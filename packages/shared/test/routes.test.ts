@@ -236,7 +236,7 @@ describe('authorisation metadata', () => {
     }
   });
 
-  it('lets the D.3 holders through the audit trail routes: audit_trail.read in a system, audit_trail.metadata.read in the organisation', () => {
+  it('lets the D.3 holders through the audit trail routes and keeps external auditors to the audited system (F.7)', () => {
     expect(routeById('audit-trail.list').anyOf).toEqual([
       { permission: 'audit_trail.read', scope: 'ms' },
       { permission: 'audit_trail.metadata.read', scope: 'org' },
@@ -257,19 +257,29 @@ describe('authorisation metadata', () => {
         if (c.scope === 'ms') return evaluatePermission(c.permission, inMs) !== null;
         return evaluatePermission(c.permission, ctx) !== null;
       });
+    // F.7: an external auditor passes only GET routes that name a system (the audited one, checked by WP-39), on top
+    // of the permission check.
+    const namesSystem = (id: string) => Boolean(routeById(id).msSource) || /:ms(\/|$)/.test(routeById(id).path);
+    const auditorPasses = (id: string, ctx: Parameters<typeof evaluatePermission>[1], inMs: Parameters<typeof evaluatePermission>[1]) =>
+      routeById(id).method === 'GET' && namesSystem(id) && passes(id, ctx, inMs);
     const manager = { ...base, anyMsRoles: ['ms_manager'] } as const;
     const externalAuditor = { ...base, anyMsRoles: ['external_auditor'] } as const;
     const tenantAdmin = { ...base, orgRoles: ['tenant_admin'] } as const;
     const domainOwner = { ...base, anyMsRoles: ['domain_owner'] } as const;
     for (const id of ['audit-trail.verify', 'audit-trail.anchors']) {
       expect(passes(id, manager, base), `${id} MS Manager`).toBe(true);
-      expect(passes(id, externalAuditor, base), `${id} external auditor`).toBe(true);
       expect(passes(id, tenantAdmin, base), `${id} Tenant Admin`).toBe(true);
       expect(passes(id, domainOwner, base), `${id} Domain Owner`).toBe(false);
+      // The any_ms alternative alone would admit the auditor; the route names no system, so F.7 denies them.
+      expect(namesSystem(id), `${id} names no system`).toBe(false);
+      expect(auditorPasses(id, externalAuditor, base), `${id} external auditor`).toBe(false);
     }
     expect(passes('audit-trail.list', manager, { ...manager, msRoles: ['ms_manager'] }), 'MS Manager of the query system').toBe(true);
     expect(passes('audit-trail.list', manager, manager), 'MS Manager of another system').toBe(false);
     expect(passes('audit-trail.list', tenantAdmin, tenantAdmin), 'Tenant Admin').toBe(true);
+    const auditorInMs = { ...externalAuditor, msRoles: ['external_auditor'] } as const;
+    expect(auditorPasses('audit-trail.list', externalAuditor, auditorInMs), 'external auditor in the audited query system').toBe(true);
+    expect(auditorPasses('audit-trail.list', externalAuditor, externalAuditor), 'external auditor in another system').toBe(false);
   });
 
   it('resets the second factor with user.manage in the organisation or ops.users.manage on the platform (D.3)', () => {

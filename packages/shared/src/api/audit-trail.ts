@@ -64,11 +64,22 @@ export const AuditAnchorsQuery = named('AuditAnchorsQuery', z.strictObject({ fro
 });
 export type AuditAnchorsQuery = z.infer<typeof AuditAnchorsQuery>;
 
+const EXAMPLE_ANCHOR = {
+  chain: 'org_ndt.audit_trail', seq: 1042, rowHash: 'ab'.repeat(32), anchoredAt: '2026-09-29T04:00:00Z', installationId: '11111111-2222-4333-8444-555555555555',
+  keyId: '0a1b2c3d4e5f6789', signature: 'ed25519:' + 'A'.repeat(86) + '==',
+} as const;
+
 export const AuditAnchor = named(
   'AuditAnchor',
-  z.object({ chain: z.string().min(1).max(80), seq: z.int().min(0), rowHash: z.string().regex(/^[0-9a-f]{64}$/), anchoredAt: Instant, keyId: KeyId, signature: Ed25519Signature }),
-  'Signed anchor of a chain head; the signature covers the canonical JSON of the other fields (D-33, F.11)',
-  { valid: [{ chain: 'org_ndt.audit_trail', seq: 1042, rowHash: 'ab'.repeat(32), anchoredAt: '2026-09-29T04:00:00Z', keyId: '0a1b2c3d4e5f6789', signature: 'ed25519:' + 'A'.repeat(86) + '==' }], invalid: [{ chain: 'x', seq: 1, rowHash: 'xyz', anchoredAt: '2026-09-29T04:00:00Z', keyId: 'k', signature: 's' }] },
+  z.object({
+    chain: z.string().min(1).max(80), seq: z.int().min(0), rowHash: z.string().regex(/^[0-9a-f]{64}$/), anchoredAt: Instant, installationId: Uuid,
+    keyId: KeyId, signature: Ed25519Signature,
+  }),
+  'Signed anchor of a chain head (D-33, F.11). The signed payload is the canonical JSON of chain, seq, rowHash, anchoredAt and installationId; keyId and signature are left out of it',
+  {
+    valid: [EXAMPLE_ANCHOR],
+    invalid: [{ chain: 'x', seq: 1, rowHash: 'xyz', anchoredAt: '2026-09-29T04:00:00Z', keyId: 'k', signature: 's' }, { ...EXAMPLE_ANCHOR, installationId: undefined }],
+  },
 );
 export type AuditAnchor = z.infer<typeof AuditAnchor>;
 
@@ -92,7 +103,10 @@ const readInMsOrMetadata = [
   { permission: 'audit_trail.read', scope: 'ms' },
   { permission: 'audit_trail.metadata.read', scope: 'org' },
 ] as const;
-/** D.3: `audit_trail.read` in at least one system (MS Manager, time-boxed external auditor), or `audit_trail.metadata.read`. */
+/**
+ * D.3: `audit_trail.read` in at least one system (MS Manager), or `audit_trail.metadata.read`. These routes name no
+ * system, so the F.7 rule (external auditors only on GET routes of the audited system, WP-39) keeps external auditors out.
+ */
 const readInAnyMsOrMetadata = [
   { permission: 'audit_trail.read', scope: 'any_ms' },
   { permission: 'audit_trail.metadata.read', scope: 'org' },
