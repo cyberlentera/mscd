@@ -70,14 +70,23 @@ export class UsersService {
     const adminRoles = [...new Set(body.adminRoles)] as OrgRole[];
     try {
       await this.scope.withTenant(tenantContextOf(principal), async (trx) => {
-        const invited = await this.invitations.inviteUser(trx, {
-          orgId: org.id,
-          email: body.email,
-          displayName: body.displayName,
-          jobTitle: body.jobTitle ?? null,
-          adminRoles,
-          actor: { userId: principal.user.id, kind: 'user' },
-        });
+        const actor = { userId: principal.user.id, kind: 'user' as const };
+        let invited;
+        try {
+          invited = await this.invitations.inviteUser(trx, {
+            orgId: org.id,
+            email: body.email,
+            displayName: body.displayName,
+            jobTitle: body.jobTitle ?? null,
+            adminRoles,
+            actor,
+          });
+        } catch (error) {
+          // A disabled account elsewhere gets the same invited membership as an active one, so the member list does not
+          // tell it apart from a new email (F.6). The owner accepts it only once the account is enabled again.
+          if (error instanceof ConflictError && (await this.inviteDisabledAccount(trx, org.id, body.email, adminRoles, actor.userId))) return;
+          throw error;
+        }
         if (invited.invitation) {
           this.mailer.sendAfterCommit(trx, {
             to: { email: invited.email, userId: invited.userId },
@@ -96,12 +105,73 @@ export class UsersService {
     return { status: 'invited' };
   }
 
+  /**
+   * Gives a disabled account (found by email, not a guest) an `invited` membership of the organisation, as
+   * `InvitationService.inviteUser` does for an active account, without an invitation link. False when the email is not
+   * a disabled account or the account already has a live membership here.
+   */
+  private async inviteDisabledAccount(trx: Trx, orgId: string, email: string, adminRoles: OrgRole[], actorUserId: string): Promise<boolean> {
+    const account = await trx
+      .selectFrom('platform.app_user')
+      .select(['id', 'handle', 'status'])
+      .where(sql<string>`lower(email)`, '=', email.trim().toLowerCase())
+      .where('kind', '<>', 'guest')
+      .where('deleted_at', 'is', null)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!account || account.status !== 'disabled') return false;
+    const membership = await trx
+      .selectFrom('platform.org_membership')
+      .select(['status', 'deleted_at'])
+      .where('organization_id', '=', orgId)
+      .where('user_id', '=', account.id)
+      .forUpdate()
+      .executeTakeFirst();
+    if (membership && membership.deleted_at === null && membership.status !== 'disabled') return false;
+    if (membership) {
+      await trx
+        .updateTable('platform.org_membership')
+        .set({ status: 'invited', deleted_at: null, admin_roles: adminRoles, invited_by: actorUserId, accepted_at: null })
+        .where('organization_id', '=', orgId)
+        .where('user_id', '=', account.id)
+        .execute();
+    } else {
+      await trx
+        .insertInto('platform.org_membership')
+        .values({ organization_id: orgId, user_id: account.id, status: 'invited', admin_roles: adminRoles, invited_by: actorUserId, is_default: false })
+        .execute();
+    }
+    await this.audit.record(trx, {
+      action: 'user.invited',
+      actor: { userId: actorUserId, kind: 'user' },
+      organizationId: orgId,
+      entityType: 'user',
+      entityId: account.id,
+      entityCode: account.handle,
+      after: { userId: account.id, adminRoles, newAccount: false, link: false, at: this.clock.now().toISOString() },
+    });
+    return true;
+  }
+
+  /**
+   * Refuses changes of global fields and the MFA reset for an invited membership: until the user accepts, the Tenant
+   * Admin sees only what the organisation supplied, and the answer must not depend on the account's other memberships.
+   */
+  private async assertNotInvited(principal: Principal, orgId: string, userId: string, path: string): Promise<void> {
+    const row = await this.scope.withTenant(tenantContextOf(principal), (trx) => memberRow(trx, orgId, userId));
+    if (!row) throw new NotFoundError('Not a member of this organisation');
+    if (row.membership_status === 'invited') {
+      throw new ValidationError([{ path, message: 'The account of an invited member changes only after the user accepts the invitation' }]);
+    }
+  }
+
   /** `PATCH /admin/users/{id}`: membership fields always; global fields only within the F.6 limits. */
   async update(request: FastifyRequest, reply: FastifyReply, principal: Principal, userId: string, patch: UserPatch): Promise<UserView> {
     const org = orgOf(principal);
     const actorId = principal.user.id;
     const self = actorId === userId;
     const globalChange = patch.displayName !== undefined || patch.jobTitle !== undefined || patch.accountStatus !== undefined;
+    if (globalChange && !self) await this.assertNotInvited(principal, org.id, userId, 'body');
     // F.6: global fields change by the user, the platform operator or a Tenant Admin of the user's only organisation.
     if (globalChange && !self && (await this.directory.hasOtherActiveMembership(org.id, userId))) {
       throw new ForbiddenError("The user is a member of another organisation: only the user or the platform operator changes the account's global fields");
@@ -223,8 +293,7 @@ export class UsersService {
       return;
     }
     const tenant = orgOf(principal);
-    const exists = await this.scope.withTenant(tenantContextOf(principal), (trx) => memberRow(trx, tenant.id, userId));
-    if (!exists) throw new NotFoundError('Not a member of this organisation');
+    await this.assertNotInvited(principal, tenant.id, userId, 'id');
     if (await this.directory.hasOtherActiveMembership(tenant.id, userId)) {
       throw new ForbiddenError('The user is a member of another organisation: only the platform operator resets the second factor');
     }

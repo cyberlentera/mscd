@@ -133,6 +133,32 @@ describe('WP-39 authorisation guard (F.7)', () => {
     expect((await manager.post('/api/v1/ms/isms/probe')).statusCode).toBe(200);
   });
 
+  it('treats a regular account whose only role is external_auditor as an external auditor (F.7, F.14 step 6)', async () => {
+    const regular = await addUser(db, 'kap.auditor', [{ org: ndt }]);
+    await grantRole(db, ndt, regular, 'isms', 'external_auditor', { validUntil: new Date(ctx.clock.now().getTime() + 86_400_000) });
+    const client = await sessionFor(ctx, regular, { org: ndt });
+    // Writes on auth-only business routes are refused and logged, as for guests.
+    const refused = await client.post('/api/v1/probe/session');
+    expect(refused.statusCode).toBe(403);
+    expect((await tenantAudit(db, ndt, 'authz.denied')).filter((e) => e.entity_code === 'probe.session-write').at(-1)).toMatchObject({ actor_user_id: regular.id });
+    // Reads of auth-only business routes and of the audited system write auditor.read.
+    expect((await client.get('/api/v1/probe/session')).statusCode).toBe(200);
+    expect((await tenantAudit(db, ndt, 'auditor.read')).at(-1)).toMatchObject({ actor_user_id: regular.id, entity_code: 'probe.session-read', management_system_id: null });
+    expect((await client.get('/api/v1/ms/isms/probe')).statusCode).toBe(200);
+    expect((await tenantAudit(db, ndt, 'auditor.read')).at(-1)).toMatchObject({ actor_user_id: regular.id, entity_code: 'probe.read' });
+    // The own session routes stay available.
+    expect((await client.put('/api/v1/me/preferences', { lang: 'id' })).statusCode).toBe(204);
+    // A member with another role besides the auditor role is not an auditor account.
+    const mixed = await addUser(db, 'mixed.auditor', [{ org: ndt }]);
+    await grantRole(db, ndt, mixed, 'isms', 'external_auditor', { validUntil: new Date(ctx.clock.now().getTime() + 86_400_000) });
+    await grantRole(db, ndt, mixed, 'qms', 'domain_owner');
+    const mixedClient = await sessionFor(ctx, mixed, { org: ndt });
+    const before = (await tenantAudit(db, ndt, 'auditor.read')).length;
+    expect((await mixedClient.post('/api/v1/probe/session')).statusCode).toBe(200);
+    expect((await mixedClient.get('/api/v1/probe/session')).statusCode).toBe(200);
+    expect(await tenantAudit(db, ndt, 'auditor.read')).toHaveLength(before);
+  });
+
   it('keeps external auditors out of the audit trail routes that name no system, and in the audited system only', async () => {
     expect((await auditorClient.get('/api/v1/admin/audit-trail/verify')).statusCode).toBe(403);
     expect((await auditorClient.get('/api/v1/admin/audit-trail/anchors')).statusCode).toBe(403);

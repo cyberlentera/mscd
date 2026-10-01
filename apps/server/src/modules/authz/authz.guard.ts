@@ -3,7 +3,7 @@
 // is checked (401); session checks of WP-11 (CSRF, F.2); rate limits keyed before validation (F.3); params, query,
 // headers and body are validated (400); rate limits keyed on the body; the permission is evaluated in the system of
 // the request (403, or 404 for an unknown system); the external auditor rules (F.7: a grant that comes only from
-// the external auditor role admits GET routes of the audited system only, and guests never write); BR-37 read-only
+// the external auditor role admits GET routes of the audited system only, and external auditor accounts never write); BR-37 read-only
 // mode blocks writes (403). The decision is stored on the request for services (`request.mscd`); requests of
 // external auditors are marked for the `auditor.read` entry (`auditor-read.ts`). A route under `/api/` without a
 // contract definition is 404: the guard fails closed.
@@ -12,7 +12,7 @@
 // the system id on denial entries.
 import { Inject, Injectable, Logger, Optional, type CanActivate, type ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { effectiveGrant, machinePermissions, type Permission, type RouteDef } from '@mscd/shared';
+import { EXTERNAL_AUDITOR, effectiveGrant, machinePermissions, type Permission, type RouteDef } from '@mscd/shared';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { PinoLogger } from 'nestjs-pino';
 import { Counter } from 'prom-client';
@@ -39,6 +39,7 @@ import { MetricsService } from '../platform/metrics';
 import { RateLimitService } from '../platform/rate-limit';
 import { markAuditorRead } from './auditor-read';
 import { isDetailedEvaluator } from './permission-evaluator';
+import { RoleResolver } from './role-resolver';
 
 /** The result of one permission check of the guard. */
 interface Outcome {
@@ -144,6 +145,7 @@ export class AuthzGuard implements CanActivate {
     @Optional() @Inject(AUDIT_WRITER) private readonly audit?: AuditWriter,
     @Optional() private readonly pino?: PinoLogger,
     @Optional() metrics?: MetricsService,
+    @Optional() private readonly roles?: RoleResolver,
   ) {
     const profile = config.profile;
     this.testRoutesEnabled = profile.demo.enabled && profile.test?.endpoints_enabled === true;
@@ -186,13 +188,14 @@ export class AuthzGuard implements CanActivate {
     const { authz, externalAuditor, msId } = await this.authorise(def, principal, input);
     if (authz?.ms) updateRequestContext({ ms: authz.ms });
     if (principal) {
-      const guest = principal.user.kind === 'guest';
-      // F.7, F.14: guests (external auditors) never change anything on business routes.
-      if (guest && def.method !== 'GET' && isBusinessRoute(def)) {
+      // F.7, F.14: external auditors (guests, and regular accounts whose only role is the external auditor role) never
+      // change anything on business routes, and every business request they make is logged as `auditor.read`.
+      const auditorAccount = isBusinessRoute(def) && (await this.isExternalAuditorAccount(principal));
+      if (auditorAccount && def.method !== 'GET') {
         await this.recordDenial(def, principal, authz?.ms ?? null, msId, []);
         throw new ForbiddenError('External auditors have read access only');
       }
-      if (externalAuditor || (guest && isBusinessRoute(def))) {
+      if (externalAuditor || auditorAccount) {
         markAuditorRead(request, def, principal, { ms: authz?.ms ?? null, msId }, input.params);
       }
     }
@@ -203,6 +206,20 @@ export class AuthzGuard implements CanActivate {
     const ifMatch = def.ifMatch ? request.headers['if-match'] : undefined;
     request.mscd = { route: def, input, principal, authz, ...(typeof ifMatch === 'string' && ifMatch.trim() !== '' ? { ifMatch } : {}) };
     return true;
+  }
+
+  /**
+   * True for a guest account, and for a regular account whose business roles in the organisation are all the external
+   * auditor role and who holds no organisation or platform role (F.6, F.14 step 6).
+   */
+  private async isExternalAuditorAccount(principal: Principal): Promise<boolean> {
+    if (principal.user.kind === 'guest') return true;
+    // With an evaluator that cannot tell roles apart (test fakes), only guests count, as for the permission checks.
+    if (!principal.org || !this.roles || !isDetailedEvaluator(this.evaluator)) return false;
+    const resolved = await this.roles.rolesOf(principal);
+    if (resolved.orgRoles.length > 0 || resolved.platformRoles.length > 0) return false;
+    const held = [...resolved.systems.values()].flatMap((s) => s.roles);
+    return held.length > 0 && held.every((role) => role === EXTERNAL_AUDITOR);
   }
 
   /** Evaluates the route's permission (F.7); `authz` is null for auth-only routes. */

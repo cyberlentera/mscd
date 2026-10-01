@@ -127,10 +127,44 @@ describe('WP-39 administration of users and role grants (F.6, C.13)', () => {
       expect(again.statusCode, email).toBe(202);
       expect(again.json()).toEqual({ status: 'invited' });
     }
-    expect(await membership(ndt, u.disabled!.id)).toBeUndefined();
+    // The disabled account gets the same invited membership as an active one (no link: it cannot sign in).
+    expect(await membership(ndt, u.disabled!.id)).toMatchObject({ status: 'invited' });
     await new Promise((resolve) => setTimeout(resolve, 300));
     expect(await mail.messages(u.bsdOnly!.email)).toHaveLength(0);
     expect(await mail.messages(u.dewi!.email)).toHaveLength(0);
+    // The list shows the same row for a new email and for accounts of other organisations, active or disabled: only
+    // what this organisation supplied or knows until the user accepts (F.6).
+    await addFactor(db, ctx.moduleRef, u.bsdOnly!.id);
+    await inScope(db.migrator, { platformScope: true }, (trx) =>
+      trx.updateTable('platform.app_user').set({ job_title: 'Secret title', last_login_at: new Date() }).where('id', 'in', [u.bsdOnly!.id, u.disabled!.id]).execute(),
+    );
+    const listed = ((await ta1.get('/api/v1/admin/users?pageSize=100')).json() as Page<UserView>).items;
+    const rowOf = (email: string) => {
+      const row = listed.find((i) => i.email.toLowerCase() === email.toLowerCase());
+      expect(row, email).toBeDefined();
+      const { id: _id, handle: _handle, email: _email, ...rest } = row!;
+      return { rest, email: row!.email, displayName: row!.displayName };
+    };
+    const fresh = rowOf('new.person@ndt.test');
+    expect(fresh.rest).toEqual({
+      displayName: 'new.person@ndt.test', jobTitle: null, kind: 'person', accountStatus: 'invited', membershipStatus: 'invited', adminRoles: [], roles: [],
+      mfaEnrolled: false, otherMemberships: false, lastLoginAt: null,
+    });
+    for (const user of [u.bsdOnly!, u.disabled!]) {
+      const other = rowOf(user.email);
+      expect(other.displayName).toBe(other.email);
+      expect({ ...other.rest, displayName: 'x' }).toEqual({ ...fresh.rest, displayName: 'x' });
+    }
+    // Search sees only the projected fields: the foreign account's name and title are not searchable.
+    const foreignName = (await inScope(db.migrator, { platformScope: true }, (trx) =>
+      trx.selectFrom('platform.app_user').select('display_name').where('id', '=', u.bsdOnly!.id).executeTakeFirstOrThrow(),
+    )).display_name;
+    expect(((await ta1.get(`/api/v1/admin/users?q=${encodeURIComponent(foreignName)}`)).json() as Page<UserView>).items.map((i) => i.id)).not.toContain(u.bsdOnly!.id);
+    // Global fields and the MFA reset of an invited member answer the same 400 whatever the account's other memberships.
+    for (const id of [u.bsdOnly!.id, u.disabled!.id, listed.find((i) => i.email === 'new.person@ndt.test')!.id]) {
+      expect((await ta1.patch(`/api/v1/admin/users/${id}`, { displayName: 'Renamed' })).statusCode, id).toBe(400);
+      expect((await ta1.post(`/api/v1/admin/users/${id}/reset-mfa`)).statusCode, id).toBe(400);
+    }
     // The licence user limit (D-15).
     ctx.licence.userLimitReached = true;
     const limited = await ta1.post('/api/v1/admin/users', { email: 'one.more@ndt.test', displayName: 'One More', adminRoles: [] });
@@ -159,8 +193,8 @@ describe('WP-39 administration of users and role grants (F.6, C.13)', () => {
     expect((await ta1.patch(`/api/v1/admin/users/${u.dewi!.id}`, { membershipStatus: 'active', adminRoles: [] })).json()).toMatchObject({ membershipStatus: 'active', adminRoles: [] });
     // An invited membership is accepted by its user, not activated by the Tenant Admin.
     expect((await ta1.patch(`/api/v1/admin/users/${u.invited!.id}`, { membershipStatus: 'active' })).statusCode).toBe(400);
-    // A member of the other organisation only is not found here.
-    expect((await ta1.patch(`/api/v1/admin/users/${u.disabled!.id}`, { membershipStatus: 'disabled' })).statusCode).toBe(404);
+    // A member of another organisation only is not found here.
+    expect((await ta1.patch(`/api/v1/admin/users/${u.solo!.id}`, { membershipStatus: 'disabled' })).statusCode).toBe(404);
   });
 
   it('changes global fields only for a user without another active membership; disabling the account ends every session (F.6, J.5)', async () => {
@@ -209,8 +243,8 @@ describe('WP-39 administration of users and role grants (F.6, C.13)', () => {
     expect(factors).toHaveLength(0);
     expect((await mail.waitFor(u.dewi!.email, (m) => m.mailKind === 'account:mfa_reset')).subject).toContain('[MSCD]');
     expect((await platformAudit(db, 'auth.mfa_reset')).at(-1)).toMatchObject({ entity_id: u.dewi!.id, actor_user_id: u.ta1!.id, organization_id: ndt.tenant.id });
-    // Not a member of this organisation (only of bsd): 404.
-    expect((await ta1.post(`/api/v1/admin/users/${u.disabled!.id}/reset-mfa`)).statusCode).toBe(404);
+    // Not a member of this organisation (only of rmn): 404.
+    expect((await ta1.post(`/api/v1/admin/users/${u.solo!.id}/reset-mfa`)).statusCode).toBe(404);
     const member = await sessionFor(ctx, u.storage!, { org: ndt });
     expect((await member.post(`/api/v1/admin/users/${u.dewi!.id}/reset-mfa`)).statusCode).toBe(403);
     // The platform operator, without an organisation, for a user of two organisations.
@@ -230,7 +264,7 @@ describe('WP-39 administration of users and role grants (F.6, C.13)', () => {
     expect((await platformAudit(db, 'identity.registered')).at(-1)!.after_data).toMatchObject({ provider: 'kc-ndt', subject: 'subject-dewi' });
     expect((await ta1.post(`/api/v1/admin/users/${u.storage!.id}/identities`, { provider: 'kc-ndt', subject: 'subject-dewi' })).statusCode).toBe(409);
     expect((await ta1.post(`/api/v1/admin/users/${u.dewi!.id}/identities`, { provider: 'kc-bsd', subject: 'subject-x' })).statusCode).toBe(404);
-    expect((await ta1.post(`/api/v1/admin/users/${u.disabled!.id}/identities`, { provider: 'kc-ndt', subject: 'subject-y' })).statusCode).toBe(404);
+    expect((await ta1.post(`/api/v1/admin/users/${u.solo!.id}/identities`, { provider: 'kc-ndt', subject: 'subject-y' })).statusCode).toBe(404);
   });
 
   it('sets the local sign-in policy of the organisation and refreshes the tenant cache (F.4)', async () => {
