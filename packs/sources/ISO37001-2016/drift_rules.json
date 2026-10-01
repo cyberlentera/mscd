@@ -1,0 +1,13 @@
+[
+  {
+    "code": "dd",
+    "label_en": "Business associates without valid due diligence",
+    "label_id": "Mitra tanpa due diligence berlaku",
+    "severity": "risk",
+    "source_stage": "associate",
+    "source_kind": "dd_expired",
+    "predicate": {},
+    "message": "Business associates whose due diligence has expired or was never done. Complete a new due diligence check.",
+    "sort_order": 1
+  }
+]

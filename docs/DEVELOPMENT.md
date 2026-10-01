@@ -101,6 +101,84 @@ npm run dev:stack
 
 starts PostgreSQL, the S3-compatible object store and Mailpit with Docker Compose and waits until they are healthy. Valkey and Keycloak start with the Compose profiles `bullmq` and `sso`. Connection strings, keys, logins and how to reset the data are in [deploy/compose/dev/README.md](../deploy/compose/dev/README.md).
 
+## Server, shared packages and tools
+
+Files of this part of the repository:
+
+| Path | Package | Contents |
+|---|---|---|
+| `apps/server` | `@mscd/server` | NestJS server on Fastify (CommonJS): run modes `api`, `worker`, `storage-gateway` and `migrate`, admin commands, profiles, migrations, unit and integration tests ([README](../apps/server/README.md)) |
+| `packages/shared` | `@mscd/shared` | Shared contract: zod schemas, route table, authorisation matrix, OpenAPI generator (ES module) |
+| `packages/pack-tools` | `@mscd/pack-tools` | CLI `mscd-pack`: builds, signs and verifies framework packs and licences (ES module) |
+| `tools/mock-providers` | `@mscd/mock-providers` | Local Microsoft identity, Graph and Google Drive mocks for tests and the demo |
+| `tools/smoke` | `@mscd/smoke` | Full-stack smoke test (Playwright against Compose) |
+| `tools/scripts` | none | `check-text.mjs` and `demo-totp.mjs` ([README](../tools/scripts/README.md)) |
+| `tsconfig.base.json`, `eslint.config.mjs` | none | Shared TypeScript options (strict, ES2023, `nodenext`) and the ESLint configuration |
+
+### Build, typecheck, lint and unit tests
+
+```bash
+npm run build -w @mscd/server     # also builds @mscd/shared and @mscd/pack-tools (project references)
+npm run typecheck                 # every workspace
+npm run lint                      # TypeScript everywhere and the .mjs scripts outside apps/web
+npm test                          # unit tests of every workspace, no Docker needed
+```
+
+During development no package needs a build to be used by another: Vitest configurations alias `@mscd/shared`, `@mscd/pack-tools` and `@mscd/mock-providers` to their `src`, and the TypeScript configurations resolve the export condition `@mscd/source` to the same files. Only `node apps/server/dist/main.js` needs the built `dist` folders, which `npm run build -w @mscd/server` produces.
+
+The server lint rules enforce tenant scoping (build plan F.10): no queries on the injected pool (`db` or `this.db`) outside `src/db`, `src/modules/tenancy` and `src/seed`; `withPlatform` only in the identity, ops, jobs, audit, packs, license and tenancy modules, `src/cli`, `src/seed` and `src/worker`; no session-level `SET` statement and no `set_config(..., false)` in SQL strings.
+
+### Integration tests
+
+```bash
+npm run test:int -w @mscd/server                      # every suite
+npm run test:int -w @mscd/server -- test/int/smoke    # one folder
+```
+
+The global setup starts `postgres:16.15-alpine` with Testcontainers (label `mscd.test=true`, no reaper container) and builds the template database `mscd_tpl_empty`; each test file copies it with `useTestDatabase()` from `apps/server/test/setup/test-db.ts`. Variables:
+
+| Variable | Effect |
+|---|---|
+| `MSCD_TEST_DATABASE_URL` | Use this PostgreSQL server (an administrator URL) instead of a container |
+| `MSCD_TEST_PG_IMAGE` | Another image, for example `postgres:15-alpine` or `postgres:17-alpine` |
+| `MSCD_TEST_CONTAINER_PREFIX` | Name the container `<prefix>postgres-<random>` |
+| `MSCD_TEST_SSO=1` | Also run the Keycloak global setup (OIDC and SAML suites) |
+
+### Run the api locally
+
+```bash
+npm run build -w @mscd/server
+MSCD_PROFILE_FILE=apps/server/profiles/test.yaml node apps/server/dist/main.js api
+curl http://localhost:3000/healthz
+curl http://localhost:3000/api/v1/system/profile
+```
+
+`/readyz` answers 503 until the database of the profile is reachable (with `test.yaml`, the developer stack on port 55432). Metrics are on port 9464 (`/metrics`).
+
+### Deployment profiles
+
+The server reads the YAML file named by `MSCD_PROFILE_FILE` and validates it strictly at start: an unknown key, a missing key or a forbidden value stops the process with a list of every problem. `apps/server/profiles` holds `onprem.yaml` and `saas.yaml` (release) and `demo.yaml` and `test.yaml` (development builds only; their secrets are the public values in `apps/server/test/fixtures/secrets`). Relative paths in a profile resolve against the profile's folder.
+
+| Override | Example |
+|---|---|
+| `MSCD__<SECTION>__<KEY>=<YAML value>` | `MSCD__HTTP__PORT=3001`, `MSCD__DEMO__ENABLED=false`, `MSCD__OBSERVABILITY__METRICS_PORT=null` |
+| Database URLs (win over `database.*_file`) | `MSCD_DATABASE_URL`, `MSCD_DATABASE_MIGRATOR_URL`, `MSCD_DATABASE_PACK_URL`, `MSCD_DATABASE_ADMIN_URL` |
+| The same values from files | `MSCD_DATABASE_URL_FILE=/run/secrets/db-app.url` and so on |
+
+`mscd-server db bootstrap [--with-report-role]` creates the database roles, schema `ext` and extension `pg_trgm` (build plan C.2). It connects with the administrator URL and takes each role's password from that role's URL, so all four URLs must be set. The developer stack already ran the same bootstrap at its first start.
+
+### Build information and flavours
+
+`npm run gen:build-info -w @mscd/server` (also run before every build, typecheck and test) writes `apps/server/src/generated/build-info.ts`: build flavour, version, revision, the platform migrations of the build and the trusted public keys. `MSCD_BUILD_FLAVOR` is `dev` (default; trusts the keys in `packages/pack-tools/dev-keys`) or `release` (trusts only the keys in `MSCD_TRUSTED_KEYS_DIR`, which must hold a `licence-*.pub` and a `pack-*.pub` key and no development key). Release builds also refuse the demo and test profiles at start. `MSCD_VERSION` and `MSCD_REVISION` override the version from `apps/server/package.json` and the Git revision.
+
+### Demo users
+
+Every demo and test user signs in with the password `Mscd-Demo-2026!` and a TOTP code derived from the user's handle:
+
+```bash
+node tools/scripts/demo-totp.mjs rina
+```
+
 ## Root scripts
 
 | Script | What it runs |
@@ -118,7 +196,7 @@ starts PostgreSQL, the S3-compatible object store and Mailpit with Docker Compos
 | `npm run seed:demo` | Loads the demo organisations into the development database |
 | `npm run check:text` | Fails when a document in `docs/` contains an em dash or a centre dot character |
 
-Scripts that need a workspace or tool that is not in the repository yet fail until it is added; `check:text` prints that it is not available instead.
+Scripts whose work package has not landed yet fail with a message that names it (for example `npm run test:smoke` until the smoke test exists). `npm run test:smoke` runs the script `smoke` of `@mscd/smoke`, not its `test` script, so `npm test` never starts the full stack.
 
 ## Image builds
 

@@ -1,0 +1,8 @@
+{
+  "ms.name": "BCMS",
+  "ms.long_name": "Sistem manajemen keberlangsungan usaha",
+  "ms.manager_role": "Manajer BCMS",
+  "gate.name": "BIA & Penilaian Risiko",
+  "applicability.artefact_name": "Penetapan Ruang Lingkup BCMS",
+  "risk.object_name": "Risiko gangguan"
+}

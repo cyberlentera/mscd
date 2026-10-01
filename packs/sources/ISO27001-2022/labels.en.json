@@ -1,0 +1,12 @@
+{
+  "ms.name": "ISMS",
+  "ms.long_name": "Information security management system",
+  "ms.manager_role": "ISMS Manager",
+  "gate.name": "Risk & SoA",
+  "applicability.artefact_name": "Statement of Applicability",
+  "risk.object_name": "Information security risk",
+  "catalogue.theme.5": "Organizational",
+  "catalogue.theme.6": "People",
+  "catalogue.theme.7": "Physical",
+  "catalogue.theme.8": "Technological"
+}

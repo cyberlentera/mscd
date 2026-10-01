@@ -1,0 +1,6 @@
+code,title,days_before_audit,skip_on_first_audit,sort_order
+PREP-01,Approve BIA report,71,false,1
+PREP-02,Approve BC strategy,57,false,2
+PREP-03,Approve BC plan: DC Jakarta,31,false,3
+PREP-04,Run table-top exercise EX-01,26,false,4
+PREP-05,Internal audit of the BCMS,16,false,5

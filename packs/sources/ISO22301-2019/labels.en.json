@@ -1,0 +1,8 @@
+{
+  "ms.name": "BCMS",
+  "ms.long_name": "Business continuity management system",
+  "ms.manager_role": "BCMS Manager",
+  "gate.name": "BIA & Risk Assessment",
+  "applicability.artefact_name": "BCMS Scope Determination",
+  "risk.object_name": "Disruption risk"
+}

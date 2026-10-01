@@ -1,0 +1,48 @@
+[
+  {
+    "code": "risk12",
+    "label_en": "Risks not reassessed in 12 months",
+    "label_id": "Risiko tidak dinilai ulang 12 bulan",
+    "severity": "risk",
+    "source_stage": "risk",
+    "source_kind": "stale_risk",
+    "predicate": {
+      "months": 12
+    },
+    "message": "Risks whose last assessment is more than 12 months old. Reassess them so the risk register reflects the current situation.",
+    "sort_order": 1
+  },
+  {
+    "code": "unverif",
+    "label_en": "Evidence files that cannot be verified",
+    "label_id": "Berkas bukti tak terverifikasi",
+    "severity": "crit",
+    "source_stage": "evidence",
+    "source_kind": "unverif",
+    "predicate": {},
+    "message": "Evidence files whose link can no longer be verified (changed, moved, missing or access revoked). Re-link the file or upload the correct version.",
+    "sort_order": 2
+  },
+  {
+    "code": "metric",
+    "label_en": "Metrics no longer updated",
+    "label_id": "Metrik berhenti diperbarui",
+    "severity": "warn",
+    "source_stage": "metric",
+    "source_kind": "metric",
+    "predicate": {},
+    "message": "Metrics that have not been updated within their measurement period. Enter the missing values or review the metric.",
+    "sort_order": 3
+  },
+  {
+    "code": "mr",
+    "label_en": "Management review inputs missing",
+    "label_id": "Input tinjauan manajemen hilang",
+    "severity": "risk",
+    "source_stage": "management_review",
+    "source_kind": "manual",
+    "predicate": {},
+    "message": "Mandatory management review inputs that are not prepared yet. Prepare them before the review is held.",
+    "sort_order": 4
+  }
+]

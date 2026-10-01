@@ -1,0 +1,7 @@
+stage_key,position,label_en,label_id,question_en,question_id,source,entity_type,risk_profile_code,is_mandatory,clause_at_risk,overview_clause,gate_type_label_en,gate_type_label_id
+context,1,Context issue,Isu konteks,,,entity,context_issue,,true,4.1,4,,
+brisk,2,Bribery risk,Risiko penyuapan,,,entity,risk,bribery,true,,4,,
+control,3,Control / requirement,Kontrol / persyaratan,,,applicability,,,true,6.1.3 d),8,,
+associate,4,Position / associate,Posisi / mitra,,,entity,business_associate,,true,,8,,
+document,5,Document,Dokumen,,,document,,,true,7.5,7,,
+evidence,6,Evidence,Bukti,,,evidence,,,true,8.1 / 9.1,8,,

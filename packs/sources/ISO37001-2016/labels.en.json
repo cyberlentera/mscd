@@ -1,0 +1,8 @@
+{
+  "ms.name": "ABMS",
+  "ms.long_name": "Anti-bribery management system",
+  "ms.manager_role": "Anti-Bribery Compliance Function",
+  "gate.name": "Bribery Risk Assessment",
+  "applicability.artefact_name": "Control Proportionality",
+  "risk.object_name": "Bribery risk"
+}

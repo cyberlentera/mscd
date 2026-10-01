@@ -1,0 +1,13 @@
+{
+  "pack_id": "ISO37001-2025",
+  "pack_version": "0.6.0",
+  "framework_code": "ISO37001",
+  "framework_name": "ISO 37001",
+  "edition": "2025",
+  "status": "current",
+  "pre_release": true,
+  "engine_min_version": "1.0.0",
+  "modules": [],
+  "applicability_target": "requirement",
+  "catalogue": false
+}

@@ -1,0 +1,13 @@
+{
+  "pack_id": "ISO9001-2015",
+  "pack_version": "1.4.2",
+  "framework_code": "ISO9001",
+  "framework_name": "ISO 9001",
+  "edition": "2015",
+  "status": "current",
+  "pre_release": false,
+  "engine_min_version": "1.0.0",
+  "modules": [],
+  "applicability_target": "requirement",
+  "catalogue": false
+}

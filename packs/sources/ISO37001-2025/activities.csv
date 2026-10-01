@@ -1,0 +1,44 @@
+phase_no,phase_name_en,phase_name_id,is_gate_phase,activity_no,title,clause_ref,output_document_code,expected_outcome
+1,Initiation & mandate,Inisiasi & mandat,false,1,Secure top management mandate,,,Secure top management mandate: approved and recorded in the register
+1,Initiation & mandate,Inisiasi & mandat,false,2,Appoint management system manager,,,Appoint management system manager: approved and recorded in the register
+1,Initiation & mandate,Inisiasi & mandat,false,3,Approve project charter and budget,,,Approve project charter and budget: approved and recorded in the register
+1,Initiation & mandate,Inisiasi & mandat,false,4,Baseline gap assessment,,,Baseline gap assessment: approved and recorded in the register
+2,Context & scope,Konteks & ruang lingkup,false,1,Identify internal and external issues,,,Identify internal and external issues: approved and recorded in the register
+2,Context & scope,Konteks & ruang lingkup,false,2,Identify interested parties and requirements,,,Identify interested parties and requirements: approved and recorded in the register
+2,Context & scope,Konteks & ruang lingkup,false,3,Define scope and boundaries,,,Define scope and boundaries: approved and recorded in the register
+2,Context & scope,Konteks & ruang lingkup,false,4,Map processes and interfaces,,,Map processes and interfaces: approved and recorded in the register
+2,Context & scope,Konteks & ruang lingkup,false,5,Approve scope statement,,,Approve scope statement: approved and recorded in the register
+3,Leadership & policy,Kepemimpinan & kebijakan,false,1,Draft policy,,POL-01,Draft policy: approved and recorded in the register
+3,Leadership & policy,Kepemimpinan & kebijakan,false,2,"Define roles, responsibilities and authorities",,,"Define roles, responsibilities and authorities: approved and recorded in the register"
+3,Leadership & policy,Kepemimpinan & kebijakan,false,3,Set measurable objectives,,,Set measurable objectives: approved and recorded in the register
+3,Leadership & policy,Kepemimpinan & kebijakan,false,4,Approve and communicate policy,,POL-01,Approve and communicate policy: approved and recorded in the register
+4,Bribery risk assessment,Penilaian risiko penyuapan,true,1,Identify bribery risk positions and transactions,,,Identify bribery risk positions and transactions: approved and recorded in the register
+4,Bribery risk assessment,Penilaian risiko penyuapan,true,2,Identify business associates in scope,,,Identify business associates in scope: approved and recorded in the register
+4,Bribery risk assessment,Penilaian risiko penyuapan,true,3,"Assess bribery risks by position, partner, region",,,"Assess bribery risks by position, partner, region: approved and recorded in the register"
+4,Bribery risk assessment,Penilaian risiko penyuapan,true,4,Determine proportionate controls,,,Determine proportionate controls: approved and recorded in the register
+4,Bribery risk assessment,Penilaian risiko penyuapan,true,5,Approve bribery risk assessment,,,Approve bribery risk assessment: approved and recorded in the register
+4,Bribery risk assessment,Penilaian risiko penyuapan,true,6,Set risk review triggers,,,Set risk review triggers: approved and recorded in the register
+5,Anti-bribery controls,Kontrol anti-penyuapan,false,1,Establish anti-bribery compliance function,,,Establish anti-bribery compliance function: approved and recorded in the register
+5,Anti-bribery controls,Kontrol anti-penyuapan,false,2,Due diligence procedure,,,Due diligence procedure: approved and recorded in the register
+5,Anti-bribery controls,Kontrol anti-penyuapan,false,3,Financial controls,,,Financial controls: approved and recorded in the register
+5,Anti-bribery controls,Kontrol anti-penyuapan,false,4,Non-financial controls,,,Non-financial controls: approved and recorded in the register
+5,Anti-bribery controls,Kontrol anti-penyuapan,false,5,"Gifts, hospitality and donations register",,,"Gifts, hospitality and donations register: approved and recorded in the register"
+5,Anti-bribery controls,Kontrol anti-penyuapan,false,6,Anti-bribery commitments from associates,,,Anti-bribery commitments from associates: approved and recorded in the register
+5,Anti-bribery controls,Kontrol anti-penyuapan,false,7,Raising concerns channel,,,Raising concerns channel: approved and recorded in the register
+5,Anti-bribery controls,Kontrol anti-penyuapan,false,8,Investigation procedure,,,Investigation procedure: approved and recorded in the register
+6,Documentation,Dokumentasi,false,1,Establish document control,,IMS-01,Establish document control: approved and recorded in the register
+6,Documentation,Dokumentasi,false,2,Write mandatory procedures,,,Write mandatory procedures: approved and recorded in the register
+6,Documentation,Dokumentasi,false,3,Define record retention,,,Define record retention: approved and recorded in the register
+6,Documentation,Dokumentasi,false,4,Publish document register,,,Publish document register: approved and recorded in the register
+6,Documentation,Dokumentasi,false,5,Approve controlled documents,,,Approve controlled documents: approved and recorded in the register
+7,Operation & awareness,Operasi & kepedulian,false,1,Run awareness campaign,,,Run awareness campaign: approved and recorded in the register
+7,Operation & awareness,Operasi & kepedulian,false,2,Role-based training,,,Role-based training: approved and recorded in the register
+7,Operation & awareness,Operasi & kepedulian,false,3,Operate controls and collect evidence,,,Operate controls and collect evidence: approved and recorded in the register
+7,Operation & awareness,Operasi & kepedulian,false,4,Handle nonconformities per procedure,,,Handle nonconformities per procedure: approved and recorded in the register
+7,Operation & awareness,Operasi & kepedulian,false,5,Evidence freshness review,,,Evidence freshness review: approved and recorded in the register
+8,Performance evaluation & improvement,Evaluasi kinerja & peningkatan,false,1,Define metrics and measurement plan,,,Define metrics and measurement plan: approved and recorded in the register
+8,Performance evaluation & improvement,Evaluasi kinerja & peningkatan,false,2,Collect metric values,,,Collect metric values: approved and recorded in the register
+8,Performance evaluation & improvement,Evaluasi kinerja & peningkatan,false,3,Conduct internal audit,,IMS-02,Conduct internal audit: approved and recorded in the register
+8,Performance evaluation & improvement,Evaluasi kinerja & peningkatan,false,4,Hold management review,,IMS-04,Hold management review: approved and recorded in the register
+8,Performance evaluation & improvement,Evaluasi kinerja & peningkatan,false,5,Implement corrective actions,,IMS-03,Implement corrective actions: approved and recorded in the register
+8,Performance evaluation & improvement,Evaluasi kinerja & peningkatan,false,6,Verify corrective action effectiveness,,IMS-03,Verify corrective action effectiveness: approved and recorded in the register

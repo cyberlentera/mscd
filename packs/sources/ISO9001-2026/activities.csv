@@ -1,0 +1,58 @@
+phase_no,phase_name_en,phase_name_id,is_gate_phase,activity_no,title,clause_ref,output_document_code,expected_outcome
+1,Initiation & mandate,Inisiasi & mandat,false,1,Secure top management mandate,,,Secure top management mandate: approved and recorded in the register
+1,Initiation & mandate,Inisiasi & mandat,false,2,Appoint management system manager,,,Appoint management system manager: approved and recorded in the register
+1,Initiation & mandate,Inisiasi & mandat,false,3,Approve project charter and budget,,,Approve project charter and budget: approved and recorded in the register
+1,Initiation & mandate,Inisiasi & mandat,false,4,Baseline gap assessment,,,Baseline gap assessment: approved and recorded in the register
+2,Context & scope,Konteks & ruang lingkup,false,1,Identify internal and external issues,,,Identify internal and external issues: approved and recorded in the register
+2,Context & scope,Konteks & ruang lingkup,false,2,Identify interested parties and requirements,,,Identify interested parties and requirements: approved and recorded in the register
+2,Context & scope,Konteks & ruang lingkup,false,3,Define scope and boundaries,,,Define scope and boundaries: approved and recorded in the register
+2,Context & scope,Konteks & ruang lingkup,false,4,Map processes and interfaces,,,Map processes and interfaces: approved and recorded in the register
+2,Context & scope,Konteks & ruang lingkup,false,5,Approve scope statement,,,Approve scope statement: approved and recorded in the register
+3,Leadership & policy,Kepemimpinan & kebijakan,false,1,Draft policy,,POL-01,Draft policy: approved and recorded in the register
+3,Leadership & policy,Kepemimpinan & kebijakan,false,2,"Define roles, responsibilities and authorities",,,"Define roles, responsibilities and authorities: approved and recorded in the register"
+3,Leadership & policy,Kepemimpinan & kebijakan,false,3,Set measurable objectives,,,Set measurable objectives: approved and recorded in the register
+3,Leadership & policy,Kepemimpinan & kebijakan,false,4,Approve and communicate policy,,POL-01,Approve and communicate policy: approved and recorded in the register
+4,Risk & opportunity + process map,Risiko & peluang + peta proses,true,1,Determine risks and opportunities,,,Determine risks and opportunities: approved and recorded in the register
+4,Risk & opportunity + process map,Risiko & peluang + peta proses,true,2,Plan actions for risks and opportunities,,,Plan actions for risks and opportunities: approved and recorded in the register
+4,Risk & opportunity + process map,Risiko & peluang + peta proses,true,3,Define process map and interactions,,QM-01,Define process map and interactions: approved and recorded in the register
+4,Risk & opportunity + process map,Risiko & peluang + peta proses,true,4,Assign process owners,,,Assign process owners: approved and recorded in the register
+4,Risk & opportunity + process map,Risiko & peluang + peta proses,true,5,Define process KPIs,,,Define process KPIs: approved and recorded in the register
+4,Risk & opportunity + process map,Risiko & peluang + peta proses,true,6,Approve process map,,QM-01,Approve process map: approved and recorded in the register
+4,Risk & opportunity + process map,Risiko & peluang + peta proses,true,7,Approve quality objectives,,,Approve quality objectives: approved and recorded in the register
+5,Process controls & design,Kendali proses & desain,false,1,Customer requirements review,,,Customer requirements review: approved and recorded in the register
+5,Process controls & design,Kendali proses & desain,false,2,Design and development controls,,,Design and development controls: approved and recorded in the register
+5,Process controls & design,Kendali proses & desain,false,3,External provider evaluation,,,External provider evaluation: approved and recorded in the register
+5,Process controls & design,Kendali proses & desain,false,4,Production and service provision controls,,,Production and service provision controls: approved and recorded in the register
+5,Process controls & design,Kendali proses & desain,false,5,Release and nonconforming output controls,,,Release and nonconforming output controls: approved and recorded in the register
+5,Process controls & design,Kendali proses & desain,false,6,Customer feedback process,,,Customer feedback process: approved and recorded in the register
+5,Process controls & design,Kendali proses & desain,false,7,Complaint handling,,,Complaint handling: approved and recorded in the register
+6,Documentation,Dokumentasi,false,1,Establish document control,,IMS-01,Establish document control: approved and recorded in the register
+6,Documentation,Dokumentasi,false,2,Write mandatory procedures,,,Write mandatory procedures: approved and recorded in the register
+6,Documentation,Dokumentasi,false,3,Define record retention,,,Define record retention: approved and recorded in the register
+6,Documentation,Dokumentasi,false,4,Publish document register,,,Publish document register: approved and recorded in the register
+6,Documentation,Dokumentasi,false,5,Approve controlled documents,,,Approve controlled documents: approved and recorded in the register
+7,Operation & awareness,Operasi & kepedulian,false,1,Run awareness campaign,,,Run awareness campaign: approved and recorded in the register
+7,Operation & awareness,Operasi & kepedulian,false,2,Role-based training,,,Role-based training: approved and recorded in the register
+7,Operation & awareness,Operasi & kepedulian,false,3,Operate controls and collect evidence,,,Operate controls and collect evidence: approved and recorded in the register
+7,Operation & awareness,Operasi & kepedulian,false,4,Handle nonconformities per procedure,,,Handle nonconformities per procedure: approved and recorded in the register
+7,Operation & awareness,Operasi & kepedulian,false,5,Evidence freshness review,,,Evidence freshness review: approved and recorded in the register
+8,Performance evaluation & improvement,Evaluasi kinerja & peningkatan,false,1,Define metrics and measurement plan,,,Define metrics and measurement plan: approved and recorded in the register
+8,Performance evaluation & improvement,Evaluasi kinerja & peningkatan,false,2,Collect metric values,,,Collect metric values: approved and recorded in the register
+8,Performance evaluation & improvement,Evaluasi kinerja & peningkatan,false,3,Conduct internal audit,,IMS-02,Conduct internal audit: approved and recorded in the register
+8,Performance evaluation & improvement,Evaluasi kinerja & peningkatan,false,4,Hold management review,,IMS-04,Hold management review: approved and recorded in the register
+8,Performance evaluation & improvement,Evaluasi kinerja & peningkatan,false,5,Implement corrective actions,,IMS-03,Implement corrective actions: approved and recorded in the register
+8,Performance evaluation & improvement,Evaluasi kinerja & peningkatan,false,6,Verify corrective action effectiveness,,IMS-03,Verify corrective action effectiveness: approved and recorded in the register
+9,ISO 9001:2026 transition,Transisi ISO 9001:2026,false,1,Install ISO 9001:2026 framework pack,,,Install ISO 9001:2026 framework pack: approved and recorded in the register
+9,ISO 9001:2026 transition,Transisi ISO 9001:2026,false,2,Run gap analysis 2015 to 2026,,PLN-Q05,Run gap analysis 2015 to 2026: approved and recorded in the register
+9,ISO 9001:2026 transition,Transisi ISO 9001:2026,false,3,Map documents to new requirements,,,Map documents to new requirements: approved and recorded in the register
+9,ISO 9001:2026 transition,Transisi ISO 9001:2026,false,4,Map evidence to new requirements,,,Map evidence to new requirements: approved and recorded in the register
+9,ISO 9001:2026 transition,Transisi ISO 9001:2026,false,5,Review three new requirements,,,Review three new requirements: approved and recorded in the register
+9,ISO 9001:2026 transition,Transisi ISO 9001:2026,false,6,Update quality manual,,QM-01,Update quality manual: approved and recorded in the register
+9,ISO 9001:2026 transition,Transisi ISO 9001:2026,false,7,Update process map,,QM-01,Update process map: approved and recorded in the register
+9,ISO 9001:2026 transition,Transisi ISO 9001:2026,false,8,Train process owners,,,Train process owners: approved and recorded in the register
+9,ISO 9001:2026 transition,Transisi ISO 9001:2026,false,9,Update quality objectives,,,Update quality objectives: approved and recorded in the register
+9,ISO 9001:2026 transition,Transisi ISO 9001:2026,false,10,Update supplier controls,,PRC-08,Update supplier controls: approved and recorded in the register
+9,ISO 9001:2026 transition,Transisi ISO 9001:2026,false,11,Internal audit against 2026 edition,,IMS-02,Internal audit against 2026 edition: approved and recorded in the register
+9,ISO 9001:2026 transition,Transisi ISO 9001:2026,false,12,Management review on transition,,IMS-04,Management review on transition: approved and recorded in the register
+9,ISO 9001:2026 transition,Transisi ISO 9001:2026,false,13,Notify certification body,,,Notify certification body: approved and recorded in the register
+9,ISO 9001:2026 transition,Transisi ISO 9001:2026,false,14,Confirm transition audit date,,PLN-Q05,Confirm transition audit date: approved and recorded in the register

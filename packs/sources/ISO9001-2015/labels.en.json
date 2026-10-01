@@ -1,0 +1,8 @@
+{
+  "ms.name": "QMS",
+  "ms.long_name": "Quality management system",
+  "ms.manager_role": "QMS Manager",
+  "gate.name": "Risk & Opportunity + Process Map",
+  "applicability.artefact_name": "Requirement Applicability",
+  "risk.object_name": "Risk or opportunity"
+}

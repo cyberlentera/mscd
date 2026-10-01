@@ -1,0 +1,13 @@
+{
+  "pack_id": "ISO27001-2022",
+  "pack_version": "1.2.0",
+  "framework_code": "ISO27001",
+  "framework_name": "ISO/IEC 27001",
+  "edition": "2022",
+  "status": "current",
+  "pre_release": false,
+  "engine_min_version": "1.0.0",
+  "modules": [],
+  "applicability_target": "catalogue_item",
+  "catalogue": true
+}

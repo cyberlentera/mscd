@@ -1,0 +1,9 @@
+stage_key,position,label_en,label_id,question_en,question_id,source,entity_type,risk_profile_code,is_mandatory,clause_at_risk,overview_clause,gate_type_label_en,gate_type_label_id
+context,1,Context issue,Isu konteks,Which issues and interested parties drive the QMS?,Isu dan pihak berkepentingan mana yang mendorong QMS?,entity,context_issue,,true,4.1,4,,
+risk,2,Risk & opportunity,Risiko & peluang,How were risks and opportunities determined?,Bagaimana risiko dan peluang ditentukan?,entity,risk,quality,true,6.1.2,6,Risk,Risiko
+action,3,Action,Tindakan,What actions were planned and were they effective?,"Tindakan apa yang direncanakan, dan apakah tindakan itu efektif?",entity,risk_treatment,,true,6.1,6,,
+process,4,Process / requirement,Proses / persyaratan,Show the process and its operational controls.,Tunjukkan prosesnya beserta kendali operasionalnya.,applicability,,,true,4.4,8,,
+objective,5,Quality objective,Sasaran mutu,Are objectives measurable and monitored?,Apakah sasaran dapat diukur dan dipantau?,entity,quality_objective,,true,6.2,6,,
+document,6,Document,Dokumen,Is this the current controlled version?,Apakah ini versi terkendali yang berlaku?,document,,,true,7.5,7,,
+evidence,7,Evidence,Bukti,Show records from the current cycle.,Tunjukkan rekaman dari siklus berjalan.,evidence,,,true,8.1 / 9.1,8,,
+metric,8,Metric,Metrik,How is performance evaluated?,Bagaimana kinerja dievaluasi?,entity,metric,,true,9.1,9,,

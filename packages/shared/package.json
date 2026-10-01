@@ -1,0 +1,33 @@
+{
+  "name": "@mscd/shared",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MSCD shared contract: zod schemas, enums, API route table, authorisation matrix and OpenAPI generator",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "exports": {
+    ".": {
+      "@mscd/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --passWithNoTests",
+    "openapi": "npm run build && node scripts/openapi.mjs"
+  },
+  "dependencies": {
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "vitest": "3.2.7"
+  }
+}

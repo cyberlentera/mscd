@@ -1,0 +1,7 @@
+code,requirement_code,title,derivation,sort_order
+RISK_ASSESSMENT,6.1.2,Risk assessment reviewed this cycle,,1
+INTERNAL_AUDIT,9.2,Internal audit covering all requirements and controls,,2
+MGMT_REVIEW,9.3,Management review with all mandatory inputs,,3
+CORRECTIVE_ACTION,10.2,Corrective actions closed with verification,,4
+PERFORMANCE_EVALUATION,9.1,Performance measured and analysed,,5
+DOCUMENT_REVIEW,7.5.2,Document reviews on time,,6

@@ -1,0 +1,36 @@
+{
+  "name": "@mscd/pack-tools",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MSCD framework pack and licence tooling: build, sign and verify packs and licences (CLI mscd-pack)",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "mscd-pack": "dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "@mscd/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@mscd/shared": "*",
+    "commander": "14.0.3",
+    "csv-parse": "6.2.1",
+    "tar": "7.5.22",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "vitest": "3.2.7"
+  }
+}

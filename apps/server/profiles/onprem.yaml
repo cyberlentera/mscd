@@ -1,0 +1,41 @@
+# MSCD deployment profile: on-premise, one organisation per installation (build plan I.1).
+# Release profile. Relative file paths resolve against the folder of this file. Override any key with an
+# environment variable MSCD__<SECTION>__<KEY>=<YAML value>, for example MSCD__HTTP__PORT=3001.
+# Shorthand variables MSCD_DATABASE_URL, MSCD_DATABASE_MIGRATOR_URL, MSCD_DATABASE_PACK_URL and
+# MSCD_DATABASE_ADMIN_URL (or their _FILE forms) win over the database.*_file entries.
+tenancy:   { mode: single, isolation: database }
+license:   { validation: offline }                        # trusted keys are compiled into the build (D-16)
+updates:   { channel: offline }
+packs:     { channel: offline, dir: /app/packs, channel_url: null }
+telemetry: { enabled: false, otlp_endpoint: null }
+kms:       { provider: file, file: { path: /run/secrets/platform.key, previous_paths: [] } }   # only `file` (D-09)
+identity:
+  providers: [local, oidc, saml]
+  local: { mfa_required: true }
+  oidc: { allow_insecure_http: false }
+  session: { idle_minutes: 60, absolute_hours: 8, remember_hours: 12, guest_idle_minutes: 30, guest_absolute_hours: 4 }
+mail:      { transport: smtp, from: "MSCD <mscd@example.internal>", smtp: { host: smtp, port: 25, secure: false, user: null, password_file: null } }
+storage:
+  adapters: { enabled: [managed_vault, m365, google_drive] }
+  max_upload_bytes: 104857600
+  gateway: { url: "https://storage-gateway:8443", token_file: /run/secrets/gateway.token,
+             tls: { mode: mtls, ca_file: /run/secrets/ca.crt, cert_file: /run/secrets/client.crt, key_file: /run/secrets/client.key } }
+network:   { egress_allowlist: [] }
+jobs:      { driver: pgboss, schedules_enabled: true, bullmq: { url: null } }
+http:      { port: 3000, public_url: "https://mscd.example.internal", trust_proxy: { cidrs: ["172.31.250.10/32"] } }
+security:  { cookie_secure: true }
+database:  { url_file: /run/secrets/db-app.url, migrator_url_file: /run/secrets/db-migrator.url,
+             pack_installer_url_file: /run/secrets/db-pack.url, admin_url_file: null, pool_max: 10 }
+audit:     { anchor_key_file: /run/secrets/audit-anchor.key }       # read by the worker only
+observability: { log_level: info, metrics_port: 9464 }
+demo:      { enabled: false, acknowledge_insecure: false, fixed_today: null, personas: false, keycloak: null }
+gateway:                                                  # read only by run mode storage-gateway
+  port: 8443
+  token_files: [/run/secrets/gateway.token, /run/secrets/gateway.token.previous]   # the second may be absent
+  kms: { provider: file, file: { path: /run/secrets/storage.key, previous_paths: [] } }
+  tls: { mode: mtls, ca_file: /run/secrets/ca.crt, cert_file: /run/secrets/gateway.crt, key_file: /run/secrets/gateway.key }
+  vault: { endpoint: "http://objectstore:8333", region: us-east-1, bucket: mscd-vault, force_path_style: true,
+           access_key_file: /run/secrets/s3.access, secret_key_file: /run/secrets/s3.secret }
+  providers:
+    m365: { graph_base_url: "https://graph.microsoft.com/v1.0", login_base_url: "https://login.microsoftonline.com" }
+    google: { api_base_url: "https://www.googleapis.com", token_url: "https://oauth2.googleapis.com/token" }

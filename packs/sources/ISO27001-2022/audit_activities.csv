@@ -1,0 +1,7 @@
+code,event_type,clause_ref,title,auditee_role,key_questions,evidence_to_request,sort_order
+AA-S1-01,stage1,4.3,Review ISMS scope and context,ISMS Manager,"Are the scope, boundaries and interfaces documented and consistent with the context and interested parties?",Scope statement; register of context issues and interested parties,1
+AA-S1-02,stage1,6.1,Review risk method and Statement of Applicability,ISMS Manager,"Is the risk method repeatable, and does every control decision trace to a risk or a stated reason?",Risk assessment method; risk register; Statement of Applicability,2
+AA-S1-03,stage1,9.2,Confirm audit programme and management review plan,ISMS Manager,Are an internal audit and a management review planned or held before Stage 2?,Internal audit programme; management review plan or minutes,3
+AA-S2-01,stage2,5.1,Interview top management on leadership,Top Management,"How does top management set the policy and objectives, provide resources and review results?",Approved policy; objectives; management review decisions,4
+AA-S2-02,stage2,8.1,Sample controls in operation,Domain Owner,Does evidence from the current cycle show each sampled control operating as the Statement of Applicability says?,Operating records of the sampled controls; linked procedures,5
+AA-S2-03,stage2,10.2,Follow up nonconformities and corrective actions,ISMS Manager,Were causes analysed and were corrective actions verified as effective before closure?,Nonconformity register; root cause analyses; effectiveness checks,6

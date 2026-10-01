@@ -1,0 +1,9 @@
+stage_key,position,label_en,label_id,question_en,question_id,source,entity_type,risk_profile_code,is_mandatory,clause_at_risk,overview_clause,gate_type_label_en,gate_type_label_id
+context,1,Context issue,Isu konteks,Which issues affect continuity of prioritised activities?,Isu apa yang memengaruhi keberlangsungan aktivitas prioritas?,entity,context_issue,,true,4.1,4,,
+product,2,Product / activity,Produk / aktivitas,Which products and activities are in scope and prioritised?,Produk dan aktivitas mana yang masuk ruang lingkup dan diprioritaskan?,entity,prioritized_activity,,true,8.2.1,8,,
+bia,3,BIA,BIA,"Show MTPD, RTO and RPO for each prioritised activity.","Tunjukkan MTPD, RTO dan RPO untuk setiap aktivitas prioritas.",entity,business_impact_analysis,,true,8.2.2,8,BIA,BIA
+drisk,4,Disruption risk,Risiko gangguan,How were disruption risks assessed?,Bagaimana risiko gangguan dinilai?,entity,risk,disruption,true,8.2.3,8,,
+strategy,5,Strategy / requirement,Strategi / persyaratan,Which strategies and solutions were selected?,Strategi dan solusi mana yang dipilih?,applicability,,,true,8.3,8,,
+document,6,BC plan / document,Rencana BC / dokumen,Are plans approved and current?,Apakah rencana sudah disetujui dan masih berlaku?,document,,,true,7.5,7,,
+exercise,7,Exercise,Latihan,When was this plan last exercised?,Kapan rencana ini terakhir diuji melalui latihan?,entity,exercise,,true,8.5,8,,
+evidence,8,Evidence,Bukti,Show exercise and operating records.,Tunjukkan rekaman latihan dan rekaman operasional.,evidence,,,true,8.1 / 9.1,8,,

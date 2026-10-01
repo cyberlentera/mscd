@@ -1,0 +1,70 @@
+phase_no,phase_name_en,phase_name_id,is_gate_phase,activity_no,title,clause_ref,output_document_code,expected_outcome
+1,Initiation & mandate,Inisiasi & mandat,false,1,Secure top management mandate,,,Secure top management mandate: approved and recorded in the register
+1,Initiation & mandate,Inisiasi & mandat,false,2,Appoint ISMS Manager and steering committee,,,Appoint ISMS Manager and steering committee: approved and recorded in the register
+1,Initiation & mandate,Inisiasi & mandat,false,3,Define project charter and budget,,,Define project charter and budget: approved and recorded in the register
+1,Initiation & mandate,Inisiasi & mandat,false,4,Baseline gap assessment,,,Baseline gap assessment: approved and recorded in the register
+1,Initiation & mandate,Inisiasi & mandat,false,5,Communicate programme kick-off,,,Communicate programme kick-off: approved and recorded in the register
+2,Context & scope,Konteks & ruang lingkup,false,1,Identify internal and external issues,,,Identify internal and external issues: approved and recorded in the register
+2,Context & scope,Konteks & ruang lingkup,false,2,Identify interested parties and requirements,,,Identify interested parties and requirements: approved and recorded in the register
+2,Context & scope,Konteks & ruang lingkup,false,3,Define ISMS scope and boundaries,,,Define ISMS scope and boundaries: approved and recorded in the register
+2,Context & scope,Konteks & ruang lingkup,false,4,Inventory information assets,,,Inventory information assets: approved and recorded in the register
+2,Context & scope,Konteks & ruang lingkup,false,5,Map interfaces and dependencies,,,Map interfaces and dependencies: approved and recorded in the register
+2,Context & scope,Konteks & ruang lingkup,false,6,Approve scope statement,,,Approve scope statement: approved and recorded in the register
+3,Leadership & policy,Kepemimpinan & kebijakan,false,1,Draft information security policy,,POL-01,Draft information security policy: approved and recorded in the register
+3,Leadership & policy,Kepemimpinan & kebijakan,false,2,"Define roles, responsibilities and authorities",,,"Define roles, responsibilities and authorities: approved and recorded in the register"
+3,Leadership & policy,Kepemimpinan & kebijakan,false,3,Approve policy at management review,,POL-01,Approve policy at management review: approved and recorded in the register
+3,Leadership & policy,Kepemimpinan & kebijakan,false,4,Set information security objectives,,,Set information security objectives: approved and recorded in the register
+3,Leadership & policy,Kepemimpinan & kebijakan,false,5,Communicate policy to all staff,,POL-01,Communicate policy to all staff: approved and recorded in the register
+4,Risk assessment & SoA,Penilaian risiko & SoA,true,1,Define risk assessment methodology,,PRC-05,Define risk assessment methodology: approved and recorded in the register
+4,Risk assessment & SoA,Penilaian risiko & SoA,true,2,Identify information security risks,,,Identify information security risks: approved and recorded in the register
+4,Risk assessment & SoA,Penilaian risiko & SoA,true,3,Analyse and evaluate risks,,,Analyse and evaluate risks: approved and recorded in the register
+4,Risk assessment & SoA,Penilaian risiko & SoA,true,4,Select risk treatment options,,,Select risk treatment options: approved and recorded in the register
+4,Risk assessment & SoA,Penilaian risiko & SoA,true,5,Select Annex A controls,,,Select Annex A controls: approved and recorded in the register
+4,Risk assessment & SoA,Penilaian risiko & SoA,true,6,Justify inclusions and exclusions,,,Justify inclusions and exclusions: approved and recorded in the register
+4,Risk assessment & SoA,Penilaian risiko & SoA,true,7,Draft Statement of Applicability,,SOA-01,Draft Statement of Applicability: approved and recorded in the register
+4,Risk assessment & SoA,Penilaian risiko & SoA,true,8,Risk owner approval of residual risk,,,Risk owner approval of residual risk: approved and recorded in the register
+4,Risk assessment & SoA,Penilaian risiko & SoA,true,9,Approve risk treatment plan,,,Approve risk treatment plan: approved and recorded in the register
+4,Risk assessment & SoA,Penilaian risiko & SoA,true,10,Approve Statement of Applicability,,SOA-01,Approve Statement of Applicability: approved and recorded in the register
+5,Risk treatment & controls,Perlakuan risiko & kontrol,false,1,Implement organisational controls (A.5),,,Implement organisational controls (A.5): approved and recorded in the register
+5,Risk treatment & controls,Perlakuan risiko & kontrol,false,2,Implement people controls (A.6),,,Implement people controls (A.6): approved and recorded in the register
+5,Risk treatment & controls,Perlakuan risiko & kontrol,false,3,Implement physical controls (A.7),,,Implement physical controls (A.7): approved and recorded in the register
+5,Risk treatment & controls,Perlakuan risiko & kontrol,false,4,Implement technological controls (A.8),,,Implement technological controls (A.8): approved and recorded in the register
+5,Risk treatment & controls,Perlakuan risiko & kontrol,false,5,Establish supplier security requirements,,PRC-08,Establish supplier security requirements: approved and recorded in the register
+5,Risk treatment & controls,Perlakuan risiko & kontrol,false,6,Deploy access control and identity management,,PRC-07,Deploy access control and identity management: approved and recorded in the register
+5,Risk treatment & controls,Perlakuan risiko & kontrol,false,7,Deploy logging and monitoring,,,Deploy logging and monitoring: approved and recorded in the register
+5,Risk treatment & controls,Perlakuan risiko & kontrol,false,8,Establish incident management process,,PRC-13,Establish incident management process: approved and recorded in the register
+5,Risk treatment & controls,Perlakuan risiko & kontrol,false,9,Establish backup and continuity arrangements,,PRC-11,Establish backup and continuity arrangements: approved and recorded in the register
+5,Risk treatment & controls,Perlakuan risiko & kontrol,false,10,Cryptography and key management,,,Cryptography and key management: approved and recorded in the register
+5,Risk treatment & controls,Perlakuan risiko & kontrol,false,11,Secure development practices,,,Secure development practices: approved and recorded in the register
+5,Risk treatment & controls,Perlakuan risiko & kontrol,false,12,Track treatment plan progress,,,Track treatment plan progress: approved and recorded in the register
+6,Documentation,Dokumentasi,false,1,Establish document control procedure,,IMS-01,Establish document control procedure: approved and recorded in the register
+6,Documentation,Dokumentasi,false,2,Write mandatory procedures,,,Write mandatory procedures: approved and recorded in the register
+6,Documentation,Dokumentasi,false,3,Write operating standards,,,Write operating standards: approved and recorded in the register
+6,Documentation,Dokumentasi,false,4,Define record retention,,,Define record retention: approved and recorded in the register
+6,Documentation,Dokumentasi,false,5,Publish document register,,,Publish document register: approved and recorded in the register
+6,Documentation,Dokumentasi,false,6,Train document owners,,,Train document owners: approved and recorded in the register
+6,Documentation,Dokumentasi,false,7,Approve tier 1–2 documents,,,Approve tier 1–2 documents: approved and recorded in the register
+6,Documentation,Dokumentasi,false,8,Approve tier 3–4 documents,,,Approve tier 3–4 documents: approved and recorded in the register
+7,Operation & awareness,Operasi & kepedulian,false,1,Run awareness campaign,,,Run awareness campaign: approved and recorded in the register
+7,Operation & awareness,Operasi & kepedulian,false,2,Role-based security training,,,Role-based security training: approved and recorded in the register
+7,Operation & awareness,Operasi & kepedulian,false,3,Operate controls and collect evidence,,,Operate controls and collect evidence: approved and recorded in the register
+7,Operation & awareness,Operasi & kepedulian,false,4,Supplier onboarding under new requirements,,PRC-08,Supplier onboarding under new requirements: approved and recorded in the register
+7,Operation & awareness,Operasi & kepedulian,false,5,Handle incidents per procedure,,PRC-13,Handle incidents per procedure: approved and recorded in the register
+7,Operation & awareness,Operasi & kepedulian,false,6,Change management under control,,,Change management under control: approved and recorded in the register
+7,Operation & awareness,Operasi & kepedulian,false,7,Quarterly access reviews,,,Quarterly access reviews: approved and recorded in the register
+7,Operation & awareness,Operasi & kepedulian,false,8,Evidence freshness review,,,Evidence freshness review: approved and recorded in the register
+8,Performance evaluation,Evaluasi kinerja,false,1,Define metrics and measurement plan,,,Define metrics and measurement plan: approved and recorded in the register
+8,Performance evaluation,Evaluasi kinerja,false,2,Collect metric values,,,Collect metric values: approved and recorded in the register
+8,Performance evaluation,Evaluasi kinerja,false,3,Plan internal audit programme,,IMS-02,Plan internal audit programme: approved and recorded in the register
+8,Performance evaluation,Evaluasi kinerja,false,4,Conduct internal audit,,IMS-02,Conduct internal audit: approved and recorded in the register
+8,Performance evaluation,Evaluasi kinerja,false,5,Record and classify findings,,,Record and classify findings: approved and recorded in the register
+8,Performance evaluation,Evaluasi kinerja,false,6,Prepare management review inputs,,IMS-04,Prepare management review inputs: approved and recorded in the register
+8,Performance evaluation,Evaluasi kinerja,false,7,Hold management review,,IMS-04,Hold management review: approved and recorded in the register
+8,Performance evaluation,Evaluasi kinerja,false,8,Record decisions and actions,,,Record decisions and actions: approved and recorded in the register
+9,Improvement & audit readiness,Peningkatan & kesiapan audit,false,1,Root cause analysis for findings,,,Root cause analysis for findings: approved and recorded in the register
+9,Improvement & audit readiness,Peningkatan & kesiapan audit,false,2,Implement corrective actions,,IMS-03,Implement corrective actions: approved and recorded in the register
+9,Improvement & audit readiness,Peningkatan & kesiapan audit,false,3,Verify corrective action effectiveness,,IMS-03,Verify corrective action effectiveness: approved and recorded in the register
+9,Improvement & audit readiness,Peningkatan & kesiapan audit,false,4,Compile evidence pack,,,Compile evidence pack: approved and recorded in the register
+9,Improvement & audit readiness,Peningkatan & kesiapan audit,false,5,Surveillance readiness check,,,Surveillance readiness check: approved and recorded in the register
+9,Improvement & audit readiness,Peningkatan & kesiapan audit,false,6,Brief auditees on sampling focus,,,Brief auditees on sampling focus: approved and recorded in the register
+9,Improvement & audit readiness,Peningkatan & kesiapan audit,false,7,Close-out of open actions,,,Close-out of open actions: approved and recorded in the register

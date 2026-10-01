@@ -1,0 +1,35 @@
+[
+  {
+    "code": "exercise",
+    "label_en": "BC plans without a scheduled exercise",
+    "label_id": "Rencana BC tanpa latihan terjadwal",
+    "severity": "risk",
+    "source_stage": "exercise",
+    "source_kind": "exercise",
+    "predicate": {},
+    "message": "Business continuity plans without a scheduled exercise. Schedule an exercise within the programme period.",
+    "sort_order": 1
+  },
+  {
+    "code": "unverif",
+    "label_en": "Evidence files that cannot be verified",
+    "label_id": "Berkas bukti tak terverifikasi",
+    "severity": "crit",
+    "source_stage": "evidence",
+    "source_kind": "unverif",
+    "predicate": {},
+    "message": "Evidence files whose link can no longer be verified (changed, moved, missing or access revoked). Re-link the file or upload the correct version.",
+    "sort_order": 2
+  },
+  {
+    "code": "nohash",
+    "label_en": "Google-native evidence without content hash",
+    "label_id": "Bukti Google native tanpa hash",
+    "severity": "warn",
+    "source_stage": "evidence",
+    "source_kind": "nohash",
+    "predicate": {},
+    "message": "Google-native evidence files without a content hash, so later changes cannot be detected. Store a fixed export or accept the limitation.",
+    "sort_order": 3
+  }
+]

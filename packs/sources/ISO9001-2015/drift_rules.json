@@ -1,0 +1,37 @@
+[
+  {
+    "code": "risk12",
+    "label_en": "Risks not reassessed in 12 months",
+    "label_id": "Risiko tidak dinilai ulang 12 bulan",
+    "severity": "risk",
+    "source_stage": "risk",
+    "source_kind": "stale_risk",
+    "predicate": {
+      "months": 12
+    },
+    "message": "Risks whose last assessment is more than 12 months old. Reassess them so the risk register reflects the current situation.",
+    "sort_order": 1
+  },
+  {
+    "code": "metric",
+    "label_en": "Metrics no longer updated",
+    "label_id": "Metrik berhenti diperbarui",
+    "severity": "warn",
+    "source_stage": "metric",
+    "source_kind": "metric",
+    "predicate": {},
+    "message": "Metrics that have not been updated within their measurement period. Enter the missing values or review the metric.",
+    "sort_order": 2
+  },
+  {
+    "code": "csat",
+    "label_en": "Customer satisfaction not analysed this cycle",
+    "label_id": "Kepuasan pelanggan belum dianalisis",
+    "severity": "warn",
+    "source_stage": "objective",
+    "source_kind": "manual",
+    "predicate": {},
+    "message": "Customer satisfaction results that have not been analysed in this cycle. Analyse them and record the outcome.",
+    "sort_order": 3
+  }
+]

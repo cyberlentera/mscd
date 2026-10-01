@@ -1,0 +1,8 @@
+code,label_en,label_id,period_days,sort_order
+daily,Daily,Harian,1,1
+weekly,Weekly,Mingguan,7,2
+monthly,Monthly,Bulanan,30,3
+quarterly,Quarterly,Kuartalan,91,4
+semi,Semi-annual,Semesteran,182,5
+annual,Annual,Tahunan,365,6
+event,Per event,Per kejadian,0,7

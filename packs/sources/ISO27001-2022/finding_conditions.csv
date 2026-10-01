@@ -1,0 +1,7 @@
+code,classification,requirement_code,text
+FC-01,major,8.2,No information security risk assessment performed for the scope
+FC-02,major,9.2,Internal audit programme not carried out within the cycle
+FC-03,minor,6.1,Control decision in the Statement of Applicability without a risk-based justification
+FC-04,minor,7.5,Controlled document used after its review date
+FC-05,minor,10.2,Corrective action closed without an effectiveness check
+FC-06,ofi,9.1,Performance metrics without target values

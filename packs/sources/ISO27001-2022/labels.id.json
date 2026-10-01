@@ -1,0 +1,12 @@
+{
+  "ms.name": "ISMS",
+  "ms.long_name": "Sistem manajemen keamanan informasi",
+  "ms.manager_role": "Manajer ISMS",
+  "gate.name": "Risiko & SoA",
+  "applicability.artefact_name": "Pernyataan Keberlakuan",
+  "risk.object_name": "Risiko keamanan informasi",
+  "catalogue.theme.5": "Organisasional",
+  "catalogue.theme.6": "Orang",
+  "catalogue.theme.7": "Fisik",
+  "catalogue.theme.8": "Teknologi"
+}

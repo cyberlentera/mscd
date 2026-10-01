@@ -1,0 +1,12 @@
+domain,code,label_en,label_id,sort_order
+doc_type,policy,Policy,Kebijakan,1
+doc_type,standard,Standard,Standar,2
+doc_type,procedure,Procedure,Prosedur,3
+doc_type,plan,Plan,Rencana,4
+doc_type,register,Register,Register,5
+doc_type,record,Record,Rekaman,6
+doc_type,form,Form,Formulir,7
+treatment_option,modify,Modify,Modifikasi,1
+treatment_option,retain,Retain,Pertahankan,2
+treatment_option,avoid,Avoid,Hindari,3
+treatment_option,share,Share,Berbagi,4

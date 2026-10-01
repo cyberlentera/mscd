@@ -1,0 +1,94 @@
+item_code,theme_code,title_short,requirement_code,default_frequency_code,evidence_example,sort_order
+A.5.1,A.5,Policies for information security,,annual,,1
+A.5.2,A.5,Information security roles and responsibilities,,annual,,2
+A.5.3,A.5,Segregation of duties,,annual,,3
+A.5.4,A.5,Management responsibilities,,annual,,4
+A.5.5,A.5,Contact with authorities,,annual,,5
+A.5.6,A.5,Contact with special interest groups,,annual,,6
+A.5.7,A.5,Threat intelligence,,monthly,,7
+A.5.8,A.5,Information security in project management,,event,,8
+A.5.9,A.5,Inventory of information and other associated assets,,quarterly,Asset register export with date stamp,9
+A.5.10,A.5,Acceptable use of information and other associated assets,,annual,,10
+A.5.11,A.5,Return of assets,,event,,11
+A.5.12,A.5,Classification of information,,annual,,12
+A.5.13,A.5,Labelling of information,,annual,,13
+A.5.14,A.5,Information transfer,,annual,,14
+A.5.15,A.5,Access control,,annual,,15
+A.5.16,A.5,Identity management,,annual,,16
+A.5.17,A.5,Authentication information,,annual,,17
+A.5.18,A.5,Access rights,,quarterly,Access review spreadsheet signed by the system owner,18
+A.5.19,A.5,Information security in supplier relationships,,annual,Completed supplier security questionnaire and review notes,19
+A.5.20,A.5,Addressing information security within supplier agreements,,annual,,20
+A.5.21,A.5,Managing information security in the ICT supply chain,,annual,,21
+A.5.22,A.5,"Monitoring, review and change management of supplier services",,quarterly,,22
+A.5.23,A.5,Information security for use of cloud services,,annual,,23
+A.5.24,A.5,Information security incident management planning and preparation,,event,,24
+A.5.25,A.5,Assessment and decision on information security events,,event,,25
+A.5.26,A.5,Response to information security incidents,,event,,26
+A.5.27,A.5,Learning from information security incidents,,event,,27
+A.5.28,A.5,Collection of evidence,,event,,28
+A.5.29,A.5,Information security during disruption,,annual,,29
+A.5.30,A.5,ICT readiness for business continuity,,annual,,30
+A.5.31,A.5,"Legal, statutory, regulatory and contractual requirements",,annual,,31
+A.5.32,A.5,Intellectual property rights,,annual,,32
+A.5.33,A.5,Protection of records,,annual,,33
+A.5.34,A.5,Privacy and protection of PII,,annual,,34
+A.5.35,A.5,Independent review of information security,,semi,,35
+A.5.36,A.5,"Compliance with policies, rules and standards for information security",,annual,,36
+A.5.37,A.5,Documented operating procedures,,annual,,37
+A.6.1,A.6,Screening,,event,,38
+A.6.2,A.6,Terms and conditions of employment,,event,,39
+A.6.3,A.6,"Information security awareness, education and training",,event,LMS attendance export or signed attendance sheet,40
+A.6.4,A.6,Disciplinary process,,event,,41
+A.6.5,A.6,Responsibilities after termination or change of employment,,event,,42
+A.6.6,A.6,Confidentiality or non-disclosure agreements,,event,,43
+A.6.7,A.6,Remote working,,quarterly,,44
+A.6.8,A.6,Information security event reporting,,event,,45
+A.7.1,A.7,Physical security perimeters,,annual,,46
+A.7.2,A.7,Physical entry,,monthly,,47
+A.7.3,A.7,"Securing offices, rooms and facilities",,annual,,48
+A.7.4,A.7,Physical security monitoring,,monthly,,49
+A.7.5,A.7,Protecting against physical and environmental threats,,annual,,50
+A.7.6,A.7,Working in secure areas,,annual,,51
+A.7.7,A.7,Clear desk and clear screen,,quarterly,,52
+A.7.8,A.7,Equipment siting and protection,,annual,,53
+A.7.9,A.7,Security of assets off-premises,,annual,,54
+A.7.10,A.7,Storage media,,annual,,55
+A.7.11,A.7,Supporting utilities,,annual,,56
+A.7.12,A.7,Cabling security,,annual,,57
+A.7.13,A.7,Equipment maintenance,,semi,Vendor maintenance report or signed log,58
+A.7.14,A.7,Secure disposal or re-use of equipment,,event,,59
+A.8.1,A.8,User endpoint devices,,quarterly,,60
+A.8.2,A.8,Privileged access rights,,quarterly,,61
+A.8.3,A.8,Information access restriction,,quarterly,,62
+A.8.4,A.8,Access to source code,,quarterly,,63
+A.8.5,A.8,Secure authentication,,quarterly,,64
+A.8.6,A.8,Capacity management,,monthly,,65
+A.8.7,A.8,Protection against malware,,daily,,66
+A.8.8,A.8,Management of technical vulnerabilities,,monthly,Scanner PDF report showing scan date and remediation status,67
+A.8.9,A.8,Configuration management,,quarterly,,68
+A.8.10,A.8,Information deletion,,event,,69
+A.8.11,A.8,Data masking,,quarterly,,70
+A.8.12,A.8,Data leakage prevention,,quarterly,,71
+A.8.13,A.8,Information backup,,monthly,Backup job log export and restore test sign-off,72
+A.8.14,A.8,Redundancy of information processing facilities,,semi,,73
+A.8.15,A.8,Logging,,daily,SIEM review record with reviewer and date,74
+A.8.16,A.8,Monitoring activities,,daily,,75
+A.8.17,A.8,Clock synchronization,,quarterly,,76
+A.8.18,A.8,Use of privileged utility programs,,quarterly,,77
+A.8.19,A.8,Installation of software on operational systems,,event,,78
+A.8.20,A.8,Networks security,,quarterly,,79
+A.8.21,A.8,Security of network services,,quarterly,,80
+A.8.22,A.8,Segregation of networks,,quarterly,,81
+A.8.23,A.8,Web filtering,,quarterly,,82
+A.8.24,A.8,Use of cryptography,,quarterly,Key rotation ticket or KMS audit log,83
+A.8.25,A.8,Secure development life cycle,,quarterly,,84
+A.8.26,A.8,Application security requirements,,quarterly,,85
+A.8.27,A.8,Secure system architecture and engineering principles,,quarterly,,86
+A.8.28,A.8,Secure coding,,event,,87
+A.8.29,A.8,Security testing in development and acceptance,,event,,88
+A.8.30,A.8,Outsourced development,,quarterly,,89
+A.8.31,A.8,"Separation of development, test and production environments",,quarterly,,90
+A.8.32,A.8,Change management,,event,CAB meeting minutes with approvals,91
+A.8.33,A.8,Test information,,quarterly,,92
+A.8.34,A.8,Protection of information systems during audit testing,,quarterly,,93

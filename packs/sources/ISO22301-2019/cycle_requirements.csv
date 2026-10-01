@@ -1,0 +1,6 @@
+code,requirement_code,title,derivation,sort_order
+BIA,8.2.2,Business impact analysis approved,,1
+RISK_ASSESSMENT,8.2.3,Disruption risk assessment approved,,2
+EXERCISE_PROGRAMME,8.5,Exercise programme executed,,3
+INTERNAL_AUDIT,9.2,Internal audit of the BCMS,,4
+MGMT_REVIEW,9.3,Management review,,5

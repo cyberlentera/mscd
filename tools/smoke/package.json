@@ -1,0 +1,15 @@
+{
+  "name": "@mscd/smoke",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MSCD full-stack smoke test: Playwright against the Compose demo stack (build plan J.9, WP-31)",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "smoke": "node -e \"process.stderr.write('The full-stack smoke test is not implemented in this build yet (WP-31)\\n'); process.exit(2)\""
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
+  }
+}

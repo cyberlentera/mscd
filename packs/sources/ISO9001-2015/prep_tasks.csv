@@ -1,0 +1,6 @@
+code,title,days_before_audit,skip_on_first_audit,sort_order
+PREP-01,Install and validate ISO 9001:2026 pack,74,false,1
+PREP-02,Complete transition gap tasks (14),23,false,2
+PREP-03,Update quality manual to 2026 structure,32,false,3
+PREP-04,Internal audit against 2026 requirements,19,false,4
+PREP-05,Management review including transition,13,false,5

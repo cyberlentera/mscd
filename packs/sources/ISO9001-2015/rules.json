@@ -1,0 +1,217 @@
+[
+  {
+    "rule_id": "BR-01",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-03",
+    "active": true,
+    "params": {
+      "phrases": {
+        "en": [
+          "-",
+          "n/a",
+          "na",
+          "none",
+          "not applicable",
+          "not relevant",
+          "tbd"
+        ],
+        "id": [
+          "-",
+          "t/a",
+          "tidak ada",
+          "tidak berlaku",
+          "tidak relevan",
+          "belum ditentukan"
+        ]
+      }
+    }
+  },
+  {
+    "rule_id": "BR-04",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-06",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-07",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-08",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-09",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-10",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-11",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-12",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-13",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-14",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-15",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-16",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-17",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-21",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-22",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-23",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-29",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-30",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-31",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-32",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-34",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-35",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-36",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-37",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-38",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-39",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-40",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-41",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-42",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-43",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-44",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-45",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-46",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-47",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-48",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-49",
+    "active": true,
+    "params": {}
+  },
+  {
+    "rule_id": "BR-50",
+    "active": true,
+    "params": {}
+  }
+]

@@ -1,0 +1,25 @@
+[
+  {
+    "code": "bribery",
+    "definition": {
+      "label_en": "Bribery risk",
+      "label_id": "Risiko penyuapan",
+      "likelihood_scale": {
+        "min": 1,
+        "max": 5
+      },
+      "consequence_scale": {
+        "min": 1,
+        "max": 5
+      },
+      "impact_dimensions": [],
+      "level_lookup_domain": "bribery_risk_level",
+      "assessed_by": [
+        "position",
+        "transaction",
+        "associate",
+        "region"
+      ]
+    }
+  }
+]

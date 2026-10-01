@@ -1,0 +1,8 @@
+code,title,days_before_audit,skip_on_first_audit,sort_order
+PREP-01,Confirm audit plan and auditee schedule with certifier,33,false,1
+PREP-02,Internal audit 2026 report issued,37,false,2
+PREP-03,Approve SoA v3.0,28,false,3
+PREP-04,Close NC-2025-02 with effectiveness verification,23,true,4
+PREP-05,Management review 2026 held and recorded,15,false,5
+PREP-06,Compile evidence pack: manifest in SharePoint,7,false,6
+PREP-07,Brief auditees on expected sampling focus,3,false,7

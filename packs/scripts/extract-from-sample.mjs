@@ -5,7 +5,7 @@
 // same bytes. `--check` regenerates in memory and exits 1 on any difference with the files
 // on disk. Packs hold numbering and short titles only, never ISO text (PRD 3.3).
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { CSV_HEADERS, compareCodes, toCsv, toJson } from './lib/pack-format.mjs';
@@ -32,7 +32,7 @@ Writes packs/sources/<pack_id>/ for the six demo packs from apps/web/src/data/ms
  * Minimum MSCD engine version for this pack format. The installer (WP-12) compares it with
  * the server version; raise it when the pack format changes in a way older engines cannot read.
  */
-const ENGINE_MIN_VERSION = '0.1.0';
+const ENGINE_MIN_VERSION = '1.0.0';
 
 const PACK_DEFS = [
   { packId: 'ISO27001-2022', version: '1.2.0', ms: 'isms', frameworkCode: 'ISO27001', edition: '2022', status: 'current', preRelease: false },
@@ -195,6 +195,7 @@ const CYCLE_CODES = {
 };
 
 /** Drift rule kinds (G.7): row rules get a stored kind, `src` rules keep their own kind. */
+const STORED_DRIFT_KINDS = new Set(['stale_risk', 'dd_expired', 'manual']);
 const DRIFT_RULES = {
   risk12: {
     sourceKind: 'stale_risk', predicate: { months: 12 }, severity: 'risk', sourceStage: 'risk',
@@ -769,27 +770,68 @@ async function generate() {
   return out;
 }
 
-/** Files under a folder as paths relative to it, with forward slashes, sorted. */
+/** `lstatSync` that returns null when nothing exists at the path (a dangling link exists). */
+function lstatOrNull(file) {
+  try {
+    return lstatSync(file);
+  } catch (err) {
+    if (err.code === 'ENOENT') return null;
+    throw err;
+  }
+}
+
+function displayPath(file) {
+  return path.relative(ROOT, file).split(path.sep).join('/');
+}
+
+/**
+ * Files under a folder as paths relative to it, with forward slashes, sorted. Symbolic links
+ * are never followed: a link, or anything else that is neither a regular file nor a folder,
+ * stops the script before it writes or removes anything.
+ */
 function listFiles(dir, prefix = '') {
-  if (!existsSync(dir)) return [];
+  const st = lstatOrNull(dir);
+  if (!st) return [];
+  if (!st.isDirectory()) fail(`${displayPath(dir)} is not a folder (symbolic links are not followed); remove it by hand`);
   const out = [];
   for (const name of readdirSync(dir).sort()) {
     const full = path.join(dir, name);
     const rel = prefix ? `${prefix}/${name}` : name;
-    if (statSync(full).isDirectory()) out.push(...listFiles(full, rel));
-    else out.push(rel);
+    const entry = lstatSync(full);
+    if (entry.isDirectory()) out.push(...listFiles(full, rel));
+    else if (entry.isFile()) out.push(rel);
+    else fail(`${displayPath(full)} is ${entry.isSymbolicLink() ? 'a symbolic link' : 'not a regular file'}; packs/sources holds only generated files, remove it by hand`);
   }
   return out;
 }
 
+/** Stops unless packs/sources is a real folder at its own place in the repository. */
+function assertSourcesDir() {
+  if (!lstatOrNull(SOURCES_DIR)) return;
+  const expected = path.join(realpathSync(ROOT), 'packs', 'sources');
+  if (!lstatSync(SOURCES_DIR).isDirectory() || realpathSync(SOURCES_DIR) !== expected) {
+    fail('packs/sources must be a folder inside the repository, not a symbolic link');
+  }
+}
+
+/** Stops unless the real path of `file` is strictly inside packs/sources. */
+function assertInsideSources(file) {
+  const rel = path.relative(realpathSync(SOURCES_DIR), realpathSync(file));
+  if (rel === '' || rel === '..' || rel.startsWith('..' + path.sep) || path.isAbsolute(rel)) {
+    fail(`refusing to remove ${displayPath(file)}: it is outside packs/sources`);
+  }
+}
+
 function check(generated) {
+  assertSourcesDir();
+  const onDisk = listFiles(SOURCES_DIR);
   const problems = [];
   for (const [rel, content] of generated) {
     const file = path.join(SOURCES_DIR, rel);
     if (!existsSync(file)) problems.push(`missing: packs/sources/${rel}`);
     else if (readFileSync(file, 'utf8') !== content) problems.push(`differs: packs/sources/${rel}`);
   }
-  for (const rel of listFiles(SOURCES_DIR)) {
+  for (const rel of onDisk) {
     if (!generated.has(rel)) problems.push(`not generated: packs/sources/${rel}`);
   }
   if (problems.length) {
@@ -803,6 +845,9 @@ function check(generated) {
 }
 
 function write(generated) {
+  // Check the whole tree first, so a symbolic link stops the run before anything changes.
+  assertSourcesDir();
+  const onDisk = listFiles(SOURCES_DIR);
   let written = 0;
   for (const [rel, content] of generated) {
     const file = path.join(SOURCES_DIR, rel);
@@ -813,11 +858,13 @@ function write(generated) {
   }
   // The folder belongs to this script: remove what it no longer produces.
   const removed = [];
-  for (const rel of listFiles(SOURCES_DIR)) {
-    if (!generated.has(rel)) {
-      rmSync(path.join(SOURCES_DIR, rel));
-      removed.push(rel);
-    }
+  for (const rel of onDisk) {
+    if (generated.has(rel)) continue;
+    const file = path.join(SOURCES_DIR, rel);
+    if (!lstatSync(file).isFile()) fail(`${displayPath(file)} is no longer a regular file; remove it by hand`);
+    assertInsideSources(file);
+    rmSync(file);
+    removed.push(rel);
   }
   removeEmptyDirs(SOURCES_DIR);
   for (const rel of removed) console.log(`removed packs/sources/${rel}`);
@@ -825,12 +872,15 @@ function write(generated) {
   return 0;
 }
 
+/** Removes empty folders below `dir`; only real folders are entered or removed. */
 function removeEmptyDirs(dir) {
   for (const name of readdirSync(dir)) {
     const full = path.join(dir, name);
-    if (statSync(full).isDirectory()) {
-      removeEmptyDirs(full);
-      if (readdirSync(full).length === 0) rmSync(full, { recursive: true });
+    if (!lstatSync(full).isDirectory()) continue;
+    removeEmptyDirs(full);
+    if (readdirSync(full).length === 0) {
+      assertInsideSources(full);
+      rmdirSync(full);
     }
   }
 }

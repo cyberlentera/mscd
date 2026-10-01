@@ -1,0 +1,7 @@
+code,requirement_code,title,derivation,sort_order
+RISK_ASSESSMENT,6.1,Risks and opportunities reviewed,,1
+CUSTOMER_SATISFACTION,9.1.2,Customer satisfaction analysed,,2
+INTERNAL_AUDIT,9.2,Internal audit against 2026 edition,,3
+MGMT_REVIEW,9.3,Management review incl. transition,,4
+CORRECTIVE_ACTION,10.2,Corrective actions closed with verification,,5
+EDITION_TRANSITION,,Edition transition tasks complete,,6

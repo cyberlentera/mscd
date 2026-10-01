@@ -1,0 +1,8 @@
+{
+  "ms.name": "QMS",
+  "ms.long_name": "Sistem manajemen mutu",
+  "ms.manager_role": "Manajer QMS",
+  "gate.name": "Risiko & Peluang + Peta Proses",
+  "applicability.artefact_name": "Keberlakuan Persyaratan",
+  "risk.object_name": "Risiko atau peluang"
+}
