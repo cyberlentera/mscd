@@ -385,7 +385,8 @@ describe('WP-11 local sign-in and sessions', () => {
 
     await setOrgStatus(db, ctx.moduleRef, adm.id, 'offboarding');
     expect((await browser.get('/api/v1/probe/read')).json()).toEqual({ ok: true });
-    expect((await browser.get('/api/v1/admin/audit-trail')).json().type).toBe('https://mscd.cyberlentera.com/problems/forbidden');
+    // Offboarding allows reads: the Tenant Admin holds audit_trail.metadata.read (WP-39 evaluator).
+    expect((await browser.get('/api/v1/admin/audit-trail')).statusCode).toBe(200);
     expect((await browser.post('/api/v1/probe/write')).json().type).toBe(inactive);
 
     await setOrgStatus(db, ctx.moduleRef, adm.id, 'active');
