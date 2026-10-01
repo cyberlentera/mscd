@@ -52,10 +52,6 @@ export interface CheckSummary {
   errors: number;
 }
 
-function uuids(ids: readonly string[]) {
-  return sql`${[...ids]}::uuid[]`;
-}
-
 /** E.2 singleton key `lhc:<org>:<repo>:<sha1 of ids>`; a rescheduled rest adds the instant it may run. */
 export function linkCheckKey(orgId: string, repositoryId: string, ids: readonly string[], notBefore?: Date): string {
   const hash = createHash('sha1').update([...ids].join(',')).update(notBefore ? `@${notBefore.toISOString()}` : '').digest('hex');

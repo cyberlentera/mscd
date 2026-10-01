@@ -97,7 +97,10 @@ export class ActivityService {
       const scope = { msIds: [row.management_system_id], ref };
       const today = todayOf(this.clock, org);
 
-      if (transition.rules.includes('BR-12')) {
+      // BR-12 on the C.13 rows that list it, and on leaving `blocked` for work when the activity was never started:
+      // otherwise not_started -> blocked -> in_progress would start an activity of a locked phase.
+      const unblockUnstarted = from === 'blocked' && (to === 'in_progress' || to === 'complete') && !(await this.wasStarted(trx, row));
+      if (transition.rules.includes('BR-12') || unblockUnstarted) {
         await this.rules.enforce<Br12Input>(trx, 'BR-12', { kind: 'start', phaseNo: row.phase_no }, scope);
       }
       const set: Updateable<DB['implementation_activity_progress']> = { status: to, updated_by: actor };
@@ -114,7 +117,8 @@ export class ActivityService {
         await this.rules.enforce<Br39Input>(trx, 'BR-39', { gateItemRef: body.blockerGateItemRef!, gateItems }, scope);
         Object.assign(set, { blocker_gate_item_ref: body.blockerGateItemRef!.trim(), blocker_reason: body.blockerReason! });
       } else if (to === 'in_progress') {
-        if (from === 'complete') Object.assign(set, { completed_by_user_id: null, completed_at: null });
+        // Back to work: the completion (also one carried through `blocked`) and the blocker no longer hold.
+        Object.assign(set, { completed_by_user_id: null, completed_at: null });
         if (from === 'blocked') Object.assign(set, { blocker_gate_item_ref: null, blocker_reason: null });
       }
 
@@ -175,6 +179,8 @@ export class ActivityService {
   async verifyPhase(principal: Principal, ms: string, phaseNo: number): Promise<CommandResult> {
     return this.tenancy.withTenant(tenantContextOf(principal), async (trx) => {
       const system = await this.records.resolveMs(trx, ms);
+      // One confirmation at a time per (system, phase), so a concurrent repeat sees the first `phase.verified`.
+      await sql`select pg_advisory_xact_lock(hashtextextended(${`phase-verified:${system.id}:${phaseNo}`}, 0))`.execute(trx);
       const { rows } = await sql<{ total: number; verified: number; last_change: Date | null; gate: boolean }>`
         select count(*)::int as total, count(*) filter (where status = 'verified')::int as verified,
                max(updated_at) as last_change, coalesce(bool_or(is_gate_phase), false) as gate
@@ -229,6 +235,21 @@ export class ActivityService {
   // -------------------------------------------------------------------------------------------------------------
   // Helpers
   // -------------------------------------------------------------------------------------------------------------
+
+  /**
+   * Whether the activity was ever started: it carries a completion, or its audit history shows it in progress or
+   * further along. A blocked activity with neither was blocked straight from `not_started`.
+   */
+  private async wasStarted(trx: Trx, row: ActivityRow): Promise<boolean> {
+    if (row.completed_at || row.completed_by_user_id || row.verified_at) return true;
+    const { rows } = await sql<{ id: string }>`
+      select id from audit_trail
+       where entity_type = ${ENTITY} and entity_id = ${row.id} and action = 'activity.transition'
+         and (after_data->>'status' in ('in_progress', 'complete', 'verified')
+              or before_data->>'status' in ('in_progress', 'complete', 'verified'))
+       limit 1`.execute(trx);
+    return rows.length > 0;
+  }
 
   /** Business ids of the system's current gate items (A-27, the read model's `bundle.gates`). */
   private async gateItemIds(trx: Trx, org: TenantInfo, ms: string): Promise<string[]> {

@@ -54,7 +54,7 @@ export const opsHealthRoute = defineRoute({ ...op, id: 'ops.health', method: 'GE
 export const opsQueuesRoute = defineRoute({ ...op, id: 'ops.queues', method: 'GET', path: '/api/v1/ops/queues', summary: 'Queue statistics', permission: 'ops.read', response: z.array(QueueStats), errors: [] });
 export const opsJobRunRoute = defineRoute({
   ...op, id: 'ops.jobs.run', method: 'POST', path: '/api/v1/ops/jobs/:name/run', summary: 'Run an allow-listed job now (audited ops.job_run)',
-  permission: 'ops.jobs.run', params: JobRunParams, body: JobRunRequest, response: JobRunResponse, status: 202, errors: [404, 422],
+  permission: 'ops.jobs.run', params: JobRunParams, body: JobRunRequest, response: JobRunResponse, status: 202, errors: [404, 409, 422],
 });
 export const opsDiagnosticsRoute = defineRoute({
   ...op, id: 'ops.diagnostics', method: 'POST', path: '/api/v1/ops/diagnostics',

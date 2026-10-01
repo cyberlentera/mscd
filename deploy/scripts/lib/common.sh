@@ -2,21 +2,33 @@
 # MSCD on-premise: helpers shared by install.sh, upgrade.sh and uninstall.sh.
 # This file is sourced, not executed.
 
+readonly MSCD_PROJECT=mscd         # Compose project name (the "name:" of docker-compose.yml)
+readonly MSCD_WEB_SERVICE=web
+# Name of the web container of installations made before the full platform
+# (one container, mscd-web); still recognised so they can be upgraded.
 readonly MSCD_CONTAINER=mscd-web
 # shellcheck disable=SC2034  # used by the scripts that source this file
 readonly MSCD_CANARY=mscd-web-canary
 readonly MSCD_DEFAULT_DIR=/opt/mscd
 # shellcheck disable=SC2034  # used by the scripts that source this file
 readonly MSCD_DEFAULT_IMAGE=cyberlentera/mscd-web
+# shellcheck disable=SC2034  # used by the scripts that source this file
+readonly MSCD_DEFAULT_SERVER_IMAGE=cyberlentera/mscd-server
 readonly MSCD_MARKER=.mscd-install
 readonly MSCD_PUBLIC_KEY=mscd-release.pub   # looked for next to the bundle directory
-readonly MSCD_ACCOUNT=mscd         # host system account the container runs as
+readonly MSCD_ACCOUNT=mscd         # host system account the web container runs as
 readonly MSCD_ACCOUNT_COMMENT="MSCD container user"
-readonly MSCD_IMAGE_UID=101        # image default user
+readonly MSCD_IMAGE_UID=101        # web image default user
+# Users that read the secret files (I.3): the MSCD server image, the postgres
+# user of postgres:16.15-alpine and the seaweed user of chrislusf/seaweedfs.
+readonly MSCD_SERVER_UID=10001
+readonly MSCD_SERVER_GID=0
+readonly MSCD_POSTGRES_UID=70
+readonly MSCD_SEAWEED_UID=1000
 readonly MSCD_MIN_DOCKER=24.0
 readonly MSCD_MIN_COMPOSE=2.20
-readonly MSCD_MIN_RAM_MB=900       # a "1 GB" server reports a little less than 1024 MB
-readonly MSCD_MIN_DOCKER_DISK_MB=2048
+readonly MSCD_MIN_RAM_MB=3800      # a "4 GB" server reports a little less than 4096 MB
+readonly MSCD_MIN_DOCKER_DISK_MB=10240
 readonly MSCD_MIN_DIR_DISK_MB=100
 
 FAILURES=0
@@ -311,15 +323,42 @@ check_install_dir() {
     fi
 }
 
-# mscd_container_dir: install directory of the existing mscd-web container.
-# Prints nothing when there is no such container, "unknown" when it was not
-# created by Docker Compose.
+# project_containers [SERVICE]: IDs of the containers of the MSCD Compose
+# project (all services, or one), running or not.
+project_containers() {
+    local filters=(--filter "label=com.docker.compose.project=$MSCD_PROJECT")
+    if [[ -n ${1:-} ]]; then filters+=(--filter "label=com.docker.compose.service=$1"); fi
+    docker ps -aq "${filters[@]}" 2>/dev/null || true
+}
+
+# service_state SERVICE: health (or status) of the service's container, or
+# "missing". Installations made before the full platform ran the web service
+# as the container mscd-web, which counts as the web service.
+service_state() {
+    local id
+    id=$(project_containers "$1" | head -n 1)
+    if [[ -n $id ]]; then
+        container_state "$id"
+    elif [[ $1 == "$MSCD_WEB_SERVICE" ]]; then
+        container_state "$MSCD_CONTAINER"
+    else
+        echo missing
+    fi
+}
+
+# mscd_container_dir: install directory of the existing MSCD containers.
+# Prints nothing when there are none, "unknown" when a container named
+# mscd-web exists that Docker Compose did not create.
 mscd_container_dir() {
-    local dir
-    docker container inspect "$MSCD_CONTAINER" >/dev/null 2>&1 || return 0
+    local id dir
+    id=$(project_containers | head -n 1)
+    if [[ -z $id ]]; then
+        docker container inspect "$MSCD_CONTAINER" >/dev/null 2>&1 || return 0
+        id=$MSCD_CONTAINER
+    fi
     dir=$(docker container inspect \
         --format '{{index .Config.Labels "com.docker.compose.project.working_dir"}}' \
-        "$MSCD_CONTAINER" 2>/dev/null || true)
+        "$id" 2>/dev/null || true)
     if [[ -n $dir ]]; then
         absolute_path "$dir"
     else
@@ -327,8 +366,8 @@ mscd_container_dir() {
     fi
 }
 
-# check_container_owner DIR: the mscd-web container, if any, belongs to DIR.
-# Only one MSCD installation can run on a Docker host.
+# check_container_owner DIR: the MSCD containers, if any, belong to DIR.
+# Only one MSCD installation can run on a Docker host (Compose project "mscd").
 check_container_owner() {
     local dir=$1 owner
     [[ $DOCKER_OK == true ]] || return 0
@@ -343,8 +382,8 @@ check_container_owner() {
         fail "MSCD is already installed in $owner" \
             "Use --dir $owner, or remove that installation first: $(sudo_prefix)$owner/uninstall.sh"
     else
-        fail "The $MSCD_CONTAINER container belongs to $owner, which is no longer an MSCD install directory" \
-            "Remove the container (docker rm -f $MSCD_CONTAINER) and run the script again"
+        fail "The MSCD containers belong to $owner, which is no longer an MSCD install directory" \
+            "Remove them (docker compose -p $MSCD_PROJECT down) and run the script again"
     fi
 }
 
@@ -487,18 +526,18 @@ host_port_listening() {
 
 # port_owner PORT: prints mscd, container:<name>, other, or nothing when free.
 port_owner() {
-    local port=$1 line
+    local port=$1 name project ports
     if [[ $DOCKER_OK == true ]]; then
-        while IFS= read -r line; do
-            if [[ $line =~ :$port-\> ]]; then
-                if [[ ${line%% *} == "$MSCD_CONTAINER" ]]; then
+        while IFS=$'\t' read -r name project ports; do
+            if [[ $ports =~ :$port-\> ]]; then
+                if [[ $project == "$MSCD_PROJECT" || $name == "$MSCD_CONTAINER" ]]; then
                     echo mscd
                 else
-                    echo "container:${line%% *}"
+                    echo "container:$name"
                 fi
                 return 0
             fi
-        done < <(docker ps --format '{{.Names}} {{.Ports}}' 2>/dev/null)
+        done < <(docker ps --format '{{.Names}}	{{.Label "com.docker.compose.project"}}	{{.Ports}}' 2>/dev/null)
     fi
     if host_port_listening "$port"; then
         echo other
@@ -511,7 +550,7 @@ check_port() {
     owner=$(port_owner "$port")
     case "$owner" in
         "") pass "Port $port ($label) is free" ;;
-        mscd) pass "Port $port ($label) is used by the running MSCD container and will be reused" ;;
+        mscd) pass "Port $port ($label) is used by the running MSCD web container and will be reused" ;;
         container:*) fail "Port $port ($label) is published by container ${owner#container:}" \
             "Stop that container or choose another port with $flag" ;;
         *) fail "Port $port ($label) is already in use by another program" \
@@ -694,12 +733,14 @@ set_key_owner() {
 }
 
 # tls_config_test DIR IMAGE UID GID: NGINX from IMAGE loads tls.crt and tls.key
-# from DIR in a throwaway container without network, as the real container would.
+# from DIR in a throwaway container without network, as the real container would
+# (with the API proxy off, since no api exists in that container's network).
 tls_config_test() {
     local dir=$1 image=$2 uid=$3 gid=$4
     docker run --rm --network none --user "$uid:$gid" \
         --read-only --tmpfs /tmp:size=16m,mode=1777 \
         --cap-drop ALL --security-opt no-new-privileges:true \
+        -e MSCD_API_UPSTREAM=none \
         -v "$dir:/etc/nginx/tls:ro,z" --entrypoint sh "$image" \
         -c '/docker-entrypoint.d/40-mscd-runtime.sh >/dev/null && nginx -t -q' 2>&1
 }
@@ -757,6 +798,7 @@ wait_healthy() {
     return 1
 }
 
+# show_logs CONTAINER [LINES]: last log lines and health check output of a container.
 show_logs() {
     local health
     printf '        Last log lines from %s:\n' "$1"
@@ -767,6 +809,36 @@ show_logs() {
         printf '        Last health check output:\n'
         printf '%s\n' "$health" | sed 's/^/          /'
     fi
+}
+
+# show_service_logs SERVICE [LINES]: show_logs for the container of a Compose service.
+show_service_logs() {
+    local id
+    id=$(project_containers "$1" | head -n 1)
+    if [[ -z $id && $1 == "$MSCD_WEB_SERVICE" ]] && docker container inspect "$MSCD_CONTAINER" >/dev/null 2>&1; then
+        id=$MSCD_CONTAINER
+    fi
+    if [[ -n $id ]]; then
+        printf '        Service %s:\n' "$1"
+        show_logs "$id" "${2:-30}"
+    fi
+}
+
+# show_unhealthy_logs [LINES]: logs of every MSCD container that is not running
+# and healthy (a one-shot service that exited 0 counts as fine).
+show_unhealthy_logs() {
+    local id state service code
+    while IFS= read -r id; do
+        [[ -n $id ]] || continue
+        state=$(container_state "$id")
+        service=$(docker inspect --format '{{index .Config.Labels "com.docker.compose.service"}}' "$id" 2>/dev/null || echo "$id")
+        code=$(docker inspect --format '{{.State.ExitCode}}' "$id" 2>/dev/null || echo 1)
+        if [[ $state == healthy || ($state == exited && $code == 0) || ($state == running && $service == cli) ]]; then
+            continue
+        fi
+        printf '        Service %s is %s:\n' "$service" "$state"
+        show_logs "$id" "${1:-30}"
+    done < <(project_containers)
 }
 
 # http_status URL: prints the HTTP status code (000 when unreachable).
@@ -808,6 +880,7 @@ verify_endpoints() {
     check_url "http://$host:$http_port/healthz" "HTTP " || ok=1
     check_url "https://$host:$https_port/healthz" "HTTPS" || ok=1
     check_url "https://$host:$https_port/" "HTTPS" || ok=1
+    check_url "https://$host:$https_port/api/v1/system/profile" "API  " || ok=1
     if [[ $redirect == true ]]; then
         local code
         code=$(http_status "http://$host:$http_port/")
@@ -833,4 +906,365 @@ public_url() {
     else
         echo "https://$domain:$port/"
     fi
+}
+
+# ---------------------------------------------------------------------------
+# Bundle images
+# ---------------------------------------------------------------------------
+# BUNDLE-INFO names the images of a bundle:
+#   IMAGE, IMAGE_FILE, IMAGE_LAYERS                       the web image
+#   SERVER_IMAGE, SERVER_IMAGE_FILE, SERVER_IMAGE_LAYERS  the server image
+#   EXTRA_IMAGE_1, EXTRA_IMAGE_2, ...                     "<image:tag> <file> [<layers>]"
+#                                                         (PostgreSQL, SeaweedFS, Valkey)
+# All images are tagged with VERSION except the extra images, which carry their own tag.
+
+# bundle_images BUNDLE_DIR: prints "<image:tag> <file> <layers>" per image.
+bundle_images() {
+    local dir=$1 info=$1/BUNDLE-INFO version repo i line
+    version=$(tr -d '[:space:]' <"$dir/VERSION")
+    repo=$(kv_get "$info" IMAGE)
+    printf '%s %s %s\n' "${repo:-$MSCD_DEFAULT_IMAGE}:$version" "$(kv_get "$info" IMAGE_FILE)" "$(kv_get "$info" IMAGE_LAYERS)"
+    repo=$(kv_get "$info" SERVER_IMAGE)
+    if [[ -n $repo ]]; then
+        printf '%s %s %s\n' "$repo:$version" "$(kv_get "$info" SERVER_IMAGE_FILE)" "$(kv_get "$info" SERVER_IMAGE_LAYERS)"
+    fi
+    for ((i = 1; ; i++)); do
+        line=$(kv_get "$info" "EXTRA_IMAGE_$i")
+        [[ -n $line ]] || break
+        printf '%s\n' "$line"
+    done
+}
+
+# check_bundle_images BUNDLE_DIR: the bundle carries a server image and every
+# image file it names.
+check_bundle_images() {
+    local dir=$1 ref file layers count=0
+    if [[ -z $(kv_get "$dir/BUNDLE-INFO" SERVER_IMAGE) ]]; then
+        fail "This bundle has no MSCD server image (BUNDLE-INFO lists no SERVER_IMAGE)" \
+            "Use a bundle of the full MSCD platform; this installer does not install the web-only package"
+        return 0
+    fi
+    while read -r ref file layers; do
+        count=$((count + 1))
+        if [[ -z $file || ! -f $dir/$file ]]; then
+            fail "The image file ${file:-for $ref} is missing from the bundle" "Extract the complete bundle again"
+        fi
+    done < <(bundle_images "$dir")
+    pass "The bundle carries $count images"
+}
+
+# load_bundle_images BUNDLE_DIR: docker load of every image of the bundle.
+load_bundle_images() {
+    local dir=$1 ref file layers
+    while read -r ref file layers; do
+        load_image "$dir/$file" "$ref" "$layers"
+    done < <(bundle_images "$dir")
+}
+
+# ---------------------------------------------------------------------------
+# Secrets (build plan I.3, F.11)
+# ---------------------------------------------------------------------------
+# The files in <install dir>/secrets are mounted one by one into the services
+# that need them (Compose "secrets:"). Ownership and modes are set by
+# fix_secret_owners: mode 0400 and owned by the user that reads the file
+# (10001 for api, worker, storage-gateway and migrate; 70 for PostgreSQL; 1000
+# for SeaweedFS); certificates 0444; ca.key stays with the installing user and
+# is never mounted.
+
+# Files every installation needs, in the order install.sh reports them.
+# shellcheck disable=SC2034  # used by the scripts that source this file
+readonly MSCD_SECRET_FILES=(
+    postgres-admin.password postgres-roles.env db-migrator.url db-app.url db-pack.url
+    platform.key storage.key gateway.token gateway.token.previous
+    s3.access s3.secret s3.json audit-anchor.key audit-anchor.pub smtp.password
+    ca.crt ca.key gateway.crt gateway.key api.crt api.key worker.crt worker.key
+)
+
+random_hex() {
+    openssl rand -hex "$1"
+}
+
+# write_secret DIR NAME VALUE: writes DIR/NAME atomically (mode 0600 until
+# fix_secret_owners runs). A file owned by another user is replaced, not edited.
+write_secret() {
+    local dir=$1 name=$2 value=$3 tmp
+    tmp=$(mktemp "$dir/.$name.XXXXXX")
+    chmod 0600 "$tmp"
+    printf '%s' "$value" >"$tmp"
+    mv -f "$tmp" "$dir/$name"
+}
+
+# container_user_for_host_files: the --user of a helper container that must
+# write files the installing user can then move: that user, or root of the
+# user namespace with rootless Docker.
+container_user_for_host_files() {
+    if docker_is_rootless; then
+        echo 0:0
+    else
+        echo "$(id -u):$(id -g)"
+    fi
+}
+
+# ensure_database_secrets DIR: PostgreSQL superuser and role passwords, the
+# three role URLs and postgres-roles.env, generated together when none exists.
+# A new set is refused while a database volume of an earlier installation
+# exists, because its roles keep their old passwords.
+ensure_database_secrets() {
+    local dir=$1 have=0 name migrator app pack db=postgres:5432/mscd
+    for name in postgres-admin.password postgres-roles.env db-migrator.url db-app.url db-pack.url; do
+        [[ -f $dir/$name ]] && have=$((have + 1))
+    done
+    if ((have == 5)); then
+        pass "Database passwords: kept"
+        return 0
+    fi
+    if ((have > 0)); then
+        fail "Some database secret files are missing in $dir (postgres-admin.password, postgres-roles.env, db-*.url)" \
+            "Restore them from your backup of $dir; new passwords would not match the database"
+        return 1
+    fi
+    if docker volume inspect "${MSCD_PROJECT}_pgdata" >/dev/null 2>&1; then
+        fail "The database volume ${MSCD_PROJECT}_pgdata of an earlier installation exists, but its passwords are gone" \
+            "Restore the secrets folder from your backup, or delete the old database: docker volume rm ${MSCD_PROJECT}_pgdata"
+        return 1
+    fi
+    migrator=$(random_hex 24)
+    app=$(random_hex 24)
+    pack=$(random_hex 24)
+    write_secret "$dir" postgres-admin.password "$(random_hex 24)"
+    write_secret "$dir" postgres-roles.env "$(printf 'MSCD_MIGRATOR_PASSWORD=%s\nMSCD_APP_PASSWORD=%s\nMSCD_PACK_INSTALLER_PASSWORD=%s\n' "$migrator" "$app" "$pack")"
+    write_secret "$dir" db-migrator.url "postgres://mscd_migrator:$migrator@$db"
+    write_secret "$dir" db-app.url "postgres://mscd_app:$app@$db"
+    write_secret "$dir" db-pack.url "postgres://mscd_pack_installer:$pack@$db"
+    pass "Database passwords generated"
+}
+
+# ensure_key_secrets DIR: the two key-encryption keys (32 random bytes, base64),
+# the gateway token, an empty previous token, the S3 identity of the bundled
+# SeaweedFS and the SMTP password file. Existing files are kept.
+ensure_key_secrets() {
+    local dir=$1 access secret created=()
+    if [[ ! -f $dir/platform.key ]]; then
+        write_secret "$dir" platform.key "$(openssl rand -base64 32)"
+        created+=(platform.key)
+    fi
+    if [[ ! -f $dir/storage.key ]]; then
+        write_secret "$dir" storage.key "$(openssl rand -base64 32)"
+        created+=(storage.key)
+    fi
+    if [[ ! -f $dir/gateway.token ]]; then
+        write_secret "$dir" gateway.token "$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\n')"
+        created+=(gateway.token)
+    fi
+    if [[ ! -f $dir/gateway.token.previous ]]; then
+        write_secret "$dir" gateway.token.previous ""
+    fi
+    if [[ ! -f $dir/s3.access || ! -f $dir/s3.secret || ! -f $dir/s3.json ]]; then
+        if [[ -f $dir/s3.access || -f $dir/s3.secret || -f $dir/s3.json ]]; then
+            fail "s3.access, s3.secret and s3.json in $dir must exist together" \
+                "Restore them from your backup of $dir"
+            return 1
+        fi
+        access=mscd-$(random_hex 8)
+        secret=$(random_hex 24)
+        write_secret "$dir" s3.access "$access"
+        write_secret "$dir" s3.secret "$secret"
+        write_secret "$dir" s3.json "$(printf '{"identities":[{"name":"mscd","credentials":[{"accessKey":"%s","secretKey":"%s"}],"actions":["Admin","Read","Write","List","Tagging"]}]}\n' "$access" "$secret")"
+        created+=(s3.access s3.secret s3.json)
+    fi
+    if [[ ! -f $dir/smtp.password ]]; then
+        write_secret "$dir" smtp.password ""
+    fi
+    if ((${#created[@]} > 0)); then
+        pass "Generated ${created[*]}"
+    else
+        pass "Keys, gateway token and S3 identity: kept"
+    fi
+}
+
+# ensure_anchor_key DIR IMAGE: the Ed25519 key pair that signs audit chain
+# anchors (F.11), made by "mscd-server keys generate" in a one-off container
+# without network. Only audit-anchor.key and audit-anchor.pub are kept.
+ensure_anchor_key() {
+    local dir=$1 image=$2 work out
+    if [[ -f $dir/audit-anchor.key && -f $dir/audit-anchor.pub ]]; then
+        pass "Audit anchor key: kept"
+        return 0
+    fi
+    work=$(mktemp -d "$dir/.keys.XXXXXX")
+    chmod 0777 "$work"
+    if ! out=$(docker run --rm --network none --read-only --cap-drop ALL \
+        --security-opt no-new-privileges:true --user "$(container_user_for_host_files)" \
+        -v "$work:/out:z" "$image" keys generate --out /out/keys 2>&1); then
+        rm -rf -- "$work"
+        printf '%s\n' "$out" | sed 's/^/        /'
+        fail "mscd-server keys generate failed"
+        return 1
+    fi
+    chmod u+rw "$work/keys/audit-anchor.key" "$work/keys/audit-anchor.pub"
+    mv -f "$work/keys/audit-anchor.key" "$dir/audit-anchor.key"
+    mv -f "$work/keys/audit-anchor.pub" "$dir/audit-anchor.pub"
+    rm -rf -- "$work"
+    pass "Audit anchor key pair created ($(printf '%s\n' "$out" | sed -n 's/.*audit anchor key \([0-9a-f]*\).*/key id \1/p'))"
+}
+
+# cert_valid_for CERT DAYS: the certificate exists and is valid for DAYS more days.
+cert_valid_for() {
+    [[ -f $1 ]] && openssl x509 -in "$1" -noout -checkend $(($2 * 86400)) >/dev/null 2>&1
+}
+
+# issue_cert DIR NAME CN EXTENSIONS: a P-256 key and a certificate signed by the
+# installation CA in DIR (ca.crt, ca.key), valid 825 days.
+issue_cert() {
+    local dir=$1 name=$2 cn=$3 ext=$4 work
+    work=$(mktemp -d "$dir/.cert.XXXXXX")
+    printf '%s\n' "$ext" >"$work/ext.cnf"
+    openssl req -new -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes \
+        -subj "/CN=$cn/O=MSCD installation" -keyout "$work/$name.key" -out "$work/$name.csr" >/dev/null 2>&1 &&
+        openssl x509 -req -in "$work/$name.csr" -CA "$dir/ca.crt" -CAkey "$dir/ca.key" \
+            -set_serial "0x$(random_hex 16)" -days 825 -extfile "$work/ext.cnf" \
+            -out "$work/$name.crt" >/dev/null 2>&1 || {
+        rm -rf -- "$work"
+        return 1
+    }
+    chmod 0600 "$work/$name.key"
+    chmod 0444 "$work/$name.crt"
+    mv -f "$work/$name.key" "$dir/$name.key"
+    mv -f "$work/$name.crt" "$dir/$name.crt"
+    rm -rf -- "$work"
+}
+
+# ensure_certificates DIR: the internal CA (10 years) and the certificates of
+# storage-gateway (server, DNS name storage-gateway), api (client, CN=mscd-api)
+# and worker (client, CN=mscd-worker) for the gateway's mutual TLS (D.5). A
+# certificate is issued again when it is missing, expires within 30 days or was
+# not signed by the current CA; a CA that expires within a year is replaced.
+ensure_certificates() {
+    local dir=$1 name cn ext issued=() new_ca=false
+    local server_ext='basicConstraints=critical,CA:FALSE
+keyUsage=critical,digitalSignature
+extendedKeyUsage=serverAuth
+subjectAltName=DNS:storage-gateway'
+    local client_ext='basicConstraints=critical,CA:FALSE
+keyUsage=critical,digitalSignature
+extendedKeyUsage=clientAuth'
+    if [[ ! -f $dir/ca.key ]] || ! cert_valid_for "$dir/ca.crt" 365; then
+        local work
+        work=$(mktemp -d "$dir/.ca.XXXXXX")
+        if ! openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes -days 3650 \
+            -subj "/CN=MSCD installation CA $(random_hex 4)/O=MSCD installation" \
+            -addext "basicConstraints=critical,CA:TRUE,pathlen:0" \
+            -addext "keyUsage=critical,keyCertSign,cRLSign" \
+            -keyout "$work/ca.key" -out "$work/ca.crt" >/dev/null 2>&1; then
+            rm -rf -- "$work"
+            fail "openssl could not create the internal CA"
+            return 1
+        fi
+        chmod 0400 "$work/ca.key"
+        chmod 0444 "$work/ca.crt"
+        mv -f "$work/ca.key" "$dir/ca.key"
+        mv -f "$work/ca.crt" "$dir/ca.crt"
+        rm -rf -- "$work"
+        new_ca=true
+        issued+=(ca)
+    fi
+    for name in gateway api worker; do
+        case $name in
+            gateway) cn=storage-gateway ext=$server_ext ;;
+            api) cn=mscd-api ext=$client_ext ;;
+            worker) cn=mscd-worker ext=$client_ext ;;
+        esac
+        if [[ $new_ca == false && -f $dir/$name.key ]] && cert_valid_for "$dir/$name.crt" 30 &&
+            openssl verify -CAfile "$dir/ca.crt" "$dir/$name.crt" >/dev/null 2>&1; then
+            continue
+        fi
+        if ! issue_cert "$dir" "$name" "$cn" "$ext"; then
+            fail "openssl could not create the $name certificate"
+            return 1
+        fi
+        issued+=("$name")
+    done
+    if ((${#issued[@]} > 0)); then
+        pass "Internal certificates issued: ${issued[*]} (valid until $(cert_end_date "$dir/gateway.crt"))"
+        CERTS_CHANGED=true
+    else
+        pass "Internal certificates: kept (valid until $(cert_end_date "$dir/gateway.crt"))"
+    fi
+}
+
+# secret_owner NAME: "<uid>:<gid> <mode>" of a secret file.
+secret_owner() {
+    case "$1" in
+        postgres-admin.password | postgres-roles.env) echo "$MSCD_POSTGRES_UID:$MSCD_POSTGRES_UID 0400" ;;
+        s3.json) echo "$MSCD_SEAWEED_UID:$MSCD_SEAWEED_UID 0400" ;;
+        *.crt | *.pub) echo "keep 0444" ;;
+        ca.key) echo "keep 0400" ;;
+        *) echo "$MSCD_SERVER_UID:$MSCD_SERVER_GID 0400" ;;
+    esac
+}
+
+# fix_secret_owners DIR IMAGE: sets the owner and mode of every secret file.
+# Without root, a short-lived container (from IMAGE, as root of its user
+# namespace) changes the owners, as set_key_owner does for the TLS key.
+fix_secret_owners() {
+    local dir=$1 image=$2 file name owner mode args=()
+    chmod 0700 "$dir"
+    for file in "$dir"/*; do
+        [[ -f $file ]] || continue
+        name=$(basename -- "$file")
+        read -r owner mode < <(secret_owner "$name")
+        if [[ $owner == keep ]]; then
+            chmod "$mode" "$file"
+        elif [[ $EUID -eq 0 ]]; then
+            chown "$owner" "$file"
+            chmod "$mode" "$file"
+        elif [[ "$(stat -c '%u:%g %a' "$file")" != "$owner ${mode#0}" ]]; then
+            args+=("$name" "$owner" "$mode")
+        fi
+    done
+    ((${#args[@]} > 0)) || return 0
+    docker run --rm --user 0 --network none --entrypoint sh -v "$dir:/s:z" "$image" -c '
+        cd /s || exit 1
+        while [ $# -gt 0 ]; do chown "$2" "$1" && chmod "$3" "$1" || exit 1; shift 3; done' sh "${args[@]}"
+}
+
+# ensure_secrets DIR SERVER_IMAGE: every secret of the installation, generated
+# when missing, then owners and modes set. Sets CERTS_CHANGED=true when a
+# certificate was issued (services must be recreated to read it).
+ensure_secrets() {
+    local dir=$1 image=$2
+    CERTS_CHANGED=false
+    install -d -m 0700 "$dir"
+    ensure_database_secrets "$dir" || return 1
+    ensure_key_secrets "$dir" || return 1
+    ensure_anchor_key "$dir" "$image" || return 1
+    ensure_certificates "$dir" || return 1
+    fix_secret_owners "$dir" "$image" || {
+        fail "Could not set the owners of the files in $dir"
+        return 1
+    }
+    pass "Secret files in $dir are readable only by the service that uses them"
+}
+
+# set_smtp_password DIR FILE: copies the SMTP password from FILE (first line).
+set_smtp_password() {
+    local dir=$1 file=$2
+    write_secret "$dir" smtp.password "$(head -n 1 "$file" | tr -d '\r\n')"
+}
+
+# install_config SRC DST: copies the Compose configuration folders (the
+# PostgreSQL initialisation script) from the bundle. The demo secrets of the
+# repository are never copied.
+install_config() {
+    local src=$1 dst=$2 sub
+    install -d -m 0755 "$dst"
+    for sub in "$src"/*/; do
+        sub=$(basename -- "$sub")
+        [[ $sub != demo-secrets ]] || continue
+        rm -rf -- "${dst:?}/$sub"
+        cp -R -- "$src/$sub" "$dst/$sub"
+        find "$dst/$sub" -type d -exec chmod 0755 {} +
+        find "$dst/$sub" -type f -name '*.sh' -exec chmod 0755 {} +
+        find "$dst/$sub" -type f ! -name '*.sh' -exec chmod 0644 {} +
+    done
 }

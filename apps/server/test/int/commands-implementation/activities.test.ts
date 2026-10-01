@@ -41,6 +41,8 @@ describe('activity and phase commands', () => {
                   blocker_gate_item_ref = case when ${values.blocker !== undefined} then ${values.blocker ?? null} else blocker_gate_item_ref end,
                   blocker_reason = case when ${values.blocker !== undefined} then (case when ${values.blocker ?? null}::text is null then null else 'Blocked by gate item ' || ${values.blocker ?? null} end) else blocker_reason end,
                   completed_by_user_id = case when ${values.status !== undefined} then null else completed_by_user_id end,
+                  completed_at = case when ${values.status !== undefined} then null else completed_at end,
+                  verified_at = case when ${values.status !== undefined} then null else verified_at end,
                   verified_by_user_id = case when ${values.status !== undefined} then null else verified_by_user_id end
                 where phase_no = ${phase} and activity_no = ${activity}
                   and management_system_id = (select id from management_system where slug = 'isms')`.execute(trx);
@@ -162,6 +164,33 @@ describe('activity and phase commands', () => {
     const unblocked = await bagus.post(ACTIVITY_URL('isms', act.id), { to: 'in_progress' });
     expect(unblocked.status).toBe(200);
     expect(await activityOf(db, 'tst', 'isms', '9.2')).toMatchObject({ status: 'in_progress', blockerRef: null });
+  });
+
+  it('BR-12 also holds on the way through blocked: an activity blocked before it started stays locked behind the gate', async () => {
+    // 9.3 has no audit history and no completion: it was never started.
+    const act = await setActivity('9.3', { status: 'not_started', owner: 'bagus', out: null, doc: null, blocker: null });
+    const snapshot = await rina.get<UiMsSnapshot>('/api/v1/ui/ms/isms');
+    const gate = snapshot.body.bundle.gates[0]!.id;
+    const blocked = await bagus.post(ACTIVITY_URL('isms', act.id), { to: 'blocked', blockerGateItemRef: gate, blockerReason: 'Waiting for the gate item' });
+    expect(blocked.status).toBe(200);
+    const unblocked = await bagus.post(ACTIVITY_URL('isms', act.id), { to: 'in_progress' });
+    expect(unblocked.status).toBe(422);
+    expect(unblocked.body).toMatchObject({ rule: 'BR-12', messages: { en: expect.stringMatching(/critical gate phase 4/) } });
+    expect(await activityOf(db, 'tst', 'isms', '9.3')).toMatchObject({ status: 'blocked', blockerRef: gate });
+  });
+
+  it('clears the completion when a completed activity is blocked and then taken up again', async () => {
+    const act = await setActivity('2.2', { status: 'in_progress', owner: 'bagus', out: null, doc: null, blocker: null });
+    expect((await bagus.post(ACTIVITY_URL('isms', act.id), { to: 'complete' })).status).toBe(200);
+    const snapshot = await rina.get<UiMsSnapshot>('/api/v1/ui/ms/isms');
+    const gate = snapshot.body.bundle.gates[0]!.id;
+    expect((await bagus.post(ACTIVITY_URL('isms', act.id), { to: 'blocked', blockerGateItemRef: gate, blockerReason: 'Waiting' })).status).toBe(200);
+    expect((await bagus.post(ACTIVITY_URL('isms', act.id), { to: 'in_progress' })).status).toBe(200);
+    const row = await inOrg(db, 'tst', async (trx) =>
+      (await sql<{ completed_at: string | null; completed_by_user_id: string | null }>`
+        select completed_at, completed_by_user_id from implementation_activity_progress where id = ${act.id}`.execute(trx)).rows[0]!,
+    );
+    expect(row).toEqual({ completed_at: null, completed_by_user_id: null });
   });
 
   it('answers 409 for pairs C.13 does not list, 403 for someone else\'s activity, 412 for a stale ETag and 404 across systems', async () => {

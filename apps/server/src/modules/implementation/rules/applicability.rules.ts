@@ -36,7 +36,7 @@ export interface Br02Input {
   riskCount: number;
 }
 
-/** BR-02 (PRD 6.3): an applicable entry without a linked risk cannot be saved or verified. */
+/** BR-02 (PRD 6.3): an applicable entry without a linked risk cannot be verified, holds the gate, and cannot lose its last risk. */
 @Injectable()
 @BusinessRule('BR-02', { severity: 'error' })
 export class Br02RiskLinkRule implements BusinessRuleHandler<Br02Input> {

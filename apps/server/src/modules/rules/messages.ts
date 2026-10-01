@@ -27,8 +27,8 @@ export const RULE_MESSAGES: Readonly<Record<RuleId, RuleMessageTemplate>> = {
     id: 'Entri ini tidak dapat diubah menjadi diterapkan tanpa bukti dari periode berjalan yang berkasnya utuh atau dipindahkan. Ubah menjadi diterapkan sebagian atau direncanakan.',
   },
   'BR-02': {
-    en: 'Link this applicable entry to at least one risk. The entry cannot be saved or verified without a risk-based justification.',
-    id: 'Tautkan entri yang berlaku ini ke setidaknya satu risiko. Entri tidak dapat disimpan atau diverifikasi tanpa justifikasi berbasis risiko.',
+    en: 'Link this applicable entry to at least one risk. Until it is, the entry cannot be verified and holds the gate.',
+    id: 'Tautkan entri yang berlaku ini ke setidaknya satu risiko. Sampai ditautkan, entri tidak dapat diverifikasi dan menahan gerbang.',
   },
   'BR-03': {
     en: 'The exclusion justification does not look meaningful. Explain why this does not apply.',

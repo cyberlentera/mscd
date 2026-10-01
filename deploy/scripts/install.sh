@@ -1,11 +1,20 @@
 #!/usr/bin/env bash
-# MSCD on-premise installer (Docker Compose).
+# MSCD on-premise installer (Docker Compose, build plan I.3).
 #
 # Run it from the extracted bundle directory:
 #   sudo ./install.sh                      (asks a few questions)
-#   sudo ./install.sh --yes --self-signed  (no questions)
+#   sudo ./install.sh --yes --self-signed --org-slug acme --org-name "PT Acme"
 #
-# Safe to run again: existing settings are kept unless you pass new values.
+# It loads the images of the bundle, writes the settings (.env), creates the
+# secrets that are missing (database passwords, the two key-encryption keys,
+# the gateway token, the audit anchor key pair, an internal CA with the
+# certificates of the storage gateway, api and worker), starts the stack (the
+# database migrations run first), creates the organisation and prints how to
+# invite the first administrator.
+#
+# Safe to run again: existing settings and secrets are kept unless you pass new
+# values. An installation of the web-only package (MSCD 1.0) is extended to the
+# full platform with its settings and certificate kept.
 set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
@@ -16,8 +25,9 @@ usage() {
     cat <<'EOF'
 Usage: sudo ./install.sh [options]
 
-Installs MSCD with Docker Compose from this offline bundle, or changes the
-settings of an existing installation. Without options it asks a few questions.
+Installs the MSCD platform with Docker Compose from this offline bundle, or
+changes the settings of an existing installation. Without options it asks a
+few questions.
 
 Options:
   --dir DIR                Install directory (default: /opt/mscd; use a directory
@@ -32,10 +42,21 @@ Options:
   --http-redirect on|off   Redirect HTTP to HTTPS (default: on)
   --hsts on|off            Send Strict-Transport-Security (default: off; needs a trusted certificate)
   --external-fonts on|off  Allow the optional Google Fonts (default: off)
+  --org-slug SLUG          Short name of your organisation: a lower-case letter, then 2 to 40
+                           lower-case letters, digits or _ (it cannot change once created)
+  --org-name NAME          Display name of your organisation
+  --admin-email EMAIL      Invite this person as the first administrator and print the
+                           one-time invitation link (default: print the command to do it)
+  --smtp-host HOST         SMTP relay for outgoing email (default: smtp)
+  --smtp-port PORT         SMTP port (default: 25)
+  --smtp-user USER         SMTP login, when the relay needs one
+  --smtp-password-file FILE
+                           File whose first line is the SMTP password
+  --mail-from ADDRESS      Sender of MSCD email, such as "MSCD <mscd@example.co.id>"
   --verify-key FILE        Public key for the bundle signature
                            (default: mscd-release.pub next to the bundle directory)
   --skip-signature-check   Install a signed bundle without checking its signature (not recommended)
-  --timeout SECONDS        How long to wait for the health check (default: 180)
+  --timeout SECONDS        How long to wait for the services to become healthy (default: 600)
   -y, --yes                Ask no questions; use flags, saved settings, then defaults.
                            Required when there is no terminal.
   -h, --help               Show this help
@@ -45,13 +66,22 @@ EOF
 # Values from flags (empty means "not given").
 OPT_DIR='' OPT_DOMAIN='' OPT_HTTP_PORT='' OPT_HTTPS_PORT='' OPT_BIND=''
 OPT_SELF_SIGNED=false OPT_TLS_CERT='' OPT_TLS_KEY=''
-OPT_REDIRECT='' OPT_HSTS='' OPT_FONTS='' VERIFY_KEY='' SKIP_SIGNATURE=false TIMEOUT=180
+OPT_REDIRECT='' OPT_HSTS='' OPT_FONTS='' VERIFY_KEY='' SKIP_SIGNATURE=false TIMEOUT=600
+OPT_ORG_SLUG='' OPT_ORG_NAME='' OPT_ADMIN_EMAIL=''
+OPT_SMTP_HOST='' OPT_SMTP_PORT='' OPT_SMTP_USER='' OPT_SMTP_PASSWORD_FILE='' OPT_MAIL_FROM=''
 
 need_value() {
     if [[ $# -lt 2 || -z $2 || $2 == --* ]]; then
         die "Option $1 needs a value. See ./install.sh --help"
     fi
 }
+
+# Answer checks, also called by name from ask().
+valid_slug() { [[ $1 =~ ^[a-z][a-z0-9_]{1,39}$ ]]; }
+# A value written to .env: no quotes, $, backslash, backquote or # (Compose
+# would read them as syntax), no line breaks, 1 to 200 characters.
+env_safe() { ((${#1} >= 1 && ${#1} <= 200)) && [[ $1 != *[\"\'\$\\\`#$'\n\r']* ]]; }
+valid_email() { [[ $1 =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; }
 
 parse_args() {
     while [[ $# -gt 0 ]]; do
@@ -67,6 +97,14 @@ parse_args() {
             --http-redirect) need_value "$@"; OPT_REDIRECT=$(to_bool "$2") || die "--http-redirect takes on or off"; shift 2 ;;
             --hsts) need_value "$@"; OPT_HSTS=$(to_bool "$2") || die "--hsts takes on or off"; shift 2 ;;
             --external-fonts) need_value "$@"; OPT_FONTS=$(to_bool "$2") || die "--external-fonts takes on or off"; shift 2 ;;
+            --org-slug) need_value "$@"; OPT_ORG_SLUG=$2; shift 2 ;;
+            --org-name) need_value "$@"; OPT_ORG_NAME=$2; shift 2 ;;
+            --admin-email) need_value "$@"; OPT_ADMIN_EMAIL=$2; shift 2 ;;
+            --smtp-host) need_value "$@"; OPT_SMTP_HOST=$2; shift 2 ;;
+            --smtp-port) need_value "$@"; OPT_SMTP_PORT=$2; shift 2 ;;
+            --smtp-user) need_value "$@"; OPT_SMTP_USER=$2; shift 2 ;;
+            --smtp-password-file) need_value "$@"; OPT_SMTP_PASSWORD_FILE=$2; shift 2 ;;
+            --mail-from) need_value "$@"; OPT_MAIL_FROM=$2; shift 2 ;;
             --verify-key) need_value "$@"; VERIFY_KEY=$2; shift 2 ;;
             --skip-signature-check) SKIP_SIGNATURE=true; shift ;;
             --timeout) need_value "$@"; TIMEOUT=$2; shift 2 ;;
@@ -84,6 +122,32 @@ parse_args() {
     fi
     [[ $TIMEOUT =~ ^[0-9]+$ ]] || die "--timeout takes a number of seconds"
     if [[ -n $VERIFY_KEY ]]; then VERIFY_KEY=$(absolute_path "$VERIFY_KEY"); fi
+    if [[ -n $OPT_ORG_SLUG ]] && ! valid_slug "$OPT_ORG_SLUG"; then
+        die "--org-slug '$OPT_ORG_SLUG' is not valid: use a lower-case letter, then 2 to 40 lower-case letters, digits or _"
+    fi
+    if [[ -n $OPT_ORG_NAME ]] && ! env_safe "$OPT_ORG_NAME"; then
+        die "--org-name must have 1 to 200 characters, without quotes, \$, backslash, backquote or #"
+    fi
+    if [[ -n $OPT_ADMIN_EMAIL ]] && ! valid_email "$OPT_ADMIN_EMAIL"; then
+        die "--admin-email '$OPT_ADMIN_EMAIL' is not an email address"
+    fi
+    if [[ -n $OPT_SMTP_HOST ]] && ! valid_host "$OPT_SMTP_HOST"; then
+        die "--smtp-host '$OPT_SMTP_HOST' is not a host name or IPv4 address"
+    fi
+    if [[ -n $OPT_SMTP_PORT ]] && ! valid_port "$OPT_SMTP_PORT"; then
+        die "--smtp-port '$OPT_SMTP_PORT' is not a valid port"
+    fi
+    if [[ -n $OPT_SMTP_USER ]] && { ! env_safe "$OPT_SMTP_USER" || [[ $OPT_SMTP_USER =~ [[:space:]] ]]; }; then
+        die "--smtp-user cannot contain spaces, quotes, \$, backslash, backquote or #"
+    fi
+    if [[ -n $OPT_SMTP_PASSWORD_FILE ]]; then
+        OPT_SMTP_PASSWORD_FILE=$(absolute_path "$OPT_SMTP_PASSWORD_FILE")
+        [[ -f $OPT_SMTP_PASSWORD_FILE && -r $OPT_SMTP_PASSWORD_FILE ]] ||
+            die "Cannot read --smtp-password-file $OPT_SMTP_PASSWORD_FILE"
+    fi
+    if [[ -n $OPT_MAIL_FROM ]] && ! env_safe "$OPT_MAIL_FROM"; then
+        die "--mail-from cannot contain quotes, \$, backslash, backquote or #"
+    fi
 }
 
 # ask PROMPT DEFAULT [CHECK ERROR]: prints the answer, or DEFAULT when empty.
@@ -116,14 +180,22 @@ readable_file() { [[ -n $1 && -f $1 && -r $1 ]]; }
 resolve_settings() {
     local saved_version
     ENV_FILE=$INSTALL_DIR/.env
+    WEB_ONLY=false
     if [[ -f $ENV_FILE ]]; then
         info "Existing installation found in $INSTALL_DIR; its settings are the defaults"
+        if [[ ! -d $INSTALL_DIR/secrets ]]; then
+            WEB_ONLY=true
+        fi
         saved_version=$(kv_get "$ENV_FILE" MSCD_VERSION)
         if [[ -n $saved_version && $saved_version != "$BUNDLE_VERSION" ]]; then
             if version_ge "$saved_version" "$BUNDLE_VERSION"; then
                 die "MSCD $saved_version is installed, which is newer than this bundle ($BUNDLE_VERSION). To go back, run: $INSTALL_DIR/upgrade.sh --rollback"
             fi
-            die "MSCD $saved_version is installed. Use ./upgrade.sh from this bundle to move to $BUNDLE_VERSION with automatic rollback."
+            if [[ $WEB_ONLY == true ]]; then
+                info "MSCD $saved_version (web only) is installed; this adds the MSCD $BUNDLE_VERSION platform and keeps its settings and certificate"
+            else
+                die "MSCD $saved_version is installed. Use ./upgrade.sh from this bundle to move to $BUNDLE_VERSION with automatic rollback."
+            fi
         fi
     fi
 
@@ -140,6 +212,17 @@ resolve_settings() {
     REDIRECT=${OPT_REDIRECT:-$(kv_get "$ENV_FILE" MSCD_HTTP_REDIRECT)}
     HSTS=${OPT_HSTS:-$(kv_get "$ENV_FILE" MSCD_HSTS)}
     FONTS=${OPT_FONTS:-$(kv_get "$ENV_FILE" MSCD_EXTERNAL_FONTS)}
+    SMTP_HOST=${OPT_SMTP_HOST:-$(kv_get "$ENV_FILE" MSCD_SMTP_HOST)}
+    SMTP_PORT=${OPT_SMTP_PORT:-$(kv_get "$ENV_FILE" MSCD_SMTP_PORT)}
+    SMTP_USER=${OPT_SMTP_USER:-$(kv_get "$ENV_FILE" MSCD_SMTP_USER)}
+    MAIL_FROM=${OPT_MAIL_FROM:-$(kv_get "$ENV_FILE" MSCD_MAIL_FROM)}
+
+    SAVED_ORG_SLUG=$(kv_get "$ENV_FILE" MSCD_ORG_SLUG)
+    ORG_SLUG=${OPT_ORG_SLUG:-$SAVED_ORG_SLUG}
+    ORG_NAME=${OPT_ORG_NAME:-$(kv_get "$ENV_FILE" MSCD_ORG_NAME)}
+    if [[ -n $SAVED_ORG_SLUG && $ORG_SLUG != "$SAVED_ORG_SLUG" ]]; then
+        die "The organisation of this installation is $SAVED_ORG_SLUG; its slug cannot change (--org-slug $ORG_SLUG)"
+    fi
 
     local have_cert=false
     SAVED_TLS_MODE=$(kv_get "$ENV_FILE" MSCD_TLS_MODE)
@@ -176,6 +259,10 @@ resolve_settings() {
                 TLS_MODE=self-signed
             fi
         fi
+        [[ -n $ORG_SLUG ]] || ORG_SLUG=$(ask "Organisation short name (slug, for example acme)" "" valid_slug \
+            "Use a lower-case letter, then 2 to 40 lower-case letters, digits or _.")
+        [[ -n $ORG_NAME ]] || ORG_NAME=$(ask "Organisation name (for example PT Acme Indonesia)" "" env_safe \
+            "Use 1 to 200 characters, without quotes, \$, backslash, backquote or #.")
     fi
 
     DOMAIN=${DOMAIN:-$default_domain}
@@ -186,13 +273,30 @@ resolve_settings() {
     HSTS=${HSTS:-false}
     FONTS=${FONTS:-false}
     TLS_MODE=${TLS_MODE:-self-signed}
+    SMTP_HOST=${SMTP_HOST:-smtp}
+    SMTP_PORT=${SMTP_PORT:-25}
+    MAIL_FROM=${MAIL_FROM:-MSCD <mscd@$DOMAIN>}
     IMAGE=$BUNDLE_IMAGE:$BUNDLE_VERSION
+    SERVER_IMAGE=$BUNDLE_SERVER_IMAGE:$BUNDLE_VERSION
+    if [[ $HTTPS_PORT == 443 ]]; then
+        PUBLIC_URL=https://$DOMAIN
+    else
+        PUBLIC_URL=https://$DOMAIN:$HTTPS_PORT
+    fi
 
     valid_host "$DOMAIN" || die "Host name '$DOMAIN' is not valid. Use --domain, for example --domain mscd.example.co.id"
     valid_port "$HTTP_PORT" || die "HTTP port '$HTTP_PORT' is not a valid port"
     valid_port "$HTTPS_PORT" || die "HTTPS port '$HTTPS_PORT' is not a valid port"
     [[ $HTTP_PORT != "$HTTPS_PORT" ]] || die "HTTP and HTTPS need different ports"
     is_ipv4 "$BIND" || die "Bind address '$BIND' must be an IPv4 address such as 0.0.0.0"
+    [[ -n $ORG_SLUG ]] || die "Name your organisation with --org-slug (for example --org-slug acme) and --org-name"
+    valid_slug "$ORG_SLUG" || die "The organisation slug '$ORG_SLUG' is not valid"
+    [[ -n $ORG_NAME ]] || die "Give the display name of your organisation with --org-name"
+    env_safe "$ORG_NAME" || die "The organisation name '$ORG_NAME' cannot be written to .env"
+    env_safe "$MAIL_FROM" || die "The sender address '$MAIL_FROM' cannot be written to .env"
+    if [[ -n $SMTP_USER && -z $OPT_SMTP_PASSWORD_FILE && ! -f $INSTALL_DIR/secrets/smtp.password ]]; then
+        die "--smtp-user needs --smtp-password-file"
+    fi
     if [[ $TLS_MODE == self-signed && $HSTS == true ]]; then
         warn "HSTS is turned off: browsers would lock users out of a site with a self-signed certificate"
         HSTS=false
@@ -200,19 +304,22 @@ resolve_settings() {
 }
 
 show_settings() {
-    local redirect_text="serves the app"
+    local redirect_text="serves the app" smtp
     if [[ $INTERACTIVE == true ]]; then echo; fi
     [[ $REDIRECT == true ]] && redirect_text="redirects to HTTPS"
+    smtp="$SMTP_HOST:$SMTP_PORT${SMTP_USER:+ as $SMTP_USER}, from $MAIL_FROM"
     printf '  %-20s %s\n' \
         "Install directory" "$INSTALL_DIR" \
-        "Version" "$BUNDLE_VERSION ($IMAGE)" \
+        "Version" "$BUNDLE_VERSION ($IMAGE, $SERVER_IMAGE)" \
+        "Organisation" "$ORG_NAME ($ORG_SLUG)" \
         "Host name" "$DOMAIN" \
         "Listen address" "$BIND" \
         "HTTP port" "$HTTP_PORT ($redirect_text)" \
         "HTTPS port" "$HTTPS_PORT" \
         "Certificate" "$TLS_MODE${OPT_TLS_CERT:+ ($OPT_TLS_CERT)}" \
         "HSTS" "$HSTS" \
-        "External fonts" "$FONTS"
+        "External fonts" "$FONTS" \
+        "Email" "$smtp"
 }
 
 check_settings() {
@@ -232,20 +339,39 @@ check_settings() {
     fi
 }
 
+# check_bundle_files: the Compose files and configuration are in the bundle.
+check_bundle_files() {
+    local missing=() f
+    for f in compose/docker-compose.yml compose/.env.example compose/config/postgres/10-mscd-bootstrap.sh \
+        upgrade.sh uninstall.sh lib/common.sh VERSION; do
+        [[ -f $SCRIPT_DIR/$f ]] || missing+=("$f")
+    done
+    if ((${#missing[@]} > 0)); then
+        fail "The bundle is incomplete; missing: ${missing[*]}" "Extract the complete bundle again"
+    else
+        pass "Compose files and configuration are in the bundle"
+    fi
+}
+
 # ---------------------------------------------------------------------------
 # Install steps
 # ---------------------------------------------------------------------------
 prepare_dir() {
-    install -d -m 0755 "$INSTALL_DIR" "$INSTALL_DIR/lib" "$INSTALL_DIR/tls" "$INSTALL_DIR/backups"
+    install -d -m 0755 "$INSTALL_DIR" "$INSTALL_DIR/lib" "$INSTALL_DIR/tls" "$INSTALL_DIR/backups" \
+        "$INSTALL_DIR/config"
     lock_dir "$INSTALL_DIR"
 }
 
 install_files() {
     install -m 0644 "$SCRIPT_DIR/compose/docker-compose.yml" "$INSTALL_DIR/docker-compose.yml"
     install -m 0644 "$SCRIPT_DIR/compose/.env.example" "$INSTALL_DIR/.env.example"
+    install_config "$SCRIPT_DIR/compose/config" "$INSTALL_DIR/config"
     install -m 0644 "$SCRIPT_DIR/lib/common.sh" "$INSTALL_DIR/lib/common.sh"
     install -m 0755 "$SCRIPT_DIR/upgrade.sh" "$SCRIPT_DIR/uninstall.sh" "$INSTALL_DIR/"
-    install -m 0644 "$SCRIPT_DIR/VERSION" "$SCRIPT_DIR/INSTALL-ONPREM.md" "$INSTALL_DIR/"
+    install -m 0644 "$SCRIPT_DIR/VERSION" "$INSTALL_DIR/"
+    if [[ -f $SCRIPT_DIR/INSTALL-ONPREM.md ]]; then
+        install -m 0644 "$SCRIPT_DIR/INSTALL-ONPREM.md" "$INSTALL_DIR/"
+    fi
     printf 'MSCD on-premise install directory. Do not delete this file.\n' >"$INSTALL_DIR/$MSCD_MARKER"
     pass "Files copied to $INSTALL_DIR"
 }
@@ -260,6 +386,9 @@ snapshot_config() {
         if [[ -f $INSTALL_DIR/docker-compose.yml ]]; then
             cp -p "$INSTALL_DIR/docker-compose.yml" "$SNAPSHOT/docker-compose.yml"
         fi
+        if [[ -d $INSTALL_DIR/config ]]; then
+            cp -pR "$INSTALL_DIR/config" "$SNAPSHOT/config"
+        fi
     fi
 }
 
@@ -271,7 +400,9 @@ write_env() {
     fi
     env_set "$ENV_FILE" MSCD_VERSION "$BUNDLE_VERSION"
     env_set "$ENV_FILE" MSCD_IMAGE "$BUNDLE_IMAGE"
+    env_set "$ENV_FILE" MSCD_SERVER_IMAGE "$BUNDLE_SERVER_IMAGE"
     env_set "$ENV_FILE" MSCD_DOMAIN "$DOMAIN"
+    env_set "$ENV_FILE" MSCD_PUBLIC_URL "$PUBLIC_URL"
     env_set "$ENV_FILE" MSCD_BIND_ADDRESS "$BIND"
     env_set "$ENV_FILE" MSCD_HTTP_PORT "$HTTP_PORT"
     env_set "$ENV_FILE" MSCD_HTTPS_PORT "$HTTPS_PORT"
@@ -279,9 +410,35 @@ write_env() {
     env_set "$ENV_FILE" MSCD_HTTP_REDIRECT "$REDIRECT"
     env_set "$ENV_FILE" MSCD_HSTS "$HSTS"
     env_set "$ENV_FILE" MSCD_EXTERNAL_FONTS "$FONTS"
+    env_set "$ENV_FILE" MSCD_ORG_SLUG "$ORG_SLUG"
+    env_set "$ENV_FILE" MSCD_ORG_NAME "$ORG_NAME"
+    env_set "$ENV_FILE" MSCD_SMTP_HOST "$SMTP_HOST"
+    env_set "$ENV_FILE" MSCD_SMTP_PORT "$SMTP_PORT"
+    env_set "$ENV_FILE" MSCD_SMTP_USER "$SMTP_USER"
+    if [[ -n $SMTP_USER ]]; then
+        env_set "$ENV_FILE" MSCD_SMTP_PASSWORD_FILE /run/secrets/smtp.password
+    else
+        env_set "$ENV_FILE" MSCD_SMTP_PASSWORD_FILE ""
+    fi
+    env_set "$ENV_FILE" MSCD_MAIL_FROM "$MAIL_FROM"
     env_set "$ENV_FILE" MSCD_RUN_UID "$RUN_UID"
     env_set "$ENV_FILE" MSCD_RUN_GID "$RUN_GID"
     pass "Settings saved to $ENV_FILE"
+}
+
+# write_secrets: every secret that is missing, then owners and modes (I.3).
+write_secrets() {
+    local dir=$INSTALL_DIR/secrets
+    install -d -m 0700 "$dir"
+    if [[ -n $OPT_SMTP_PASSWORD_FILE ]]; then
+        set_smtp_password "$dir" "$OPT_SMTP_PASSWORD_FILE"
+        pass "SMTP password stored in $dir/smtp.password"
+    fi
+    if ! ensure_secrets "$dir" "$SERVER_IMAGE"; then
+        rm -rf -- "$SNAPSHOT"
+        abort_if_failed
+        die "The secrets could not be created."
+    fi
 }
 
 # prepare_tls: puts a new certificate and key (provided or self-signed) in
@@ -360,6 +517,10 @@ restore_previous() {
     if [[ -f $SNAPSHOT/docker-compose.yml ]]; then
         cp -p "$SNAPSHOT/docker-compose.yml" "$INSTALL_DIR/docker-compose.yml"
     fi
+    if [[ -d $SNAPSHOT/config ]]; then
+        rm -rf -- "$INSTALL_DIR/config"
+        cp -pR "$SNAPSHOT/config" "$INSTALL_DIR/config"
+    fi
     if [[ $TLS_BACKUP == true ]]; then
         mv -f "$dir/tls.crt.bak" "$dir/tls.crt"
         mv -f "$dir/tls.key.bak" "$dir/tls.key"
@@ -371,17 +532,20 @@ start_stack() {
     local args=(up -d --remove-orphans --wait --wait-timeout "$TIMEOUT")
     # A new certificate, or a container that is not healthy (for example stuck
     # restarting after a fix), gets a fresh container with a clean health state.
-    if [[ $TLS_CHANGED == true ]] || [[ $PREVIOUS_STATE != healthy && $PREVIOUS_STATE != missing ]]; then
+    # Secret files are bind mounts, so new certificates also need new containers.
+    if [[ $TLS_CHANGED == true || $CERTS_CHANGED == true ]] ||
+        [[ $PREVIOUS_STATE != healthy && $PREVIOUS_STATE != missing ]]; then
         args+=(--force-recreate)
     fi
+    info "Starting the services; the database migrations run first (this can take a few minutes)"
     if compose_in "$INSTALL_DIR" "${args[@]}"; then
-        pass "Container $MSCD_CONTAINER is running and healthy"
+        pass "All MSCD services are running and healthy"
         return 0
     fi
 
     fail "MSCD did not become healthy with the new settings"
-    show_logs "$MSCD_CONTAINER" 40
-    if [[ $PREVIOUS_STATE == healthy && -f $SNAPSHOT/.env ]]; then
+    show_unhealthy_logs 40
+    if [[ $PREVIOUS_STATE == healthy && -f $SNAPSHOT/.env && $WEB_ONLY == false ]]; then
         step "Restoring the previous settings and certificate"
         if restore_previous; then
             pass "MSCD is running again with the previous settings"
@@ -392,7 +556,35 @@ start_stack() {
         die "The previous settings did not start either. They are in $INSTALL_DIR/.env; see the troubleshooting table in INSTALL-ONPREM.md."
     fi
     rm -rf -- "$SNAPSHOT"
-    die "Installation did not finish. Fix the problem shown above and run ./install.sh again (see: docker logs $MSCD_CONTAINER)."
+    die "Installation did not finish. Fix the problem shown above and run ./install.sh again (see: cd $INSTALL_DIR && docker compose ps -a && docker compose logs)."
+}
+
+# create_organisation: "mscd-server tenant create" in a one-off cli container
+# (schema, tenant migrations, data key from the gateway, Managed Vault).
+create_organisation() {
+    local out
+    if out=$(compose_in "$INSTALL_DIR" run --rm --no-deps cli tenant create --slug "$ORG_SLUG" --name "$ORG_NAME" 2>&1); then
+        pass "Organisation $ORG_NAME ($ORG_SLUG) created"
+        return 0
+    fi
+    if [[ $out == *"Organisation $ORG_SLUG already exists"* ]]; then
+        pass "Organisation $ORG_SLUG exists"
+        return 0
+    fi
+    printf '%s\n' "$out" | tail -n 20 | sed 's/^/        /'
+    die "The organisation could not be created. Fix the problem shown above and run ./install.sh again."
+}
+
+# invite_admin EMAIL: invites the first administrator and prints the link.
+invite_admin() {
+    local out
+    if out=$(compose_in "$INSTALL_DIR" run --rm --no-deps cli admin create-user --email "$1" --tenant-admin 2>&1); then
+        pass "Invitation created for $1"
+        INVITATION=$(printf '%s\n' "$out" | grep -v '^ *Container ' || true)
+        return 0
+    fi
+    printf '%s\n' "$out" | tail -n 20 | sed 's/^/        /'
+    warn "The first administrator could not be invited; run the command printed below after fixing the problem"
 }
 
 print_done() {
@@ -402,10 +594,20 @@ print_done() {
     printf '\n%sMSCD %s is running.%s\n\n' "$C_GREEN$C_BOLD" "$BUNDLE_VERSION" "$C_RESET"
     printf '  %-13s %s\n' \
         "Open" "$url" \
+        "Organisation" "$ORG_NAME ($ORG_SLUG)" \
         "Install dir" "$INSTALL_DIR" \
-        "Status" "cd $INSTALL_DIR && docker compose ps" \
-        "Logs" "docker logs $MSCD_CONTAINER" \
+        "Status" "cd $INSTALL_DIR && ${sudo}docker compose ps" \
+        "Logs" "cd $INSTALL_DIR && ${sudo}docker compose logs api web" \
         "Uninstall" "$sudo$INSTALL_DIR/uninstall.sh"
+    if [[ -n ${INVITATION:-} ]]; then
+        printf '\n  First administrator: send this one-time link (valid 72 hours) to %s:\n' "$OPT_ADMIN_EMAIL"
+        printf '%s\n' "$INVITATION" | sed 's/^/    /'
+    else
+        printf '\n  Invite the first administrator (prints a one-time link, valid 72 hours):\n'
+        printf '    cd %s && %sdocker compose run --rm cli admin create-user --email <email> --tenant-admin\n' "$INSTALL_DIR" "$sudo"
+    fi
+    printf '\n  Keep a copy of %s/secrets in a safe place: without it the database\n' "$INSTALL_DIR"
+    printf '  and the encrypted files cannot be opened.\n'
     if [[ $TLS_MODE == self-signed ]]; then
         printf '\n  The certificate is self-signed, so browsers show a warning. Its SHA-256 fingerprint is\n'
         printf '  %s\n' "$(cert_fingerprint "$INSTALL_DIR/tls/tls.crt")"
@@ -418,6 +620,8 @@ main() {
     BUNDLE_VERSION=$(tr -d '[:space:]' <"$SCRIPT_DIR/VERSION")
     BUNDLE_IMAGE=$(kv_get "$SCRIPT_DIR/BUNDLE-INFO" IMAGE)
     BUNDLE_IMAGE=${BUNDLE_IMAGE:-$MSCD_DEFAULT_IMAGE}
+    BUNDLE_SERVER_IMAGE=$(kv_get "$SCRIPT_DIR/BUNDLE-INFO" SERVER_IMAGE)
+    BUNDLE_SERVER_IMAGE=${BUNDLE_SERVER_IMAGE:-$MSCD_DEFAULT_SERVER_IMAGE}
     INSTALL_DIR=$(absolute_path "${OPT_DIR:-$MSCD_DEFAULT_DIR}")
     [[ $INSTALL_DIR != / ]] || die "The install directory cannot be /"
     [[ $INSTALL_DIR != "$SCRIPT_DIR" ]] || die "Install into a directory other than the bundle directory"
@@ -437,7 +641,7 @@ main() {
     check_resources "$INSTALL_DIR"
     check_install_dir "$INSTALL_DIR"
     check_container_owner "$INSTALL_DIR"
-    check_tool openssl "needed for certificates"
+    check_tool openssl "needed for keys and certificates"
     if ! command -v curl >/dev/null 2>&1; then
         warn "curl is not installed; the final checks through the published ports will be skipped"
     fi
@@ -450,6 +654,8 @@ main() {
     fi
     verify_signature "$SCRIPT_DIR" "$VERIFY_KEY" "$SKIP_SIGNATURE"
     check_arch "$(kv_get "$SCRIPT_DIR/BUNDLE-INFO" IMAGE_ARCH)"
+    check_bundle_files
+    check_bundle_images "$SCRIPT_DIR"
     abort_if_failed
 
     step "Settings"
@@ -465,12 +671,14 @@ main() {
         exit 0
     fi
 
-    PREVIOUS_STATE=$(container_state "$MSCD_CONTAINER")
+    PREVIOUS_STATE=$(service_state "$MSCD_WEB_SERVICE")
     TLS_BACKUP=false
+    CERTS_CHANGED=false
+
+    step "Loading the images"
+    load_bundle_images "$SCRIPT_DIR"
 
     step "Installing"
-    load_image "$SCRIPT_DIR/$(kv_get "$SCRIPT_DIR/BUNDLE-INFO" IMAGE_FILE)" "$IMAGE" \
-        "$(kv_get "$SCRIPT_DIR/BUNDLE-INFO" IMAGE_LAYERS)"
     resolve_run_ids
     prepare_dir
     snapshot_config
@@ -478,12 +686,25 @@ main() {
     prepare_tls
     write_env
     activate_tls
+
+    step "Secrets"
+    write_secrets
+
+    step "Starting MSCD"
     start_stack
+    rm -rf -- "$SNAPSHOT"
+
+    step "Organisation"
+    create_organisation
+    INVITATION=''
+    if [[ -n $OPT_ADMIN_EMAIL ]]; then
+        invite_admin "$OPT_ADMIN_EMAIL"
+    fi
 
     step "Verifying"
-    rm -rf -- "$SNAPSHOT"
     if ! verify_endpoints "$ENV_FILE"; then
-        show_logs "$MSCD_CONTAINER" 20
+        show_unhealthy_logs 20
+        show_service_logs "$MSCD_WEB_SERVICE" 20
         die "MSCD is running but not reachable as expected. See the troubleshooting table in INSTALL-ONPREM.md."
     fi
 
