@@ -1,0 +1,10 @@
+{
+  "id": "46cf980a-28e1-4623-b8d0-11fc5278efe6",
+  "createdDateTime": "0001-01-01T00:00:00Z",
+  "lastActionDateTime": "0001-01-01T00:00:00Z",
+  "status": "failed",
+  "error": {
+    "code": "nameAlreadyExists",
+    "message": "Name already exists"
+  }
+}

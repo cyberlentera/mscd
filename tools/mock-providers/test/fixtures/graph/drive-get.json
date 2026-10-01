@@ -1,0 +1,16 @@
+{
+  "id": "b!t18F8ybsHUq1z3LTz8xvZqP8zaSWjkFNhsME-Fepo75dTf9vQKfeRblBZjoSQrd7",
+  "driveType": "business",
+  "owner": {
+    "user": {
+      "id": "efee1b77-fb3b-4f65-99d6-274c11914d12",
+      "displayName": "Ryan Gregg"
+    }
+  },
+  "quota": {
+    "deleted": 256938,
+    "remaining": 1099447353539,
+    "state": "normal",
+    "total": 1099511627776
+  }
+}

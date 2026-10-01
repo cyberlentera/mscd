@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "description": "Example of the fixture format with the situations of build plan G.8 on a few files: a SharePoint library with a changed file and picker files, a disabled OneDrive, a Google shared drive whose delegated token has expired. Load it with --fixtures example. Credentials with keys are registered at run time through POST /_admin/credentials.",
+  "credentials": [
+    {
+      "kind": "google_refresh_token",
+      "clientId": "mscd-example.apps.googleusercontent.com",
+      "refreshToken": "1//example-expired-delegated-token",
+      "account": { "email": "tono.hartono@nusantaradigital.co.id", "displayName": "Tono Hartono" },
+      "scope": "https://www.googleapis.com/auth/drive.file",
+      "revoked": true
+    }
+  ],
+  "m365": {
+    "drives": [
+      {
+        "id": "drive-sp-compliance",
+        "name": "Compliance",
+        "driveType": "documentLibrary",
+        "tenantId": "8f3c2a10-6c1e-4f5b-9d2a-0b7e5c4d3a21",
+        "webUrl": "https://nusantaradigital.sharepoint.com/sites/compliance/Shared%20Documents",
+        "folders": [
+          { "id": "01EXAMPLECOMPLIANCEROOTFOLDER0001", "path": "Compliance" },
+          { "id": "01EXAMPLEISMSFOLDER00000000000001", "path": "Compliance/ISMS" },
+          { "id": "01EXAMPLEISMSEVIDENCE2026Q3000001", "path": "Compliance/ISMS/Evidence/2026/Q3" }
+        ],
+        "items": [
+          {
+            "id": "01EXAMPLEACCESSREVIEWQ32026000001",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "Access-Review-Q3-2026.xlsx",
+            "description": "Quarterly access review",
+            "createdAt": "2026-09-15T02:00:00Z",
+            "createdBy": { "displayName": "Rina Kusuma", "email": "rina.kusuma@nusantaradigital.co.id" },
+            "versions": [
+              { "id": "1.0", "content": "Access review Q3 2026, first draft", "modifiedAt": "2026-09-15T02:00:00Z" },
+              { "id": "2.0", "content": "Access review Q3 2026, signed off", "modifiedAt": "2026-09-22T02:00:00Z" }
+            ]
+          },
+          {
+            "id": "01EXAMPLEBACKUPJOBLOGSEP2026000001",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "Backup-Job-Log-Sep-2026.xlsx",
+            "createdAt": "2026-09-28T01:00:00Z",
+            "createdBy": { "displayName": "Bagus Prasetyo", "email": "bagus.prasetyo@nusantaradigital.co.id" },
+            "versionId": "3.0",
+            "modifiedAt": "2026-09-28T01:00:00Z",
+            "content": "Backup job log, September 2026"
+          }
+        ]
+      },
+      {
+        "id": "drive-od-fnugroho",
+        "name": "OneDrive",
+        "driveType": "personal",
+        "tenantId": "8f3c2a10-6c1e-4f5b-9d2a-0b7e5c4d3a21",
+        "owner": { "displayName": "F. Nugroho", "email": "f.nugroho@nusantaradigital.co.id" },
+        "forbidden": true,
+        "items": [{ "id": "01EXAMPLEPERSONALNOTES00000000001", "path": "Evidence", "name": "Firewall-Review-Notes.docx", "content": "Personal notes" }]
+      }
+    ]
+  },
+  "google": {
+    "drives": [
+      {
+        "id": "drive-gd-bcms",
+        "name": "Compliance BCMS",
+        "kind": "shared_drive",
+        "folders": [{ "id": "1exampleBcmsEvidence2026Folder01", "path": "Compliance BCMS/Evidence/2026" }],
+        "items": [
+          {
+            "id": "1exampleBiaWorkshopNotesSep00001",
+            "path": "Compliance BCMS/Evidence/2026",
+            "name": "BIA-Workshop-Notes-Sep",
+            "mimeType": "application/vnd.google-apps.document",
+            "createdBy": { "displayName": "Tono Hartono", "email": "tono.hartono@nusantaradigital.co.id" },
+            "versions": [{ "id": "6", "modifiedAt": "2026-09-24T03:00:00Z" }, { "id": "7", "modifiedAt": "2026-09-25T03:00:00Z" }]
+          },
+          {
+            "id": "1examplePrioritisedActivities001",
+            "path": "Compliance BCMS/Evidence/2026",
+            "name": "Prioritised-Activities-v1.xlsx",
+            "createdAt": "2026-09-01T03:00:00Z",
+            "createdBy": { "displayName": "Tono Hartono", "email": "tono.hartono@nusantaradigital.co.id" },
+            "versions": [
+              { "id": "0BexampleRevisionOne000000000000000000001", "content": "Prioritised activities r1", "modifiedAt": "2026-09-01T03:00:00Z" },
+              { "id": "0BexampleRevisionTwo000000000000000000002", "content": "Prioritised activities r2", "modifiedAt": "2026-09-08T03:00:00Z" },
+              { "id": "0BexampleRevisionThree0000000000000000003", "content": "Prioritised activities r3", "modifiedAt": "2026-09-15T03:00:00Z", "keepForever": true }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

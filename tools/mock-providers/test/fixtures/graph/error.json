@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "badRequest",
+    "message": "Uploaded fragment overlaps with existing data.",
+    "innerError": {
+      "code": "invalidRange",
+      "request-id": "request-id",
+      "date": "date-time"
+    }
+  }
+}

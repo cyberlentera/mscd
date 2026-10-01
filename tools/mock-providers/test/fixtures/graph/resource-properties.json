@@ -1,0 +1,140 @@
+{
+  "driveItem": [
+    "audio",
+    "bundle",
+    "content",
+    "cTag",
+    "deleted",
+    "description",
+    "file",
+    "fileSystemInfo",
+    "folder",
+    "image",
+    "location",
+    "malware",
+    "package",
+    "pendingOperations",
+    "photo",
+    "publication",
+    "remoteItem",
+    "root",
+    "searchResult",
+    "shared",
+    "sharepointIds",
+    "size",
+    "specialFolder",
+    "video",
+    "webDavUrl",
+    "activities",
+    "analytics",
+    "children",
+    "createdByUser",
+    "retentionLabel",
+    "lastModifiedByUser",
+    "permissions",
+    "subscriptions",
+    "thumbnails",
+    "versions",
+    "createdBy",
+    "createdDateTime",
+    "eTag",
+    "id",
+    "lastModifiedBy",
+    "lastModifiedDateTime",
+    "name",
+    "parentReference",
+    "webUrl",
+    "@microsoft.graph.conflictBehavior",
+    "@microsoft.graph.downloadUrl",
+    "@microsoft.graph.sourceUrl"
+  ],
+  "file": [
+    "hashes",
+    "mimeType"
+  ],
+  "folder": [
+    "childCount",
+    "view"
+  ],
+  "fileSystemInfo": [
+    "createdDateTime",
+    "lastAccessedDateTime",
+    "lastModifiedDateTime"
+  ],
+  "identitySet": [
+    "application",
+    "applicationInstance",
+    "conversation",
+    "conversationIdentityType",
+    "device",
+    "encrypted",
+    "onPremises",
+    "guest",
+    "phone",
+    "user"
+  ],
+  "identity": [
+    "displayName",
+    "id",
+    "tenantId",
+    "thumbnails"
+  ],
+  "itemReference": [
+    "driveId",
+    "driveType",
+    "id",
+    "name",
+    "path",
+    "shareId",
+    "sharepointIds",
+    "siteId"
+  ],
+  "hashes": [
+    "crc32Hash",
+    "sha1Hash",
+    "sha256Hash",
+    "quickXorHash"
+  ],
+  "driveItemVersion": [
+    "content",
+    "id",
+    "lastModifiedBy",
+    "lastModifiedDateTime",
+    "publication",
+    "size",
+    "@microsoft.graph.downloadUrl"
+  ],
+  "drive": [
+    "createdBy",
+    "createdDateTime",
+    "description",
+    "driveType",
+    "following",
+    "id",
+    "items",
+    "lastModifiedBy",
+    "lastModifiedDateTime",
+    "name",
+    "owner",
+    "quota",
+    "root",
+    "sharepointIds",
+    "special",
+    "system",
+    "webUrl"
+  ],
+  "uploadSession": [
+    "uploadUrl",
+    "expirationDateTime",
+    "nextExpectedRanges"
+  ],
+  "quota": [
+    "deleted",
+    "remaining",
+    "state",
+    "storagePlanInformation",
+    "upgradeAvailable",
+    "total",
+    "used"
+  ]
+}
