@@ -1,8 +1,9 @@
 // `freshness.recompute` (debounced 5 seconds by its producers, singleton `fr:<org>:<ms or all>`) and
 // `freshness.sweep` (daily at 01:00 local time, `fs:<org>:<date>`), build plan E.2 and E.3.
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { JobHandler, type JobHandlerInstance } from '../../common/jobs/job-handler';
-import type { JobRun } from '../../common/jobs/job-queue';
+import { JOB_QUEUE, type JobQueue, type JobRun } from '../../common/jobs/job-queue';
+import { driftEvaluateKey } from '../drift/drift.job';
 import { TenantJobRunner } from '../jobs/tenant-job';
 import { FreshnessService, type RecomputeResult } from './freshness.service';
 
@@ -25,6 +26,7 @@ export class FreshnessRecomputeJob implements JobHandlerInstance<'freshness.reco
   constructor(
     private readonly runner: TenantJobRunner,
     private readonly freshness: FreshnessService,
+    @Inject(JOB_QUEUE) private readonly jobs: JobQueue,
   ) {}
 
   async handle(job: JobRun<'freshness.recompute'>): Promise<void> {
@@ -32,6 +34,15 @@ export class FreshnessRecomputeJob implements JobHandlerInstance<'freshness.reco
     if (!org) return;
     const result = await this.freshness.recompute(org, job.env.payload, job.env.requestId);
     this.logger.log({ jobId: job.id, orgId: org.id, attempt: job.attempt, ...summary(result) }, 'freshness.recompute done');
+    // E.2: drift.evaluate also runs after a recompute that changed evidence state, so drift rows follow at once.
+    if (result.evidenceUpdated > 0 || result.downgraded.length > 0) {
+      const msId = job.env.payload.msId ?? null;
+      await this.jobs.send(
+        'drift.evaluate',
+        { orgId: org.id, requestId: job.env.requestId, payload: msId ? { msId } : {} },
+        { singletonKey: driftEvaluateKey(org.id, msId), retryLimit: 3 },
+      );
+    }
   }
 }
 
