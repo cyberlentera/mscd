@@ -1,0 +1,8 @@
+.DS_Store
+.git/
+*.swp
+*.bak
+*.tmp
+*.orig
+# Static checks and the install test are not part of the packaged chart.
+ci/

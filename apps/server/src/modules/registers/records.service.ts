@@ -141,7 +141,10 @@ export class RecordCommandsService {
       const beforeDue = (row[columns.due] as string | null) ?? null;
       let updatedAt: Date;
       try {
-        updatedAt = await writeRow(trx, entityType, id, { [columns.holder]: holder, [columns.due]: body.dueAt }, actor);
+        const set: Record<string, unknown> = { [columns.holder]: holder, [columns.due]: body.dueAt };
+        // A-26: BR-43 was enforced above, so a new due date of a preparation task is before its audit.
+        if (body.kind === 'prep' && body.dueAt !== beforeDue) set.violates_br43 = false;
+        updatedAt = await writeRow(trx, entityType, id, set, actor);
       } catch (error) {
         if (isBr43TriggerError(error)) throw new ProblemError('business-rule', { rule: 'BR-43', messages: ruleMessages('BR-43'), detail: ruleMessages('BR-43').en });
         throw error;

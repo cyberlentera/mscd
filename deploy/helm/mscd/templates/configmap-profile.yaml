@@ -1,0 +1,12 @@
+{{- /* Deployment profile (I.1) read by api, worker and storage-gateway. The
+       migrate hook gets its own copy (job-migrate.yaml), because hooks run
+       before this ConfigMap exists on a first install. */}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "mscd.fullname" . }}-profile
+  labels:
+    {{- include "mscd.labels" (list . "profile") | nindent 4 }}
+data:
+  profile.yaml: |
+    {{- include "mscd.profile" . | nindent 4 }}

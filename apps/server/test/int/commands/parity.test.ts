@@ -4,13 +4,14 @@
 // (`completeRecordAction`); and Start review of an expired document (`startReview`). Each command is applied to the
 // web's `SampleDataSource` (imported from `apps/web/src/data`) and to the API on a fresh copy of the demo template,
 // as `rina` (persona `manager`) in `ndt`; the touched record, its chain item and the navigation counts must match.
-// File and implementation commands are covered by WP-21 and WP-20. The known difference (an Unassigned document
-// review falls back to the owner on the API) is asserted last.
+// Assign also runs on a preparation task, a cycle item and a drift row; completeRecordAction also runs on a stored task
+// and a drift row (API mode only, see the test). File and implementation commands are covered by WP-21 and WP-20.
 import path from 'node:path';
 import type { CommandResult, UiMsSnapshot } from '@mscd/shared';
+import { sql } from 'kysely';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { useTestDatabase } from '../../setup/test-db';
-import { createApp, RECORD_URL, sessionFor, type Client, type CommandsApp } from './helpers';
+import { createApp, inOrg, RECORD_URL, sessionFor, type Client, type CommandsApp } from './helpers';
 
 interface BundleLike {
   reqs: { id: string; st: string; owner: string; gate?: boolean }[];
@@ -214,17 +215,52 @@ describe('command parity with the sample source (J.4, WP-35 commands)', () => {
     expect(navCounts(b.api)).toEqual(navCounts(b.sample));
   });
 
-  // Last, because the two sources differ afterwards.
-  it('known difference: an Unassigned document review falls back to the document owner on the API', async () => {
-    const { api } = await both('qms');
-    const doc = api.chain.items.find((i) => i.kind === 'doc')!;
-    const ref = (await apiSnapshot('qms')).refs[doc.key]!;
-    const r = await rina.post(RECORD_URL('qms', 'document', ref.id, 'assignment'), { kind: 'doc', holder: 'none', dueAt: '2026-10-30' });
-    await sample.assign(doc.key, 'none', '2026-10-30');
-    expect(r.status).toBe(200);
-    const b = await both('qms');
-    const owner = b.api.docs.find((d) => `qms:doc:${d.id}` === doc.key)!.owner;
-    expect(chainItem(b.sample, doc.key)!.h).toBe('none');
-    expect(chainItem(b.api, doc.key)!.h).toBe(owner);
+  it('assign on a preparation task, a cycle item and a drift row', async () => {
+    const s = await apiSnapshot('isms');
+    const keyOf = (prefix: string, code: string) => Object.keys(s.refs).find((k) => k.startsWith(prefix) && s.refs[k]!.code === code)!;
+    const prepKey = keyOf('isms:prep:', 'Approve SoA v3.0');
+    const cycleKey = keyOf('isms:cycle:', '9.1');
+    const driftKey = keyOf('isms:drift:', 'R-009');
+    // The sample keeps these assignments as overrides of the record key without changing its static PREP,
+    // CYCLE_ITEMS and DRIFT lists, so parity covers the command result, the chain and the navigation counts.
+    await assignBoth('isms', prepKey, 'audit_prep_task', 'prep', 'bagus', '2026-11-01');
+    await assignBoth('isms', cycleKey, 'cycle_requirement_status', 'cycle', 'maya', '2026-10-16');
+    await assignBoth('isms', driftKey, 'drift_result', 'drift', 'andi', '2026-10-18');
   });
+
+  // The two kinds below exist in API mode only (H.5 `completeRecordAction`): the sample has no stored tasks (kind
+  // `task`, H.5 step 13) and no completion for drift rows, so it answers 404 and 422 and changes nothing. The API
+  // completes them; the chain and the navigation counts stay equal on both sides.
+  it('completeRecordAction on a stored task (POST /tasks/{id}/complete) and on a drift row', async () => {
+    const { api: before } = await both('isms');
+    const [task] = await inOrg(db, 'ndt', async (trx) => (await sql<{ id: string }>`
+      insert into task (management_system_id, source_rule, entity_type, entity_id, entity_code, title_en, title_id, owner_user_id, due_at)
+      select m.id, 'manual', 'document', gen_random_uuid(), 'PRC-07', 'Review PRC-07', 'Tinjau PRC-07', u.id, '2026-10-05'::date
+      from management_system m, platform.app_user u where m.slug = 'isms' and u.handle = 'rina' returning id`.execute(trx)).rows);
+    const taskKey = `isms:task:${task!.id}`;
+    const r = await rina.post(`/api/v1/tasks/${task!.id}/complete`, {});
+    const s = await sample.completeRecordAction(taskKey);
+    expect(r.status).toBe(200);
+    expect(r.body.changed).toEqual(['isms']);
+    expect(s.ok).toBe(false);
+    let b = await both('isms');
+    expect(navCounts(b.api)).toEqual(navCounts(b.sample));
+    expect(navCounts(b.api)).toEqual(navCounts(before));
+
+    const refs = (await apiSnapshot('isms')).refs;
+    const driftKey = Object.keys(refs).find((k) => k.startsWith('isms:drift:') && refs[k]!.code === 'R-011')!;
+    const d = await rina.post(RECORD_URL('isms', 'drift_result', refs[driftKey]!.id, 'complete-action'), {});
+    const sd = await sample.completeRecordAction(driftKey);
+    expect(d.status).toBe(200);
+    expect(sd.ok).toBe(false);
+    b = await both('isms');
+    expect(chainItem(b.api, driftKey)).toEqual(chainItem(b.sample, driftKey));
+    expect(navCounts(b.api)).toEqual(navCounts(b.sample));
+    expect((await apiSnapshot('isms')).refs[driftKey]).toBeUndefined();
+  });
+
+  // Reassigning a document review to Unassigned (holder `none`) is not compared: the API stores a null pending
+  // holder, which the read model shows as the document owner, while the sample shows `none`. J.4 does not list this
+  // difference; it waits for a read model change (WP-17) or a plan decision.
+  it.todo('assign on a document review to Unassigned (holder none) matches the sample');
 });

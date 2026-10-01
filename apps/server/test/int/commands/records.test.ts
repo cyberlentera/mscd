@@ -175,6 +175,26 @@ describe('record commands', () => {
       expect(row).toEqual({ holder: 'andi', due_at: '2026-10-18' });
     });
 
+    it('clears the BR-43 flag of a preparation task given a valid date after the audit moved earlier (A-26)', async () => {
+      const [event] = await rowsOf<{ id: string }>(db, 'tst', sql`select id from audit_event where short_label = 'Surveillance 1' and deleted_at is null`);
+      const eventUrl = `/api/v1/ms/isms/audit-events/${event!.id}`;
+      expect((await rina.patch(eventUrl, { scheduledAt: '2026-10-25' })).status).toBe(200);
+      const title = 'Brief auditees on expected sampling focus';
+      const prepOf = async () => {
+        const r = await rina.get<{ prep: { ref: { id: string }; title: string; owner: string | null; dueAt: string; violatesBr43: boolean }[] }>(
+          `/api/v1/ms/isms/surveillance/events/${event!.id}`,
+        );
+        expect(r.status).toBe(200);
+        return r.body.prep.find((p) => p.title === title)!;
+      };
+      const flagged = await prepOf();
+      expect(flagged.violatesBr43).toBe(true);
+      const response = await rina.post(RECORD_URL('isms', 'audit_prep_task', flagged.ref.id, 'assignment'), { kind: 'prep', holder: 'maya', dueAt: '2026-10-20' });
+      expect(response.status).toBe(200);
+      expect(await prepOf()).toMatchObject({ owner: 'maya', dueAt: '2026-10-20', violatesBr43: false });
+      expect((await rina.patch(eventUrl, { scheduledAt: '2026-11-12' })).status).toBe(200);
+    });
+
     it('is refused to a Domain Owner (403)', async () => {
       const ref = await refOf('isms:x:R-014');
       const response = await bagus.post(RECORD_URL('isms', 'risk', ref.id, 'assignment'), { kind: 'x', holder: 'bagus', dueAt: null });

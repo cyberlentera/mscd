@@ -75,6 +75,29 @@ describe('reminders', () => {
     expect(notification!.body_en).toMatch(/^Reminder: Start review: .+ for .+, v.+, due \d{2} \w{3} \d{4}$/);
   });
 
+  it('derives the code and the BR-50 key of a record without a snapshot key from the row, never from the request', async () => {
+    // A preparation task of an audit event other than the next one has no ref in the snapshot.
+    const [task] = await rowsOf<{ id: string; title: string }>(db, 'tst', sql`
+      insert into audit_prep_task (audit_event_id, management_system_id, title, owner_user_id, due_at, status, position, created_by, updated_by)
+      select e.id, e.management_system_id, 'Book the closing meeting room', u.id, e.scheduled_at - 10, 'not_started', 99, u.id, u.id
+      from audit_event e join management_system m on m.id = e.management_system_id, platform.app_user u
+      where m.slug = 'isms' and e.short_label <> 'Surveillance 1' and e.deleted_at is null and u.handle = 'rina'
+      order by e.scheduled_at desc limit 1 returning id, title`);
+    expect(Object.values((await snapshot()).refs).some((r) => r.id === task!.id)).toBe(false);
+    const send = (code: string) =>
+      rina.post('/api/v1/reminders', { ms: 'isms', ref: { module: 'audit', entityType: 'audit_prep_task', id: task!.id, code }, recipient: 'maya' });
+    const first = await send('Forged one');
+    expect(first.status).toBe(200);
+    const key = `isms:prep:${task!.id}`;
+    expect(await remindersOf('maya', key)).toHaveLength(1);
+    const [notification] = await notificationsOf(db, 'tst', 'maya', 'reminder');
+    expect(notification!.body_en).toBe(`Reminder: Follow up for ${task!.title}`);
+    expect(notification!.body_en).not.toContain('Forged');
+    const second = await send('Forged two');
+    expect(second.status).toBe(422);
+    expect(second.body.rule).toBe('BR-50');
+  });
+
   it('answers 404 for a record of another system or organisation and for an unknown key', async () => {
     const qms = await snapshot(rinaNdt, 'qms');
     const doc = qms.bundle.docs.find((d) => !d.shared)!;

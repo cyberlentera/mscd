@@ -15,6 +15,7 @@ import {
   type Principal, type RecordResolver, type TenantInfo, type Trx,
 } from '../../common/tokens';
 import { ReadModelService } from '../read-model';
+import { businessCodeOf, refOf } from '../registers';
 import { RuleEngine, ruleMessageKey } from '../rules';
 import { TenantScope, tenantContextOf } from '../tenancy/tenant-scope';
 import { REMINDER_THROTTLE_MS, type Br50Input } from './reminder.rules';
@@ -226,9 +227,11 @@ export class RemindersService {
       if (found) {
         [key, ref] = found;
       } else {
-        const code = typeof record.row.code === 'string' ? record.row.code : body.ref.code;
-        key = `${body.ms}:${KIND_OF[record.entityType] ?? 'x'}:${code}`;
-        ref = { ...body.ref, id: record.id, code };
+        // A record without a snapshot key (for example a preparation task of a later audit event): the code and the
+        // ref come from the resolved row and the BR-50 key from its entity type and id, never from the request.
+        const code = await businessCodeOf(trx, record);
+        key = `${body.ms}:${KIND_OF[record.entityType] ?? record.entityType}:${record.id}`;
+        ref = refOf(record.entityType, record.id, code, record.row.updated_at as Date);
       }
     }
     const chained = snapshot.bundle.chain.items.find((i) => i.key === key);

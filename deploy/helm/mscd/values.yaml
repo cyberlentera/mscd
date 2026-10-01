@@ -1,0 +1,420 @@
+# Default values for the MSCD chart (build plan I.4).
+#
+# The chart runs the whole platform: web (NGINX, the only component the
+# Ingress reaches; it proxies /api to the api), api, worker, storage-gateway
+# and the migrate Job (a pre-install and pre-upgrade hook). The defaults suit a
+# namespace with the "restricted" Pod Security Standard.
+#
+# Before installing, create one Secret per component (see "secrets" below) and
+# the service certificates (see "certs"), or enable cert-manager. values-ha.yaml
+# is a reference for production; values-ci.yaml is for the install test only.
+
+# -- Replaces the chart name in resource names.
+nameOverride: ""
+# -- Replaces the full resource name (release name plus chart name).
+fullnameOverride: ""
+# -- DNS domain of the cluster, used for the api address the web pods proxy to
+# and for the storage-gateway certificate names.
+clusterDomain: cluster.local
+
+image:
+  server:
+    # -- mscd-server image (api, worker, storage-gateway, migrate). For
+    # air-gapped clusters push the bundle image to your registry and set this,
+    # for example registry.example.internal/cyberlentera/mscd-server
+    repository: cyberlentera/mscd-server
+    # -- Image tag. Empty means the chart appVersion.
+    tag: ""
+    pullPolicy: IfNotPresent
+  web:
+    # -- mscd-web image (NGINX with the web application).
+    repository: cyberlentera/mscd-web
+    tag: ""
+    pullPolicy: IfNotPresent
+
+# -- Secrets for pulling from a private registry, for example [{name: regcred}]
+imagePullSecrets: []
+
+serviceAccount:
+  # -- Create a dedicated service account. Pods never get an API token.
+  create: true
+  # -- Name to use. Empty means the release full name.
+  name: ""
+  annotations: {}
+
+# Deployment profile (I.1), written to a ConfigMap and read by every server
+# component through MSCD_PROFILE_FILE. The chart sets these keys itself and
+# ignores what is written here: every secret file path (/run/secrets/...),
+# storage.gateway.url, http.port (3000), http.trust_proxy (from
+# api.trustedProxyCidrs), gateway.port (8443), observability.metrics_port
+# (9464), mail.smtp.password_file (when secrets hold smtp.password) and, with
+# testServices, gateway.vault.endpoint. The profile is validated strictly at
+# start: an unknown key stops the pods with a list of errors.
+profile:
+  tenancy:   { mode: single, isolation: database }     # SaaS: { mode: multi, isolation: schema }
+  license:   { validation: offline }                   # SaaS: online (D-32)
+  updates:   { channel: offline }                      # SaaS: managed
+  packs:     { channel: offline, dir: /app/packs, channel_url: null }   # SaaS: channel managed
+  telemetry: { enabled: false, otlp_endpoint: null }
+  kms:       { provider: file, file: { path: /run/secrets/platform.key, previous_paths: [] } }
+  identity:
+    providers: [local, oidc, saml]
+    local: { mfa_required: true }
+    oidc: { allow_insecure_http: false }
+    session: { idle_minutes: 60, absolute_hours: 8, remember_hours: 12, guest_idle_minutes: 30, guest_absolute_hours: 4 }
+  mail:      { transport: smtp, from: "MSCD <mscd@example.internal>", smtp: { host: smtp, port: 25, secure: false, user: null, password_file: null } }
+  storage:
+    adapters: { enabled: [managed_vault, m365, google_drive] }
+    max_upload_bytes: 104857600
+    gateway:
+      url: "https://storage-gateway:8443"
+      token_file: /run/secrets/gateway.token
+      tls: { mode: mtls, ca_file: /run/secrets/ca.crt, cert_file: /run/secrets/client.crt, key_file: /run/secrets/client.key }
+  network:   { egress_allowlist: [] }
+  jobs:      { driver: pgboss, schedules_enabled: true, bullmq: { url: null } }
+  http:      { port: 3000, public_url: "https://mscd.example.internal", trust_proxy: { cidrs: ["10.0.0.0/8"] } }
+  security:  { cookie_secure: true }
+  database:
+    url_file: /run/secrets/db-app.url
+    migrator_url_file: /run/secrets/db-migrator.url
+    pack_installer_url_file: /run/secrets/db-pack.url
+    admin_url_file: null
+    pool_max: 10
+  audit:     { anchor_key_file: /run/secrets/audit-anchor.key }
+  observability: { log_level: info, metrics_port: 9464 }
+  demo:      { enabled: false, acknowledge_insecure: false, fixed_today: null, personas: false, keycloak: null }
+  gateway:
+    port: 8443
+    token_files: [/run/secrets/gateway.token, /run/secrets/gateway.token.previous]
+    kms: { provider: file, file: { path: /run/secrets/storage.key, previous_paths: [] } }
+    tls: { mode: mtls, ca_file: /run/secrets/ca.crt, cert_file: /run/secrets/gateway.crt, key_file: /run/secrets/gateway.key }
+    # -- S3-compatible object store of the Managed Vault.
+    vault:
+      endpoint: "http://objectstore:8333"
+      region: us-east-1
+      bucket: mscd-vault
+      force_path_style: true
+      access_key_file: /run/secrets/s3.access
+      secret_key_file: /run/secrets/s3.secret
+    providers:
+      m365: { graph_base_url: "https://graph.microsoft.com/v1.0", login_base_url: "https://login.microsoftonline.com" }
+      google: { api_base_url: "https://www.googleapis.com", token_url: "https://oauth2.googleapis.com/token" }
+
+# Secrets (D-09, I.3). One Secret per component, and each pod mounts only its
+# own at /run/secrets, so storage.key exists only in storage-gateway and
+# platform.key never there.
+#
+#   <fullname>-api      db-app.url, platform.key, gateway.token [, smtp.password]
+#   <fullname>-worker   db-app.url, platform.key, gateway.token, db-pack.url,
+#                       audit-anchor.key [, smtp.password]
+#   <fullname>-gateway  storage.key, s3.access, s3.secret, gateway.token
+#                       [, gateway.token.previous during a token rotation]
+#   <fullname>-migrate  db-migrator.url, db-pack.url
+#
+# platform.key and storage.key: base64 of 32 random bytes (openssl rand -base64 32).
+# gateway.token: at least 32 characters, the same value in api, worker and
+# gateway. audit-anchor.key: Ed25519 private key in PEM (mscd-server keys
+# generate). db-*.url: postgres:// URLs of the roles mscd_app,
+# mscd_migrator and mscd_pack_installer (C.2).
+secrets:
+  # -- Let the chart create the Secrets, with generated keys kept across
+  # upgrades. For tests only (values-ci.yaml): the keys then live in the Helm
+  # release record. Production creates the Secrets itself.
+  create: false
+  # -- Names of existing Secrets per component. Empty means <fullname>-<component>.
+  existingSecret:
+    api: ""
+    worker: ""
+    gateway: ""
+    migrate: ""
+  # -- Values used when create is true. Empty values are generated (keys,
+  # token, S3 credentials with testServices) or required (database URLs
+  # without testServices).
+  values:
+    dbAppUrl: ""
+    dbMigratorUrl: ""
+    dbPackUrl: ""
+    platformKey: ""
+    storageKey: ""
+    gatewayToken: ""
+    auditAnchorKey: ""
+    s3AccessKey: ""
+    s3SecretKey: ""
+    smtpPassword: ""
+  # -- The api and worker Secrets hold smtp.password (the SMTP relay needs a
+  # login). Sets mail.smtp.password_file in the profile.
+  smtpPassword: false
+
+# Internal TLS between the api and worker (clients) and storage-gateway
+# (server), used when profile gateway.tls.mode is mtls. The gateway accepts
+# client certificates of the internal CA with CN mscd-api or mscd-worker.
+#
+#   <fullname>-gateway-tls  certificate with the gateway Service names
+#   <fullname>-api-tls      client certificate, CN mscd-api
+#   <fullname>-worker-tls   client certificate, CN mscd-worker
+#
+# Each is a kubernetes.io/tls Secret with tls.crt, tls.key and ca.crt.
+certs:
+  # -- Generate the internal CA and the three certificates with Helm
+  # (genCA, genSignedCert), kept across upgrades. null means the value of
+  # secrets.create. The CA key then lives in <fullname>-internal-ca and in the
+  # Helm release record; prefer cert-manager in production.
+  generate: null
+  # -- Lifetime of the generated service certificates, in days.
+  validityDays: 825
+  # -- Lifetime of the generated internal CA, in days.
+  caValidityDays: 3650
+
+certManager:
+  # -- Issue the three certificates with cert-manager Certificate resources
+  # (cert-manager must be installed).
+  enabled: false
+  # -- Issuer to use, for example {name: internal-ca, kind: ClusterIssuer}.
+  # Empty means the chart creates a self-signed root, an internal CA
+  # certificate and a CA Issuer in the namespace.
+  issuerRef: {}
+  # -- Certificate lifetime and renewal window.
+  duration: 2160h
+  renewBefore: 360h
+
+# Web (NGINX). Serves the application and proxies /api to the api Service.
+web:
+  # -- Number of pods when autoscaling is off.
+  replicaCount: 2
+  config:
+    # -- Host name users open, for the HTTP to HTTPS redirect inside the pod.
+    # Empty means the first ingress host.
+    domain: ""
+    # -- Redirect HTTP to HTTPS inside the pod (tls.enabled only). Leave false
+    # when the Ingress handles TLS and redirects.
+    httpRedirect: false
+    # -- Strict-Transport-Security from the pod's HTTPS port (tls.enabled only).
+    hsts: false
+    # -- Load the optional Google Fonts of the alternative font pairings.
+    externalFonts: false
+    # -- DNS servers NGINX uses to look up the api Service. Empty means the
+    # nameserver lines of the pod's /etc/resolv.conf (the cluster DNS).
+    apiResolver: ""
+  # HTTPS inside the pod (end-to-end TLS). Usually TLS ends at the Ingress.
+  tls:
+    enabled: false
+    # -- Existing kubernetes.io/tls Secret (tls.crt and tls.key).
+    secretName: ""
+  service:
+    # -- ClusterIP, NodePort or LoadBalancer.
+    type: ClusterIP
+    port: 80
+    httpsPort: 443
+    # -- Fixed node ports for type NodePort, for example {http: 30080, https: 30443}.
+    nodePorts: {}
+    annotations: {}
+  resources:
+    requests: { cpu: 50m, memory: 64Mi }
+    limits: { cpu: 500m, memory: 256Mi }
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+  # -- Pod security settings; the web image runs as user 101.
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 101
+    runAsGroup: 101
+    fsGroup: 101
+    seccompProfile:
+      type: RuntimeDefault
+  # -- Seconds a stopping pod keeps serving, so the ingress controller can
+  # remove it from rotation first.
+  preStopSleepSeconds: 5
+  terminationGracePeriodSeconds: 30
+
+# api: HTTP API on port 3000, reached only through the web pods.
+api:
+  replicaCount: 2
+  # -- Address ranges the api trusts for X-Forwarded-For (http.trust_proxy):
+  # the pod network of the web pods, for example 10.42.0.0/16 (k3s) or
+  # 10.244.0.0/16. Only the web pods can reach the api (NetworkPolicy), so the
+  # range trusts nothing else; without NetworkPolicy enforcement narrow it to
+  # the web pod addresses.
+  trustedProxyCidrs:
+    - 10.0.0.0/8
+  resources:
+    requests: { cpu: 250m, memory: 384Mi }
+    limits: { cpu: "2", memory: 1Gi }
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+  # -- Extra environment variables, for example profile overrides MSCD__SECTION__KEY.
+  extraEnv: []
+
+# worker: background jobs; health and metrics on 9464.
+worker:
+  replicaCount: 1
+  resources:
+    requests: { cpu: 200m, memory: 384Mi }
+    limits: { cpu: "2", memory: 1Gi }
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 70
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+  extraEnv: []
+
+# storage-gateway: holds storage.key, talks to the object store and to the
+# cloud repositories (SharePoint, Google Drive). Port 8443 needs a client
+# certificate; health and metrics on 9464.
+gateway:
+  replicaCount: 1
+  resources:
+    requests: { cpu: 200m, memory: 256Mi }
+    limits: { cpu: "2", memory: 1Gi }
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+  # -- Allow outbound HTTPS (443) to any address outside egressExcept, for
+  # the cloud repositories. When false, only egressCidrs are reachable.
+  egressAll: true
+  # -- Ranges excluded from egressAll (cluster and private networks).
+  egressExcept:
+    - 10.0.0.0/8
+    - 172.16.0.0/12
+    - 192.168.0.0/16
+    - 100.64.0.0/10
+    - 169.254.0.0/16
+  # -- Ranges reachable on 443 when egressAll is false: the addresses of the
+  # hosts in profile network.egress_allowlist and of the provider endpoints.
+  egressCidrs: []
+  extraEnv: []
+
+# migrate: pre-install and pre-upgrade hook (mscd-server migrate). Applies the
+# migrations and installs the packs of the image before pods roll.
+migrate:
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { cpu: "1", memory: 768Mi }
+  # -- Seconds the Job may run.
+  activeDeadlineSeconds: 900
+  # -- Wait for the database port before migrating (host and port of the
+  # database URL). With testServices the bundled PostgreSQL is used.
+  waitForDatabase:
+    host: ""
+    port: 5432
+  extraEnv: []
+
+ingress:
+  # -- Create an Ingress routing / and /api to the web Service.
+  enabled: false
+  className: ""
+  annotations: {}
+  # -- Host names served. Each gets the paths /api and /.
+  hosts:
+    - mscd.example.internal
+  # -- TLS, for example [{secretName: mscd-tls, hosts: [mscd.example.internal]}]
+  tls: []
+  # -- Address ranges of the ingress controller pods (or load balancer). The
+  # web pods take the client address from X-Forwarded-For only from these
+  # (MSCD_TRUSTED_PROXY_CIDRS). Empty means the socket address is logged.
+  trustedCidrs: []
+
+networkPolicy:
+  # -- Default deny for every pod of the release, plus the flows MSCD needs.
+  # Needs a network plugin that enforces NetworkPolicy.
+  enabled: true
+  # -- Who may reach the web ports. Empty allows any source. To allow only the
+  # ingress controller, use for example
+  #   - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: ingress-nginx}}
+  ingressFrom: []
+  # -- Cluster DNS, reachable from every pod on port 53.
+  dns:
+    to:
+      - namespaceSelector: {}
+        podSelector:
+          matchLabels:
+            k8s-app: kube-dns
+  # -- PostgreSQL ranges (api, worker, migrate). Empty means any address on
+  # the port. Ignored with testServices.
+  database:
+    cidrs: []
+    port: 5432
+  # -- Valkey ranges (jobs.driver bullmq). Empty means any address on the port.
+  valkey:
+    cidrs: []
+    port: 6379
+  # -- Object store ranges (storage-gateway); the port comes from
+  # gateway.vault.endpoint. Empty means any address on the port.
+  objectStore:
+    cidrs: []
+  # -- SMTP relay ranges (api, worker); the port comes from mail.smtp.port.
+  # Empty means any address on the port.
+  smtp:
+    cidrs: []
+  # -- Identity providers the api reaches over HTTPS (OIDC discovery and
+  # tokens, SAML metadata). Narrow to your providers.
+  identityProviders:
+    cidrs:
+      - 0.0.0.0/0
+    ports: [443]
+  # -- Sources allowed to scrape metrics on 9464 (api, worker, gateway), for
+  # example a Prometheus namespace. Empty allows none.
+  metricsFrom: []
+
+# Single-replica PostgreSQL and SeaweedFS with emptyDir storage, for the
+# install test only (values-ci.yaml). Data is lost when a pod restarts.
+testServices:
+  enabled: false
+  postgres:
+    image: postgres:16.15-alpine
+  seaweedfs:
+    image: chrislusf/seaweedfs:4.48
+
+# -- Spread pods of each component across nodes (values-ha.yaml turns it on).
+topologySpread:
+  enabled: false
+  topologyKey: kubernetes.io/hostname
+
+# -- Pod security settings of the server components (image user 10001).
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+# -- Container security settings of every container: no privilege escalation,
+# read-only root filesystem, no Linux capabilities.
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+
+probes:
+  readiness: { initialDelaySeconds: 2, periodSeconds: 5, timeoutSeconds: 3, failureThreshold: 3 }
+  liveness: { initialDelaySeconds: 10, periodSeconds: 10, timeoutSeconds: 3, failureThreshold: 3 }
+  # -- Start-up allowance of the server components (failureThreshold x periodSeconds).
+  startup: { periodSeconds: 2, timeoutSeconds: 3, failureThreshold: 60 }
+
+# -- Extra annotations and labels for every pod.
+podAnnotations: {}
+podLabels: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+priorityClassName: ""
