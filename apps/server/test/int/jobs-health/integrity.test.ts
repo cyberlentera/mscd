@@ -4,7 +4,7 @@
 // after the recompute) and the daily link check keeps that finding; objects re-hashed within 7 days are not due;
 // seeded objects without stored bytes keep their status.
 import { Readable } from 'node:stream';
-import { PutObjectCommand } from '@aws-sdk/client-s3';
+import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import type { PutResult } from '@mscd/shared';
 import { sql } from 'kysely';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -87,14 +87,15 @@ describe('integrity.rehash (A-08)', () => {
     await rehash();
     expect(ctx.queue.failed()).toEqual([]);
     for (const object of stored) expect(await rehashRows(object.id)).toEqual([{ outcome: 'found', status_after: 'intact', matches: 'true' }]);
-    // The seeded vault objects have no stored bytes in this vault: not found, status kept, tried again next week.
+    // The seeded vault objects carry demo item ids that are not vault object ids, so the gateway refuses them
+    // (outside-root): recorded as an error, status kept, tried again next week.
     const [seededRow] = await rows<{ outcome: string; status_before: string; status_after: string }>(
       db,
       'ndt',
       sql`SELECT h.outcome, h.status_before, h.status_after FROM link_health_result h JOIN storage_object o ON o.id = h.storage_object_id
           WHERE h.detail->>'check' = 'rehash' AND NOT (o.id = ANY(${stored.map((s) => s.id)}::uuid[])) LIMIT 1`,
     );
-    expect(seededRow).toEqual({ outcome: 'not_found', status_before: 'intact', status_after: 'intact' });
+    expect(seededRow).toEqual({ outcome: 'error', status_before: 'intact', status_after: 'intact' });
     expect(await allStatuses(db, 'ndt')).toEqual(before);
   });
 
@@ -110,7 +111,11 @@ describe('integrity.rehash (A-08)', () => {
 
   it('content changed in the object store gives hash_mismatch, which the daily link check keeps', async () => {
     const target = stored[1]!;
-    await seaweed.s3.send(new PutObjectCommand({ Bucket: VAULT_BUCKET, Key: target.key, Body: Buffer.from('tampered content that is not the encrypted original') }));
+    // One byte of the stored ciphertext changes; the object keeps its metadata (wrapped content key, chunk sizes).
+    const original = await seaweed.s3.send(new GetObjectCommand({ Bucket: VAULT_BUCKET, Key: target.key }));
+    const bytes = Buffer.from(await original.Body!.transformToByteArray());
+    bytes[bytes.length - 20] = bytes[bytes.length - 20]! ^ 0xff;
+    await seaweed.s3.send(new PutObjectCommand({ Bucket: VAULT_BUCKET, Key: target.key, Body: bytes, Metadata: original.Metadata, ContentType: original.ContentType }));
     await rows(db, 'ndt', sql`UPDATE link_health_result SET checked_at = ${new Date(new Date(NOON).getTime() - 8 * DAY)} WHERE storage_object_id = ${target.id}::uuid`);
     await rehash();
     expect((await objectState(db, 'ndt', target.id)).link_status).toBe('hash_mismatch');

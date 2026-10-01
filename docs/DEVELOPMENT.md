@@ -25,7 +25,7 @@ The repository is one npm workspace with the members `apps/*`, `packages/*` and 
 
 | Path | Contents |
 |---|---|
-| `apps/web` | The React single-page app (package `@mscd/web`): controller `src/MscdApp.jsx`, generated views in `src/views`, sample data in `src/data`, Playwright suite in `e2e/` |
+| `apps/web` | The React single-page app (package `@mscd/web`): controller `src/MscdApp.jsx`, generated views in `src/views`, the data sources in `src/data` (sample data, and the API source in `src/data/api`), sign-in pages in `src/auth`, Playwright suite in `e2e/` |
 | `deploy/docker/web.Dockerfile` | The web image, built with the repository root as the build context |
 | `deploy/` | NGINX configuration, Compose files, Helm chart and the on-premise scripts ([deploy/README.md](../deploy/README.md)) |
 | `deploy/compose/dev` | Developer infrastructure stack: PostgreSQL, object store, Valkey, Keycloak and Mailpit ([README](../deploy/compose/dev/README.md)) |
@@ -56,7 +56,7 @@ npm run build -w @mscd/web     # static files in apps/web/dist
 npm run preview -w @mscd/web   # serves apps/web/dist on http://localhost:4173
 ```
 
-The app runs fully in the browser on a fictional sample organisation, so no back end is needed. Display settings come from the query string, for example `http://localhost:5173/?lang=id&theme=dark`; [apps/web/README.md](../apps/web/README.md) lists them.
+By default the app runs fully in the browser on a fictional sample organisation, so no back end is needed (to use the api instead, see [Run the web app against the api](#run-the-web-app-against-the-api)). Display settings come from the query string, for example `http://localhost:5173/?lang=id&theme=dark`; [apps/web/README.md](../apps/web/README.md) lists them.
 
 ## End-to-end tests
 
@@ -154,6 +154,62 @@ curl http://localhost:3000/api/v1/system/profile
 ```
 
 `/readyz` answers 503 until the database of the profile is reachable (with `test.yaml`, the developer stack on port 55432). Metrics are on port 9464 (`/metrics`).
+
+### Run the web app against the api
+
+The web app has two data sources, chosen when it is built (build plan H.1):
+
+| `VITE_DATA_SOURCE` | Data source | Used by |
+|---|---|---|
+| unset or `sample` | `src/data/SampleDataSource.js`: the fictional sample organisations, in the browser | `npm run dev -w @mscd/web`, the sample E2E suite |
+| `api` | `src/data/api/ApiDataSource.ts`: sign-in pages, then every screen from the api | the `mscd-web` image, `VITE_DATA_SOURCE=api npm run build -w @mscd/web` |
+
+In API mode the app signs in through the api, then reads `GET /me`, `GET /ui/org`, `GET /ui/ms/{ms}` for every system where the user holds a role and `GET /tasks`, and sends every action as a command of the api (build plan H.4). The menu under the user's name shows the demo personas in demo mode and Sign out. A build for the API holds no sample records: `VITE_DATA_SOURCE=api npm run build -w @mscd/web` followed by `grep -r Backup-Job-Log-Sep-2026 apps/web/dist/assets` finds nothing.
+
+To run it against a local api with the demo data:
+
+1. Start the developer stack and load the demo organisations (the second command builds the server, migrates the database of the stack and seeds it):
+
+   ```bash
+   npm run dev:stack
+   npm run seed:demo
+   ```
+
+2. Build the mock providers and start them with the demo fixture, in their own terminal (file pickers, uploads and repository tests of Microsoft 365 and Google Drive go there):
+
+   ```bash
+   npm run build -w @mscd/mock-providers
+   node tools/mock-providers/dist/server.js --port 4310 --fixtures demo
+   ```
+
+3. Start the storage gateway and the api, each in its own terminal, with the demo profile. The demo profile names the services of the Compose demo overlay, so on your machine the addresses of the stack and of the processes above replace them (`MSCD__<SECTION>__<KEY>` overrides, see the next section):
+
+   ```bash
+   export MSCD_PROFILE_FILE=apps/server/profiles/demo.yaml
+   export MSCD__STORAGE__GATEWAY__URL=http://localhost:8443
+   export MSCD__GATEWAY__VAULT__ENDPOINT=http://localhost:58333
+   export MSCD__GATEWAY__PROVIDERS__M365__GRAPH_BASE_URL=http://localhost:4310/v1.0
+   export MSCD__GATEWAY__PROVIDERS__M365__LOGIN_BASE_URL=http://localhost:4310
+   export MSCD__GATEWAY__PROVIDERS__GOOGLE__API_BASE_URL=http://localhost:4310
+   export MSCD__GATEWAY__PROVIDERS__GOOGLE__TOKEN_URL=http://localhost:4310/token
+   export MSCD__MAIL__SMTP__HOST=localhost
+   export MSCD__MAIL__SMTP__PORT=51025
+   export MSCD__HTTP__PUBLIC_URL=http://localhost:5173
+   node apps/server/dist/main.js storage-gateway     # terminal 1
+   node apps/server/dist/main.js api                 # terminal 2
+   ```
+
+4. Start the web development server in API mode. Vite forwards `/api` to `VITE_API_TARGET` (default `http://localhost:3000`, the api of step 3):
+
+   ```bash
+   VITE_DATA_SOURCE=api npm run dev -w @mscd/web
+   ```
+
+5. Open `http://localhost:5173` and sign in as a demo user, for example `rina`, with the password `Mscd-Demo-2026!` and the code of `node tools/scripts/demo-totp.mjs rina` (see Demo users below). Choose another persona in the menu under the user's name; Sign out is the last entry.
+
+The display settings in the query string (`lang`, `theme`, `drill`, `density`, `layout`, `font`) work in both modes. `npm run preview -w @mscd/web` after an API build serves `apps/web/dist` on port 4173 with the same `/api` forwarding.
+
+Unit tests of the API source and of the controller in API mode run with the other web unit tests (`npm test -w @mscd/web`, files in `apps/web/test/api`); they answer every request with a fake `fetch` built from the sample data, so they need no api.
 
 ### Deployment profiles
 

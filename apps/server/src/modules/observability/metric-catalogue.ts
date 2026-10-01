@@ -101,7 +101,7 @@ export const METRICS = {
   },
   outboxStuckRows: {
     name: 'mscd_job_outbox_stuck_rows',
-    help: 'Outbox rows (BullMQ driver) that reached the relay attempt limit and are no longer relayed',
+    help: 'Outbox rows (BullMQ driver) that are parked after a permanent relay failure or still failing after the stuck threshold',
     type: 'gauge',
     labelNames: [],
   },

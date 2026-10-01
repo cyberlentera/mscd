@@ -68,7 +68,7 @@ export class OpsService {
       const outbox = await this.collector.outboxHealth();
       components.push(
         outbox.stuckRows > 0
-          ? { name: 'job-outbox', status: 'degraded', detail: `${outbox.stuckRows} row(s) no longer relayed, oldest from ${outbox.oldestStuckAt?.toISOString() ?? 'unknown'}` }
+          ? { name: 'job-outbox', status: 'degraded', detail: `${outbox.stuckRows} row(s) stuck or parked, oldest from ${outbox.oldestStuckAt?.toISOString() ?? 'unknown'}` }
           : { name: 'job-outbox', status: 'ok', detail: 'no stuck rows' },
       );
     } catch (error) {

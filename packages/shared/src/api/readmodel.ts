@@ -55,6 +55,26 @@ export const ClauseMaturity = named(
 );
 export type ClauseMaturity = z.infer<typeof ClauseMaturity>;
 
+export const GateConsistency = named(
+  'GateConsistency',
+  z.object({
+    gatePhases: z.array(z.int().min(1)),
+    blockedActivities: Count,
+    openGateItems: Count,
+    flagged: z.boolean(),
+    messages: z.object({ en: z.string(), id: z.string() }).optional(),
+  }),
+  'BR-46 consistency of the critical gate phases: blocked activities against open gate items; flagged when they differ and the rule is active',
+  {
+    valid: [
+      { gatePhases: [4], blockedActivities: 4, openGateItems: 4, flagged: false },
+      { gatePhases: [4], blockedActivities: 3, openGateItems: 4, flagged: true, messages: { en: 'Blocked activities and open gate items differ', id: 'Aktivitas terblokir dan butir gerbang terbuka berbeda' } },
+    ],
+    invalid: [{ gatePhases: [4], blockedActivities: -1, openGateItems: 4, flagged: false }, { gatePhases: [4], blockedActivities: 1, openGateItems: 4 }],
+  },
+);
+export type GateConsistency = z.infer<typeof GateConsistency>;
+
 export const ImplementationSummary = named(
   'ImplementationSummary',
   z.object({
@@ -64,8 +84,9 @@ export const ImplementationSummary = named(
     currentPhase: z.int().min(1).nullable(),
     phases: z.array(PhaseSummary),
     maturity: z.array(ClauseMaturity),
+    gateConsistency: GateConsistency.optional(),
   }),
-  'GET /ms/{ms}/implementation/summary: five cards, the two evidence counts of A.4 5.13, phases with derived text and maturity per clause',
+  'GET /ms/{ms}/implementation/summary: five cards, the two evidence counts of A.4 5.13, phases with derived text, maturity per clause and, for readers with the full view of the system, the BR-46 gate consistency flag',
   {
     valid: [{
       cards: [
@@ -74,6 +95,7 @@ export const ImplementationSummary = named(
         { key: 'documents_expired', label: 'Documents expired', count: 5 },
       ],
       criticalEvidence: 3, unverifiableEvidence: 3, currentPhase: 9, phases: [], maturity: [{ clause: 4, readiness: 100, dimensions: [4, 4, 4, 4] }],
+      gateConsistency: { gatePhases: [4], blockedActivities: 4, openGateItems: 4, flagged: false },
     }],
     invalid: [{ cards: [], criticalEvidence: 0, unverifiableEvidence: 0, currentPhase: null, phases: [], maturity: [] }],
   },

@@ -8,7 +8,7 @@ import { sql } from 'kysely';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { BusinessRuleError } from '../../../src/common/problems';
 import { LICENCE_GATE, type LicenceGate } from '../../../src/common/tokens';
-import { LinkHealthService } from '../../../src/modules/link-health/link-health.service';
+import { LINK_CHECK_RETRY_LIMIT, LinkHealthService } from '../../../src/modules/link-health/link-health.service';
 import { TenantJobRunner } from '../../../src/modules/jobs/tenant-job';
 import { TenantResolver } from '../../../src/modules/tenancy/tenant-resolver';
 import { useTestDatabase } from '../../setup/test-db';
@@ -145,6 +145,25 @@ describe('link health check (E.4)', () => {
     expect(await notificationsFor('evidence_anomaly', object.evidence_id)).toHaveLength(1);
   });
 
+  it('a newer version of a document file notifies the document owner (PRD 11.4, digest)', async () => {
+    const [doc] = await rows<{ object_id: string; item: string; document_id: string; owner: string; doc_code: string }>(
+      db,
+      'ndt',
+      sql`SELECT o.id AS object_id, o.external_item_id AS item, d.id AS document_id, d.owner_user_id AS owner, d.doc_code
+          FROM document_version v JOIN document d ON d.id = v.document_id JOIN storage_object o ON o.id = v.storage_object_id
+          JOIN storage_repository r ON r.id = o.storage_repository_id
+          WHERE r.slug = 'sp' AND o.link_status = 'intact' AND d.owner_user_id IS NOT NULL AND v.deleted_at IS NULL AND d.deleted_at IS NULL
+          ORDER BY d.doc_code LIMIT 1`,
+    );
+    expect(doc).toBeDefined();
+    await mockAdmin(stack.mock, `/_admin/items/${doc!.item}/new-version`, { content: 'a revised document', versionId: '9.0' });
+    await check([doc!.object_id]);
+    expect((await objectState(db, 'ndt', doc!.object_id)).link_status).toBe('version_changed');
+    expect(await notificationsFor('document_new_version', doc!.document_id)).toEqual([
+      { recipient_user_id: doc!.owner, digest: true, title_en: `New version available for ${doc!.doc_code}` },
+    ]);
+  });
+
   it('a purged pinned version gives pinned_version_lost', async () => {
     const { code, version } = take();
     const object = await evidenceObject(db, 'ndt', code);
@@ -215,7 +234,7 @@ describe('link health check (E.4)', () => {
     for (const o of objects) expect((await objectState(db, 'ndt', o.id)).link_status).toBe('intact');
     const waiting = ctx.queue.waitingJobs('link-health.check');
     expect(waiting).toHaveLength(1);
-    expect(waiting[0]!.env.payload.storageObjectIds).toEqual(ids);
+    expect((waiting[0]!.env.payload as { storageObjectIds: string[] }).storageObjectIds).toEqual(ids);
     expect(await results(objects[0]!.id)).toEqual([expect.objectContaining({ outcome: 'rate_limited', status_before: 'intact', status_after: 'intact' })]);
     // After the wait the rest runs: the deleted file is found missing, the others stay intact.
     await ctx.drain(true);
@@ -325,8 +344,11 @@ describe('link health check (E.4)', () => {
       for (const job of checks) expect((job.env.payload as { storageObjectIds: string[] }).storageObjectIds.length).toBeLessThanOrEqual(50);
       expect(ctx.gateway.calls.filter((c) => c.path === '/v1/stat')).toHaveLength(expected);
       expect(ctx.queue.failed()).toEqual([]);
-      // Nothing is due any more.
-      expect(await due()).toEqual([]);
+      // Nothing is due any more except the seeded vault objects, whose demo item ids the gateway refuses (an error
+      // that keeps the status and leaves them due).
+      const vault = await repositoryId(db, 'ndt', 'vault');
+      const left = await due();
+      expect(left.every((r) => r.storage_repository_id === vault)).toBe(true);
     });
   });
 
@@ -357,6 +379,57 @@ describe('link health check (E.4)', () => {
       expect(await task()).toMatchObject({ kind: 'link_health_run', status: 'queued', params: { total: n } });
       await ctx.drain(true);
       expect(await task()).toMatchObject({ status: 'succeeded', progress: 100, result: { checked: n } });
+      expect(ctx.queue.failed()).toEqual([]);
+    });
+
+    const taskRow = async (id: string) =>
+      (await rows<{ status: string; progress: number; result: { checked: number; changed: number } }>(
+        db,
+        'ndt',
+        sql`SELECT status, progress, result FROM background_task WHERE id = ${id}::uuid`,
+      ))[0]!;
+
+    it('a second run of the same system before the first is done gets its own checks and also succeeds', async () => {
+      const rina = await sessionFor(ctx, db, 'rina', 'ndt');
+      const first = await rina.post('/api/v1/ms/bcms/link-health/run');
+      const second = await rina.post('/api/v1/ms/bcms/link-health/run');
+      expect(first.status).toBe(202);
+      expect(second.status).toBe(202);
+      const n = first.body.count!;
+      expect(n).toBeGreaterThan(0);
+      expect(second.body.taskId).not.toBe(first.body.taskId);
+      await ctx.drain(true);
+      for (const reply of [first, second]) {
+        expect(await taskRow(reply.body.taskId!)).toMatchObject({ status: 'succeeded', progress: 100, result: { checked: n } });
+      }
+      expect(ctx.queue.failed()).toEqual([]);
+    });
+
+    it('a retried check batch counts its objects once', async () => {
+      const objects = await Promise.all([take(), take(), take()].map((s) => evidenceObject(db, 'ndt', s.code)));
+      const [{ id: taskId }] = (await rows<{ id: string }>(
+        db,
+        'ndt',
+        sql`INSERT INTO background_task (kind, status, params, result) VALUES ('link_health_run', 'queued', ${JSON.stringify({ total: 4 })}::jsonb,
+            ${JSON.stringify({ checked: 0, changed: 0 })}::jsonb) RETURNING id`,
+      )) as [{ id: string }];
+      // The second stat call of the first attempt fails in transport; the job is retried from its first object.
+      let stats = 0;
+      ctx.gateway.script = (pathName) => {
+        if (pathName !== '/v1/stat') return undefined;
+        stats += 1;
+        return stats === 2 ? new Error('connection reset') : undefined;
+      };
+      await ctx.run(
+        'link-health.check',
+        { orgId: NDT, payload: { repositoryId: await repositoryId(db, 'ndt', 'sp'), storageObjectIds: objects.map((o) => o.id), taskId } },
+        { retryLimit: LINK_CHECK_RETRY_LIMIT },
+      );
+      expect(stats).toBe(4);
+      expect(await taskRow(taskId)).toMatchObject({ status: 'running', result: { checked: 3 } });
+      ctx.gateway.script = null;
+      await check([(await evidenceObject(db, 'ndt', take().code)).id], 'sp', { taskId });
+      expect(await taskRow(taskId)).toMatchObject({ status: 'succeeded', progress: 100, result: { checked: 4 } });
       expect(ctx.queue.failed()).toEqual([]);
     });
 

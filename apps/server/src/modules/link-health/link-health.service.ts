@@ -52,9 +52,17 @@ export interface CheckSummary {
   errors: number;
 }
 
-/** E.2 singleton key `lhc:<org>:<repo>:<sha1 of ids>`; a rescheduled rest adds the instant it may run. */
-export function linkCheckKey(orgId: string, repositoryId: string, ids: readonly string[], notBefore?: Date): string {
-  const hash = createHash('sha1').update([...ids].join(',')).update(notBefore ? `@${notBefore.toISOString()}` : '').digest('hex');
+/**
+ * E.2 singleton key `lhc:<org>:<repo>:<sha1 of ids>`; a rescheduled rest adds the instant it may run. A batch of an
+ * on-demand run adds its task id, so a second run of the same system is never dropped as a duplicate of the first
+ * (its task would then wait forever).
+ */
+export function linkCheckKey(orgId: string, repositoryId: string, ids: readonly string[], notBefore?: Date, taskId?: string): string {
+  const hash = createHash('sha1')
+    .update([...ids].join(','))
+    .update(notBefore ? `@${notBefore.toISOString()}` : '')
+    .update(taskId ? `#${taskId}` : '')
+    .digest('hex');
   return `lhc:${orgId}:${repositoryId}:${hash}`;
 }
 
@@ -73,7 +81,11 @@ export function batchesOf(rows: readonly { id: string; storage_repository_id: st
   return batches;
 }
 
-/** Maps a gateway problem of a `stat` call to the outcome it stands for (null: an error that changes nothing). */
+/**
+ * Maps a gateway problem of a `stat` call to the outcome it stands for (null: an error that changes nothing). An item
+ * moved outside the root is already a `forbidden` outcome of the adapters; a refused `outside-root` problem means the
+ * stored id does not belong to the repository at all, which is a data error and leaves the status as it is.
+ */
 function outcomeOfProblem(error: GatewayProblemError): StatResult | null {
   switch (error.gatewaySlug) {
     case 'not-found':
@@ -83,8 +95,6 @@ function outcomeOfProblem(error: GatewayProblemError): StatResult | null {
       if (error.reason === 'credential-binding' || error.reason === 'credential-missing' || error.reason === 'credential-kind') {
         return { outcome: 'unreachable', detail: 'credential_invalid', pinnedVersionAvailable: false };
       }
-      return { outcome: 'forbidden', pinnedVersionAvailable: false };
-    case 'outside-root':
       return { outcome: 'forbidden', pinnedVersionAvailable: false };
     case 'unreachable':
       return { outcome: 'unreachable', pinnedVersionAvailable: false };
@@ -188,7 +198,7 @@ export class LinkHealthService {
           requestedBy: options.requestedBy,
           payload: { repositoryId: batch.repositoryId, storageObjectIds: batch.storageObjectIds, ...(options.taskId ? { taskId: options.taskId } : {}) },
         },
-        { singletonKey: linkCheckKey(org.id, batch.repositoryId, batch.storageObjectIds), retryLimit: LINK_CHECK_RETRY_LIMIT },
+        { singletonKey: linkCheckKey(org.id, batch.repositoryId, batch.storageObjectIds, undefined, options.taskId), retryLimit: LINK_CHECK_RETRY_LIMIT },
         trx,
       );
     }
@@ -245,6 +255,10 @@ export class LinkHealthService {
     }
     const missing = storageObjectIds.length - prepared.objects.length;
     const affected = new Set<string>();
+    // The run's `checked` count moves once per job, at its end (or for the part done before a throttled rest is
+    // queued again), so a retried batch is never counted twice. A status change counts as it commits: on a retry the
+    // same object no longer changes, so `changed` cannot double either.
+    let counted = missing;
     try {
       for (let index = 0; index < prepared.objects.length; index += 1) {
         const object = prepared.objects[index]!;
@@ -253,7 +267,7 @@ export class LinkHealthService {
         if (result === null) {
           summary.errors += 1;
           summary.checked += 1;
-          await this.runner.run(org, (trx) => (taskId ? this.progressTask(trx, taskId, 1, 0) : Promise.resolve()), job.env.requestId);
+          counted += 1;
           continue;
         }
         if (result.outcome === 'rate_limited') {
@@ -296,12 +310,13 @@ export class LinkHealthService {
               jobId: job.id,
               source: 'link-health.check',
             });
-            if (taskId) await this.progressTask(trx, taskId, 1, outcome.changed ? 1 : 0);
+            if (taskId && outcome.changed) await this.progressTask(trx, taskId, 0, 1);
             return outcome;
           },
           job.env.requestId,
         );
         summary.checked += 1;
+        counted += 1;
         if (applied.changed) summary.changed += 1;
         if (applied.affectsValidity) for (const ms of applied.msIds) affected.add(ms);
       }
@@ -311,7 +326,7 @@ export class LinkHealthService {
     } finally {
       if (affected.size > 0) await this.runner.run(org, (trx) => this.queueFreshness(trx, org, [...affected], job.env.requestId), job.env.requestId);
     }
-    if (taskId && missing > 0) await this.runner.run(org, (trx) => this.progressTask(trx, taskId, missing, 0), job.env.requestId);
+    if (taskId && counted > 0) await this.runner.run(org, (trx) => this.progressTask(trx, taskId, counted, 0), job.env.requestId);
     return summary;
   }
 
@@ -358,7 +373,7 @@ export class LinkHealthService {
         await this.jobs.send(
           'link-health.check',
           { orgId: org.id, requestId: job.env.requestId, requestedBy: job.env.requestedBy, payload: { repositoryId, storageObjectIds: rest, ...(taskId ? { taskId } : {}) } },
-          { singletonKey: linkCheckKey(org.id, repositoryId, rest, notBefore), startAfterSeconds: delay, retryLimit: LINK_CHECK_RETRY_LIMIT },
+          { singletonKey: linkCheckKey(org.id, repositoryId, rest, notBefore, taskId), startAfterSeconds: delay, retryLimit: LINK_CHECK_RETRY_LIMIT },
           trx,
         );
       },

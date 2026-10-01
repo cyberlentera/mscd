@@ -24,12 +24,20 @@ export const BULLMQ_PREFIX = 'mscd';
 export const OUTBOX_BATCH = 100;
 
 /**
- * Relay attempts per outbox row. A row that failed this often is parked: the relay no longer takes it, it is
- * logged once at error level and counted by `countStuckOutboxRows` (metric `mscd_job_outbox_stuck_rows`, WP-34).
- * Parked rows stay for diagnosis (cleanup removes relayed rows only); an operator who fixed the cause sets
- * `attempts = 0` to relay them again.
+ * Failed relay attempts after which an outbox row counts as stuck: it is logged once at error level and counted by
+ * `countStuckOutboxRows` (metric `mscd_job_outbox_stuck_rows`, WP-34). A row whose failure is transient (a Valkey
+ * error such as OOM, READONLY or NOAUTH) keeps being retried every `OUTBOX_MAX_BACKOFF_SECONDS`, so it is relayed
+ * as soon as Valkey recovers, however long the outage lasts.
  */
-export const OUTBOX_MAX_ATTEMPTS = 12;
+export const OUTBOX_STUCK_ATTEMPTS = 12;
+
+/**
+ * `attempts` value of a parked row (the largest `smallint`). Only permanent failures park a row (a job name this build does not know, for
+ * example after a rollback): the relay never takes it again and logs it once at error level. Parked rows stay for
+ * diagnosis (cleanup removes relayed rows only); an operator who fixed the cause runs
+ * `UPDATE platform.job_outbox SET attempts = 0, run_at = now() WHERE dispatched_at IS NULL AND attempts >= 12`.
+ */
+export const OUTBOX_PARKED_ATTEMPTS = 32_767;
 
 /** Longest wait between two relay attempts of a failing row. */
 export const OUTBOX_MAX_BACKOFF_SECONDS = 600;
@@ -39,13 +47,13 @@ export function outboxBackoffSeconds(attempts: number): number {
   return Math.min(OUTBOX_MAX_BACKOFF_SECONDS, 2 ** Math.max(1, Math.min(attempts, 20)));
 }
 
-/** Outbox rows that reached `OUTBOX_MAX_ATTEMPTS` and are not relayed any more (any driver; zero unless BullMQ). */
+/** Outbox rows that are parked or failed at least `OUTBOX_STUCK_ATTEMPTS` times (any driver; zero unless BullMQ). */
 export async function countStuckOutboxRows(trx: Transaction<DB>): Promise<{ rows: number; oldestCreatedAt: Date | null }> {
   const row = await trx
     .selectFrom('platform.job_outbox')
     .select((eb) => [eb.fn.countAll<string>().as('rows'), eb.fn.min('created_at').as('oldest')])
     .where('dispatched_at', 'is', null)
-    .where('attempts', '>=', OUTBOX_MAX_ATTEMPTS)
+    .where('attempts', '>=', OUTBOX_STUCK_ATTEMPTS)
     .executeTakeFirst();
   return { rows: Number(row?.rows ?? 0), oldestCreatedAt: (row?.oldest as Date | null | undefined) ?? null };
 }
@@ -185,8 +193,9 @@ export class BullMqJobQueue implements JobQueue {
    * transaction of the caller), locking them with `FOR UPDATE SKIP LOCKED` so relays in other processes take other
    * rows. Rows that keep failing (for example a job name this build does not know, after a rollback) never block
    * newer jobs: rows are taken by fewest attempts first; a failed row waits `outboxBackoffSeconds(attempts)` before
-   * its next attempt (its `run_at` moves forward, never back, so a delayed job never runs early); after
-   * `OUTBOX_MAX_ATTEMPTS` failures it is parked and logged at error level. Returns the number of rows dispatched.
+   * its next attempt (its `run_at` moves forward, never back, so a delayed job never runs early). A permanent failure
+   * (unknown job name) parks the row at once; a transient one is retried at most every `OUTBOX_MAX_BACKOFF_SECONDS`
+   * and reported once at error level when it reaches `OUTBOX_STUCK_ATTEMPTS`. Returns the number of rows dispatched.
    */
   async relayOutbox(trx: Transaction<DB>): Promise<number> {
     if (this.stopped) return 0;
@@ -195,15 +204,16 @@ export class BullMqJobQueue implements JobQueue {
              greatest(0, ceil(extract(epoch FROM (run_at - now())) * 1000))::bigint AS delay_ms
         FROM platform.job_outbox
        WHERE dispatched_at IS NULL
-         AND attempts < ${OUTBOX_MAX_ATTEMPTS}
+         AND attempts < ${OUTBOX_PARKED_ATTEMPTS}
          AND (attempts = 0 OR run_at <= now())
        ORDER BY attempts, id
        LIMIT ${OUTBOX_BATCH}
          FOR UPDATE SKIP LOCKED`.execute(trx);
     let dispatched = 0;
     for (const row of rows) {
+      const permanent = !KNOWN_JOBS.has(row.queue);
       try {
-        if (!KNOWN_JOBS.has(row.queue)) throw new Error(`Unknown job ${row.queue}`);
+        if (permanent) throw new Error(`Unknown job ${row.queue}`);
         const payload = row.payload;
         await this.queue(row.queue).add(
           row.queue,
@@ -216,10 +226,15 @@ export class BullMqJobQueue implements JobQueue {
         const message = error instanceof Error ? error.message : String(error);
         const attempts = Number(row.attempts) + 1;
         const backoff = outboxBackoffSeconds(attempts);
-        if (attempts >= OUTBOX_MAX_ATTEMPTS) {
+        if (permanent) {
           this.logger.error(
-            { event: 'job_outbox.stuck', outboxId: row.id, queue: row.queue, attempts, lastError: message.slice(0, 500) },
-            `Outbox row ${row.id} (${row.queue}) parked after ${attempts} failed relay attempts; it is no longer relayed (set attempts = 0 to retry): ${message}`,
+            { event: 'job_outbox.stuck', outboxId: row.id, queue: row.queue, attempts, parked: true, lastError: message.slice(0, 500) },
+            `Outbox row ${row.id} (${row.queue}) parked after a permanent relay failure; it is no longer relayed (set attempts = 0, run_at = now() to retry): ${message}`,
+          );
+        } else if (attempts === OUTBOX_STUCK_ATTEMPTS) {
+          this.logger.error(
+            { event: 'job_outbox.stuck', outboxId: row.id, queue: row.queue, attempts, parked: false, lastError: message.slice(0, 500) },
+            `Outbox row ${row.id} (${row.queue}) stuck after ${attempts} failed relay attempts; still retried every ${OUTBOX_MAX_BACKOFF_SECONDS} s: ${message}`,
           );
         } else {
           this.logger.warn(`Outbox row ${row.id} (${row.queue}) not relayed after ${attempts} attempt(s), next attempt in ${backoff} s: ${message}`);
@@ -227,7 +242,7 @@ export class BullMqJobQueue implements JobQueue {
         await trx
           .updateTable('platform.job_outbox')
           .set({
-            attempts: sql<number>`attempts + 1`,
+            attempts: permanent ? OUTBOX_PARKED_ATTEMPTS : sql<number>`least(attempts + 1, ${OUTBOX_PARKED_ATTEMPTS - 1})`,
             last_error: message.slice(0, 2000),
             run_at: sql<Date>`greatest(run_at, now() + ${backoff} * interval '1 second')`,
           })

@@ -122,7 +122,7 @@ export class OpsMetricsCollector implements OnModuleInit {
     return out;
   }
 
-  /** Outbox rows parked by the relay (BullMQ driver). */
+  /** Outbox rows stuck in or parked by the relay (BullMQ driver). */
   async outboxHealth(): Promise<{ stuckRows: number; oldestStuckAt: Date | null }> {
     const stuck = await this.scope.withPlatform((trx) => countStuckOutboxRows(trx), { scope: 'operator' });
     return { stuckRows: stuck.rows, oldestStuckAt: stuck.oldestCreatedAt };

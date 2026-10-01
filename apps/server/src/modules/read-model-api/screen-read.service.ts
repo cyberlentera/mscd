@@ -16,6 +16,7 @@ import { Clock } from '../../common/clock';
 import { ForbiddenError, NotFoundError } from '../../common/problems';
 import { PERMISSION_EVALUATOR, type PermissionEvaluator, type Principal, type TenantInfo, type Trx } from '../../common/tokens';
 import { ScopePolicyService } from '../authz/scope-policy';
+import { ActivityService } from '../implementation';
 import { buildSystemSnapshot, loadOrgData, systemFields } from '../read-model';
 import { TenantScope, tenantContextOf } from '../tenancy/tenant-scope';
 import {
@@ -35,14 +36,34 @@ export class ScreenReadService {
     private readonly clock: Clock,
     private readonly scopePolicy: ScopePolicyService,
     @Inject(PERMISSION_EVALUATOR) private readonly evaluator: PermissionEvaluator,
+    private readonly activityCommands: ActivityService,
   ) {}
 
   // -------------------------------------------------------------------------------------------------------------
   // Module 1
   // -------------------------------------------------------------------------------------------------------------
 
+  /**
+   * The summary, plus the BR-46 gate consistency flag (`ActivityService.gateConsistencyIn`, WP-20) for readers with
+   * the full view of the system; owner-scoped, Top Management and external auditor readers get the cards only.
+   */
   summary(principal: Principal, ms: string, lang: Lang): Promise<ImplementationSummary> {
-    return this.screen(principal, ms, lang, async (_trx, d) => implementationSummary(d));
+    const org = this.orgOf(principal);
+    return this.screen(principal, ms, lang, async (trx, d) => {
+      const summary = implementationSummary(d);
+      if (d.scope.kind !== 'full') return summary;
+      const consistency = await this.activityCommands.gateConsistencyIn(trx, org, ms);
+      return {
+        ...summary,
+        gateConsistency: {
+          gatePhases: consistency.gatePhases,
+          blockedActivities: consistency.blockedActivities,
+          openGateItems: consistency.openGateItems,
+          flagged: consistency.finding !== null,
+          ...(consistency.finding ? { messages: consistency.finding.messages } : {}),
+        },
+      };
+    });
   }
 
   applicability(principal: Principal, ms: string, lang: Lang, query: ApplicabilityQuery): Promise<Page<ApplicabilityItem>> {

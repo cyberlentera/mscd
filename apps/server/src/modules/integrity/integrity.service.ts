@@ -51,25 +51,24 @@ export class IntegrityService {
     const due = await this.runner.run(
       org,
       async (trx) => {
-        const rows = await trx
+        // The last re-hash of each object, the 7-day window, the order (never re-hashed first) and the cap all run in
+        // SQL, so the read stays at `REHASH_BATCH` rows whatever the size of the vault.
+        const lastRehash = sql<Date | null>`(select max(h.checked_at) from link_health_result h where h.storage_object_id = o.id and h.detail->>'check' = 'rehash')`;
+        const list = await trx
           .selectFrom('storage_object as o')
           .innerJoin('storage_repository as r', 'r.id', 'o.storage_repository_id')
           .select(LINK_OBJECT_COLUMNS.map((c) => `o.${c}` as const))
-          .select(
-            sql<Date | null>`(select max(h.checked_at) from link_health_result h where h.storage_object_id = o.id and h.detail->>'check' = 'rehash')`.as(
-              'last_rehash',
-            ),
-          )
+          .select(lastRehash.as('last_rehash'))
           .where('r.adapter', '=', 'managed_vault')
           .where('r.deleted_at', 'is', null)
           .where('o.deleted_at', 'is', null)
           .where('o.hash_source', '=', 'computed')
           .where('o.link_status', 'in', [...REHASH_STATUSES])
+          .where(sql<boolean>`coalesce(${lastRehash} < ${since}::timestamptz, true)`)
+          .orderBy(sql`${lastRehash} asc nulls first`)
+          .orderBy('o.id')
+          .limit(REHASH_BATCH)
           .execute();
-        const list = rows
-          .filter((r) => r.last_rehash === null || r.last_rehash < since)
-          .sort((a, b) => (a.last_rehash?.getTime() ?? 0) - (b.last_rehash?.getTime() ?? 0) || a.id.localeCompare(b.id))
-          .slice(0, REHASH_BATCH);
         const repositories = new Map<string, Awaited<ReturnType<StorageGatewayContext['repository']>>>();
         for (const id of new Set(list.map((r) => r.storage_repository_id))) {
           repositories.set(id, await this.gatewayContext.repository(trx, await this.gatewayContext.repositoryRow(trx, id), { withCredential: false }));

@@ -1,13 +1,23 @@
-// Chooses the data source at build time (ARCHITECTURE 14.1, BUILD-PLAN H.1). The source module is loaded with a
-// dynamic import, so a bundle holds only the source it uses: the sample records of SampleDataSource.js never enter
-// an API build. `VITE_DATA_SOURCE=api` selects the API source, which WP-25 adds here (./api/ApiDataSource.ts);
-// every other value, and no value, selects the sample source.
-// Resolves to a DataSource of types.ts; options go to the sample source (org, persona).
+// Chooses the data source at build time (ARCHITECTURE 14.1, BUILD-PLAN H.1). Each source module is loaded with a
+// dynamic import, so a bundle holds only the source it uses: `VITE_DATA_SOURCE=api` builds never contain the sample
+// records of SampleDataSource.js (checked by the WP-25 acceptance), and sample builds never contain the API source.
+//
+// API mode: options are `{client, me, profile}` from the boot router (src/auth/boot.tsx); the source shares the boot's
+// ApiClient, so a 401, a `reauth-required` and a sign-out reach the router. A call without that client is refused:
+// a source with a client of its own would hide session ends and organisation switches from the router.
+// Sample mode: every other value, and no value; options go to the sample source (org, persona).
+// `import.meta.env.VITE_DATA_SOURCE` is written out in full so Vite replaces it with the build's value and the bundler
+// drops the branch the build does not use (with it, the dynamic import of the other source).
 export async function createDataSource(options) {
-  const env = (import.meta && import.meta.env) || {};
-  if (env.VITE_DATA_SOURCE === 'api') {
-    throw new Error('createDataSource: VITE_DATA_SOURCE=api is not available in this build (WP-25 adds the API source)');
+  if (import.meta.env.VITE_DATA_SOURCE === 'api') {
+    const opts = options || {};
+    if (!opts.client) {
+      throw new Error("createDataSource: VITE_DATA_SOURCE=api is not available without the boot router's ApiClient (options.client)");
+    }
+    const { createApiDataSource } = await import('./api/ApiDataSource.ts');
+    return createApiDataSource(opts);
+  } else {
+    const { createSampleDataSource } = await import('./SampleDataSource.js');
+    return createSampleDataSource(options);
   }
-  const { createSampleDataSource } = await import('./SampleDataSource.js');
-  return createSampleDataSource(options);
 }

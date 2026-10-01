@@ -177,6 +177,11 @@ services:
     secrets:
       - db-migrator.url
       - db-pack.url
+    # egress reaches an external PostgreSQL when bundled-db is off (the mscd
+    # network is internal and has no route out).
+    networks:
+      - mscd
+      - egress
     depends_on:
       postgres:
         condition: service_healthy
@@ -234,6 +239,9 @@ services:
         target: client.crt
       - source: api.key
         target: client.key
+      # Account emails (invitations, password reset, one-time codes) are sent
+      # by the api itself; the file is empty when the relay has no login.
+      - smtp.password
     # The mscd network carries web, database and gateway traffic; egress reaches
     # the identity providers (OIDC, SAML metadata) of the organisation.
     networks:
@@ -368,6 +376,12 @@ services:
         target: client.crt
       - source: api.key
         target: client.key
+      # admin create-user sends the invitation email.
+      - smtp.password
+    # egress reaches an external PostgreSQL and the SMTP relay.
+    networks:
+      - mscd
+      - egress
 
 networks:
   # Internal: no route out of the host. Every service is on it.
@@ -378,7 +392,8 @@ networks:
         - subnet: ${MSCD_SUBNET:-172.31.250.0/24}
   # Published ports of web.
   edge: {}
-  # Outbound connections of api, worker and storage-gateway.
+  # Outbound connections of api, worker, storage-gateway, migrate and cli
+  # (external PostgreSQL, SMTP relay, identity providers, cloud repositories).
   egress: {}
 
 volumes:
