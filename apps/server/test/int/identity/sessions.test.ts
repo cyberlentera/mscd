@@ -410,6 +410,32 @@ describe('WP-11 local sign-in and sessions', () => {
     expect(await service.get(users.rina!.id)).not.toHaveProperty('big2');
   });
 
+  it('counts cleared keys towards the 16 KiB limit and writes nothing for a null of a key never stored (D.3)', async () => {
+    const user = await addUser(db, ctx.moduleRef, { handle: 'prefs', memberships: [{ org: ndt }], factor: true });
+    const browser = await signIn(ctx, user);
+    const service = ctx.moduleRef.get(PreferencesService);
+    const stored = () =>
+      inScope(db.migrator, { platformScope: true }, (trx) => trx.selectFrom('platform.user_preference').select(['key', 'value']).where('user_id', '=', user.id).execute());
+    /** 200 keys of 47 characters: about 10 KiB with small values, 11 KiB when cleared. */
+    const batch = (round: number, value: unknown) =>
+      Object.fromEntries(Array.from({ length: 200 }, (_, i) => [`k${round}_${String(i).padStart(3, '0')}_${'x'.repeat(40)}`, value]));
+
+    for (let round = 0; round < 10; round += 1) expect((await browser.put(PREFERENCES, batch(round, null))).statusCode).toBe(204);
+    expect(await stored()).toHaveLength(0);
+
+    expect((await browser.put(PREFERENCES, batch(0, 1))).statusCode).toBe(204);
+    expect((await browser.put(PREFERENCES, batch(0, null))).statusCode).toBe(204);
+    expect(await stored()).toHaveLength(200);
+    expect(await service.get(user.id)).toEqual({});
+    // The cleared rows still count: 200 more keys would pass 16 KiB in all, so the whole PUT is refused.
+    expect((await browser.put(PREFERENCES, batch(1, 1))).statusCode).toBe(413);
+    expect(await stored()).toHaveLength(200);
+    // A cleared key takes a value again.
+    const first = Object.keys(batch(0, 1))[0]!;
+    expect((await browser.put(PREFERENCES, { [first]: 'en' })).statusCode).toBe(204);
+    expect(await service.get(user.id)).toEqual({ [first]: 'en' });
+  });
+
   describe('services for other modules', () => {
     it('revokes sessions by organisation, grant and provider from a tenant transaction, restoring the platform scope (F.1)', async () => {
       const sessions = ctx.moduleRef.get(SessionService);

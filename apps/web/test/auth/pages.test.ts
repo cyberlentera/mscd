@@ -10,7 +10,8 @@ import { EnrolPage } from '../../src/auth/EnrolPage';
 import { ForgotPasswordPage } from '../../src/auth/ForgotPasswordPage';
 import { GuestPage } from '../../src/auth/GuestPage';
 import { LOGIN_ERROR_MESSAGES, TEXT, li } from '../../src/auth/i18n';
-import { InvitePage } from '../../src/auth/InvitePage';
+import { InvitePage, inviteOutcome } from '../../src/auth/InvitePage';
+import type { ApiError } from '../../src/data/api/ApiClient';
 import { LoginPage } from '../../src/auth/LoginPage';
 import { MfaPage } from '../../src/auth/MfaPage';
 import { ResetPasswordPage } from '../../src/auth/ResetPasswordPage';
@@ -144,7 +145,8 @@ describe('enrolment /login/enrol', () => {
     const html = render(EnrolPage, { env: envFor(), mode: 'enrol' });
     const text = textOf(html);
     expect(text).toContain('Add an authenticator');
-    expect(text).toContain('Please wait');
+    expect(html).toContain('<p class="au-lead" role="status">Please wait</p>');
+    expect(text.split('Please wait').length).toBe(2);
     expect(html).not.toContain('<form');
   });
 
@@ -192,7 +194,52 @@ describe('invitation /invite#token=', () => {
     for (const key of ['inviteEyebrow', 'inviteTitle', 'inviteLead', 'newPassword', 'repeatPassword', 'inviteSubmit', 'haveAccount', 'orContinueWith', 'findSignIn'] as const) {
       expect(text).toContain(li(TEXT[key], 'en'));
     }
+    expect(html).toMatch(/id="au-new-password"[^>]*type="password" autoComplete="new-password"/);
+    expect(html).not.toContain('au-current-password');
     expect(html).not.toContain(TOKEN);
+  });
+
+  it('asks an account that has a password for its current password only (WP-11: checked, never replaced)', () => {
+    for (const lang of ['en', 'id'] as const) {
+      const html = render(InvitePage, { env: envFor(lang), token: TOKEN, initialMode: 'existing' });
+      expect(html).toMatch(/id="au-current-password" name="password"[^>]*type="password" autoComplete="current-password"/);
+      expect((html.match(/type="password"/g) ?? []).length).toBe(1);
+      expect(html).not.toContain('au-new-password');
+      expect(html).not.toContain('au-repeat-password');
+      expect(html).toContain('href="/forgot-password"');
+      const text = textOf(html);
+      for (const key of ['inviteExistingLead', 'accountPassword', 'inviteAccept', 'noPasswordYet', 'forgot', 'orContinueWith', 'findSignIn'] as const) {
+        expect(text).toContain(li(TEXT[key], lang));
+      }
+      for (const key of ['inviteLead', 'passwordRules', 'repeatPassword', 'haveAccount'] as const) expect(text).not.toContain(li(TEXT[key], lang));
+      expect(html).not.toContain(TOKEN);
+    }
+  });
+
+  it('reads the refusals of the acceptance into a message and the form to show next', () => {
+    const validation = (message: string): ApiError => ({ status: 400, slug: 'validation', message: ['x', 'x'], errors: [{ path: 'body.password', message }] });
+    const wrong: ApiError = { status: 401, slug: 'unauthenticated', message: ['x', 'x'], messageKey: 'auth.invalid_credentials' };
+    // A new password for an account that has one: the server checked it as the current password.
+    expect(inviteOutcome(wrong, 'new')).toEqual({ text: TEXT.inviteHasPassword, mode: 'existing', invalidLink: false });
+    expect(inviteOutcome(wrong, 'existing')).toEqual({ text: TEXT.inviteWrongPassword, mode: 'existing', invalidLink: false });
+    expect(inviteOutcome({ status: 401, message: ['x', 'x'] }, 'existing').text).toBe(TEXT.inviteWrongPassword);
+    const enter = validation('Enter the password of your account to accept the invitation');
+    expect(inviteOutcome(enter, 'new')).toEqual({ text: TEXT.inviteEnterPassword, mode: 'existing', invalidLink: false });
+    expect(inviteOutcome(enter, 'existing')).toEqual({ text: TEXT.inviteEnterPassword, mode: 'existing', invalidLink: false });
+    // A current password for an account without one: the server checked it as a new password.
+    expect(inviteOutcome(validation('Use at least 12 characters'), 'existing')).toEqual({ text: TEXT.inviteNoPassword, mode: 'new', invalidLink: false });
+    expect(inviteOutcome(validation('This password is too common; choose another one'), 'existing').mode).toBe('new');
+    expect(inviteOutcome(validation('Use at least 12 characters'), 'new')).toEqual({ text: TEXT.passwordTooShort, mode: 'new', invalidLink: false });
+    expect(inviteOutcome(validation('Choose a password to accept the invitation'), 'new').text).toBe(TEXT.choosePassword);
+    // The link itself, single sign-on and the rate limit.
+    for (const mode of ['new', 'existing'] as const) {
+      expect(inviteOutcome({ status: 400, slug: 'validation', message: ['x', 'x'], messageKey: 'auth.invitation_invalid' }, mode))
+        .toEqual({ text: LOGIN_ERROR_MESSAGES.invitation_invalid, mode, invalidLink: true });
+      expect(inviteOutcome({ status: 400, slug: 'validation', message: ['x', 'x'], errors: [{ path: 'body.token', message: 'Invalid' }] }, mode).invalidLink).toBe(true);
+      expect(inviteOutcome({ status: 401, message: ['x', 'x'], messageKey: 'auth.sso_required' }, mode))
+        .toEqual({ text: LOGIN_ERROR_MESSAGES.sso_required, mode, invalidLink: false });
+      expect(inviteOutcome({ status: 429, slug: 'rate-limited', message: ['x', 'x'], retryAfter: 120 }, mode).text[0]).toBe('Too many attempts. Try again in 2 minutes.');
+    }
   });
 
   it('says the link is incomplete without a token', () => {

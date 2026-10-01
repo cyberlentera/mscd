@@ -96,6 +96,7 @@ describe('errorMessage', () => {
     expect(err('This password is too common; choose another one')).toBe(TEXT.passwordCommon);
     expect(err('The password must not be your email address or user name')).toBe(TEXT.passwordPersonal);
     expect(err('Choose a password to accept the invitation')).toBe(TEXT.choosePassword);
+    expect(err('Enter the password of your account to accept the invitation')).toBe(TEXT.inviteEnterPassword);
     expect(passwordProblemMessage('Something new')).toEqual(['Something new', 'Something new']);
   });
 });

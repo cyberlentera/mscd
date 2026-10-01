@@ -1,6 +1,7 @@
 // Multi-factor authentication (build plan F.5, F.3): TOTP factors sealed with `platform.key` (AAD `mfa:<userId>`),
 // replay protection by the last accepted step, ten single-use recovery codes, enrolment and re-enrolment with a
-// recent proof, and the per-user second-factor lock across sessions: 10 consecutive failures lock the second factor
+// recent proof (a session that has not passed the second factor replaces a confirmed factor only with its current
+// code), and the per-user second-factor lock across sessions: 10 consecutive failures lock the second factor
 // for 15 minutes, doubling with every further lock up to 24 hours; the level decays by one per 24 hours without a
 // lock. Every failure audits `auth.mfa_failed`, every lock `auth.mfa_locked` and emails the user.
 import { Injectable } from '@nestjs/common';
@@ -33,10 +34,34 @@ export const SESSION_MFA_FAILURE_LIMIT = 10;
 /** A password or TOTP proof this recent replaces the proof of a re-enrolment or an identity link (F.5, F.8). */
 export const RECENT_PROOF_MS = 5 * 60_000;
 
+function isRecent(at: Date | null, now: Date): boolean {
+  return at !== null && now.getTime() - at.getTime() <= RECENT_PROOF_MS && at.getTime() <= now.getTime() + 60_000;
+}
+
 /** True when the session verified a password or a second factor within the last 5 minutes (F.5). */
 export function hasRecentProof(session: Pick<SessionRow, 'password_at' | 'mfa_at'>, now: Date): boolean {
-  const recent = (at: Date | null) => at !== null && now.getTime() - at.getTime() <= RECENT_PROOF_MS && at.getTime() <= now.getTime() + 60_000;
-  return recent(session.password_at) || recent(session.mfa_at);
+  return isRecent(session.password_at, now) || isRecent(session.mfa_at, now);
+}
+
+/** True when the session verified the second factor within the last 5 minutes. */
+export function hasRecentSecondFactorProof(session: Pick<SessionRow, 'mfa_at'>, now: Date): boolean {
+  return isRecent(session.mfa_at, now);
+}
+
+/** What starting an enrolment asks for (F.5): nothing, the current code or the password, or only the current code. */
+export type EnrolmentProof = 'none' | 'code_or_password' | 'code';
+
+/**
+ * The proof an enrolment needs (F.5). An active session (re-enrolment) gives the current code or the password unless
+ * it proved one of them in the last 5 minutes. A session that has not passed the second factor (`mfa_enrolment`)
+ * needs nothing while the user has no confirmed factor; once the user has one (confirmed in another session
+ * meanwhile), enrolling would replace it, and the session must give the current code unless it proved it in the last
+ * 5 minutes: its password proves nothing the sign-in did not, so a password alone never replaces a factor.
+ */
+export function enrolmentProofNeeded(session: Pick<SessionRow, 'state' | 'password_at' | 'mfa_at'>, userHasFactor: boolean, now: Date): EnrolmentProof {
+  if (session.state === 'active') return hasRecentProof(session, now) ? 'none' : 'code_or_password';
+  if (!userHasFactor) return 'none';
+  return hasRecentSecondFactorProof(session, now) ? 'none' : 'code';
 }
 
 /** Lock length of a lock at `level` (0 for the first). */
@@ -104,6 +129,13 @@ function lockedError(until: Date, now: Date): RateLimitedError {
 
 function wrongCode(): UnauthenticatedError {
   return new UnauthenticatedError({ messageKey: 'auth.mfa_invalid', detail: 'The code is not valid' });
+}
+
+function factorCodeRequired(): UnauthenticatedError {
+  return new UnauthenticatedError({
+    messageKey: 'auth.proof_required',
+    detail: 'Your account already has an authenticator: enter its current code to replace it, or sign in again',
+  });
 }
 
 @Injectable()
@@ -226,9 +258,11 @@ export class MfaService {
   }
 
   /**
-   * `POST /auth/mfa/enrol/start` (F.5): a new TOTP secret, shown once. In state `mfa_enrolment` no proof is asked;
-   * from an active session (re-enrolment) the current code or the password is required unless the session proved
-   * one of them in the last 5 minutes.
+   * `POST /auth/mfa/enrol/start` (F.5): a new TOTP secret, shown once. The proof follows `enrolmentProofNeeded`,
+   * decided under the user's row lock: none for the first factor of an `mfa_enrolment` session; from an active
+   * session (re-enrolment) the current code or the password unless the session proved one of them in the last 5
+   * minutes; from an `mfa_enrolment` session of a user who has a confirmed factor (confirmed in another session) only
+   * the current code.
    */
   async startEnrolment(current: CurrentSession, body: MfaEnrolStartRequest): Promise<MfaEnrolStartResponse> {
     const row = current.row;
@@ -244,8 +278,11 @@ export class MfaService {
           .where('id', '=', userId)
           .forUpdate()
           .executeTakeFirstOrThrow();
-        if (row.state === 'active' && !hasRecentProof(row, now)) {
-          const error = await this.checkProof(trx, row, user, body, now);
+        // A confirmation in another session may have revoked this one after the resolver read it.
+        if (!(await this.sessions.isOpen(trx, row.id_hash))) return { error: new UnauthenticatedError(), email: user.email };
+        const needed = enrolmentProofNeeded(row, await this.hasConfirmedFactor(trx, userId), now);
+        if (needed !== 'none') {
+          const error = await this.checkProof(trx, row, user, body, now, needed);
           if (error) return { error, email: user.email };
         }
         await trx
@@ -267,8 +304,11 @@ export class MfaService {
 
   /**
    * `POST /auth/mfa/enrol/confirm` (F.5): the first code of the new secret confirms it, replaces an older factor,
-   * issues ten recovery codes (shown once), rotates the session to `active` and, on re-enrolment, revokes the user's
-   * other sessions.
+   * issues ten recovery codes (shown once) and rotates the session to `active`. On re-enrolment every other session
+   * of the user is revoked (`mfa_reenrolled`); on a first enrolment the user's other sessions still in
+   * `mfa_enrolment` are (`mfa_enrolled`), so a session signed in with the password alone cannot later replace the
+   * factor. Under the user's row lock a session that has not passed the second factor and would replace a confirmed
+   * factor must have proved the current code in the last 5 minutes (401 `auth.proof_required`).
    */
   async confirmEnrolment(current: CurrentSession, reply: FastifyReply, code: string): Promise<MfaEnrolConfirmResponse> {
     const row = current.row;
@@ -281,12 +321,15 @@ export class MfaService {
     const hashes = await Promise.all(codes.map((c) => hashSecret(recoveryCodeKey(c))));
 
     const outcome = await this.infra.scope.withPlatform(
-      async (trx) => {
+      async (trx): Promise<{ error: Error } | { error: null; issued: IssuedSession; user: UserColumns }> => {
         const owner = await trx.selectFrom('platform.app_user').select(['id', 'kind']).where('id', '=', userId).forUpdate().executeTakeFirstOrThrow();
         const actor = actorOf(userId, owner.kind);
+        if (row.state !== 'active' && enrolmentProofNeeded(row, await this.hasConfirmedFactor(trx, userId), now) !== 'none') {
+          return { error: factorCodeRequired() };
+        }
         const factor = await this.pendingFactor(trx, userId);
         const step = factor ? await this.matchPending(factor, userId, code, now) : null;
-        if (!factor || step === null) return null;
+        if (!factor || step === null) return { error: wrongCode() };
         const replaced = await trx
           .updateTable('platform.mfa_factor')
           .set({ deleted_at: now })
@@ -308,18 +351,22 @@ export class MfaService {
           .values(hashes.map((code_hash) => ({ user_id: userId, code_hash })))
           .execute();
         const issued = await this.sessions.rotate(trx, row, { state: 'active', mfaAt: now });
-        if (wasReplaced) {
-          const revoked = await this.sessions.revokeUserSessions(trx, userId, 'mfa_reenrolled', { except: issued.row.id_hash });
-          if (revoked > 0) {
-            await this.infra.audit.record(trx, {
-              action: 'auth.session_revoked',
-              actor,
-              organizationId: row.auth_org_id,
-              entityType: 'user',
-              entityId: userId,
-              after: { reason: 'mfa_reenrolled', sessions: revoked },
-            });
-          }
+        // Re-enrolment: every other session. First enrolment: the other sessions that were waiting to enrol, which
+        // would otherwise replace this factor later without proving it.
+        const reason = wasReplaced ? 'mfa_reenrolled' : 'mfa_enrolled';
+        const revoked = await this.sessions.revokeUserSessions(trx, userId, reason, {
+          except: issued.row.id_hash,
+          ...(wasReplaced ? {} : { states: ['mfa_enrolment'] as const }),
+        });
+        if (revoked > 0) {
+          await this.infra.audit.record(trx, {
+            action: 'auth.session_revoked',
+            actor,
+            organizationId: row.auth_org_id,
+            entityType: 'user',
+            entityId: userId,
+            after: { reason, sessions: revoked },
+          });
         }
         await this.infra.audit.record(trx, {
           action: 'auth.mfa_enrolled',
@@ -334,11 +381,11 @@ export class MfaService {
           to: { email: user.email, userId },
           template: { name: wasReplaced ? 'mfa_replaced' : 'mfa_enrolled', link: this.mailer.appLink('/') },
         });
-        return { issued, user };
+        return { error: null, issued, user };
       },
       { scope: 'auth', userId, orgId: row.auth_org_id },
     );
-    if (!outcome) throw wrongCode();
+    if (outcome.error) throw outcome.error;
     const response = await this.responder.respond(reply, outcome.issued, principalUser(outcome.user));
     if (response.status !== 'ok' || !response.me) throw new Error('An enrolled session must be active');
     return { recoveryCodes: codes, me: response.me };
@@ -406,13 +453,17 @@ export class MfaService {
     return trx.selectFrom('platform.app_user').select([...USER_COLUMNS]).where('id', '=', userId).executeTakeFirstOrThrow();
   }
 
-  /** Re-enrolment proof (F.5): the current TOTP code (with the lock) or the password (with the account lockout). */
+  /**
+   * Enrolment proof (F.5): the current TOTP code (with the lock) or, when `accepted` allows it, the password (with
+   * the account lockout). A password given where only the code counts is not checked.
+   */
   private async checkProof(
     trx: Trx,
     row: SessionRow,
     user: { id: string; password_hash: string | null; failed_login_count: number; locked_until: Date | null },
     body: MfaEnrolStartRequest,
     now: Date,
+    accepted: Exclude<EnrolmentProof, 'none'>,
   ): Promise<Error | null> {
     if ('currentCode' in body) {
       const result = await this.checkSecondFactor(trx, user.id, { code: body.currentCode }, { organizationId: row.auth_org_id });
@@ -421,6 +472,7 @@ export class MfaService {
       await this.sessions.touchProof(trx, row.id_hash, { mfaAt: now });
       return null;
     }
+    if (accepted === 'code') return factorCodeRequired();
     if ('password' in body) {
       const result = await checkPassword(trx, user, body.password, now);
       if (result.kind !== 'ok') return new UnauthenticatedError({ messageKey: 'auth.proof_invalid', detail: 'The password is not valid' });

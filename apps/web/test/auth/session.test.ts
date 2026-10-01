@@ -146,7 +146,7 @@ describe('the identity calls of the pages', () => {
     expect((await api.requestPasswordReset('a@b.co')).ok).toBe(true);
     expect((await api.resetPassword('t'.repeat(43), 'correct horse battery')).status).toBe(204);
     await api.acceptInvitation('i'.repeat(43), 'correct horse battery');
-    await api.acceptInvitation('i'.repeat(43));
+    await api.acceptInvitation('i'.repeat(43), 'the current password');
     await api.guestStart('g'.repeat(43));
     await api.guestLogin('ext.auditor@mscd.test');
     await api.guestVerify('482913');
@@ -161,7 +161,7 @@ describe('the identity calls of the pages', () => {
       ['POST', '/api/v1/auth/password/reset-request', { email: 'a@b.co' }],
       ['POST', '/api/v1/auth/password/reset', { token: 't'.repeat(43), password: 'correct horse battery' }],
       ['POST', '/api/v1/auth/invitations/accept', { token: 'i'.repeat(43), password: 'correct horse battery' }],
-      ['POST', '/api/v1/auth/invitations/accept', { token: 'i'.repeat(43) }],
+      ['POST', '/api/v1/auth/invitations/accept', { token: 'i'.repeat(43), password: 'the current password' }],
       ['POST', '/api/v1/auth/guest/start', { token: 'g'.repeat(43) }],
       ['POST', '/api/v1/auth/guest/login', { email: 'ext.auditor@mscd.test' }],
       ['POST', '/api/v1/auth/guest/verify', { code: '482913' }],

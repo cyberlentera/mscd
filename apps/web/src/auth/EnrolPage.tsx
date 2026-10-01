@@ -153,7 +153,7 @@ export function EnrolPage({ env, mode, copy = defaultCopy }: EnrolPageProps) {
 
       {phase === 'starting' ? (
         busy || !problem ? (
-          <p className="au-lead" role="status"><span className="au-sr">{li(TEXT.working, lang)}</span>{li(TEXT.working, lang)}</p>
+          <p className="au-lead" role="status">{li(TEXT.working, lang)}</p>
         ) : (
           <div className="au-row">
             <button type="button" className="au-btn au-btn-quiet" onClick={() => void start({})}>{li(TEXT.tryAgain, lang)}</button>

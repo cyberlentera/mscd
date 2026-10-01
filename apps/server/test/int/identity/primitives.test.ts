@@ -4,7 +4,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { hash } from '@node-rs/argon2';
 import { describe, expect, it } from 'vitest';
-import { decayedLockLevel, hasRecentProof, mfaLockDuration } from '../../../src/modules/identity/mfa.service';
+import { decayedLockLevel, enrolmentProofNeeded, hasRecentProof, mfaLockDuration } from '../../../src/modules/identity/mfa.service';
 import { ARGON2_PARAMETERS, hashSecret, needsRehash, verifySecret } from '../../../src/modules/identity/password-hasher';
 import { commonPasswordFileCandidates, commonPasswords, isCommonPassword, parseCommonPasswordList, passwordProblems } from '../../../src/modules/identity/password-policy';
 import { newRecoveryCodes, RECOVERY_CODE_PATTERN, recoveryCodeKey } from '../../../src/modules/identity/recovery-codes';
@@ -170,6 +170,18 @@ describe('second-factor lock, proofs and tokens', () => {
     expect(hasRecentProof({ password_at: null, mfa_at: ago(60_000) }, now)).toBe(true);
     expect(hasRecentProof({ password_at: ago(301_000), mfa_at: ago(400_000) }, now)).toBe(false);
     expect(hasRecentProof({ password_at: null, mfa_at: null }, now)).toBe(false);
+  });
+
+  it('asks the enrolment proof by session state and existing factor; a password never replaces a factor before the second step (F.5)', () => {
+    const now = new Date('2026-10-01T08:00:00Z');
+    const ago = (ms: number) => new Date(now.getTime() - ms);
+    const session = (state: 'active' | 'mfa_enrolment', password_at: Date | null, mfa_at: Date | null) => ({ state, password_at, mfa_at });
+    expect(enrolmentProofNeeded(session('mfa_enrolment', ago(600_000), null), false, now)).toBe('none');
+    expect(enrolmentProofNeeded(session('mfa_enrolment', ago(10_000), null), true, now)).toBe('code');
+    expect(enrolmentProofNeeded(session('mfa_enrolment', ago(10_000), ago(60_000)), true, now)).toBe('none');
+    expect(enrolmentProofNeeded(session('mfa_enrolment', null, ago(301_000)), true, now)).toBe('code');
+    expect(enrolmentProofNeeded(session('active', ago(10_000), null), true, now)).toBe('none');
+    expect(enrolmentProofNeeded(session('active', ago(600_000), ago(600_000)), true, now)).toBe('code_or_password');
   });
 
   it('derives a session CSRF token from the cookie value that differs from it (F.2)', () => {

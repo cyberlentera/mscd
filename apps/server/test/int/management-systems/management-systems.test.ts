@@ -130,11 +130,20 @@ describe('management systems (TS 6.2, C.13, D-30)', () => {
     const qms = ((await app.app.inject({ method: 'GET', url: '/api/v1/admin/management-systems', headers: as('ta@ndt') })).json() as { id: string; slug: string }[]).find((m) => m.slug === 'qms')!;
     expect((await transition('qms', { to: 'transitioning', targetEdition: '2026' })).statusCode).toBe(409); // still in setup
     await tenantRows((trx) => trx.updateTable('management_system').set({ status: 'certified' }).where('id', '=', qms.id).execute());
+    // implementing to certified is the system-only C.13 row (the certification cycle sets it), never this route.
+    const implementingToCertified = async () => {
+      const refused = await transition('isms', { to: 'certified' });
+      expect(refused.statusCode).toBe(409);
+      expect(refused.json().type).toBe('https://mscd.cyberlentera.com/problems/transition-not-allowed');
+      expect(refused.json().detail).toBe('Transition from implementing to certified is not allowed');
+    };
+    await implementingToCertified();
 
     const noFeature = await transition('qms', { to: 'transitioning', targetEdition: '2026' });
     expect(noFeature.statusCode).toBe(422);
     expect(noFeature.json()).toMatchObject({ rule: 'LIC-FEATURE', messageKey: 'licence.feature.edition_transition' });
     await licence({ frameworks: ['ISO27001', 'ISO9001', 'ISO37001'], max_management_systems: 3, features: ['integrated_mode', 'edition_transition'] });
+    await implementingToCertified();
 
     expect((await transition('qms', { to: 'transitioning', targetEdition: '2026' }, 'ta@ndt')).statusCode).toBe(403);
     expect((await transition('qms', { to: 'transitioning', targetEdition: '2019' })).statusCode).toBe(400);

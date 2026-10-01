@@ -1,12 +1,14 @@
 // Multi-factor authentication against PostgreSQL and Mailpit (F.3, F.5): TOTP verification with replay protection,
 // recovery codes (single use, audit, email), the per-user second-factor lock across sessions with doubling, decay
 // and email, the per-session revocation after 10 failures, enrolment, re-enrolment without and with a proof and the
-// revocation of the other sessions, and the factor reset.
+// revocation of the other sessions, the sessions of the same user still waiting to enrol (revoked at the first
+// confirmation; a factor confirmed meanwhile is replaced only with its current code), and the factor reset.
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { CreatedTenant } from '../../../src/db/tenant-provisioner';
 import { MfaService } from '../../../src/modules/identity/mfa.service';
 import { hashSecret } from '../../../src/modules/identity/password-hasher';
 import { RECOVERY_CODE_PATTERN, recoveryCodeKey } from '../../../src/modules/identity/recovery-codes';
+import { SessionService } from '../../../src/modules/identity/session.service';
 import { base32Decode, totpAt } from '../../../src/modules/identity/totp';
 import { TenantScope } from '../../../src/modules/tenancy/tenant-scope';
 import { createTenant } from '../../setup/global-db';
@@ -17,6 +19,7 @@ import {
   auditActions,
   Browser,
   codeAt,
+  COOKIE,
   createIdentityApp,
   openSessions,
   PASSWORD,
@@ -306,6 +309,83 @@ describe('WP-11 multi-factor authentication', () => {
     // A password proof works too.
     ctx.clock.advance(6 * MINUTE);
     expect((await old.post(ENROL_START, { password: PASSWORD })).statusCode).toBe(200);
+  });
+
+  it('revokes the other sessions waiting to enrol when the first factor is confirmed, so none can replace it later (F.5)', async () => {
+    const user = await add('twosess', false);
+    // Someone who knows only the password signs in before the owner's first enrolment.
+    const intruder = new Browser(ctx.app);
+    expect((await intruder.login(user.email)).json().status).toBe('mfa_enrolment_required');
+    const owner = new Browser(ctx.app);
+    expect((await owner.login(user.email)).json().status).toBe('mfa_enrolment_required');
+    const secret = base32Decode((await owner.post(ENROL_START, {})).json().secret);
+    expect((await owner.post(ENROL_CONFIRM, { code: totpAt(secret, ctx.clock.now()) })).statusCode).toBe(200);
+
+    expect((await sessionRow(db, intruder.session!)).revoke_reason).toBe('mfa_enrolled');
+    expect((await openSessions(db, user.id)).map((s) => s.state)).toEqual(['active']);
+    expect((await auditActions(db, user.id)).find((a) => a.action === 'auth.session_revoked')).toMatchObject({ after: { reason: 'mfa_enrolled', sessions: 1 } });
+
+    // Past the recent-proof window the old session can neither start nor confirm an enrolment.
+    ctx.clock.advance(10 * MINUTE);
+    expect((await intruder.post(ENROL_START, {})).statusCode).toBe(401);
+    expect((await intruder.post(ENROL_START, { password: PASSWORD })).statusCode).toBe(401);
+    expect((await intruder.post(ENROL_CONFIRM, { code: totpAt(secret, ctx.clock.now()) })).statusCode).toBe(401);
+    const enrolled = (await auditActions(db, user.id)).filter((a) => a.action === 'auth.mfa_enrolled');
+    expect(enrolled.map((a) => a.after?.replaced)).toEqual([false]);
+    expect((await owner.put(PREFERENCES, { kept: 1 })).statusCode).toBe(204);
+    const later = await pendingBrowser(user);
+    expect((await later.post(VERIFY, { code: totpAt(secret, ctx.clock.now()) })).statusCode).toBe(200);
+  });
+
+  it('asks a session still waiting to enrol for the current code before it replaces a factor confirmed meanwhile (F.5)', async () => {
+    const user = await add('raced');
+    const other = await signIn(ctx, user);
+    // A session in mfa_enrolment although the user has a confirmed factor: a sign-in that read "no factor" just
+    // before another session confirmed one. Its password proof is recent.
+    const sessions = ctx.moduleRef.get(SessionService);
+    const issued = await ctx.moduleRef
+      .get(TenantScope)
+      .withPlatform(
+        (trx) => sessions.create(trx, { userId: user.id, organizationId: ndt.id, authOrgId: ndt.id, state: 'mfa_enrolment', authMethod: 'local', passwordAt: ctx.clock.now() }),
+        { scope: 'auth' },
+      );
+    const raced = new Browser(ctx.app);
+    raced.cookies.set(COOKIE, issued.cookieValue);
+    raced.csrfToken = issued.csrfToken;
+    const pendingFactors = () =>
+      inScope(db.migrator, { platformScope: true }, (trx) =>
+        trx.selectFrom('platform.mfa_factor').select('id').where('user_id', '=', user.id).where('confirmed_at', 'is', null).where('deleted_at', 'is', null).execute(),
+      );
+
+    const empty = await raced.post(ENROL_START, {});
+    expect(empty.statusCode).toBe(401);
+    expect(empty.json().messageKey).toBe('auth.proof_required');
+    // The password proves nothing the sign-in did not: it never replaces a factor from such a session.
+    const password = await raced.post(ENROL_START, { password: PASSWORD });
+    expect(password.statusCode).toBe(401);
+    expect(password.json().messageKey).toBe('auth.proof_required');
+    expect((await raced.post(ENROL_START, { currentCode: wrongCode(user) })).json().messageKey).toBe('auth.proof_invalid');
+    expect(await pendingFactors()).toHaveLength(0);
+
+    // With the current code it may start; the confirmation must follow within 5 minutes of that proof.
+    ctx.clock.advance(30_000);
+    const started = await raced.post(ENROL_START, { currentCode: codeAt(user.secret!, ctx.clock) });
+    expect(started.statusCode).toBe(200);
+    const secret = base32Decode(started.json().secret);
+    ctx.clock.advance(6 * MINUTE);
+    const late = await raced.post(ENROL_CONFIRM, { code: totpAt(secret, ctx.clock.now()) });
+    expect(late.statusCode).toBe(401);
+    expect(late.json().messageKey).toBe('auth.proof_required');
+    expect((await auditActions(db, user.id)).some((a) => a.action === 'auth.mfa_enrolled')).toBe(false);
+    expect((await other.put(PREFERENCES, { still: 1 })).statusCode).toBe(204);
+
+    const again = await raced.post(ENROL_START, { currentCode: codeAt(user.secret!, ctx.clock) });
+    expect(again.statusCode).toBe(200);
+    const newSecret = base32Decode(again.json().secret);
+    const confirmed = await raced.post(ENROL_CONFIRM, { code: totpAt(newSecret, ctx.clock.now()) });
+    expect(confirmed.statusCode).toBe(200);
+    expect((await sessionRow(db, other.session!)).revoke_reason).toBe('mfa_reenrolled');
+    expect((await auditActions(db, user.id)).find((a) => a.action === 'auth.mfa_enrolled')).toMatchObject({ after: { replaced: true } });
   });
 
   it('refuses enrolment from a session that still owes its second factor', async () => {

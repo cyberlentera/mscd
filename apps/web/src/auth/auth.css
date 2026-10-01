@@ -40,9 +40,12 @@ body:has(.au-root[data-theme="dark"]),body:has(.au-boot[data-theme="dark"]){back
 .au-logo{position:relative;display:inline-flex;align-items:center;gap:12px;color:#f2eee7}
 .au-logo img{height:28px;width:auto;display:block;filter:brightness(0) invert(1)}
 .au-logo span{font-weight:700;letter-spacing:.04em;font-size:14px}
-.au-hero{position:relative;max-width:520px;animation:au-up .8s ease .1s both}
+.au-hero{position:relative;max-width:520px;container-type:inline-size;animation:au-up .8s ease .1s both}
 .au-chain{display:block;overflow:visible;margin-bottom:34px;width:100%;height:auto}
-.au-chain text{font-family:var(--au-ffm);font-size:12px;fill:#b9b2a6}
+/* The chain scales with the hero (100cqw wide, at most its 520-unit viewBox), so a label renders at
+   font-size x 100cqw / 520. The second font-size is the chord of 12px x 520 / width between 300px and 520px; it lies
+   above that curve, so no label renders below 12px at any hero width the layout shows (about 360px and up). */
+.au-chain text{font-family:var(--au-ffm);font-size:12px;font-size:max(12px,calc(32.8px - 4cqw));fill:#b9b2a6}
 .au-chain-draw{animation:au-drawLoop 7s cubic-bezier(.2,.7,.2,1) .4s infinite}
 .au-chain-dot{animation:au-dotLoop 7s ease infinite;transform-box:fill-box;transform-origin:center}
 .au-hero h1{margin:0;font-size:40px;line-height:1.1;letter-spacing:-.03em;font-weight:600;color:#f2eee7}
@@ -127,8 +130,6 @@ body:has(.au-root[data-theme="dark"]),body:has(.au-boot[data-theme="dark"]){back
 .au-boot-actions button.au-boot-primary{background:#ad4f0b;border-color:#ad4f0b;color:#ffffff}
 .au-boot[data-theme="dark"] .au-boot-actions button{background:#1c1a17;color:#f2eee7;border-color:#7a7366}
 .au-boot[data-theme="dark"] .au-boot-actions button.au-boot-primary{background:#e8731a;border-color:#e8731a;color:#131210}
-
-.au-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
 @media (max-width:900px){
   .au-root{grid-template-columns:1fr}

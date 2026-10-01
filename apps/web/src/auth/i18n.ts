@@ -176,6 +176,23 @@ export const TEXT = {
   findSignIn: ['Find the sign-in of my organisation', 'Cari layanan masuk organisasi saya'],
   haveAccount: ['I already have an MSCD account with a password', 'Saya sudah memiliki akun MSCD dengan kata sandi'],
   choosePassword: ['Choose a password to accept the invitation.', 'Pilih kata sandi untuk menerima undangan.'],
+  inviteExistingLead: [
+    'Enter the current password of your MSCD account to accept the invitation. The password stays the same.',
+    'Masukkan kata sandi akun MSCD Anda saat ini untuk menerima undangan. Kata sandi tidak berubah.',
+  ],
+  accountPassword: ['Current password', 'Kata sandi saat ini'],
+  inviteAccept: ['Accept invitation', 'Terima undangan'],
+  noPasswordYet: ['My account has no password yet', 'Akun saya belum memiliki kata sandi'],
+  inviteEnterPassword: ['Enter the password of your MSCD account to accept the invitation.', 'Masukkan kata sandi akun MSCD Anda untuk menerima undangan.'],
+  inviteWrongPassword: ['The password is not correct, or the account cannot sign in now.', 'Kata sandi tidak benar, atau akun tidak dapat masuk saat ini.'],
+  inviteHasPassword: [
+    'Your MSCD account already has a password. Enter it to accept the invitation.',
+    'Akun MSCD Anda sudah memiliki kata sandi. Masukkan kata sandi tersebut untuk menerima undangan.',
+  ],
+  inviteNoPassword: [
+    'Your account has no password yet. Choose one to accept the invitation.',
+    'Akun Anda belum memiliki kata sandi. Pilih kata sandi untuk menerima undangan.',
+  ],
   noSso: ['No single sign-on was found for this address.', 'Tidak ada single sign-on untuk alamat ini.'],
 
   // guest auditor access (/guest)
@@ -273,13 +290,14 @@ export function retryMessage(seconds: number | undefined): Pair {
     : fill(['Too many attempts. Try again in {n} minutes.', 'Terlalu banyak percobaan. Coba lagi dalam {n} menit.'], { n: minutes });
 }
 
-/** The page message of a server message about a new password (`errors[].message` of the F.4 policy). */
+/** The page message of a server message about a password (`errors[].message` of the F.4 policy and of the invitation). */
 export function passwordProblemMessage(message: string): Pair {
   if (/at least/i.test(message)) return TEXT.passwordTooShort;
   if (/at most/i.test(message)) return TEXT.passwordTooLong;
   if (/too common/i.test(message)) return TEXT.passwordCommon;
   if (/email address or user name/i.test(message)) return TEXT.passwordPersonal;
   if (/choose a password/i.test(message)) return TEXT.choosePassword;
+  if (/enter the password of your account/i.test(message)) return TEXT.inviteEnterPassword;
   return [message, message];
 }
 

@@ -1,12 +1,13 @@
 // Adapter registry of the storage gateway (build plan D.5, TS 5.1). Each factory builds one adapter at start, or
-// returns null when its adapter is not enabled (`storage.adapters.enabled`). WP-15 adds the Microsoft 365 and
-// Google Drive factories from `./m365` and `./google-drive` to `ADAPTER_FACTORIES`.
+// returns null when its adapter is not enabled (`storage.adapters.enabled`).
 import type { StorageAdapter as StorageAdapterName } from '@mscd/shared';
 import { unsupported } from '../problems';
+import { googleDriveAdapterFactory } from './google-drive';
 import { managedVaultAdapterFactory } from './managed-vault/vault-adapter';
+import { m365AdapterFactory } from './m365';
 import type { AdapterFactory, AdapterFactoryContext, StorageAdapter } from './types';
 
-export const ADAPTER_FACTORIES: readonly AdapterFactory[] = [managedVaultAdapterFactory];
+export const ADAPTER_FACTORIES: readonly AdapterFactory[] = [managedVaultAdapterFactory, m365AdapterFactory, googleDriveAdapterFactory];
 
 /** The adapters of this gateway process, by adapter name. */
 export class AdapterRegistry {

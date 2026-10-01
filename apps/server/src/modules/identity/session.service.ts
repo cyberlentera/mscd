@@ -38,6 +38,7 @@ export type SessionRevokeReason =
   | 'signed_in_again'
   | 'password_changed'
   | 'password_reset'
+  | 'mfa_enrolled'
   | 'mfa_reenrolled'
   | 'mfa_reset'
   | 'mfa_failures'
@@ -191,6 +192,14 @@ export class SessionService {
     await inPlatformScope(trx, () => trx.updateTable('platform.session').set(changes).where('id_hash', '=', idHash).execute());
   }
 
+  /** True when the session is not revoked (read in `trx`, so after a lock the caller holds). */
+  async isOpen(trx: Trx, idHash: Buffer): Promise<boolean> {
+    const row = await inPlatformScope(trx, () =>
+      trx.selectFrom('platform.session').select('id_hash').where('id_hash', '=', idHash).where('revoked_at', 'is', null).executeTakeFirst(),
+    );
+    return row !== undefined;
+  }
+
   /** Revokes one session; true when it was still open. */
   async revoke(trx: Trx, idHash: Buffer, reason: SessionRevokeReason): Promise<boolean> {
     const now = this.infra.clock.now();
@@ -205,9 +214,18 @@ export class SessionService {
     return Number(result.numUpdatedRows) > 0;
   }
 
-  /** Revokes every open session of a user, except `except` (the caller's own session); returns how many. */
-  async revokeUserSessions(trx: Trx, userId: string, reason: SessionRevokeReason, options: { except?: Buffer | null } = {}): Promise<number> {
+  /**
+   * Revokes every open session of a user, except `except` (the caller's own session), only those in one of `states`
+   * when given; returns how many.
+   */
+  async revokeUserSessions(
+    trx: Trx,
+    userId: string,
+    reason: SessionRevokeReason,
+    options: { except?: Buffer | null; states?: readonly SessionState[] } = {},
+  ): Promise<number> {
     const now = this.infra.clock.now();
+    if (options.states && options.states.length === 0) return 0;
     const result = await inPlatformScope(trx, () => {
       let query = trx
         .updateTable('platform.session')
@@ -215,6 +233,7 @@ export class SessionService {
         .where('user_id', '=', userId)
         .where('revoked_at', 'is', null);
       if (options.except) query = query.where('id_hash', '<>', options.except);
+      if (options.states) query = query.where('state', 'in', [...options.states]);
       return query.executeTakeFirst();
     });
     return Number(result.numUpdatedRows);

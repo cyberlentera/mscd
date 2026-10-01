@@ -1,5 +1,5 @@
 // Calls of the sign-in and account pages (BUILD-PLAN D.3 "System, session and identity"). Paths and methods follow
-// the shared route table (`packages/shared/src/api/{system,auth,me}.ts`; test/auth/api.test.ts compares them);
+// the shared route table (`packages/shared/src/api/{system,auth,me}.ts`; test/auth/contract.test.ts compares them);
 // shapes are the shared types. Sign-in steps never tell the client's `onUnauthenticated` listeners: their 401
 // means a wrong password or code, not an ended session.
 import type {
@@ -87,8 +87,9 @@ export class AuthApi {
     return this.send('reset', { token, password });
   }
 
-  acceptInvitation(token: string, password?: string): Promise<ApiResult<LoginResponse>> {
-    return this.send('invitationAccept', password === undefined ? { token } : { token, password });
+  /** `password`: a new one for an account without a password, or the current one of an account that has one (WP-11). */
+  acceptInvitation(token: string, password: string): Promise<ApiResult<LoginResponse>> {
+    return this.send('invitationAccept', { token, password });
   }
 
   guestStart(token: string): Promise<ApiResult<GuestStartResponse>> {

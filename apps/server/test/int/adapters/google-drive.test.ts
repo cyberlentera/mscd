@@ -237,9 +237,38 @@ describe('link and zero-transit registration', () => {
     }
     await expectProblem(adapter.list(googleContext(), { scopeRoot: scope('folder/..', 'x') }), 'bad-request');
     await expectProblem(adapter.copyWithin(googleContext(), [{ externalItemId: 'x?y', externalVersionId: null, hashAlgorithm: 'none', hashValue: null, hashSource: 'none', folderPath: null }], 'Compliance/x'), 'bad-request');
+    // A revision id of pin-version is checked before the file is read, not only before it is used in a path.
+    const pinRef = { externalItemId: GD.plan, hashAlgorithm: 'none' as const, hashValue: null, hashSource: 'none' as const, folderPath: null };
+    for (const revisionId of ['rev/../x', '../x?y', 'rev%2F']) {
+      await expectProblem(adapter.pinVersion(googleContext(), { ...pinRef, externalVersionId: revisionId }), 'bad-request');
+    }
+    await expectProblem(adapter.pinVersion(googleContext(), { ...pinRef, externalItemId: 'file?x', externalVersionId: 'rev-c' }), 'bad-request');
     expect(await requests(mock, undefined, before)).toEqual([]);
-    // A revision id is checked before it is used in a path.
-    await expectProblem(adapter.pinVersion(googleContext(), { ...stored(await linkPlan()), externalVersionId: 'rev/../x' }), 'bad-request');
+  });
+
+  it('reads the root folder once per call, sharing it with the parent walk', async () => {
+    await linkPlan(); // the token is cached from here on
+    const rootPath = `/drive/v3/files/${GD.root}`;
+    const rootReads = (logged: Awaited<ReturnType<typeof requests>>) =>
+      logged.filter((request) => request.method === 'GET' && new URL(request.url, 'http://mock').pathname === rootPath).length;
+
+    let before = await lastSeq(mock);
+    await linkPlan();
+    expect(rootReads(await requests(mock, undefined, before))).toBe(1);
+
+    before = await lastSeq(mock);
+    expect(await adapter.stat(googleContext(), stored(await linkPlan()))).toMatchObject({ outcome: 'found' });
+    // Two calls (link, then stat): one root read each.
+    expect(rootReads(await requests(mock, undefined, before))).toBe(2);
+
+    before = await lastSeq(mock);
+    expect(await adapter.pinVersion(googleContext(), stored(await linkPlan()))).toEqual({ result: 'ok' });
+    expect(rootReads(await requests(mock, undefined, before))).toBe(2);
+    // The system folder of the call is read once too.
+    before = await lastSeq(mock);
+    await linkPlan();
+    const bcmsReads = (await requests(mock, undefined, before)).filter((request) => new URL(request.url, 'http://mock').pathname === `/drive/v3/files/${GD.bcms}`);
+    expect(bcmsReads).toHaveLength(1);
   });
 
   it('registers a shared drive upload only for the intent folder, time, creator and correlation code', async () => {

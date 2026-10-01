@@ -321,7 +321,9 @@ export class ManagementSystemsService {
   transition(principal: Principal, msSlug: string, body: MsTransitionRequest): Promise<CommandResult> {
     return this.inOrg(principal, async (trx, orgId) => {
       const current = await this.row(trx, { slug: msSlug });
-      if (transitionsVia(MACHINE, current.status, body.to, null).length === 0) {
+      // Only the ms.transition rows count: the system-only row implementing to certified (permission null, set when
+      // the certification cycle is certified) is not a move this user route performs.
+      if (transitionsVia(MACHINE, current.status, body.to, null).filter((t) => t.permission !== null).length === 0) {
         throw new TransitionNotAllowedError(current.status, body.to);
       }
       await this.gate.assertFeature(orgId, 'edition_transition', trx);
