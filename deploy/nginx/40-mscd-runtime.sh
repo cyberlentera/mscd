@@ -13,6 +13,14 @@
 #   MSCD_HSTS_MAX_AGE       seconds     HSTS max-age (default 31536000)
 #   MSCD_EXTERNAL_FONTS     true|false  Load the optional Google Fonts and allow them in the
 #                                       CSP (default false)
+#   MSCD_API_UPSTREAM       host:port   Address of the MSCD api that /api/ is proxied to
+#                                       (default api:3000); none turns the proxy off and
+#                                       /api/ answers 404 (web-only use)
+#   MSCD_TRUSTED_PROXY_CIDRS  list      Addresses or CIDR ranges of trusted proxies in front of
+#                                       this server (for example the ingress controller),
+#                                       separated by commas or spaces. Their X-Forwarded-For
+#                                       header names the client. Default: none, the socket
+#                                       address is the client
 #
 # TLS turns on when /etc/nginx/tls/tls.crt and /etc/nginx/tls/tls.key exist.
 set -eu
@@ -43,6 +51,8 @@ domain=${MSCD_DOMAIN:-}
 hsts=${MSCD_HSTS:-false}
 hsts_max_age=${MSCD_HSTS_MAX_AGE:-31536000}
 external_fonts=${MSCD_EXTERNAL_FONTS:-false}
+api_upstream=${MSCD_API_UPSTREAM:-api:3000}
+trusted_proxies=${MSCD_TRUSTED_PROXY_CIDRS:-}
 
 if ! is_port "$public_port"; then
     log "ERROR: MSCD_HTTPS_PUBLIC_PORT must be a port number, got '$public_port'"
@@ -61,9 +71,95 @@ case "$hsts_max_age" in
         ;;
 esac
 
+# MSCD_API_UPSTREAM: host:port, [IPv6 address]:port, or none. The host is a DNS
+# name or an IPv4 address; the port is required so a typo never silently
+# reaches port 80.
+case "$api_upstream" in
+    none) ;;
+    \[*\]:*)
+        v6=${api_upstream#\[}
+        v6=${v6%%\]*}
+        port=${api_upstream##*\]:}
+        case "$v6" in
+            '' | *[!0-9A-Fa-f:.]*)
+                log "ERROR: MSCD_API_UPSTREAM must be host:port, [IPv6]:port or none, got '$api_upstream'"
+                exit 1
+                ;;
+        esac
+        if ! is_port "$port"; then
+            log "ERROR: MSCD_API_UPSTREAM must end with a port number, got '$api_upstream'"
+            exit 1
+        fi
+        ;;
+    *:*)
+        host=${api_upstream%:*}
+        port=${api_upstream##*:}
+        case "$host" in
+            '' | *[!A-Za-z0-9.-]* | -* | .*)
+                log "ERROR: MSCD_API_UPSTREAM must be host:port, [IPv6]:port or none, got '$api_upstream'"
+                exit 1
+                ;;
+        esac
+        if ! is_port "$port"; then
+            log "ERROR: MSCD_API_UPSTREAM must end with a port number, got '$api_upstream'"
+            exit 1
+        fi
+        ;;
+    *)
+        log "ERROR: MSCD_API_UPSTREAM must be host:port, [IPv6]:port or none, got '$api_upstream'"
+        exit 1
+        ;;
+esac
+
+# MSCD_TRUSTED_PROXY_CIDRS: IPv4 or IPv6 addresses or CIDR ranges.
+proxies=$(printf '%s' "$trusted_proxies" | tr ',' ' ')
+for cidr in $proxies; do
+    case "$cidr" in
+        *[!0-9A-Fa-f:./]* | */*/* | /* | */)
+            log "ERROR: MSCD_TRUSTED_PROXY_CIDRS must list addresses or CIDR ranges such as 10.0.0.0/8, got '$cidr'"
+            exit 1
+            ;;
+    esac
+    case "$cidr" in
+        */*)
+            bits=${cidr#*/}
+            case "$bits" in
+                '' | *[!0-9]*)
+                    log "ERROR: invalid prefix length in MSCD_TRUSTED_PROXY_CIDRS entry '$cidr'"
+                    exit 1
+                    ;;
+            esac
+            if [ "$bits" -gt 128 ]; then
+                log "ERROR: invalid prefix length in MSCD_TRUSTED_PROXY_CIDRS entry '$cidr'"
+                exit 1
+            fi
+            ;;
+    esac
+done
+
 rm -rf "$RUNTIME_DIR"
 mkdir -p "$RUNTIME_DIR/conf.d" "$RUNTIME_DIR/http.d" "$RUNTIME_DIR/https.d" \
-    "$RUNTIME_DIR/hsts.d" "$RUNTIME_DIR/site.d" "$RUNTIME_DIR/index.d" "$RUNTIME_DIR/redirect.d"
+    "$RUNTIME_DIR/hsts.d" "$RUNTIME_DIR/site.d" "$RUNTIME_DIR/index.d" "$RUNTIME_DIR/redirect.d" \
+    "$RUNTIME_DIR/realip.d"
+
+if [ "$api_upstream" = none ]; then
+    echo 'return 404;' >"$RUNTIME_DIR/api-upstream.conf"
+    log "API proxy off (MSCD_API_UPSTREAM=none): /api/ answers 404"
+else
+    echo "proxy_pass http://$api_upstream;" >"$RUNTIME_DIR/api-upstream.conf"
+    log "API proxy: /api/ to http://$api_upstream"
+fi
+
+if [ -n "$proxies" ]; then
+    {
+        for cidr in $proxies; do
+            echo "set_real_ip_from $cidr;"
+        done
+        echo 'real_ip_header X-Forwarded-For;'
+        echo 'real_ip_recursive on;'
+    } >"$RUNTIME_DIR/realip.d/realip.conf"
+    log "client address taken from X-Forwarded-For of the trusted proxies: $(echo $proxies)"
+fi
 
 if [ -f /proc/net/if_inet6 ]; then
     echo 'listen [::]:8080 default_server;' >"$RUNTIME_DIR/http.d/listen-ipv6.conf"

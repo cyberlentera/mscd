@@ -16,12 +16,26 @@ apps/server/src/generated
 deploy/dist
 deploy/helm/mscd/ci/.schema-cache
 
-# Browser tests are not part of any image; leaving them out keeps the web build
-# cache valid when only tests change.
+# Tests are not part of any image; leaving them out keeps the build cache valid
+# when only tests change. apps/server/test also holds the development secrets of
+# the demo and test profiles (R-11), which no image may contain.
 apps/web/e2e
+apps/web/e2e-api
+apps/web/test
 apps/web/playwright.config.js
+apps/web/playwright.api.config.js
+apps/server/test
+packages/*/test
+tools/*/test
 
-# Design handoff material and transcripts: reference only, never part of an image
-project/uploads
-project/screenshots
+# Development secrets of the Compose overlays (R-11) and other deployment files
+# that no image build reads.
+deploy/compose
+deploy/helm
+deploy/scripts
+
+# Documentation, design handoff material and transcripts: reference only, never
+# part of an image
+docs
+project
 chats

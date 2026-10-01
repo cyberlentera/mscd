@@ -15,7 +15,7 @@
 # machine and the npm registry or the Alpine mirrors. Without such a proxy, point it
 # to an empty file (BuildKit does not accept /dev/null); an empty secret is ignored.
 #
-# Build arguments: VITE_DATA_SOURCE (sample or api, default sample), APK_UPGRADE
+# Build arguments: VITE_DATA_SOURCE (api or sample, default api), APK_UPGRADE
 # (true, auto or false, default auto; see the runtime stage), VERSION, REVISION,
 # CREATED, NODE_IMAGE and NGINX_IMAGE.
 #
@@ -51,18 +51,22 @@ WORKDIR /src
 ENV CI=true NPM_CONFIG_UPDATE_NOTIFIER=false
 
 COPY --from=manifests /manifests/ ./
+# Only the dependencies of the web workspace (and of @mscd/shared, which it
+# imports), not those of the server and the tools.
 RUN --mount=type=cache,target=/root/.npm \
     --mount=type=secret,id=build_ca \
     if [ -s /run/secrets/build_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/build_ca; fi; \
-    npm ci --no-audit --no-fund --loglevel=error
+    npm ci -w @mscd/web --no-audit --no-fund --loglevel=error
 
-# Only the web app sources. When the web build imports another workspace (for
-# example packages/shared), copy that workspace here as well.
+# The web app sources and the workspaces it imports: @mscd/shared, which Vite
+# resolves to its TypeScript sources (apps/web/vite.config.js).
+COPY packages/shared/ packages/shared/
 COPY apps/web/ apps/web/
 
-# sample: the bundled sample organisation, no back end.
-# api: the MSCD API behind /api (served by mscd-server).
-ARG VITE_DATA_SOURCE=sample
+# api: the production bundle with the sign-in pages and the MSCD API behind
+#      /api (served by mscd-server through the NGINX proxy of this image).
+# sample: the bundled sample organisation, no back end (the design preview).
+ARG VITE_DATA_SOURCE=api
 # The Google Fonts links in index.html serve only the optional alternative font
 # pairings. They are moved out of the page so browsers make no external request
 # by default; the runtime adds them back when MSCD_EXTERNAL_FONTS=true.
@@ -144,19 +148,23 @@ RUN rm -f /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh \
 
 COPY --from=nginx-config nginx.conf /etc/nginx/nginx.conf
 COPY --from=nginx-config default.conf /etc/nginx/conf.d/default.conf
-COPY --from=nginx-config site.conf security-headers.conf https.conf /etc/nginx/mscd/
+COPY --from=nginx-config site.conf security-headers.conf https.conf api.conf api-problem-headers.conf /etc/nginx/mscd/
 COPY --from=nginx-config --chmod=0755 40-mscd-runtime.sh /docker-entrypoint.d/40-mscd-runtime.sh
 COPY --from=build /src/apps/web/external-fonts.html /etc/nginx/mscd/external-fonts.html
 COPY --from=build /src/apps/web/dist/ /usr/share/nginx/html/
 
 # Configuration and content are owned by root and read-only for the NGINX user.
-# The configuration test runs as root and leaves a root-owned pid file and temp
-# folders in /tmp; they are removed so NGINX (user 101) can create its own when
-# /tmp is not a tmpfs, as with a plain "docker run".
+# The configuration test runs as root with a stand-in for the API upstream file
+# that 40-mscd-runtime.sh writes at start-up (a real upstream name would have to
+# resolve here). It leaves a root-owned pid file and temp folders in /tmp; all of
+# it is removed so NGINX (user 101) can create its own when /tmp is not a tmpfs,
+# as with a plain "docker run".
 RUN chown -R root:root /etc/nginx /usr/share/nginx/html \
  && chmod -R u=rwX,go=rX /etc/nginx /usr/share/nginx/html \
+ && mkdir -p /tmp/mscd \
+ && echo 'return 404;' >/tmp/mscd/api-upstream.conf \
  && nginx -t -q \
- && rm -rf /tmp/nginx.pid /tmp/*_temp
+ && rm -rf /tmp/mscd /tmp/nginx.pid /tmp/*_temp
 
 USER 101
 EXPOSE 8080 8443

@@ -214,8 +214,8 @@ export class AuthzGuard implements CanActivate {
    */
   private async isExternalAuditorAccount(principal: Principal): Promise<boolean> {
     if (principal.user.kind === 'guest') return true;
-    // With an evaluator that cannot tell roles apart (test fakes), only guests count, as for the permission checks.
-    if (!principal.org || !this.roles || !isDetailedEvaluator(this.evaluator)) return false;
+    // Without the database services, or with an evaluator that cannot tell roles apart (test fakes), only guests count.
+    if (!principal.org || !this.roles?.available || !isDetailedEvaluator(this.evaluator)) return false;
     const resolved = await this.roles.rolesOf(principal);
     if (resolved.orgRoles.length > 0 || resolved.platformRoles.length > 0) return false;
     const held = [...resolved.systems.values()].flatMap((s) => s.roles);
