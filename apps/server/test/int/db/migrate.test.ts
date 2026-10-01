@@ -40,6 +40,9 @@ const TENANT = [
   '0007_registers_workflow',
 ];
 
+/** A packs.dir that does not exist: C.3 step 5 (WP-12) installs nothing, whether packs/dist was built or not. */
+const NO_PACKS_DIR = path.join(MIGRATIONS_ROOT, 'no-packs');
+
 /** An external server (MSCD_TEST_DATABASE_URL, J.2) ignores MSCD_TEST_PG_IMAGE. */
 const EXTERNAL_SERVER = Boolean(process.env.MSCD_TEST_DATABASE_URL);
 const IMAGE = process.env.MSCD_TEST_PG_IMAGE || 'postgres:16.15-alpine';
@@ -141,6 +144,7 @@ describe(`migrations on ${EXTERNAL_SERVER ? 'the server of MSCD_TEST_DATABASE_UR
     vi.stubEnv('MSCD_PROFILE_FILE', TEST_PROFILE_FILE);
     vi.stubEnv('MSCD_DATABASE_MIGRATOR_URL', bare.urls.migrator);
     vi.stubEnv('MSCD_DATABASE_MIGRATOR_URL_FILE', '');
+    vi.stubEnv('MSCD__PACKS__DIR', NO_PACKS_DIR);
     let out = '';
     vi.spyOn(process.stdout, 'write').mockImplementation((chunk: string | Uint8Array) => ((out += String(chunk)), true));
     const exit = vi.spyOn(process, 'exit').mockImplementation((code?: string | number | null) => {
@@ -169,7 +173,7 @@ describe(`migrations on ${EXTERNAL_SERVER ? 'the server of MSCD_TEST_DATABASE_UR
   it('migrates every tenant schema through `migrate` (C.3 step 4), also a migration added later', async () => {
     const config = MscdConfig.load({
       runMode: 'migrate',
-      env: { ...process.env, MSCD_PROFILE_FILE: TEST_PROFILE_FILE, MSCD_DATABASE_MIGRATOR_URL: bare.urls.migrator, MSCD_DATABASE_MIGRATOR_URL_FILE: '' },
+      env: { ...process.env, MSCD_PROFILE_FILE: TEST_PROFILE_FILE, MSCD_DATABASE_MIGRATOR_URL: bare.urls.migrator, MSCD_DATABASE_MIGRATOR_URL_FILE: '', MSCD__PACKS__DIR: NO_PACKS_DIR },
     });
     const out: string[] = [];
     expect(await runMigrate(config, { out: (t) => out.push(t) })).toBe(0);
@@ -220,7 +224,7 @@ SELECT platform.secure_tenant_schema(current_schema());
     await writeFile(broken, 'CREATE TABLE test_clash (organization_id uuid);\n');
     const config = MscdConfig.load({
       runMode: 'migrate',
-      env: { ...process.env, MSCD_PROFILE_FILE: TEST_PROFILE_FILE, MSCD_DATABASE_MIGRATOR_URL: bare.urls.migrator, MSCD_DATABASE_MIGRATOR_URL_FILE: '' },
+      env: { ...process.env, MSCD_PROFILE_FILE: TEST_PROFILE_FILE, MSCD_DATABASE_MIGRATOR_URL: bare.urls.migrator, MSCD_DATABASE_MIGRATOR_URL_FILE: '', MSCD__PACKS__DIR: NO_PACKS_DIR },
     });
     const out: string[] = [];
     expect(await runMigrate(config, { out: (t) => out.push(t), migrationsRoot: tmp })).toBe(1);

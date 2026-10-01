@@ -107,7 +107,7 @@ export type MfaVerifyRequest = z.infer<typeof MfaVerifyRequest>;
 export const MfaEnrolStartRequest = named(
   'MfaEnrolStartRequest',
   z.union([z.strictObject({}), z.strictObject({ currentCode: TotpCode }), z.strictObject({ password: z.string().min(1).max(256) })]),
-  'POST /auth/mfa/enrol/start body: empty in state mfa_enrolment; from an active session exactly one proof unless one was given in the last 5 minutes (F.5)',
+  'POST /auth/mfa/enrol/start body: empty in state mfa_enrolment; from an active session exactly one proof unless one was given in the last 5 minutes; from an mfa_enrolment session of a user who has a confirmed factor only currentCode (F.5)',
   { valid: [{}, { currentCode: '654321' }, { password: 'correct horse battery staple' }], invalid: [{ currentCode: '654321', password: 'x' }, { currentCode: 'abc' }] },
 );
 export type MfaEnrolStartRequest = z.infer<typeof MfaEnrolStartRequest>;
