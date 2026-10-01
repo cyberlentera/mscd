@@ -37,7 +37,7 @@ export interface SystemCore {
   events: AuditEventRow[];
   defaultRoute: { mode: 'stored' | 'pass_through' | 'link' | 'zero_transit'; note: string | null; repositoryName: string } | null;
   /** Every chain record of the system's entity and justification stages (open and ready), by table and position. */
-  records: ChainRecordRow[];
+  records: LoadedChainRecord[];
   entryCount: number;
   chains: { id: string; nodes: [string, string | null][] }[];
   /** Approver of the system's own documents (the first by position that names one). */
@@ -76,6 +76,8 @@ export interface LoadOptions {
   slugs?: readonly string[];
   /** Also load the bundle rows (requirements, documents, evidence, phases, cycle). */
   bundle: boolean;
+  /** The request's clock (role grants past `valid_until` do not count); default the database time. */
+  now?: Date;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -236,7 +238,8 @@ export async function loadOrgData(trx: Trx, options: LoadOptions): Promise<OrgDa
       select r.management_system_id, ${handleOf('r.user_id')} as handle
       from user_ms_role r
       where r.management_system_id = any(${uuids(msIds)}) and r.role = 'ms_manager' and r.is_primary
-        and r.deleted_at is null and r.approval_status = 'active' and (r.valid_until is null or r.valid_until > now())`.execute(trx)
+        and r.deleted_at is null and r.approval_status = 'active'
+        and (r.valid_until is null or r.valid_until > ${options.now ?? sql`now()`})`.execute(trx)
   ).rows;
   const alertRows = (
     await sql<{ management_system_id: string; kind: AlertRow['kind']; tone: AlertRow['tone']; text_en: string; text_id: string; raised_at: Date }>`
