@@ -7,6 +7,7 @@
 #   docker buildx build --pull --load -f deploy/docker/web.Dockerfile \
 #     --build-context nginx-config=deploy/nginx \
 #     --secret id=build_ca,src="$MSCD_BUILD_CA" \
+#     --build-arg APK_UPGRADE=true \
 #     --build-arg VERSION=1.0.0 --build-arg REVISION=$(git rev-parse --short HEAD) \
 #     -t cyberlentera/mscd-web:1.0.0 .
 #
@@ -14,8 +15,9 @@
 # machine and the npm registry or the Alpine mirrors. Without such a proxy, point it
 # to an empty file (BuildKit does not accept /dev/null); an empty secret is ignored.
 #
-# Build arguments: VITE_DATA_SOURCE (sample or api, default sample), VERSION,
-# REVISION, CREATED, APK_UPGRADE, NODE_IMAGE and NGINX_IMAGE.
+# Build arguments: VITE_DATA_SOURCE (sample or api, default sample), APK_UPGRADE
+# (true, auto or false, default auto; see the runtime stage), VERSION, REVISION,
+# CREATED, NODE_IMAGE and NGINX_IMAGE.
 #
 # deploy/scripts/build-bundle.sh runs this build for you and scans the result
 # for known vulnerabilities before it packages the image.
@@ -82,9 +84,15 @@ RUN case "$VITE_DATA_SOURCE" in \
 FROM ${NGINX_IMAGE}
 
 ARG NGINX_IMAGE
-# false skips the Alpine updates below, for build machines that cannot reach the
-# Alpine mirrors. build-bundle.sh still scans the image before packaging it.
-ARG APK_UPGRADE=true
+# Alpine security updates (apk upgrade):
+#   true   apply them; the build fails when "apk update" fails (a mirror that
+#          cannot be reached or is blocked, or a TLS certificate not trusted).
+#   auto   apply them when "apk update" succeeds, otherwise print a warning
+#          and keep the base image packages (developer and CI builds).
+#   false  skip them, for build machines that cannot reach the Alpine mirrors.
+# build-bundle.sh always passes true (or false with --no-os-updates) and scans
+# the image before packaging it, so release bundles never depend on auto.
+ARG APK_UPGRADE=auto
 ARG VERSION=0.0.0-dev
 ARG REVISION=unknown
 ARG CREATED=unknown
@@ -101,14 +109,31 @@ LABEL org.opencontainers.image.title="MSCD Web" \
 USER root
 
 # Apply the Alpine security updates published since the base image was built.
+# "apk update" fetches the package indexes first. It fails when a mirror cannot
+# be reached, a proxy blocks it, or its certificate is not trusted (for example
+# a TLS-inspecting proxy without the build_ca secret); auto tolerates that
+# failure but never a failed upgrade. The indexes are removed again so the image carries no apk cache.
 RUN --mount=type=secret,id=build_ca \
-    if [ "$APK_UPGRADE" != true ]; then echo "Skipping apk upgrade (APK_UPGRADE=$APK_UPGRADE)"; exit 0; fi; \
+    set -eu; \
+    case "$APK_UPGRADE" in \
+        true | auto) ;; \
+        false) echo "Skipping apk upgrade (APK_UPGRADE=false)"; exit 0 ;; \
+        *) echo "APK_UPGRADE must be true, auto or false, not '$APK_UPGRADE'" >&2; exit 1 ;; \
+    esac; \
     if [ -s /run/secrets/build_ca ]; then \
         cat /etc/ssl/certs/ca-certificates.crt /run/secrets/build_ca >/tmp/build-ca.pem; \
         export SSL_CERT_FILE=/tmp/build-ca.pem; \
     fi; \
-    apk upgrade --no-cache \
- && rm -f /tmp/build-ca.pem
+    if apk update; then \
+        apk upgrade; \
+    elif [ "$APK_UPGRADE" = auto ]; then \
+        echo "WARNING: apk update failed, see the messages above (mirror not reachable or blocked by a proxy, or TLS certificate not trusted: check the build_ca secret). Alpine updates are NOT applied (APK_UPGRADE=auto)." >&2; \
+        echo "WARNING: build with --build-arg APK_UPGRADE=true to make this an error." >&2; \
+    else \
+        echo "apk update failed and APK_UPGRADE=true, see the messages above (mirror not reachable or blocked by a proxy, or TLS certificate not trusted). Allow access to the mirrors, pass the CA of a TLS-inspecting proxy as the build_ca secret (build-bundle.sh --build-ca), or build with --build-arg APK_UPGRADE=false (build-bundle.sh --no-os-updates)." >&2; \
+        exit 1; \
+    fi; \
+    rm -rf /tmp/build-ca.pem /var/cache/apk/*
 
 # Drop entrypoint helpers that rewrite config files (the root filesystem is
 # read-only at runtime) and the stock site.

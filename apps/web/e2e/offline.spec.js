@@ -1,6 +1,6 @@
 import { test, expect, SCREENS, SCREENS_ID, openApp, go, switchMs } from './helpers.js';
 
-// The on-premise image deletes every line of dist/index.html that mentions Google Fonts (app/Dockerfile:
+// The on-premise image deletes every line of dist/index.html that mentions Google Fonts (deploy/docker/web.Dockerfile:
 // sed -i -E '/fonts\.(googleapis|gstatic)\.com/d'), so an air-gapped site never calls out. The same edit is
 // applied to the page served here, and every request that leaves the app's own origin is blocked and recorded.
 const asOnPremImage = (html) => html.split('\n').filter((line) => !/fonts\.(googleapis|gstatic)\.com/.test(line)).join('\n');
