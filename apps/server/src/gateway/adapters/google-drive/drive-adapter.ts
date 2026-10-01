@@ -172,6 +172,8 @@ class DriveCall {
       if (file.driveId !== undefined && file.driveId !== this.config.driveId) {
         throw outsideRoot(`The root folder ${this.config.rootFolderId} is not in the configured shared drive ${this.config.driveId}`);
       }
+      // The parent walk of every item below the root reaches this folder; it reuses this read.
+      this.remember(file);
       return this.place(file);
     })();
     return this.rootPlaced;
@@ -195,6 +197,7 @@ class DriveCall {
     const file = await this.session.folder(folderId);
     if (file.mimeType !== FOLDER_MIME) throw notFound(`The system folder ${folderId} is not a folder`);
     if (file.trashed) throw notFound(`The system folder ${folderId} is in the trash`);
+    this.remember(file);
     return this.placeWithin(file, root);
   }
 
@@ -223,6 +226,13 @@ class DriveCall {
     }
     // chain[0] is the drive root, whose name is not part of a path.
     return { file, ancestors: chain.map((step) => step.id), segments: [...chain.slice(1).map((step) => step.name), file.name] };
+  }
+
+  /** Adds a folder already read in this call to the parent walk cache, so the walk does not read it again. */
+  private remember(folder: DriveFile): void {
+    if (!this.steps.has(folder.id)) {
+      this.steps.set(folder.id, Promise.resolve({ id: folder.id, name: folder.name, parentId: folder.parents?.[0] ?? null }));
+    }
   }
 
   private step(folderId: string): Promise<FolderStep> {
@@ -516,8 +526,11 @@ export class GoogleDriveAdapter implements StorageAdapter {
   }
 
   async pinVersion(ctx: AdapterContext, object: GatewayObjectRef): Promise<PinVersionResult> {
+    // Both ids are checked before any request (D.5).
+    const itemId = checkDriveId(object.externalItemId);
+    if (object.externalVersionId !== null) checkDriveId(object.externalVersionId, 'revision id');
     const call = this.call(ctx);
-    const file = this.fileOnly(await call.session.file(checkDriveId(object.externalItemId)));
+    const file = this.fileOnly(await call.session.file(itemId));
     await call.placeWithin(file, await call.root());
     // Google Docs, Sheets and Slides keep their revisions on Google's terms; keepForever applies to binary files.
     if (isGoogleNative(file.mimeType)) return { result: 'unsupported' };
