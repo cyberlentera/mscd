@@ -427,10 +427,14 @@ describe('modules', () => {
     }
   });
 
-  it('createDataSource loads the sample source unless the build selects another one', async () => {
+  it('createDataSource loads the sample source unless the build selects the API source', async () => {
     const ds = await createDataSource();
     expect(ds.kind).toBe('sample');
     expect((await ds.load()).MS).toHaveLength(4);
+    for (const value of ['sample', 'demo', '']) {
+      vi.stubEnv('VITE_DATA_SOURCE', value);
+      expect((await createDataSource()).kind, value).toBe('sample');
+    }
     vi.stubEnv('VITE_DATA_SOURCE', 'api');
     await expect(createDataSource()).rejects.toThrow(/VITE_DATA_SOURCE=api is not available/);
   });
