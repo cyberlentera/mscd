@@ -2,17 +2,23 @@
 //
 // Uses the PostgreSQL server of MSCD_TEST_DATABASE_URL (an administrator URL) when set; otherwise starts
 // postgres:16.15-alpine (or MSCD_TEST_PG_IMAGE) with Testcontainers, labelled mscd.test=true. Then builds the
-// template database mscd_tpl_empty: the C.2 bootstrap (roles, schema ext, pg_trgm). WP-06 adds the platform and
-// ref migrations to this template; WP-14 adds mscd_tpl_demo. Test files copy a template through
-// useTestDatabase() in test/setup/test-db.ts. Teardown stops the container.
+// template database mscd_tpl_empty: the C.2 bootstrap (roles, schema ext, pg_trgm) and the platform and ref
+// migrations (C.3 steps 1 and 2), no tenants. WP-14 adds mscd_tpl_demo. Test files copy a template through
+// useTestDatabase() in test/setup/test-db.ts and add organisations with createTenant() below. Teardown stops the
+// container.
 //
 // MSCD_TEST_CONTAINER_PREFIX names the container <prefix>postgres-<random> (useful when several runs share a host).
 import { execFile } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
+import { createCipheriv, createHash, randomBytes } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { promisify } from 'node:util';
 import pg from 'pg';
 import type { TestProject } from 'vitest/node';
 import { runBootstrap } from '../../src/db/bootstrap';
+import { migrateFolder, openDedicatedDatabase } from '../../src/db/migrator';
+import { TenantProvisioner, type CreatedTenant, type CreateTenantInput, type DataKeyIssuer, type WrappedDataKey } from '../../src/db/tenant-provisioner';
+import type { TestDatabase } from './test-db';
 import { serverUrl, templateName, TEST_ROLE_PASSWORDS, type TemplateKind, type TestDbServer } from './test-db-server';
 
 const DEFAULT_IMAGE = 'postgres:16.15-alpine';
@@ -64,6 +70,7 @@ export default async function setup(project: TestProject): Promise<() => Promise
   try {
     await buildTemplate(server, 'empty', async (adminUrlOfTemplate) => {
       await runBootstrap({ adminUrl: adminUrlOfTemplate, passwords: { ...TEST_ROLE_PASSWORDS } });
+      await migratePlatformAndRef(serverUrl(server, templateName('empty'), 'mscd_migrator', TEST_ROLE_PASSWORDS.migrator));
     });
   } catch (error) {
     await stopContainer?.();
@@ -75,6 +82,66 @@ export default async function setup(project: TestProject): Promise<() => Promise
     await stopContainer?.();
     await removeExpiredTestContainers();
   };
+}
+
+/** C.3 steps 1 and 2 as `migrate` runs them: each folder on a dedicated migrator connection with platform scope. */
+export async function migratePlatformAndRef(migratorUrl: string): Promise<void> {
+  for (const folder of ['platform', 'ref'] as const) {
+    const migrator = openDedicatedDatabase(migratorUrl, { platformScope: true, applicationName: 'mscd-test-template' });
+    try {
+      await migrateFolder(migrator, folder, { migrationTableSchema: folder });
+    } finally {
+      await migrator.destroy();
+    }
+  }
+}
+
+/** Development storage KEK of the test profile (`gateway.kms.file.path`), R-11. */
+export const TEST_STORAGE_KEY_FILE = path.resolve(__dirname, '../fixtures/secrets/storage.key');
+
+/**
+ * Test implementation of `DataKeyIssuer`: wraps a random 32-byte data key the way the storage gateway does
+ * (F.11 SecretBox `v1.<kekId>.<iv>.<ciphertext and tag>`, AES-256-GCM, additional data `dek:<orgId>`) with the
+ * development storage KEK, so the gateway of later work packages can unwrap keys of test tenants.
+ */
+export class TestDataKeyIssuer implements DataKeyIssuer {
+  readonly kekId: string;
+  readonly issued: string[] = [];
+  private readonly kek: Buffer;
+
+  constructor(kek: Buffer = Buffer.from(readFileSync(TEST_STORAGE_KEY_FILE, 'utf8').trim(), 'base64')) {
+    if (kek.length !== 32) throw new Error('The storage KEK must be 32 bytes');
+    this.kek = kek;
+    this.kekId = createHash('sha256').update(kek).digest('hex').slice(0, 8);
+  }
+
+  async issue(orgId: string): Promise<WrappedDataKey> {
+    const iv = randomBytes(12);
+    const cipher = createCipheriv('aes-256-gcm', this.kek, iv);
+    cipher.setAAD(Buffer.from(`dek:${orgId}`, 'utf8'));
+    const sealed = Buffer.concat([cipher.update(randomBytes(32)), cipher.final(), cipher.getAuthTag()]);
+    this.issued.push(orgId);
+    return { wrappedDek: `v1.${this.kekId}.${iv.toString('base64url')}.${sealed.toString('base64url')}`, kekId: this.kekId };
+  }
+}
+
+/**
+ * Creates an organisation in a test database with `TenantProvisioner` (C.8): row, schema `org_<slug>`, tenant
+ * migrations, data key from `TestDataKeyIssuer`, Managed Vault repository and audit entry.
+ */
+export async function createTenant(
+  db: Pick<TestDatabase, 'urls'>,
+  slug: string,
+  options: Partial<Omit<CreateTenantInput, 'slug'>> & { dataKeys?: DataKeyIssuer } = {},
+): Promise<CreatedTenant> {
+  const { dataKeys, ...input } = options;
+  return new TenantProvisioner({ connectionString: db.urls.migrator, dataKeys: dataKeys ?? new TestDataKeyIssuer() }).create({
+    name: `Test organisation ${slug}`,
+    timeZone: 'Asia/Jakarta',
+    siteCount: 1,
+    ...input,
+    slug,
+  });
 }
 
 /**
