@@ -1,0 +1,635 @@
+PROPOSAL TEKNIS
+Sentralisasi Pengelolaan Sistem Manajemen ISO dan Proses Audit
+Implementasi Management System Compliance Dashboard (MSCD) untuk ISO/IEC 27001, ISO 9001, ISO 22301, dan ISO 37001
+Disiapkan untuk
+PT [Nama Klien]
+Disiapkan oleh
+[Nama Penyedia]
+Keterangan
+Isi
+Nomor dokumen
+[Nomor Proposal]
+Versi
+1.0
+Tanggal
+[Tanggal]
+Masa berlaku
+90 hari kalender sejak tanggal dokumen
+Klasifikasi
+Rahasia. Hanya untuk penggunaan internal PT [Nama Klien] dalam rangka evaluasi proposal ini
+Proposal komersial disampaikan dalam dokumen terpisah. Seluruh angka dalam proposal teknis ini bersifat indikatif sampai tahap discovery selesai.
+Jakarta, [Tanggal]
+Kepada Yth.
+[Nama Penerima]
+[Jabatan]
+PT [Nama Klien]
+[Alamat]
+Perihal: Proposal Teknis Implementasi Management System Compliance Dashboard
+Dengan hormat,
+Terima kasih atas kesempatan yang diberikan kepada kami untuk menyampaikan proposal teknis ini. Proposal ini kami susun berdasarkan diskusi dengan tim PT [Nama Klien] mengenai pengelolaan sistem manajemen ISO, baik untuk ruang lingkup yang sedang disiapkan menuju sertifikasi maupun untuk sertifikat yang sudah dimiliki dan harus dipertahankan melalui audit surveillance dan recertification.
+Dari diskusi tersebut kami menangkap bahwa kendala utamanya bukan pada pemahaman standar. Tim Perusahaan memahami persyaratan ISO dengan baik. Kendalanya terletak pada koordinasi: setiap audit internal dan eksternal masih bergantung pada kick-off meeting, penjadwalan ulang dengan setiap stakeholder, pengumpulan bukti melalui surel dan folder bersama, serta tindak lanjut temuan yang dipantau secara manual. Akibatnya, status kesiapan baru diketahui dengan pasti menjelang hari audit, dan sulit menunjukkan bagian mana yang tertunda dan siapa yang perlu dibantu.
+Kami mengusulkan implementasi Management System Compliance Dashboard (MSCD) sebagai satu sistem yang menghubungkan persyaratan, risiko, dokumen, bukti, temuan, dan tindakan korektif, lengkap dengan pemilik dan tenggat masing-masing. Solusi ini dapat dijalankan sebagai layanan cloud maupun dipasang di data center Perusahaan, dan berkas bukti dapat tetap disimpan di repository milik Perusahaan seperti SharePoint atau Google Drive.
+Kami siap memaparkan proposal ini secara langsung dan menyesuaikan lingkupnya dengan prioritas Perusahaan. Untuk pertanyaan lebih lanjut, Bapak/Ibu dapat menghubungi kami melalui kontak di bawah ini.
+Hormat kami,
+[Nama Penanggung Jawab]
+[Jabatan]
+[Nama Penyedia]
+[Surel] | [Telepon]
+Daftar Isi
+Daftar isi ini diperbarui otomatis saat dokumen dibuka di Microsoft Word. Bila kosong, klik kanan lalu pilih Update Field.
+[Heading1] 1. Ringkasan Eksekutif
+PT [Nama Klien] (selanjutnya disebut &quot;Perusahaan&quot;) menghadapi dua kebutuhan yang berbeda sifatnya. Untuk ruang lingkup yang belum tersertifikasi, Perusahaan perlu membangun sistem manajemen yang memenuhi persyaratan ISO dan mampu membuktikan bahwa sistem tersebut benar-benar dijalankan, bukan hanya didokumentasikan. Untuk ruang lingkup yang sudah tersertifikasi, Perusahaan perlu menjalankan audit internal dan audit eksternal setiap tahun dengan beban koordinasi yang lebih ringan dan hasil yang lebih dapat diprediksi.
+Pada kedua kebutuhan tersebut, pekerjaan terbesar tidak terletak pada penulisan kebijakan atau prosedur. Pekerjaan terbesar adalah memastikan setiap persyaratan memiliki pemilik, setiap pemilik menyerahkan bukti yang benar pada waktunya, dan setiap temuan ditindaklanjuti sampai efektif. Dengan pendekatan yang berjalan saat ini, pekerjaan tersebut dikoordinasikan melalui rapat, surel, dan spreadsheet. Pendekatan ini dapat berhasil, tetapi sangat bergantung pada satu atau dua koordinator dan tidak memberikan gambaran status yang dapat diperiksa oleh pihak lain.
+Kami mengusulkan implementasi MSCD dengan tiga modul yang mengikuti siklus sertifikasi:
+Modul
+Kegunaan bagi Perusahaan
+Pengguna utama
+Implementation
+Membangun sistem manajemen secara bertahap dengan gate per fase, register dokumen, Statement of Applicability atau padanannya, register risiko, dan kesiapan per klausul
+MS Manager, Domain Owner
+Audit Process
+Menjalankan audit internal dan eksternal: kesiapan per tahap rantai keterlacakan, daftar item tertunda beserta pemegang dan tenggatnya, pencatatan findings, dan corrective action
+MS Manager, auditor internal
+Surveillance &amp; Recertification
+Mempertahankan sertifikat selama siklus tiga tahun: persiapan setiap audit, kelengkapan siklus, kesegaran bukti, review dokumen, dan deteksi kemunduran
+MS Manager, manajemen puncak
+Solusi ini mendukung ISO/IEC 27001, ISO 9001, ISO 22301, dan ISO 37001 dalam satu platform. Bagi Perusahaan yang menjalankan lebih dari satu standar, dokumen dan bukti yang sama (misalnya prosedur pengendalian dokumen atau notulen tinjauan manajemen) cukup dikelola sekali dan dipakai oleh semua standar yang memerlukannya.
+Salah satu kebutuhan yang disampaikan Perusahaan adalah mengetahui kontributor yang menyebabkan keterlambatan dan kontributor yang kinerjanya baik. MSCD mencatat setiap permintaan bukti, tenggat, penyerahan, dan hasil review sebagai data. Dari data tersebut sistem menyusun contributor scorecard per orang dan per unit kerja. Kami merekomendasikan agar scorecard ini digunakan terlebih dahulu sebagai alat bantu koordinasi, dan penggunaannya dalam penilaian kinerja formal diputuskan bersama fungsi SDM dan hukum Perusahaan (Bagian 6).
+Implementasi kami rencanakan dalam tujuh fase selama sekitar 20 minggu untuk mode on-premise, atau sekitar 14 minggu untuk mode SaaS, dimulai dengan satu sistem manajemen sebagai pilot sebelum diperluas ke ruang lingkup lainnya.
+Hasil yang dapat diharapkan Perusahaan
+Status kesiapan audit dapat dilihat kapan saja, per klausul dan per orang, tanpa menunggu rekap dari koordinator.
+Item yang tenggatnya jatuh setelah tanggal audit terlihat sejak item tersebut dibuat, sehingga dapat dimajukan sebelum menjadi masalah.
+Bukti untuk setiap kontrol atau persyaratan tersimpan dengan versi yang terkunci, sehingga yang ditunjukkan kepada auditor adalah bukti yang sama dengan yang telah di-review.
+Sasaran kuantitatif ditetapkan setelah baseline diukur pada tahap discovery (Bagian 11).
+[Heading1] 2. Pemahaman Kami atas Kebutuhan Perusahaan
+[Heading2] 2.1 Konteks
+Sertifikasi ISO bekerja dalam siklus tiga tahun. Setelah sertifikat terbit, lembaga sertifikasi melakukan audit surveillance pada tahun pertama dan kedua, lalu audit recertification pada tahun ketiga. Di antara audit eksternal tersebut, Perusahaan wajib menjalankan audit internal dan tinjauan manajemen. Artinya, pekerjaan pengumpulan dan pemeriksaan bukti tidak terjadi sekali, melainkan berulang setiap tahun dengan melibatkan banyak unit kerja.
+Gambar 1. Posisi ketiga modul MSCD dalam siklus sertifikasi tiga tahun
+Keempat standar yang menjadi cakupan proposal ini, yaitu ISO/IEC 27001 (keamanan informasi), ISO 9001 (mutu), ISO 22301 (keberlangsungan usaha), dan ISO 37001 (anti-penyuapan), menggunakan struktur klausul 4 sampai 10 yang sama, dikenal sebagai Harmonized Structure. Kesamaan struktur ini memungkinkan pekerjaan yang sama dilakukan sekali untuk beberapa standar, asalkan dikelola dalam satu sistem.
+[Heading2] 2.2 Kebutuhan Organisasi yang Belum Tersertifikasi
+Organisasi yang baru memulai umumnya tidak kekurangan templat dokumen. Kesulitan pertama terletak pada urutan pekerjaan. Dokumen sering disusun sebelum penilaian risiko selesai, sehingga Statement of Applicability atau penetapan ruang lingkup tidak memiliki dasar yang dapat dijelaskan kepada auditor. Pada ISO/IEC 27001, kontrol yang dinyatakan berlaku harus dapat ditelusuri ke risiko yang ditanganinya.
+Kesulitan kedua menyangkut bukti operasi. Audit Stage 2 menilai apakah sistem manajemen benar-benar dijalankan, dan lembaga sertifikasi umumnya mengharapkan catatan operasi selama beberapa bulan. Bila bukti baru dikumpulkan menjelang audit, yang tersedia sering kali adalah bukti pembangunan sistem, bukan bukti pengoperasiannya.
+Kesulitan ketiga adalah visibilitas progres. Manajemen biasanya menerima laporan persentase penyelesaian, padahal persentase yang tinggi dapat menyembunyikan satu atau dua kekurangan yang sudah cukup untuk menghasilkan temuan major.
+[Heading2] 2.3 Kebutuhan Organisasi yang Sudah Tersertifikasi
+Bagi organisasi yang sudah tersertifikasi, pola kerja audit internal biasanya berjalan sebagai berikut.
+[ListParagraph] Koordinator audit mengadakan kick-off meeting dan menyusun jadwal audit bersama setiap stakeholder.
+[ListParagraph] Auditor internal meminta bukti kepada pemilik proses melalui surel atau pesan, dan bukti dikirim sebagai lampiran atau diunggah ke folder bersama.
+[ListParagraph] Auditor menganalisis bukti, biasanya dengan checklist dalam spreadsheet, lalu menentukan findings.
+[ListParagraph] Findings dituangkan dalam laporan, kemudian ditindaklanjuti melalui surel dan rapat sampai dinyatakan tertutup.
+Audit eksternal mengikuti pola yang serupa. Menjelang audit, koordinator mengumpulkan stakeholder sesuai klausul yang akan diaudit, menyiapkan bukti, dan mendampingi auditor saat bukti ditunjukkan. Selama audit, bukti sering dicari saat itu juga dari berbagai folder dan kotak surel.
+Pola ini tidak salah, dan banyak organisasi berhasil mempertahankan sertifikatnya dengan cara ini. Namun pola ini memiliki beberapa kelemahan yang berulang setiap tahun:
+Kelemahan
+Akibat yang biasa terjadi
+Status hanya diketahui koordinator
+Manajemen tidak dapat memeriksa kesiapan tanpa meminta rekap; bila koordinator berhalangan, informasi status ikut hilang
+Bukti tersebar di surel dan folder
+Versi bukti tidak jelas; bukti yang ditunjukkan kepada auditor dapat berbeda dari yang telah diperiksa auditor internal
+Hubungan antar artefak tidak tercatat
+Saat auditor menelusuri satu risiko sampai ke bukti operasinya, tim harus merangkai hubungan tersebut secara manual
+Tenggat dipantau secara manual
+Item yang terlambat baru terlihat saat rapat berikutnya; item yang tenggatnya melewati tanggal audit tidak terdeteksi
+Tindak lanjut temuan terpisah dari bukti
+Temuan dinyatakan tertutup tanpa verifikasi efektivitas, dan temuan yang sama muncul kembali pada audit berikutnya
+Kinerja kontributor tidak terukur
+Tidak ada dasar objektif untuk mengetahui unit atau orang yang konsisten terlambat, maupun yang konsisten tepat waktu
+[Heading2] 2.4 Kriteria Keberhasilan
+Berdasarkan diskusi awal, kami merumuskan kriteria keberhasilan penugasan ini sebagai berikut. Kriteria ini akan dikonfirmasi pada fase discovery.
+[ListParagraph] Seluruh persyaratan dalam ruang lingkup memiliki pemilik bernama, dokumen pelaksana, dan bukti operasi yang dapat ditelusuri dari risiko sampai bukti.
+[ListParagraph] Koordinator audit dapat mengetahui item tertunda, pemegangnya, dan tenggatnya tanpa mengirim permintaan rekap.
+[ListParagraph] Persiapan audit eksternal tidak lagi memerlukan pencarian bukti pada hari audit.
+[ListParagraph] Manajemen menerima gambaran kesiapan yang menyebutkan kekurangan secara spesifik, bukan hanya persentase.
+[ListParagraph] Perusahaan memiliki data yang cukup untuk menilai ketepatan waktu kontribusi setiap unit kerja.
+[Heading1] 3. Tujuan dan Ruang Lingkup Penugasan
+[Heading2] 3.1 Tujuan
+Penugasan ini bertujuan menyediakan satu sistem yang dipakai bersama oleh seluruh pihak yang terlibat dalam sistem manajemen ISO Perusahaan, mulai dari pembangunan sistem manajemen sampai audit recertification, dan memastikan sistem tersebut benar-benar digunakan setelah proyek selesai.
+[Heading2] 3.2 Ruang Lingkup
+Komponen
+Termasuk dalam lingkup
+Lisensi dan platform
+MSCD dengan ketiga modul, sesuai jumlah sistem manajemen dan pengguna yang disepakati dalam proposal komersial
+Framework pack
+Konten standar untuk standar yang dipilih Perusahaan: struktur klausul, katalog kontrol (bila ada), templat aktivitas implementasi, templat aktivitas audit, dan pustaka kondisi temuan
+Konfigurasi
+Ruang lingkup sistem manajemen, struktur organisasi, peran dan pemilik, konvensi penomoran dokumen, ambang kesegaran bukti, alur persetujuan
+Migrasi data
+Register dokumen, register risiko, Statement of Applicability atau padanannya, temuan terbuka, dan jadwal audit dari spreadsheet yang ada
+Integrasi
+Single sign-on dengan direktori identitas Perusahaan; konektor repository ke Microsoft 365 atau Google Workspace; relai surel untuk notifikasi
+Pelatihan
+Pelatihan per peran: MS Manager, auditor internal, Domain Owner, manajemen, dan administrator
+Pendampingan
+Pendampingan pada satu siklus audit internal pertama yang dijalankan dengan MSCD, dan periode hypercare setelah go-live
+[Heading2] 3.3 Di Luar Ruang Lingkup
+[ListParagraph] Biaya dan penunjukan lembaga sertifikasi.
+[ListParagraph] Penyusunan seluruh kebijakan dan prosedur dari awal. Layanan ini dapat ditambahkan sebagai opsi konsultansi terpisah.
+[ListParagraph] Pengadaan perangkat keras, sistem operasi, dan basis data untuk mode on-premise.
+[ListParagraph] Konfigurasi tenant Microsoft 365 atau Google Workspace di luar pemberian izin untuk konektor MSCD.
+[ListParagraph] Pelaksanaan audit internal atas nama Perusahaan, kecuali disepakati sebagai layanan tambahan.
+[Heading1] 4. Solusi yang Diusulkan
+[Heading2] 4.1 Prinsip Rancangan
+MSCD dirancang berdasarkan pengamatan bahwa sebagian besar temuan audit tidak disebabkan oleh ketiadaan dokumen, melainkan oleh putusnya hubungan antar artefak: risiko yang tidak tertelusur ke kontrol, kontrol yang dinyatakan berjalan tanpa bukti periode berjalan, atau temuan yang ditutup tanpa verifikasi. Karena itu, MSCD mencatat hubungan tersebut sebagai data yang diperiksa sistem, bukan sebagai kolom teks yang diisi manual.
+Rangkaian hubungan ini kami sebut rantai keterlacakan. Untuk ISO/IEC 27001, rantainya berjalan dari isu konteks, risiko, perlakuan risiko, kontrol, entri Statement of Applicability, dokumen, bukti operasi, sampai metrik pemantauan. Standar lain memiliki rantai yang sesuai dengan karakternya, misalnya Business Impact Analysis, strategi, rencana, dan latihan pada ISO 22301.
+[Heading2] 4.2 Modul dan Kemampuan
+Modul
+Kemampuan utama
+Implementation
+Fase implementasi dengan gate: fase berikutnya terkunci sampai syarat fase berjalan terpenuhi. Register dokumen dengan versi, pemilik, tanggal review, dan lokasi berkas. Statement of Applicability atau padanannya dengan justifikasi yang wajib merujuk risiko. Kesiapan per klausul yang menampilkan item penghambat, bukan hanya persentase. Setiap angka ringkasan dapat dibuka sampai ke daftar kontrol, dokumen, atau aktivitas di baliknya.
+Audit Process
+Panel audit berikutnya yang menunjukkan jumlah item terbuka, item terlambat, dan item yang tenggatnya jatuh setelah tanggal audit. Uji keterlacakan interaktif: pilih satu risiko, sistem menampilkan seluruh rantainya beserta titik yang putus, pemegangnya, dan tenggatnya. Kesiapan per tahap rantai. Daftar item tertunda per orang. Pustaka kondisi temuan untuk self-assessment (401 kondisi untuk ISO/IEC 27001). Alur corrective action dengan root cause analysis dan verifikasi efektivitas oleh pihak yang berbeda.
+Surveillance &amp; Recertification
+Linimasa siklus sertifikasi dengan checklist persiapan untuk setiap audit. Kelengkapan siklus: penilaian risiko, audit internal, tinjauan manajemen, dan kewajiban khusus standar. Kesegaran bukti diukur dari tanggal bukti dihasilkan terhadap frekuensi kontrol. Kalender review dokumen. Deteksi kemunduran, misalnya register risiko yang tidak berubah atau metrik yang berhenti diperbarui.
+Lintas modul
+My Tasks untuk Domain Owner yang menggabungkan tugas dari semua standar. Pemilihan sistem manajemen dan tampilan terintegrasi. Audit trail yang tidak dapat dihapus. Notifikasi dan pengingat. Contributor scorecard (Bagian 6).
+[Heading2] 4.3 Dukungan Multi-Standar
+Setiap standar dimuat sebagai framework pack berversi. Pack berisi struktur klausul, katalog kontrol bila standar memilikinya, templat aktivitas, pustaka kondisi temuan, dan istilah yang ditampilkan kepada pengguna. Dengan cara ini, pergantian edisi standar (misalnya dari ISO 9001:2015 ke ISO 9001:2026 yang terbit pada September 2026) ditangani dengan memasang pack edisi baru dan menjalankan analisis kesenjangan otomatis, tanpa mengganti aplikasi.
+Standar
+Fokus
+Artefak khas yang dikelola
+ISO/IEC 27001
+Keamanan informasi
+Statement of Applicability, 93 kontrol Annex A, risk treatment plan
+ISO 9001
+Mutu produk dan layanan
+Peta proses, sasaran mutu, kepuasan pelanggan, pengendalian keluaran tidak sesuai
+ISO 22301
+Keberlangsungan usaha
+Business Impact Analysis (MTPD, RTO, RPO), strategi, rencana keberlangsungan, program latihan
+ISO 37001
+Anti-penyuapan
+Penilaian risiko penyuapan, due diligence mitra usaha, register hadiah dan jamuan, saluran pelaporan
+Kedalaman konten pack berbeda antar standar. Pack ISO/IEC 27001 telah memuat 69 aktivitas implementasi, 28 aktivitas audit, dan 401 kondisi temuan. Untuk standar lain, cakupan konten dikonfirmasi pada fase discovery dan dilengkapi bersama tim Perusahaan bila diperlukan.
+[Heading1] 5. Cara Kerja Solusi dalam Siklus Audit
+Bagian ini menggambarkan perubahan cara kerja pada tiga situasi: membangun sistem manajemen menuju sertifikasi, menjalankan audit internal, dan menghadapi audit eksternal.
+[Heading2] 5.1 Menuju Sertifikasi Pertama
+Tahap
+Dengan pendekatan saat ini
+Dengan MSCD
+Penetapan ruang lingkup dan konteks
+Dokumen konteks disusun terpisah dan jarang dirujuk kembali
+Isu konteks dicatat sebagai entitas yang dirujuk oleh risiko; perubahan konteks terlihat dampaknya
+Penilaian risiko
+Register risiko dalam spreadsheet; persetujuan pemilik risiko melalui surel
+Risiko memiliki pemilik bernama; persetujuan risiko residual tercatat dan tidak dapat diberikan oleh pelaksana
+Statement of Applicability
+Justifikasi ditulis sebagai teks bebas
+Justifikasi wajib merujuk risiko; kontrol tanpa rujukan ditandai sebagai penghambat gate
+Penyusunan dokumen
+Progres dilaporkan sebagai jumlah dokumen selesai
+Setiap dokumen tertaut ke kontrol yang dilaksanakannya; dokumen tanpa tautan dan kontrol tanpa dokumen terlihat
+Pengumpulan bukti operasi
+Dimulai menjelang Stage 2
+Dimulai sejak kontrol berjalan; sistem menghitung kesegaran bukti terhadap frekuensi kontrol
+Kesiapan audit
+Ditentukan melalui rapat dan checklist
+Ditentukan dari data: item penghambat gate, item tertunda, dan item yang tenggatnya melewati tanggal audit
+[Heading2] 5.2 Audit Internal
+Gambar 2. Alur audit internal dengan pendekatan saat ini dan dengan MSCD
+Dengan MSCD, kick-off meeting tetap diperlukan untuk menyamakan pemahaman, tetapi fungsinya berubah dari rapat pembagian tugas menjadi rapat konfirmasi. Pembagian tugas sudah dilakukan sistem berdasarkan pemilik yang tercatat.
+Langkah
+Yang dilakukan sistem
+Yang dilakukan pengguna
+1. Perencanaan
+Menyusun program audit dari cakupan klausul dan kontrol; menandai area yang belum diaudit dalam siklus berjalan
+Auditor internal menyetujui program dan jadwal
+2. Permintaan bukti
+Mengirim permintaan ke pemilik kontrol atau proses, lengkap dengan contoh bukti yang diterima dan tenggatnya
+Domain Owner menyerahkan bukti melalui My Tasks
+3. Penerimaan bukti
+Menyimpan bukti di repository yang ditetapkan dan mengunci versinya; mencatat tanggal bukti dihasilkan
+—
+4. Pemeriksaan
+Menyediakan pustaka kondisi temuan sebagai acuan dan menampilkan rantai keterlacakan setiap kontrol
+Auditor memeriksa dan menetapkan status
+5. Findings
+Mencatat temuan dengan klasifikasi, klausul, dan bukti terkait; membuat item corrective action
+Auditor mencatat temuan; pemilik menyusun rencana perbaikan
+6. Tindak lanjut
+Memantau tenggat, mengirim pengingat, menolak penutupan tanpa root cause analysis dan verifikasi efektivitas
+Pemilik melaksanakan; pihak berbeda memverifikasi
+7. Pelaporan
+Menyusun laporan audit internal dan data untuk tinjauan manajemen
+MS Manager meninjau dan menyampaikan
+[Heading2] 5.3 Audit Eksternal: Surveillance dan Recertification
+Persiapan audit eksternal dimulai ketika jendela persiapan terbuka, secara bawaan 60 hari sebelum tanggal audit. MSCD membangkitkan checklist persiapan dengan tugas, pemilik, dan tenggat yang seluruhnya jatuh sebelum tanggal audit.
+Sebelum audit, MS Manager melihat jumlah item terbuka pada rantai keterlacakan, item yang terlambat, dan item yang tenggatnya jatuh setelah tanggal audit. Item kategori terakhir inilah yang paling sering luput, karena belum terlambat tetapi dipastikan tidak selesai tepat waktu. Temuan audit sebelumnya ditampilkan agar penutupannya dapat dibuktikan.
+Untuk kebutuhan audit, sistem menyusun paket bukti per klausul dan per kontrol. Bila berkas disimpan di SharePoint atau Google Drive milik Perusahaan, paket disalin di dalam repository tersebut dan disertai manifest berisi versi dan sidik jari berkas.
+Selama audit berlangsung, ketika auditor memilih satu risiko atau kontrol, MS Manager membuka rantai keterlacakannya dalam hitungan detik. Pertemuan dengan stakeholder tetap berlangsung, tetapi hanya untuk wawancara dan konfirmasi, bukan untuk mencari berkas.
+Setelah audit, temuan dari lembaga sertifikasi dicatat pada sistem yang sama dan mengikuti alur corrective action yang sama dengan temuan audit internal.
+[Heading2] 5.4 Ilustrasi Beban Koordinasi
+Tabel berikut adalah ilustrasi perhitungan untuk satu siklus audit internal dengan asumsi 12 unit auditee dan 90 kontrol atau persyaratan dalam sampel. Angka ini bukan janji hasil. Angka sebenarnya akan diukur pada fase discovery sebagai baseline.
+Aktivitas koordinasi
+Asumsi saat ini
+Asumsi dengan MSCD
+Penjadwalan dengan auditee
+12 unit, masing-masing 2–3 kali korespondensi
+Jadwal dikonfirmasi melalui sistem; korespondensi hanya untuk pengecualian
+Permintaan dan penagihan bukti
+90 permintaan; sekitar sepertiga memerlukan pengingat lebih dari sekali
+Permintaan dan pengingat otomatis; koordinator menangani item yang eskalasi
+Rekap status untuk manajemen
+Disusun manual setiap minggu selama periode audit
+Tersedia langsung dari dashboard
+Penelusuran versi bukti
+Terjadi pada sebagian bukti yang dikirim ulang
+Versi dikunci saat penyerahan
+Pada fase discovery, kami akan mengukur waktu yang saat ini digunakan untuk setiap aktivitas di atas bersama koordinator audit Perusahaan.
+[Heading1] 6. Pemantauan Kinerja Kontributor
+[Heading2] 6.1 Tujuan
+Perusahaan ingin mengetahui kontributor yang menyebabkan keterlambatan dan kontributor yang kinerjanya paling baik. MSCD dapat menjawab kebutuhan ini karena setiap permintaan bukti, tenggat, penyerahan, penolakan, dan persetujuan tercatat dengan waktu dan pelakunya. Data tersebut kami olah menjadi contributor scorecard.
+Kami membedakan dua pertanyaan yang sering tercampur. Pertanyaan pertama bersifat operasional: item mana yang saat ini menahan kesiapan audit, dan siapa pemegangnya. Pertanyaan kedua bersifat evaluatif: siapa yang secara konsisten tepat waktu dan siapa yang secara konsisten terlambat dalam satu periode. Keduanya memerlukan tampilan yang berbeda.
+[Heading2] 6.2 Tampilan Operasional
+Tampilan operasional menampilkan setiap orang yang memegang item terbuka, lengkap dengan jumlah item yang terlambat, jumlah item yang tenggatnya melewati tanggal audit, dan tenggat terdekatnya. MS Manager menggunakan daftar ini untuk tindak lanjut satu per satu sebelum audit. Item yang menahan gate implementasi, atau yang berada pada rantai keterlacakan kontrol berisiko tinggi, ditandai terpisah karena keterlambatannya berdampak lebih besar daripada item lain.
+Sistem juga mencatat kapan pengingat dikirim dan kapan pemegang item merespons. Dengan catatan ini, eskalasi kepada atasan dapat dilakukan berdasarkan data, bukan berdasarkan kesan.
+[Heading2] 6.3 Contributor Scorecard
+Indikator
+Definisi
+Catatan penafsiran
+Ketepatan waktu
+Jumlah item yang diselesaikan paling lambat pada tenggat dibagi jumlah item yang jatuh tempo dalam periode
+Indikator utama; dihitung hanya bila jumlah item minimal lima
+Rata-rata keterlambatan
+Rata-rata jumlah hari keterlambatan untuk item yang terlambat
+Membedakan terlambat satu hari dari terlambat satu bulan
+Penerimaan pertama
+Jumlah bukti yang diterima auditor tanpa diminta perbaikan dibagi jumlah bukti yang diserahkan
+Mengukur kualitas, bukan hanya kecepatan
+Waktu respons
+Median waktu dari penugasan atau pengingat sampai tindakan pertama
+Berguna untuk mengenali item yang tidak tersentuh
+Beban terbuka
+Jumlah item yang sedang dipegang, termasuk item penghambat
+Konteks untuk indikator lain; beban tinggi dapat menjelaskan keterlambatan
+Kontribusi pada item kritis
+Jumlah item penghambat gate atau item berisiko tinggi yang diselesaikan tepat waktu
+Memberi bobot pada pekerjaan yang paling berpengaruh terhadap kesiapan
+Scorecard disajikan per orang dan per unit kerja. Perusahaan dapat melihat daftar kontributor dengan ketepatan waktu tertinggi dan terendah dalam satu periode, dengan syarat jumlah item setiap orang cukup untuk dibandingkan. Bobot setiap indikator dapat diatur, dan kami menyarankan agar indikator tidak digabung menjadi satu angka tunggal pada tahap awal, karena satu angka cenderung menyembunyikan penyebab keterlambatan.
+[Heading2] 6.4 Tata Kelola Penggunaan Data
+Data kinerja individu adalah data pribadi karyawan. Penggunaannya perlu memiliki dasar yang jelas, disampaikan secara terbuka kepada karyawan, dan dikaji terhadap ketentuan pelindungan data pribadi yang berlaku, termasuk Undang-Undang Nomor 27 Tahun 2022 tentang Pelindungan Data Pribadi. Kami merekomendasikan langkah berikut:
+[ListParagraph] Pada tahap awal, scorecard digunakan untuk koordinasi dan pembinaan, tidak langsung dikaitkan dengan penilaian kinerja formal.
+[ListParagraph] Keputusan untuk menggunakan scorecard dalam penilaian kinerja diambil bersama fungsi SDM dan hukum Perusahaan, disertai pemberitahuan kepada karyawan.
+[ListParagraph] Hak akses dibatasi: setiap orang dapat melihat data dirinya; atasan dan MS Manager melihat data timnya; manajemen puncak melihat data agregat per unit.
+[ListParagraph] Setiap angka dapat ditelusuri ke item asalnya, dan karyawan dapat mengajukan koreksi bila keterlambatan disebabkan oleh pihak lain, misalnya persetujuan yang tertahan.
+Catatan kami
+Pengalaman kami menunjukkan bahwa keterlambatan kontributor sering disebabkan oleh faktor di luar kendali orang tersebut, misalnya tenggat yang ditetapkan tanpa konsultasi atau bukti yang bergantung pada unit lain. Karena itu, scorecard sebaiknya dibaca bersama beban kerja dan riwayat ketergantungan antar item, bukan sebagai peringkat semata.
+[Heading1] 7. Arsitektur Solusi
+[Heading2] 7.1 Arsitektur Logis
+Gambar 3. Arsitektur logis MSCD
+MSCD terdiri atas antarmuka web, layanan aplikasi yang menegakkan kontrol akses dan aturan integritas, worker untuk proses terjadwal seperti pengingat dan pemeriksaan kesegaran bukti, Framework Engine yang memuat konten standar, dan Storage Gateway yang menjadi satu-satunya komponen yang berkomunikasi dengan repository berkas. Data terstruktur disimpan dalam basis data PostgreSQL.
+[Heading2] 7.2 Opsi Mode Implementasi
+Aspek
+SaaS
+On-premise
+Lokasi aplikasi dan basis data
+Cloud penyedia; region dapat dipilih sesuai kebutuhan residensi data
+Server Perusahaan di data center Perusahaan
+Pengoperasian
+Oleh penyedia: pembaruan, pemantauan, pencadangan
+Oleh tim infrastruktur Perusahaan dengan dukungan penyedia
+Pembaruan
+Bertahap dalam jendela pemeliharaan yang diumumkan
+Paket rilis bertanda tangan digital; jadwal ditentukan Perusahaan
+Koneksi internet
+Diperlukan untuk akses pengguna
+Tidak diperlukan, kecuali untuk konektor repository cloud dan kanal pembaruan daring
+Lisensi
+Berlangganan
+Berkas lisensi yang divalidasi tanpa koneksi ke penyedia
+Waktu implementasi indikatif
+Sekitar 14 minggu
+Sekitar 20 minggu, bergantung pada kesiapan infrastruktur
+Kedua mode menggunakan kode aplikasi yang sama sehingga fitur yang tersedia sama. Perbedaan hanya terletak pada siapa yang mengoperasikan aplikasi dan bagaimana pembaruan didistribusikan.
+[Heading2] 7.3 Penyimpanan Berkas di Repository Perusahaan
+Pada kedua mode, Perusahaan dapat memilih agar berkas dokumen dan bukti tidak diunggah ke MSCD, melainkan tetap berada di repository Perusahaan. MSCD hanya menyimpan metadata, rujukan versi berkas, dan sidik jari integritasnya. Data terstruktur seperti register risiko dan status tetap berada di basis data MSCD.
+Pilihan
+Perilaku
+Kesesuaian
+Managed vault
+Berkas disimpan oleh MSCD dengan versi dan checksum SHA-256
+Organisasi yang mengutamakan kesederhanaan
+Repository Perusahaan, mode link
+Pengguna memilih berkas yang sudah ada di SharePoint atau Google Drive; MSCD mencatat versinya
+Organisasi yang sudah mengelola dokumen di Microsoft 365 atau Google Workspace
+Repository Perusahaan, mode zero-transit
+Berkas diunggah langsung dari peramban pengguna ke repository; isi berkas tidak pernah melewati server MSCD
+Organisasi dengan kebijakan ketat terhadap penyalinan dokumen ke sistem pihak ketiga
+Karena berkas berada di luar kendali aplikasi, MSCD memeriksa setiap rujukan berkas secara terjadwal. Bila berkas dipindahkan, dihapus, atau versinya berubah, bukti terkait ditandai dan pemiliknya diberi tahu. Kami menyarankan agar bukti disimpan di document library SharePoint atau Shared Drive milik organisasi, bukan di OneDrive atau My Drive pribadi, karena berkas pada penyimpanan pribadi dapat hilang ketika karyawan keluar.
+[Heading2] 7.4 Keamanan
+Area
+Pengendalian
+Identitas dan akses
+Single sign-on melalui SAML 2.0, OIDC, atau LDAP; autentikasi multi-faktor; hak akses berbasis peran per sistem manajemen
+Pemisahan tugas
+Pelaksana tidak dapat menyetujui pekerjaannya sendiri, misalnya pada persetujuan risiko residual dan verifikasi corrective action
+Enkripsi
+TLS 1.2 atau lebih tinggi saat transit; enkripsi saat disimpan dengan kunci per tenant pada mode SaaS
+Izin konektor
+Izin minimum pada folder atau library yang ditunjuk, misalnya izin Sites.Selected pada Microsoft Graph
+Ketertelusuran
+Audit trail atas setiap perubahan status, persetujuan, penyerahan berkas, dan perubahan konfigurasi; penghapusan hanya bersifat logis
+Data khusus ISO 37001
+Laporan dugaan pelanggaran dan investigasi hanya dapat diakses fungsi kepatuhan anti-penyuapan dan penyelidik yang ditunjuk
+Kesesuaian penempatan data dengan regulasi sektor Perusahaan perlu dikonfirmasi oleh fungsi hukum dan kepatuhan Perusahaan. Kami akan menyediakan informasi teknis yang diperlukan untuk kajian tersebut.
+[Heading2] 7.5 Integrasi
+Sistem
+Tujuan integrasi
+Fase
+Direktori identitas (Microsoft Entra ID, Active Directory, atau sejenisnya)
+Single sign-on dan sinkronisasi pengguna
+Implementasi awal
+Microsoft 365 atau Google Workspace
+Konektor repository berkas
+Implementasi awal
+Relai surel atau platform kolaborasi
+Notifikasi dan pengingat
+Implementasi awal
+Sistem tiket atau ITSM
+Pengambilan bukti operasi seperti perubahan dan insiden
+Opsional, fase lanjutan
+Perangkat pemindai kerentanan dan SIEM
+Pengambilan bukti operasi untuk kontrol teknis ISO/IEC 27001
+Opsional, fase lanjutan
+[Heading1] 8. Pendekatan dan Metodologi Implementasi
+[Heading2] 8.1 Prinsip Pendekatan
+Kami tidak memulai dengan memindahkan seluruh data ke sistem baru. Kami memulai dengan satu sistem manajemen sebagai pilot, menjalankan satu siklus kerja nyata di dalamnya, lalu memperluas ke ruang lingkup lain setelah pola kerjanya diterima pengguna. Pendekatan ini memperpanjang waktu beberapa minggu dibandingkan implementasi serentak, tetapi mengurangi risiko sistem tidak digunakan setelah proyek selesai.
+Gambar 4. Rencana kerja indikatif untuk mode on-premise
+[Heading2] 8.2 Fase, Aktivitas, dan Hasil
+Fase
+Aktivitas utama
+Hasil yang diserahkan
+Kriteria selesai
+0. Mobilisasi (minggu 1–2)
+Penetapan tim dan tata kelola; kick-off meeting proyek; konfirmasi lingkup
+Piagam proyek, rencana kerja rinci, daftar kontak
+Piagam proyek disetujui sponsor
+1. Discovery dan gap assessment (minggu 2–5)
+Wawancara MS Manager dan auditor internal; inventarisasi dokumen, risiko, dan temuan; pengukuran baseline; gap assessment untuk ruang lingkup yang belum tersertifikasi
+Laporan discovery dan baseline, laporan gap assessment, daftar data yang akan dimigrasikan
+Laporan disetujui MS Manager
+2. Desain konfigurasi (minggu 5–7)
+Pemetaan organisasi, peran, dan pemilik; konvensi dokumen; ambang kesegaran bukti; alur persetujuan; desain integrasi
+Dokumen desain konfigurasi, desain integrasi
+Desain disetujui dalam lokakarya
+3. Konfigurasi, migrasi, integrasi (minggu 7–11)
+Pemasangan (untuk on-premise); konfigurasi; migrasi data; integrasi SSO dan repository; uji fungsi
+Lingkungan terkonfigurasi, laporan migrasi, laporan uji
+Uji penerimaan pengguna lulus
+4. Pilot (minggu 11–14)
+Menjalankan satu siklus audit internal atau satu fase implementasi pada satu sistem manajemen
+Laporan pilot dan daftar penyesuaian
+Pilot diterima MS Manager
+5. Rollout dan pelatihan (minggu 14–17)
+Perluasan ke sistem manajemen lain; pelatihan per peran; materi panduan
+Seluruh ruang lingkup aktif, materi pelatihan, catatan kehadiran
+Pengguna kunci terlatih
+6. Hypercare (minggu 17–20)
+Pendampingan penggunaan harian; perbaikan konfigurasi; serah terima ke tim pendukung
+Laporan hypercare, dokumen serah terima, runbook
+Serah terima ditandatangani
+[Heading2] 8.3 Pembagian Peran
+R = Responsible, A = Accountable, C = Consulted, I = Informed.
+Aktivitas
+Penyedia
+Sponsor Perusahaan
+MS Manager
+TI Perusahaan
+Domain Owner
+Tata kelola proyek
+R
+A
+C
+I
+I
+Discovery dan gap assessment
+R
+I
+A
+C
+C
+Desain konfigurasi
+R
+I
+A
+C
+C
+Penyiapan infrastruktur (on-premise)
+C
+I
+I
+A/R
+—
+Konfigurasi dan migrasi data
+R
+I
+A
+C
+C
+Integrasi SSO dan repository
+R
+I
+C
+A
+—
+Uji penerimaan pengguna
+C
+I
+A/R
+C
+R
+Pelatihan
+R
+I
+A
+I
+C
+Operasi setelah serah terima
+C
+I
+A
+R
+I
+[Heading2] 8.4 Pengelolaan Perubahan dan Adopsi
+Keberhasilan solusi ini ditentukan oleh Domain Owner yang menyerahkan bukti, bukan oleh MS Manager yang mengelolanya. Domain Owner biasanya memiliki pekerjaan utama di luar sistem manajemen ISO dan tidak perlu memahami nomor klausul. Karena itu, pelatihan untuk kelompok ini kami buat singkat, berbasis tugas nyata, dan dilakukan di dalam unit kerja masing-masing. Kami juga menyiapkan contoh bukti yang diterima untuk setiap jenis permintaan, agar penyerahan pertama tidak ditolak karena format.
+[Heading1] 9. Tata Kelola Proyek
+Forum
+Peserta
+Frekuensi
+Tujuan
+Steering committee
+Sponsor Perusahaan, pimpinan fungsi terkait, engagement lead penyedia
+Bulanan dan pada setiap akhir fase
+Keputusan lingkup, prioritas, dan eskalasi
+Rapat progres
+Manajer proyek kedua pihak, MS Manager, perwakilan TI
+Mingguan
+Progres, isu, risiko, dan keputusan operasional
+Lokakarya desain
+MS Manager, auditor internal, perwakilan Domain Owner
+Sesuai jadwal fase 1 dan 2
+Menyepakati desain konfigurasi
+Perubahan lingkup diajukan melalui formulir permintaan perubahan yang memuat dampak terhadap jadwal, biaya, dan risiko, dan diputuskan oleh steering committee. Risiko, asumsi, isu, dan keputusan dicatat dalam satu register yang ditinjau pada setiap rapat progres.
+Laporan progres mingguan memuat pencapaian terhadap rencana, isu yang memerlukan keputusan, risiko baru, dan rencana minggu berikutnya. Laporan disampaikan paling lambat satu hari kerja setelah rapat progres.
+[Heading1] 10. Tim yang Diusulkan
+Susunan tim di bawah ini disesuaikan dengan lingkup satu sampai dua sistem manajemen. Untuk lingkup yang lebih besar, jumlah konsultan ISO dan implementation engineer akan ditambah. Profil anggota tim disampaikan dalam lampiran terpisah.
+Peran
+Tanggung jawab
+Keterlibatan
+Engagement Lead
+Akuntabel atas keberhasilan penugasan; titik eskalasi; anggota steering committee
+Paruh waktu
+Manajer Proyek
+Perencanaan, pengendalian jadwal, pengelolaan risiko dan isu, pelaporan
+Penuh waktu
+Solution Architect
+Desain konfigurasi, arsitektur deployment, desain integrasi, kajian keamanan
+Paruh waktu, penuh pada fase 2 dan 3
+Konsultan ISO (Lead Auditor)
+Gap assessment, penyesuaian konten framework pack, pendampingan audit internal pertama
+Satu orang per standar, paruh waktu
+Implementation Engineer
+Konfigurasi, migrasi data, uji fungsi
+Penuh waktu pada fase 3 sampai 5
+Integration Engineer
+Integrasi SSO, konektor repository, notifikasi
+Paruh waktu pada fase 3
+Change and Training Lead
+Rencana adopsi, materi pelatihan, pelatihan per peran
+Paruh waktu pada fase 4 sampai 6
+Dari pihak Perusahaan, kami memerlukan satu sponsor proyek, satu MS Manager untuk setiap sistem manajemen dalam lingkup, satu perwakilan TI, dan perwakilan Domain Owner untuk uji penerimaan dan pilot.
+[Heading1] 11. Manfaat dan Ukuran Keberhasilan
+Kami tidak mencantumkan target angka sebelum baseline diukur. Tabel berikut memuat indikator yang kami usulkan beserta cara pengukurannya. Target untuk setiap indikator ditetapkan bersama pada akhir fase discovery.
+Indikator
+Cara pengukuran
+Arah perubahan yang diharapkan
+Waktu persiapan audit eksternal
+Hari kerja tim dari penetapan tanggal audit sampai paket bukti siap
+Turun
+Waktu menelusuri satu kontrol sampai bukti operasi
+Diukur saat simulasi audit
+Dari hitungan menit menjadi hitungan detik
+Item tertunda yang tenggatnya melewati tanggal audit
+Jumlah item pada hari audit
+Nol
+Temuan yang berulang dari audit sebelumnya
+Jumlah temuan dengan akar masalah sama pada dua audit berturut-turut
+Turun
+Ketepatan waktu penyerahan bukti
+Persentase item yang diserahkan paling lambat pada tenggat
+Naik
+Penerimaan bukti pada penyerahan pertama
+Persentase bukti yang diterima auditor tanpa perbaikan
+Naik
+Temuan major pada audit eksternal
+Jumlah per audit
+Nol
+[Heading1] 12. Asumsi dan Ketergantungan
+[ListParagraph] Perusahaan menunjuk sponsor proyek dan MS Manager yang tersedia minimal 40 persen waktunya selama fase 1 sampai 4.
+[ListParagraph] Data yang akan dimigrasikan tersedia dalam format elektronik dan diserahkan paling lambat akhir fase 1.
+[ListParagraph] Untuk mode on-premise, infrastruktur sesuai spesifikasi yang kami berikan tersedia paling lambat awal fase 3.
+[ListParagraph] Tim TI Perusahaan memberikan izin konektor pada tenant Microsoft 365 atau Google Workspace sesuai desain integrasi.
+[ListParagraph] Keputusan yang diperlukan dalam lokakarya desain diberikan dalam lima hari kerja.
+[ListParagraph] Jadwal audit eksternal ditetapkan oleh Perusahaan bersama lembaga sertifikasi; proyek ini tidak mengubah jadwal tersebut.
+[ListParagraph] Kajian hukum atas penempatan data dan penggunaan data kinerja karyawan dilakukan oleh fungsi hukum Perusahaan.
+[Heading1] 13. Risiko dan Mitigasi
+Risiko
+Dampak
+Mitigasi
+Domain Owner tidak menggunakan sistem
+Bukti tetap dikirim melalui surel; data di sistem tidak lengkap
+Pelatihan berbasis tugas nyata; My Tasks yang sederhana; pengingat otomatis; dukungan sponsor untuk menjadikan sistem sebagai satu-satunya jalur penyerahan bukti
+Kualitas data awal rendah
+Migrasi memakan waktu lebih lama; status awal tidak akurat
+Pembersihan data pada fase 1; migrasi bertahap; penandaan data yang belum terverifikasi
+Persetujuan keamanan untuk konektor tertunda
+Integrasi repository terlambat
+Pengajuan izin dimulai pada fase 2; mode managed vault sebagai jalur sementara bila disetujui Perusahaan
+Infrastruktur on-premise belum siap
+Fase 3 tertunda
+Spesifikasi diserahkan pada fase 0; pemeriksaan kesiapan pada akhir fase 2
+Scorecard dipersepsikan sebagai alat pengawasan
+Resistensi karyawan
+Tata kelola penggunaan data sesuai Bagian 6.4; komunikasi terbuka sebelum fitur diaktifkan
+Konten framework pack untuk standar tertentu belum lengkap
+Pilot atau rollout standar tersebut tertunda
+Konfirmasi kedalaman konten pada fase 1; penyusunan konten bersama konsultan ISO bila diperlukan
+Jadwal audit eksternal berdekatan dengan go-live
+Pengguna belum terbiasa saat audit berlangsung
+Go-live dijadwalkan minimal delapan minggu sebelum audit eksternal; pilot pada audit internal terlebih dahulu
+[Heading1] 14. Mengapa Kami
+Kami menggabungkan pengalaman implementasi sistem manajemen ISO dengan pengalaman membangun dan mengoperasikan perangkat lunak keamanan. Kombinasi ini relevan karena solusi yang diusulkan bukan hanya perangkat lunak, melainkan cara kerja baru bagi MS Manager, auditor internal, dan Domain Owner.
+[ListParagraph] Produk dan konsultansi dari satu pihak. Konfigurasi dan konten standar disusun oleh tim yang sama dengan tim yang memahami persyaratan audit, sehingga keputusan desain tidak berhenti pada batas antara vendor perangkat lunak dan konsultan.
+[ListParagraph] Pilihan penempatan data. MSCD dapat dipasang di data center Perusahaan dan dapat membiarkan berkas tetap berada di repository Perusahaan, dengan fitur yang sama dengan mode SaaS.
+[ListParagraph] Konteks lokal. Dukungan dan pelatihan dalam Bahasa Indonesia, serta pemahaman atas praktik audit oleh lembaga sertifikasi yang beroperasi di Indonesia.
+[ListParagraph] Kredensial. [Daftar proyek sejenis, sertifikasi tim seperti ISO/IEC 27001 Lead Auditor dan ISO 22301 Lead Auditor, serta referensi pelanggan, dilengkapi oleh penyedia.]
+[Heading1] Lampiran A. Keterkaitan Fitur dengan Klausul ISO
+Tabel ini memuat klausul inti Harmonized Structure yang berlaku pada keempat standar. Penomoran mengikuti struktur umum; penomoran rinci setiap edisi standar dimuat dalam framework pack masing-masing.
+Klausul
+Topik
+Fitur MSCD yang mendukung
+4.1, 4.2
+Konteks organisasi dan pihak berkepentingan
+Register isu konteks dan pihak berkepentingan yang dirujuk oleh risiko
+4.3
+Ruang lingkup
+Definisi ruang lingkup per sistem manajemen; justifikasi pengecualian
+5.1, 5.3
+Kepemimpinan dan peran
+Pemilik bernama untuk setiap item; pemisahan tugas
+6.1
+Tindakan terhadap risiko dan peluang
+Register risiko dengan pemilik, perlakuan, dan persetujuan residual
+6.2
+Sasaran
+Sasaran terukur yang terhubung ke metrik
+7.2, 7.3
+Kompetensi dan kepedulian
+Pencatatan pelatihan dan bukti kompetensi
+7.5
+Informasi terdokumentasi
+Register dokumen dengan versi, persetujuan, tanggal review, dan lokasi berkas
+8.1
+Perencanaan dan pengendalian operasional
+Bukti operasi dengan kesegaran terhadap frekuensi kontrol
+9.1
+Pemantauan dan pengukuran
+Metrik dengan pemantauan pembaruan
+9.2
+Audit internal
+Program audit, permintaan bukti, pustaka kondisi temuan, pencatatan temuan
+9.3
+Tinjauan manajemen
+Input wajib per standar dan pemeriksaan kelengkapannya
+10.2
+Ketidaksesuaian dan tindakan korektif
+Alur corrective action dengan root cause analysis dan verifikasi efektivitas
+[Heading1] Lampiran B. Daftar Istilah
+Istilah
+Pengertian dalam proposal ini
+Corrective action
+Tindakan untuk menghilangkan penyebab ketidaksesuaian agar tidak terulang
+Domain Owner
+Pemilik area kerja yang bertanggung jawab menjalankan kontrol dan menyerahkan bukti
+Evidence
+Bukti bahwa kontrol atau persyaratan dijalankan, misalnya laporan, catatan, atau tangkapan layar sistem
+Findings
+Hasil audit berupa ketidaksesuaian major, minor, atau peluang perbaikan
+Framework pack
+Paket konten standar yang dimuat ke MSCD: klausul, katalog kontrol, templat, dan pustaka temuan
+Gate
+Syarat yang harus dipenuhi sebelum fase implementasi berikutnya dapat dimulai
+Harmonized Structure
+Struktur klausul 4 sampai 10 yang digunakan bersama oleh standar sistem manajemen ISO
+MS Manager
+Koordinator harian satu sistem manajemen, misalnya ISMS Manager atau QMS Manager
+Rantai keterlacakan
+Hubungan dari isu konteks dan risiko sampai bukti operasi dan metrik yang ditelusuri auditor
+Recertification
+Audit pada tahun ketiga untuk memperbarui sertifikat
+Repository
+Tempat penyimpanan berkas, misalnya SharePoint, OneDrive, Google Drive, atau file share internal
+Statement of Applicability
+Dokumen ISO/IEC 27001 yang menyatakan kontrol Annex A yang berlaku beserta justifikasinya
+Surveillance
+Audit eksternal pada tahun pertama dan kedua setelah sertifikat terbit
+[Heading1] Pernyataan Penutup
+Proposal ini disusun berdasarkan informasi yang tersedia pada saat penyusunan dan diskusi awal dengan PT [Nama Klien]. Lingkup, jadwal, dan susunan tim dapat disesuaikan setelah fase discovery. Proposal ini tidak merupakan nasihat hukum, keuangan, atau regulasi. Penggunaan MSCD membantu Perusahaan memenuhi dan membuktikan persyaratan standar, tetapi keputusan sertifikasi tetap berada pada lembaga sertifikasi.
+Informasi dalam dokumen ini bersifat rahasia dan disampaikan hanya untuk keperluan evaluasi oleh PT [Nama Klien]. Dokumen ini tidak boleh diperbanyak atau diteruskan kepada pihak lain tanpa persetujuan tertulis dari [Nama Penyedia].

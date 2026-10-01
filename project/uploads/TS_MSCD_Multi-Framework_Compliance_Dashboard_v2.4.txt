@@ -1,0 +1,2127 @@
+TECHNICAL SPECIFICATION
+Management System Compliance Dashboard
+Arsitektur deployment, Framework Engine, Storage Abstraction, Data Dictionary, State Machine, RBAC Permission Matrix, dan Business Rules — spesifikasi teknis untuk tim pengembang.
+Field
+Detail
+Document ID
+TS-MSCD-01
+Versi
+2.4 — Draft untuk ditinjau tim engineering
+Menggantikan
+TS-MSCD-01 v2.0; TS-ISMS-DASH-01 v1.0
+Dokumen Induk
+PRD-MSCD-01 v2.4; Mockup antarmuka v2.4 (EN)
+Paket Terkait
+ISMS Dashboard Seed Data v1 (11 dataset, 762 baris) — menjadi Framework Pack ISO/IEC 27001 v1
+Cakupan
+Modul 1, 2, 3; Framework Engine; mode SaaS dan On-Premise; Storage Abstraction dan adapter repositori pelanggan
+Di Luar Cakupan
+Kontrak API publik lengkap (read model drill-down didefinisikan di Bagian 9), desain UI/UX rinci di luar mockup v2.4, strategi pengujian, rencana DR rinci
+Daftar Isi
+Bidang ini terisi otomatis saat dibuka di Microsoft Word. Jika kosong, klik kanan lalu Update Field.
+[Heading1] 0. Riwayat Perubahan
+Bagian
+Perubahan dari v1.0
+1. Pendahuluan
+Konvensi tenancy dan scope diganti management_system_id; ditambah konvensi deployment profile
+2. Arsitektur dan Deployment
+BARU — sebelumnya di luar cakupan; kini wajib karena dua mode implementasi
+3. Framework Engine
+BARU — format Framework Pack, instalasi, versi edisi, transisi
+4. Data Dictionary
+annex_a_control → catalogue_item; clause_requirement → requirement; soa_entry → applicability_entry; management_review tujuh kolom → baris input; storage_uri/file_uri → storage_object; entitas khusus framework
+5. Storage Abstraction
+BARU — antarmuka penyedia penyimpanan, adapter, integritas, pemeriksaan tautan
+6. State Machine
+Tetap dengan penamaan baru; ditambah state machine MS, storage_object, framework_version, due diligence, BC plan
+7. RBAC
+Peran per MS; peran administratif baru; entitas baru
+8. Business Rules
+BR-01 s.d. BR-20 diberi kolom cakupan framework; BR-21 s.d. BR-38 baru
+[Heading2] 0.1 Perubahan v2.1 sampai v2.4
+Revisi ini menyelaraskan spesifikasi dengan mockup v2.4 dan PRD-MSCD-01 v2.4, yang menambahkan drill-down pada ketiga modul. Tidak ada perubahan pada arsitektur deployment, Framework Engine, maupun Storage Abstraction.
+Bagian
+Perubahan v2.1 – v2.4
+4.9 Entitas Pendukung Drill-down
+BARU — implementation_activity_progress diperluas, audit_event diperluas, audit_prep_task, cycle_requirement, drift_rule dan drift_result, display_name pengguna
+6.6 – 6.9 State Machine
+BARU — aktivitas implementasi (termasuk status turunan locked), tugas persiapan audit, cycle requirement, dan derivasi status record rantai
+7.5 RBAC
+BARU — visibilitas tampilan pending per orang dan drill-down
+8.3 Business Rules
+BARU — BR-39 s.d. BR-50
+9. Read Model dan Kontrak Drill-down
+BARU — read model, endpoint, kontrak data, derivasi After audit, kinerja dan konsistensi angka
+10. Catatan Implementasi
+Sebelumnya Bagian 9; ditambah tahap read model drill-down
+[Heading1] 1. Pendahuluan
+Dokumen ini menerjemahkan PRD-MSCD-01 v2.0 menjadi spesifikasi yang dapat langsung diimplementasikan. Tiga ketentuan baru PRD — multi-framework, dua mode implementasi, dan repositori berkas milik pelanggan — masing-masing dijawab oleh satu komponen arsitektur: Framework Engine, Deployment Profile, dan Storage Abstraction Layer. Ketiganya wajib ada sejak MVP.
+[Heading2] 1.1 Konvensi Umum
+Konvensi
+Ketentuan
+Primary key
+UUID v4 pada kolom id. ID bisnis (requirement_code, doc_id, risk_code) unik dalam lingkupnya tetapi bukan primary key.
+Timestamp
+created_at dan updated_at wajib, timestamptz, UTC.
+Soft delete
+deleted_at nullable. Penghapusan fisik dilarang, kecuali purge terverifikasi saat offboarding tenant SaaS.
+Aktor
+created_by dan updated_by merujuk user.id; aktor sistem memakai user khusus bernilai system.
+Tenancy
+organization_id pada seluruh entitas non-referensi. Pada SaaS, setiap organisasi memiliki skema basis data sendiri; organization_id tetap ada untuk RLS lapis kedua dan portabilitas ke On-Premise.
+Management system
+management_system_id pada entitas yang terikat ke satu MS. Entitas yang dapat dibagi memakai tabel penghubung entity_ms_link. Menggantikan scope_id v1.0.
+Konten framework
+Entitas referensi (framework, requirement, catalogue_item, dst.) bersifat global dan hanya-baca bagi tenant; dipasang dari Framework Pack.
+Netralitas framework
+Nama tabel dan kolom tidak boleh memuat istilah khas satu standar (annex, soa, isms). Istilah khas hanya muncul di label dictionary.
+Enum
+String pendek snake_case. Enum khas framework disimpan di tabel lookup yang dipasang pack, bukan enum basis data.
+Rujukan berkas
+Tidak ada kolom file_uri langsung pada entitas bisnis. Seluruh berkas dirujuk melalui storage_object_id.
+Deployment profile
+Perilaku yang berbeda antar mode dibaca dari konfigurasi (Bagian 2.4), tidak pernah dari percabangan kode berdasarkan nama mode.
+CATATAN PENTING TENTANG SOFT DELETE
+Seluruh query aplikasi wajib menyaring deleted_at IS NULL secara default. Modul audit trail dan evidence pack harus dapat mengakses rekaman terhapus. Rancang lapisan akses data dengan dua mode sejak awal.
+[Heading1] 2. Arsitektur dan Deployment
+[Heading2] 2.1 Komponen Logis
+Kedua mode memakai artefak rilis yang sama: kumpulan image container bertanda tangan. Teknologi di bawah ini adalah rujukan yang disarankan; tim dapat mengganti selama antarmukanya dipertahankan.
+Komponen
+Tanggung Jawab
+Rujukan Teknologi
+Skala
+web
+Antarmuka pengguna (SPA) dan aset statis
+Container Nginx atau setara
+Horizontal, stateless
+api
+API aplikasi, RBAC, state machine, business rules
+Container aplikasi
+Horizontal, stateless
+worker
+Job terjadwal dan asinkron: freshness engine, link health check, notifikasi, evidence pack, impor
+Container aplikasi, mode worker
+Horizontal per antrean
+storage-gateway
+Satu-satunya komponen yang berbicara dengan penyedia penyimpanan; menjalankan adapter
+Container aplikasi, mode gateway
+Horizontal; dapat ditempatkan di zona jaringan terpisah
+database
+Data terstruktur, audit trail
+PostgreSQL 15 ke atas
+Primary + replica
+queue / cache
+Antrean job, cache sesi
+Redis, atau antrean berbasis PostgreSQL untuk instalasi kecil
+Primary + replica
+object storage
+Managed Vault, artefak evidence pack, impor
+S3-compatible
+Sesuai volume
+secrets / KMS
+Kunci enkripsi data, kredensial konektor
+SaaS: KMS cloud. On-Premise: HashiCorp Vault, HSM pelanggan, atau kunci berbasis berkas terenkripsi
+—
+license-service
+Validasi lisensi dan entitlement
+Modul di dalam api; validasi tanda tangan luring
+—
+MENGAPA STORAGE-GATEWAY DIPISAH
+Konektor repositori pelanggan memerlukan koneksi keluar ke Microsoft Graph atau Google API, sedangkan komponen lain tidak. Memisahkannya memungkinkan pelanggan On-Premise menempatkan satu komponen saja di zona jaringan yang diizinkan keluar, dan memungkinkan audit keamanan terfokus pada satu titik yang memegang kredensial repositori pelanggan.
+[Heading2] 2.2 Topologi SaaS
+[ListParagraph] Multi-tenant pada satu kluster per region. Isolasi: skema PostgreSQL per organisasi, Row-Level Security pada organization_id sebagai lapis kedua, dan kunci enkripsi data per tenant (envelope encryption dengan KMS).
+[ListParagraph] Region dipilih per tenant saat onboarding dan tidak dapat dipindah tanpa migrasi terkelola. Seluruh data tenant, cadangan, dan log aplikasi yang memuat data tenant berada di region tersebut.
+[ListParagraph] Kredensial konektor tenant dienkripsi dengan kunci tenant; operator penyedia tidak dapat membacanya dalam bentuk plaintext.
+[ListParagraph] Pembaruan aplikasi bergulir (rolling) dengan migrasi skema yang kompatibel ke belakang satu versi.
+[Heading2] 2.3 Topologi On-Premise
+Varian
+Target
+Isi Paket
+Catatan
+Kubernetes (utama)
+Produksi
+Helm chart, image bertanda tangan, values rujukan HA, manifest NetworkPolicy
+Distribusi yang didukung ditentukan pada matriks kompatibilitas
+Docker Compose
+Instalasi kecil, PoC, lab
+Berkas compose, image, skrip inisialisasi
+Tanpa HA; tidak disarankan untuk produksi besar
+Offline bundle
+Lingkungan air-gapped
+Seluruh image, Helm chart, Framework Pack, skrip migrasi, checksum dan tanda tangan
+Diimpor ke registry internal pelanggan
+[Heading3] Ukuran Indikatif
+Profil
+Pengguna / MS
+Rujukan Sumber Daya
+Kecil (Compose)
+Hingga 150 pengguna, 1–2 MS
+1 VM: 8 vCPU, 32 GB RAM, 500 GB SSD; object storage lokal
+Menengah (Kubernetes)
+Hingga 1.000 pengguna, hingga 6 MS
+3 worker node: 8 vCPU, 32 GB RAM; PostgreSQL primary + replica; object storage 2 TB
+Besar (Kubernetes)
+Lebih dari 1.000 pengguna atau banyak entitas anak
+Dirancang per kasus bersama tim infrastruktur pelanggan
+Angka bersifat indikatif dan wajib divalidasi dengan uji beban sebelum dijadikan prasyarat kontraktual.
+[Heading3] Kebutuhan Koneksi Keluar (On-Premise)
+Tujuan
+Komponen
+Wajib?
+Keterangan
+Kanal pembaruan penyedia
+api
+Tidak
+Hanya bila pelanggan memilih pembaruan daring
+graph.microsoft.com, login.microsoftonline.com
+storage-gateway
+Hanya bila memakai adapter Microsoft 365
+HTTPS 443
+www.googleapis.com, oauth2.googleapis.com
+storage-gateway
+Hanya bila memakai adapter Google Drive
+HTTPS 443
+IdP pelanggan, SMTP relay, file share, S3 internal
+api, worker, storage-gateway
+Sesuai konfigurasi
+Di dalam jaringan pelanggan
+[Heading2] 2.4 Deployment Profile
+Perbedaan perilaku antar mode dikendalikan konfigurasi. Kode aplikasi membaca kapabilitas, bukan nama mode.
+Kunci
+Nilai
+SaaS
+On-Premise
+tenancy.mode
+multi | single
+multi
+single
+tenancy.isolation
+schema | database
+schema
+database
+license.validation
+online | offline
+online
+offline (default)
+updates.channel
+managed | online | offline
+managed
+online atau offline
+packs.channel
+managed | online | offline
+managed
+online atau offline
+telemetry.enabled
+boolean
+true (operasional)
+false (default)
+kms.provider
+cloud_kms | vault | hsm | file
+cloud_kms
+vault, hsm, atau file
+identity.providers
+local, saml, oidc, ldap
+local, saml, oidc
+local, saml, oidc, ldap
+mail.transport
+provider | smtp
+provider
+smtp
+storage.adapters.enabled
+daftar adapter
+managed_vault, m365, google_drive, s3
+managed_vault, m365, google_drive, smb, s3, webdav
+network.egress_allowlist
+daftar host
+dikelola penyedia
+diisi pelanggan
+[Heading2] 2.5 Lisensi dan Entitlement
+Lisensi adalah dokumen JSON bertanda tangan (Ed25519) yang memuat: organisasi, masa berlaku, framework yang diizinkan, jumlah MS, jumlah pengguna, adapter penyimpanan, dan fitur. Aplikasi memverifikasi tanda tangan dengan kunci publik yang tertanam di image, sehingga validasi On-Premise tidak memerlukan koneksi. Lisensi kedaluwarsa memberi masa tenggang; setelahnya aplikasi masuk mode hanya-baca, tidak pernah menghapus atau mengunci data pelanggan.
+{
+  &quot;license_id&quot;: &quot;LIC-2026-0142&quot;, &quot;organization&quot;: &quot;Client A&quot;,
+  &quot;valid_from&quot;: &quot;2026-10-01&quot;, &quot;valid_until&quot;: &quot;2027-09-30&quot;, &quot;grace_days&quot;: 30,
+  &quot;frameworks&quot;: [&quot;ISO27001&quot;, &quot;ISO9001&quot;], &quot;max_management_systems&quot;: 4, &quot;max_users&quot;: 400,
+  &quot;storage_adapters&quot;: [&quot;managed_vault&quot;, &quot;m365&quot;], &quot;features&quot;: [&quot;integrated_mode&quot;],
+  &quot;signature&quot;: &quot;ed25519:...&quot;
+}
+[Heading1] 3. Framework Engine
+[Heading2] 3.1 Struktur Framework Pack
+Framework Pack adalah arsip bertanda tangan. Dataset seed v1 dikemas ulang menjadi pack ISO27001-2022 v1.0.0 tanpa mengubah isinya.
+ISO27001-2022-1.0.0.pack
+├── manifest.json            identitas, edisi, versi pack, dependensi, checksum
+├── requirements.csv         pohon klausul (menggantikan clause_requirements)
+├── catalogue.csv            item katalog (menggantikan annex_a_controls)
+├── applicability_model.json target applicability, justifikasi wajib, label
+├── risk_profile.json        dimensi, skala, objek risiko
+├── traceability_chain.csv   simpul rantai dan flag wajib
+├── activities.csv           fase dan aktivitas, gate kritis
+├── audit_activities.csv
+├── finding_conditions.csv
+├── document_templates.csv
+├── evidence_frequency_rules.csv
+├── review_inputs.csv        input wajib tinjauan manajemen
+├── labels.{id,en}.json      label dictionary
+├── mappings/*.csv           pemetaan ke framework lain
+├── rules.json               aktivasi dan parameter business rule
+├── modules.json             workbench khusus yang diaktifkan
+└── signature
+{
+  &quot;pack_id&quot;: &quot;ISO9001-2026&quot;, &quot;pack_version&quot;: &quot;1.0.0&quot;, &quot;framework_code&quot;: &quot;ISO9001&quot;,
+  &quot;edition&quot;: &quot;2026&quot;, &quot;status&quot;: &quot;current&quot;,
+  &quot;supersedes&quot;: {&quot;edition&quot;: &quot;2015&quot;, &quot;transition_ends&quot;: &quot;[isi sesuai ketetapan IAF/CB]&quot;},
+  &quot;engine_min_version&quot;: &quot;1.5.0&quot;, &quot;modules&quot;: [&quot;process_map&quot;, &quot;customer_feedback&quot;, &quot;nonconforming_output&quot;],
+  &quot;applicability_target&quot;: &quot;requirement&quot;, &quot;catalogue&quot;: false,
+  &quot;datasets&quot;: {&quot;requirements.csv&quot;: &quot;sha256:...&quot;, &quot;...&quot;: &quot;...&quot;}
+}
+[Heading2] 3.2 Siklus Hidup Pack
+[ListParagraph] Validasi — tanda tangan, checksum dataset, kompatibilitas engine_min_version, dan integritas referensial (misalnya setiap finding_condition merujuk requirement yang ada).
+[ListParagraph] Instalasi — dataset dimuat ke tabel referensi global dengan kunci (framework_version_id, kode). Instalasi bersifat atomik; gagal sebagian berarti rollback penuh.
+[ListParagraph] Aktivasi — Tenant Administrator membuat ManagementSystem pada framework_version tersebut. Template (aktivitas, dokumen, pustaka yang dapat disunting) disalin ke ruang tenant; konten referensi tidak disalin.
+[ListParagraph] Pembaruan minor — perbaikan konten pada edisi yang sama (misalnya kondisi temuan baru). Diterapkan otomatis ke konten referensi; salinan template di tenant ditawarkan sebagai pembaruan, tidak ditimpa.
+[ListParagraph] Transisi edisi — pack edisi baru dipasang berdampingan. Lihat Bagian 3.4.
+[Heading2] 3.3 Resolusi Label
+Antarmuka tidak pernah menampilkan nama tabel. Setiap istilah diambil dari label dictionary dengan kunci generik, misalnya ms.name, ms.manager_role, applicability.artefact_name, catalogue.item_name. Pada tampilan Integrated, dipakai label generik dari engine.
+Kunci
+ISO27001
+ISO9001
+ISO22301
+ISO37001
+ms.name
+ISMS
+QMS
+BCMS
+ABMS
+ms.manager_role
+ISMS Manager
+QMS Manager
+BCMS Manager
+Anti-Bribery Compliance Function
+applicability.artefact_name
+Statement of Applicability
+Requirement Applicability
+BCMS Scope Determination
+Control Proportionality
+catalogue.item_name
+Control
+—
+—
+Anti-bribery control
+risk.object_name
+Information security risk
+Risk or opportunity
+Disruption risk
+Bribery risk
+[Heading2] 3.4 Transisi Edisi
+Pemetaan antar edisi disimpan di mappings/ dengan jenis relasi: equivalent, split, merged, changed, new, removed. Edition Transition Assistant menjalankan:
+UNTUK SETIAP relasi r PADA ms (dokumen, bukti, applicability) YANG MERUJUK requirement lama q:
+  m = mapping[q]
+  JIKA m.type = equivalent MAKA salin relasi ke requirement baru, tandai auto_mapped
+  JIKA m.type IN (split, merged, changed) MAKA buat transition_task untuk MS Manager
+  JIKA m.type = removed MAKA arsipkan relasi, jangan hapus
+UNTUK SETIAP requirement baru tanpa relasi masuk: buat transition_task (gap)
+Selama transisi, MS memiliki dua baris management_system_version; audit trail mencatat edisi aktif pada setiap perubahan.
+[Heading2] 3.5 Cakupan Business Rule per Framework
+Setiap business rule memiliki atribut applies_to (daftar framework_code atau ALL) di rules.json. Engine hanya mengevaluasi rule yang aktif untuk MS entitas terkait. Untuk entitas bersama, rule dievaluasi untuk setiap MS yang tertaut, dan pelanggaran di salah satu MS cukup untuk menolak transisi.
+[Heading1] 4. Data Dictionary
+Field standar (id, created_at, updated_at, deleted_at, created_by, updated_by, organization_id) tidak diulang.
+[Heading2] 4.1 Entitas Referensi Global (dari Framework Pack)
+[Heading3] framework dan framework_version
+Field
+Tipe
+Null
+Constraint / Enum
+Keterangan
+framework.code
+varchar(20)
+NO
+UNIQUE
+ISO27001, ISO9001, ISO22301, ISO37001
+framework.name
+varchar(150)
+NO
+—
+Nama tampilan
+version.framework_id
+uuid
+NO
+FK framework.id
+—
+version.edition
+varchar(20)
+NO
+UNIQUE bersama framework_id
+Contoh 2022, 2026, 2019, 2025
+version.pack_version
+varchar(20)
+NO
+semver
+Versi konten pack
+version.status
+varchar(15)
+NO
+enum: current, transition, withdrawn
+Lihat Bagian 6.3
+version.transition_ends_at
+date
+YES
+—
+Batas akhir edisi lama
+version.pack_checksum
+varchar(64)
+NO
+SHA-256
+Integritas pack terpasang
+[Heading3] requirement (menggantikan clause_requirement)
+Field
+Tipe
+Null
+Constraint / Enum
+Keterangan
+framework_version_id
+uuid
+NO
+FK
+—
+requirement_code
+varchar(20)
+NO
+UNIQUE per version
+Contoh 6.1.2, 8.2.2
+parent_id
+uuid
+YES
+FK requirement.id
+Pohon klausul
+title_short
+varchar(255)
+NO
+—
+Judul ringkas, bukan teks standar
+clause_group
+varchar(3)
+NO
+enum 4..10
+Harmonized Structure
+is_hs_common
+boolean
+NO
+default false
+Persyaratan inti Harmonized Structure; kandidat pemetaan otomatis
+documented_info_mandatory
+boolean
+NO
+default false
+Dipakai Gate Enforcement
+applicability_assessable
+boolean
+NO
+default false
+true bila dapat dinyatakan tidak berlaku (misalnya klausul 8 ISO 9001)
+sort_order
+integer
+NO
+—
+—
+[Heading3] catalogue_item (menggantikan annex_a_control)
+Field
+Tipe
+Null
+Constraint / Enum
+Keterangan
+framework_version_id
+uuid
+NO
+FK
+—
+item_code
+varchar(20)
+NO
+UNIQUE per version
+A.5.1 (27001); ABC-DD-01 (37001)
+theme_code
+varchar(20)
+NO
+lookup pack
+A5..A8 (27001); financial, non_financial, due_diligence (37001)
+title_short
+varchar(255)
+NO
+—
+—
+requirement_id
+uuid
+YES
+FK requirement
+Klausul induk bila ada
+flags
+jsonb
+NO
+default {}
+Contoh {&quot;is_new_in_2022&quot;: true}
+sort_order
+integer
+NO
+—
+—
+[Heading3] requirement_mapping
+Field
+Tipe
+Null
+Constraint / Enum
+Keterangan
+source_requirement_id
+uuid
+NO
+FK requirement
+—
+target_requirement_id
+uuid
+NO
+FK requirement
+Framework atau edisi lain
+mapping_type
+varchar(15)
+NO
+enum: equivalent, partial, related, split, merged, changed, new, removed
+Tiga pertama lintas framework; sisanya transisi edisi
+evidence_reusable
+boolean
+NO
+default false
+true hanya bila bukti satu sisi sah untuk sisi lain
+note
+text
+YES
+—
+—
+Tabel referensi lain dari pack mengikuti struktur dataset v1 ditambah framework_version_id: traceability_chain_def, activity_template, audit_activity_template, finding_condition, document_template, evidence_frequency_rule, review_input_def, label.
+[Heading2] 4.2 Entitas Organisasi dan Sistem Manajemen
+[Heading3] management_system
+Field
+Tipe
+Null
+Constraint / Enum
+Keterangan
+framework_version_id
+uuid
+NO
+FK
+Edisi aktif
+code
+varchar(20)
+NO
+UNIQUE per org
+Contoh ISMS-JKT, QMS-GROUP
+name
+varchar(150)
+NO
+—
+—
+scope_statement
+text
+NO
+—
+Ruang lingkup sertifikasi
+status
+varchar(20)
+NO
+Lihat Bagian 6.2
+—
+default_storage_repository_id
+uuid
+NO
+FK storage_repository
+Lokasi default berkas baru
+transition_target_version_id
+uuid
+YES
+FK framework_version
+Diisi selama transisi edisi
+certification_body
+varchar(150)
+YES
+—
+—
+[Heading3] entity_ms_link — pembagian artefak lintas MS
+Field
+Tipe
+Null
+Constraint / Enum
+Keterangan
+entity_type
+varchar(30)
+NO
+enum: context_issue, interested_party, asset, document, evidence, risk, audit_event, management_review, metric
+Hanya entitas yang boleh dibagi
+entity_id
+uuid
+NO
+—
+—
+management_system_id
+uuid
+NO
+FK
+—
+is_primary
+boolean
+NO
+default false
+Tepat satu true per entitas; MS pemilik
+relevance_note
+text
+YES
+—
+Alasan relevan bagi MS ini
+UNIQUE (entity_type, entity_id, management_system_id). Entitas yang tidak dapat dibagi (applicability_entry, BIA, due_diligence, certification_cycle) memakai kolom management_system_id langsung.
+[Heading2] 4.3 Perubahan pada Entitas v1.0
+Entitas v1.0
+Perubahan v2.0
+context_issue, interested_party, asset
+Tambah relasi entity_ms_link. Kolom cia_affected dipindah ke atribut dimensi risiko per profil
+risk
+Tambah risk_profile_code (dari pack) dan impact_dimensions jsonb (CIA untuk 27001; dimensi lain sesuai profil). Skala likelihood/consequence dibaca dari profil, bukan CHECK 1..5 tetap
+risk_treatment
+Kolom target menjadi polimorfik terbatas: catalogue_item_id atau requirement_id (salah satu wajib)
+soa_entry → applicability_entry
+Lihat 4.4
+document
+storage_uri dihapus; relasi ke storage_object melalui document_version
+document_version
+file_uri dan file_checksum dihapus; diganti storage_object_id (NOT NULL)
+evidence
+file_uri dan file_checksum dihapus; diganti storage_object_id (NULL bila bukti berupa tautan sistem). control_id dan clause_id diganti tabel evidence_target (many-to-many ke requirement atau catalogue_item, lintas MS)
+operating_criteria
+control_id → target polimorfik terbatas; management_system_id menggantikan scope_id
+finding
+Tambah management_system_id dan framework_version_id; audit_event dapat gabungan
+self_assessment
+condition_id merujuk finding_condition pack; tambah management_system_id
+management_review
+Tujuh kolom input dihapus; diganti tabel management_review_input (4.6). Tambah entity_ms_link untuk tinjauan gabungan
+certification_cycle
+Tambah management_system_id (NOT NULL)
+[Heading2] 4.4 applicability_entry (menggantikan soa_entry)
+Field
+Tipe
+Null
+Constraint / Enum
+Keterangan
+management_system_id
+uuid
+NO
+FK
+—
+target_type
+varchar(15)
+NO
+enum: catalogue_item, requirement
+Dari applicability_model pack
+catalogue_item_id
+uuid
+YES
+FK; wajib bila target_type = catalogue_item
+—
+requirement_id
+uuid
+YES
+FK; wajib bila target_type = requirement
+—
+is_applicable
+boolean
+YES
+null = belum dinilai
+—
+inclusion_justification
+text
+YES
+Wajib sesuai applicability_model
+Pada 27001 harus merujuk risk_code
+exclusion_justification
+text
+YES
+Wajib bila is_applicable false
+—
+implementation_status
+varchar(25)
+YES
+Lihat Bagian 6.1
+—
+last_evidence_at
+date
+YES
+DERIVED
+—
+freshness_status
+varchar(15)
+YES
+DERIVED
+fresh, aging, expired, critical
+integrity_status
+varchar(15)
+YES
+DERIVED
+ok, degraded, broken — dari storage_object bukti terakhir
+UNIQUE (management_system_id, target_type, catalogue_item_id, requirement_id). Relasi: applicability_entry_risk, applicability_entry_document.
+[Heading2] 4.5 Entitas Penyimpanan
+[Heading3] storage_repository
+Field
+Tipe
+Null
+Constraint / Enum
+Keterangan
+name
+varchar(150)
+NO
+—
+Contoh &quot;SharePoint — Compliance Library&quot;
+adapter
+varchar(20)
+NO
+enum: managed_vault, m365, google_drive, smb, s3, webdav
+Harus ada di storage.adapters.enabled
+mode
+varchar(15)
+NO
+enum: stored, pass_through, link, zero_transit
+stored hanya untuk managed_vault
+config
+jsonb
+NO
+Skema per adapter
+Contoh site_id, drive_id, root_folder_id; tidak memuat rahasia
+credential_ref
+varchar(200)
+YES
+Rujukan ke secrets/KMS
+Rahasia tidak pernah disimpan di tabel
+ownership_type
+varchar(15)
+NO
+enum: organizational, personal
+personal memicu BR-30
+retention_confirmed
+boolean
+NO
+default false
+Konfirmasi pelanggan bahwa kebijakan retensi diterapkan
+connection_status
+varchar(15)
+NO
+enum: ok, degraded, failed, revoked
+Hasil uji koneksi terakhir
+last_checked_at
+timestamptz
+YES
+—
+—
+metadata_minimization
+boolean
+NO
+default false
+true: nama berkas asli tidak disimpan
+[Heading3] storage_routing_rule
+Field
+Tipe
+Null
+Constraint / Enum
+Keterangan
+management_system_id
+uuid
+YES
+FK; null = seluruh organisasi
+—
+classification
+varchar(20)
+YES
+public, internal, confidential, restricted
+—
+object_kind
+varchar(15)
+YES
+enum: document, evidence
+—
+storage_repository_id
+uuid
+NO
+FK
+Tujuan
+priority
+smallint
+NO
+—
+Aturan paling spesifik menang
+[Heading3] storage_object
+Field
+Tipe
+Null
+Constraint / Enum
+Keterangan
+storage_repository_id
+uuid
+NO
+FK
+—
+external_item_id
+varchar(300)
+NO
+—
+driveItem id, file id, path relatif, atau object key
+external_version_id
+varchar(200)
+YES
+Wajib bila adapter mendukung versi
+Versi yang dipatok
+display_name
+varchar(255)
+YES
+null bila metadata_minimization
+—
+mime_type
+varchar(100)
+YES
+—
+—
+size_bytes
+bigint
+YES
+—
+—
+hash_algorithm
+varchar(20)
+YES
+enum: sha256, sha1, md5, quickxor, none
+Sesuai ketersediaan adapter
+hash_value
+varchar(128)
+YES
+—
+—
+hash_source
+varchar(15)
+NO
+enum: computed, provider, none
+computed = dihitung aplikasi
+provider_created_at
+timestamptz
+YES
+—
+Dari repositori; pembanding produced_at
+provider_modified_at
+timestamptz
+YES
+—
+—
+link_status
+varchar(20)
+NO
+Lihat Bagian 6.4
+—
+last_verified_at
+timestamptz
+YES
+—
+—
+web_url
+text
+YES
+—
+Tautan buka di repositori; tidak dibagikan ke auditor tanpa izin
+MENGAPA HASH_ALGORITHM DISIMPAN BERSAMA HASH_VALUE
+Setiap repositori menyediakan algoritma berbeda. SharePoint Online dan OneDrive for Business menyediakan quickXorHash; Google Drive menyediakan MD5, SHA-1, dan SHA-256 untuk berkas biner, tetapi tidak untuk dokumen asli Google (Docs, Sheets). Menyimpan hanya satu kolom SHA-256 seperti v1.0 akan memaksa aplikasi mengunduh setiap berkas untuk menghitung ulang — persis hal yang ingin dihindari pelanggan pada mode Link dan Zero-transit.
+[Heading2] 4.6 management_review_input
+Field
+Tipe
+Null
+Constraint / Enum
+Keterangan
+management_review_id
+uuid
+NO
+FK
+—
+review_input_def_id
+uuid
+NO
+FK review_input_def (pack)
+Input wajib per framework
+management_system_id
+uuid
+NO
+FK
+MS yang diwakili input ini
+content
+text
+YES
+—
+Kosong = belum diisi
+source_refs
+jsonb
+YES
+—
+Rujukan metric, finding, risk
+inputs_complete pada management_review dihitung per MS: seluruh review_input_def wajib milik framework MS tersebut memiliki content terisi. Pendekatan baris tetap mempertahankan kemampuan Regression Detector mendeteksi input yang berhenti diisi — alasan yang sama dengan tujuh kolom pada v1.0.
+[Heading2] 4.7 Entitas Khusus Framework
+Diaktifkan melalui modules.json pack. Hanya field kunci yang didaftarkan; field lengkap ditetapkan saat pack disusun.
+Entitas
+Framework
+Field Kunci
+Aturan Kunci
+prioritized_activity
+ISO22301
+product_service_id, name, owner_user_id, mtpd_hours, rto_hours, rpo_hours, mbco_note
+rto_hours &lt;= mtpd_hours (BR-24)
+business_impact_analysis
+ISO22301
+activity_id, impact_over_time jsonb, dependencies jsonb, resources_required jsonb, analysed_at, next_review_at
+Wajib ada untuk setiap aktivitas prioritas
+bc_strategy / bc_plan
+ISO22301
+activity_ids, strategy_text, plan document_id, activation_criteria, owner
+Plan wajib tertaut ke dokumen terkendali
+exercise
+ISO22301
+bc_plan_id, exercise_type (tabletop, walkthrough, simulation, full), performed_at, objectives_met, lessons, finding_ids
+Plan tanpa exercise dalam periode program → untested (BR-25)
+process
+ISO9001
+name, owner_user_id, inputs, outputs, kpi_metric_ids, interacts_with[]
+Wajib memiliki pemilik dan minimal satu KPI
+quality_objective
+ISO9001
+statement, metric_id, target, due_at, owner_user_id
+Wajib terukur (metric_id)
+customer_feedback
+ISO9001
+type (complaint, survey, compliment), received_at, summary, finding_id
+Keluhan dapat menjadi finding
+nonconforming_output
+ISO9001
+detected_at, description, disposition (correct, segregate, return, concession), authorised_by
+Konsesi wajib otorisasi berbeda dari pelapor
+business_associate
+ISO37001
+name, category, jurisdiction, bribery_risk_level, relationship_owner
+Risiko &gt; low wajib due diligence berlaku (BR-26)
+due_diligence
+ISO37001
+subject_type (associate, position, transaction, project), subject_id, performed_at, valid_until, outcome, conditions
+valid_until terlewat → expired
+gift_hospitality_record
+ISO37001
+direction (given, received), counterparty, value_amount, currency, occurred_at, approved_by
+Di atas ambang wajib persetujuan (BR-27)
+concern
+ISO37001
+channel, received_at, is_anonymous, reporter_contact_encrypted, summary_encrypted, status
+Akses terbatas (BR-28); enkripsi tingkat field
+investigation
+ISO37001
+concern_id, investigator_user_id, opened_at, closed_at, outcome, finding_id
+Penyelidik tidak boleh pihak terlapor
+value_amount pada gift_hospitality_record adalah field moneter pertama; gunakan numeric(18,2) dan simpan currency terpisah.
+[Heading2] 4.8 Index dan Pertimbangan Kinerja
+Tabel
+Index
+Alasan
+evidence_target
+(target_type, target_id), (evidence_id)
+Freshness engine dan Golden Thread lintas MS
+evidence
+(organization_id, produced_at DESC)
+Pemindaian bukti terbaru
+applicability_entry
+(management_system_id, implementation_status)
+Dashboard kesiapan per MS
+entity_ms_link
+(management_system_id, entity_type), (entity_type, entity_id)
+Switcher dan tampilan artefak bersama
+storage_object
+(link_status, last_verified_at)
+Penjadwalan link health check
+storage_object
+(storage_repository_id, external_item_id)
+Deteksi berkas yang ditautkan ganda
+requirement_mapping
+(source_requirement_id), (target_requirement_id)
+Pemakaian ulang bukti dan transisi edisi
+finding
+(management_system_id, status, classification)
+Daftar temuan terbuka per MS
+audit_trail
+(entity_type, entity_id, created_at DESC)
+Riwayat satu entitas
+Golden Thread Viewer wajib merender di bawah 3 detik. Definisi rantai kini dinamis per pack, sehingga query rantai dibangkitkan dari traceability_chain_def menjadi satu recursive CTE. Status integritas berkas dibaca dari kolom link_status yang sudah tersimpan — Golden Thread tidak pernah memanggil repositori eksternal secara sinkron.
+[Heading2] 4.9 Entitas Pendukung Drill-down (v2.4)
+Entitas berikut mendukung drill-down Modul 1, 2, dan 3. Sebagian besar angka pada drill-down adalah turunan dari entitas yang sudah ada; entitas baru hanya ditambahkan bila data tidak dapat diturunkan.
+[Heading3] implementation_activity_progress (diperluas)
+Field
+Tipe
+Null
+Constraint / Enum
+Keterangan
+management_system_id
+uuid
+NO
+FK
+Menggantikan organisasi tunggal v1.0
+activity_template_id
+uuid
+NO
+FK activity_template (pack)
+Nomor, fase, klausul, aktivitas, tindakan, output, outcome
+owner_user_id
+uuid
+NO
+FK user
+Orang bernama, bukan peran
+status
+varchar(15)
+NO
+Lihat Bagian 6.6
+locked tidak disimpan; diturunkan
+output_document_id
+uuid
+YES
+FK document
+Wajib bila output template bertipe dokumen terkendali (BR-40)
+blocker_gate_item_ref
+varchar(60)
+YES
+Wajib bila status blocked
+Rujukan item gate penyebab (BR-39)
+blocker_reason
+text
+YES
+Wajib bila status blocked
+—
+due_at
+date
+YES
+—
+—
+completed_at
+date
+YES
+Wajib bila complete atau verified
+—
+verified_by_user_id
+uuid
+YES
+CHECK &lt;&gt; owner_user_id
+Verifikasi oleh MS Manager
+[Heading3] audit_event (diperluas) dan audit_prep_task
+Field
+Tipe
+Null
+Constraint / Enum
+Keterangan
+event.management_system_id
+uuid
+NO
+FK
+—
+event.event_type
+varchar(20)
+NO
+enum: stage1, stage2, surveillance, recertification, transition, special
+transition baru pada v2.4
+event.scheduled_at
+date
+NO
+—
+Dasar perhitungan After audit (BR-41)
+event.audit_days
+smallint
+YES
+—
+—
+event.lead_auditor_name
+varchar(150)
+YES
+—
+Dari lembaga sertifikasi
+event.expected_focus
+text
+YES
+—
+Area yang kemungkinan disampling
+event.prep_window_days
+smallint
+NO
+default 60
+Kapan checklist persiapan dibangkitkan
+event.outcome
+varchar(25)
+YES
+enum v1.0
+—
+event.outcome_summary
+text
+YES
+—
+Ringkasan hasil untuk event yang sudah lewat
+task.audit_event_id
+uuid
+NO
+FK audit_event
+—
+task.template_code
+varchar(30)
+YES
+FK prep_task_template (pack)
+null bila tugas ditambah manual
+task.title
+varchar(255)
+NO
+—
+—
+task.owner_user_id
+uuid
+NO
+FK user
+—
+task.due_at
+date
+NO
+CHECK &lt; event.scheduled_at
+BR-43
+task.status
+varchar(15)
+NO
+Lihat Bagian 6.7
+—
+task.note
+text
+YES
+Wajib bila blocked
+—
+[Heading3] cycle_requirement_def (pack) dan cycle_requirement_status
+Field
+Tipe
+Null
+Constraint / Enum
+Keterangan
+def.framework_version_id
+uuid
+NO
+FK
+—
+def.code
+varchar(30)
+NO
+UNIQUE per version
+Contoh RISK_ASSESSMENT, MGMT_REVIEW, EXERCISE_PROGRAMME
+def.requirement_code
+varchar(20)
+YES
+—
+Klausul rujukan; null untuk item non-klausul seperti tugas transisi
+def.title
+varchar(255)
+NO
+—
+—
+def.derivation
+jsonb
+YES
+—
+Aturan turunan otomatis bila ada (misalnya MR lengkap = inputs_complete)
+status.management_system_id
+uuid
+NO
+FK
+—
+status.certification_cycle_id
+uuid
+NO
+FK
+Satu baris per definisi per siklus
+status.owner_user_id
+uuid
+NO
+FK user
+—
+status.status
+varchar(15)
+NO
+Lihat Bagian 6.8
+—
+status.due_at
+date
+NO
+—
+—
+status.condition_note
+text
+YES
+—
+Contoh: 61 of 90 applicable controls covered
+[Heading3] drift_rule_def (pack) dan drift_result
+Field
+Tipe
+Null
+Constraint / Enum
+Keterangan
+rule.code
+varchar(30)
+NO
+UNIQUE per version
+Contoh DR_RISK_STALE, DR_EVIDENCE_UNVERIFIABLE, DR_METRIC_STALE
+rule.severity
+varchar(10)
+NO
+enum: crit, risk, warn
+—
+rule.source_stage
+varchar(20)
+NO
+Kunci tahap rantai atau entitas
+—
+rule.predicate
+jsonb
+NO
+—
+Kondisi terhadap record; dievaluasi worker
+rule.message
+text
+NO
+—
+Judul dan penjelasan bahasa awam
+result.management_system_id
+uuid
+NO
+FK
+—
+result.rule_id
+uuid
+NO
+FK
+—
+result.entity_type / entity_id
+varchar / uuid
+NO
+—
+Record terdampak
+result.detected_at / resolved_at
+timestamptz
+NO / YES
+—
+Riwayat drift dipertahankan untuk tren
+[Heading3] user (diperluas)
+Field
+Tipe
+Null
+Constraint / Enum
+Keterangan
+display_name
+varchar(150)
+NO
+—
+Ditampilkan bersama label peran pada setiap item tertunda (akuntabilitas bernama)
+job_title
+varchar(150)
+YES
+—
+Opsional; label peran MS tetap diambil dari user_ms_role
+[Heading1] 5. Storage Abstraction Layer
+[Heading2] 5.1 Antarmuka Penyedia Penyimpanan
+Seluruh adapter mengimplementasikan antarmuka yang sama. Modul bisnis hanya mengenal storage_object dan tidak mengetahui adapter yang dipakai.
+Operasi
+Masukan
+Keluaran
+Catatan
+test_connection
+repository
+status, izin efektif
+Dipakai saat konfigurasi dan pemeriksaan harian
+put
+repository, folder_hint, stream, metadata
+external_item_id, version_id, hash
+managed_vault dan pass_through; stream tidak ditulis ke disk lokal
+link
+repository, external_item_id
+version_id, hash, metadata
+Mode link; dipanggil setelah file picker
+register_client_upload
+repository, external_item_id yang dilaporkan browser
+version_id, hash, metadata
+Mode zero_transit; aplikasi memverifikasi item ada dan mengambil metadata dari repositori, bukan dari browser
+stat
+storage_object
+metadata terkini, version_id terkini
+Dipakai link health check
+pin_version
+storage_object
+ok / unsupported
+Mencegah versi dibersihkan retensi versi repositori bila didukung
+open_url
+storage_object, viewer
+URL bertenggat atau tautan repositori
+Tidak pernah URL permanen
+stream
+storage_object
+stream
+Hanya managed_vault dan pass_through; ditolak pada zero_transit
+copy_within
+storage_objects, target_folder
+daftar item baru
+Salinan di sisi repositori untuk evidence pack
+ensure_folder
+repository, path
+folder_id
+Membuat struktur folder konvensi
+[Heading2] 5.2 Matriks Adapter
+Adapter
+Autentikasi dan Izin Minimum
+Versi
+Hash
+Salin di Sisi Repositori
+managed_vault
+Internal
+Versi object storage
+SHA-256 (computed)
+Ya
+m365 (SharePoint, OneDrive for Business)
+Aplikasi terdaftar di Microsoft Entra ID. Disarankan izin aplikasi Sites.Selected yang diberikan hanya pada site kepatuhan; mode zero_transit memakai token delegasi pengguna. Autentikasi aplikasi dengan sertifikat, bukan client secret
+driveItem version id
+quickXorHash (provider); SHA-256 bila pass_through
+Ya (operasi copy asinkron)
+google_drive
+Service account yang ditambahkan sebagai anggota Shared Drive tertentu, atau OAuth delegasi dengan scope drive.file melalui Google Picker. Hindari domain-wide delegation
+revision id; keepForever untuk berkas biner
+sha256Checksum untuk berkas biner (provider); tidak tersedia untuk dokumen asli Google
+Ya (files.copy)
+smb
+Akun layanan domain dengan izin hanya pada share kepatuhan
+Tidak ada; dipakai kombinasi hash + ukuran + mtime
+SHA-256 (computed, di jaringan pelanggan)
+Ya (salin berkas di share)
+s3
+Access key atau role dengan kebijakan terbatas pada bucket/prefix
+VersionId — bucket versioning wajib aktif
+Checksum SHA-256 objek bila didukung; bila tidak, computed
+Ya (CopyObject)
+webdav
+Akun layanan
+Sesuai server
+computed
+Sesuai server
+Kemampuan API penyedia repositori dapat berubah. Verifikasi setiap butir terhadap dokumentasi resmi Microsoft Graph dan Google Drive API saat implementasi adapter, dan sertakan uji kontrak otomatis.
+[Heading2] 5.3 Alur Penyerahan Berkas
+[Heading3] Pass-through
+[ListParagraph] Browser mengunggah ke api; api meneruskan stream ke storage-gateway tanpa menulis ke disk (buffer memori terbatas, atau berkas sementara terenkripsi yang dihapus segera bila berkas besar).
+[ListParagraph] storage-gateway menghitung SHA-256 sambil menulis ke repositori pelanggan melalui upload session.
+[ListParagraph] Repositori mengembalikan item id dan version id; storage_object dibuat dengan hash_source = computed.
+[ListParagraph] Berkas sementara dihapus dan penghapusan dicatat di log teknis.
+[Heading3] Link
+[ListParagraph] Browser membuka file picker repositori (OneDrive/SharePoint picker atau Google Picker) dengan token pengguna.
+[ListParagraph] Browser mengirim item id terpilih ke api.
+[ListParagraph] storage-gateway memanggil link: mengambil version id terkini, hash penyedia, dan metadata langsung dari repositori, lalu mematok versi.
+[Heading3] Zero-transit
+[ListParagraph] api menerbitkan upload intent bertenggat: folder tujuan, batas ukuran, dan kode korelasi.
+[ListParagraph] Browser mengunggah langsung ke repositori dengan token delegasi pengguna (misalnya upload session Microsoft Graph atau resumable upload Google Drive).
+[ListParagraph] Browser melaporkan item id dan kode korelasi ke api.
+[ListParagraph] storage-gateway memverifikasi item di repositori (ada, di folder yang benar, dibuat setelah intent diterbitkan) dan mengambil hash penyedia. Metadata dari browser tidak dipercaya.
+[ListParagraph] Bila repositori tidak menyediakan hash untuk jenis berkas tersebut, storage_object dibuat dengan hash_source = none dan integritas hanya berbasis version id; status ini ditampilkan kepada pengguna dan auditor.
+[Heading2] 5.4 Konvensi Folder
+{root}/{MS code}/{cycle}/{evidence|documents}/{requirement or item code}/{evidence_code}_{produced_at}.{ext}
+Contoh: /Compliance/ISMS-JKT/2026-2029/evidence/A.8.13/EV-0412_2026-09-20.pdf
+        /Compliance/_packs/ISMS-JKT/Stage2-2026/   ← salinan evidence pack
+Pada metadata_minimization = true, nama berkas memakai evidence_code saja tanpa judul.
+[Heading2] 5.5 Link Health Check
+Job worker memeriksa storage_object secara berkala dengan prioritas: bukti yang menopang status implemented, bukti yang akan masuk evidence pack terjadwal, lalu sisanya. Frekuensi default harian untuk prioritas tinggi dan mingguan untuk lainnya; dibatasi rate limit per repositori.
+hasil = adapter.stat(obj)
+JIKA hasil.not_found MAKA status = &quot;missing&quot;
+JIKA hasil.forbidden MAKA status = &quot;access_denied&quot;
+JIKA hasil.item_id berubah folder MAKA status = &quot;moved&quot; (tetap sah, perbarui lokasi)
+JIKA hasil.version_id &lt;&gt; obj.external_version_id:
+    JIKA versi yang dipatok masih dapat diambil MAKA status = &quot;version_changed&quot;
+    SELAIN ITU status = &quot;pinned_version_lost&quot;
+JIKA obj.hash_source = &quot;provider&quot; DAN hash versi terpatok berbeda MAKA status = &quot;hash_mismatch&quot;
+JIKA repositori tidak dapat dihubungi MAKA status tetap, tandai &quot;verification_pending&quot;
+SELAIN ITU status = &quot;intact&quot;
+[Heading2] 5.6 Evidence Pack pada Repositori Pelanggan
+[ListParagraph] Worker menentukan daftar bukti sesuai lingkup paket (MS, klausul, kontrol, periode).
+[ListParagraph] storage-gateway memastikan folder paket ada, lalu memanggil copy_within per berkas. Isi berkas tidak melewati aplikasi.
+[ListParagraph] Worker menghasilkan manifest (PDF dan CSV) berisi evidence_code, requirement, produced_at, external_version_id, hash_algorithm, hash_value, link_status saat pembuatan, dan lokasi salinan.
+[ListParagraph] Manifest disimpan di folder paket yang sama dan dicatat sebagai storage_object.
+[ListParagraph] Bukti dengan link_status selain intact atau moved dicantumkan di bagian pengecualian manifest, tidak diam-diam dilewati.
+[Heading2] 5.7 Mode Kegagalan
+Kondisi
+Perilaku Sistem
+Repositori tidak dapat dihubungi
+Data terstruktur tetap berfungsi. Penyerahan berkas baru ke repositori itu ditolak dengan pesan jelas; tidak ada fallback diam-diam ke Managed Vault. Status integritas memakai hasil terakhir dan ditandai verification_pending.
+Kredensial dicabut atau kedaluwarsa
+connection_status = revoked; notifikasi ke Tenant Administrator; bukti terkait tidak diturunkan statusnya sampai 72 jam berlalu, agar pencabutan sementara tidak memicu kaskade penurunan status.
+Rate limit penyedia
+Backoff eksponensial; link health check dijadwal ulang; tidak memengaruhi pengguna.
+Adapter dinonaktifkan lisensi
+Repositori menjadi hanya-baca bagi aplikasi; tautan lama tetap diverifikasi.
+[Heading1] 6. State Machine Specification
+Setiap transisi yang tidak terdaftar ditolak sistem. State machine v1.0 untuk document, risk_treatment, finding, corrective_action, dan implementation_activity_progress tetap berlaku tanpa perubahan logika, dengan ISMS Manager dibaca sebagai MS Manager pada MS terkait.
+[Heading2] 6.1 applicability_entry.implementation_status
+Dari
+Ke
+Syarat
+Peran
+(null)
+not_started
+is_applicable sudah dinilai true
+MS Manager
+not_started
+planned
+Minimal satu treatment/action tertaut dengan target_date
+MS Manager
+planned
+partially_implemented
+Minimal satu document tertaut berstatus approved
+MS Manager, Domain Owner
+partially_implemented
+implemented
+Minimal satu evidence dalam periode operating_criteria DAN link_status bukti tersebut intact atau moved
+MS Manager
+implemented
+partially_implemented
+OTOMATIS bila freshness_status expired ATAU integrity_status broken
+Sistem
+any
+not_applicable
+is_applicable false dengan justifikasi eksklusi
+MS Manager
+[Heading2] 6.2 management_system.status
+Dari
+Ke
+Syarat
+Peran
+(baru)
+setup
+framework_version, scope_statement, default repository terisi; lisensi mengizinkan
+Tenant Admin
+setup
+implementing
+Minimal satu MS Manager ditetapkan
+Tenant Admin
+implementing
+certified
+certification_cycle berstatus certified
+Sistem
+certified
+transitioning
+transition_target_version_id diisi
+MS Manager
+transitioning
+certified
+Audit transisi recommended; framework_version_id diperbarui
+MS Manager
+any
+archived
+Tidak ada siklus aktif; alasan dicatat; data tetap tersimpan
+Tenant Admin
+[Heading2] 6.3 framework_version.status
+Dari
+Ke
+Syarat
+Peran
+(terpasang)
+current
+Pack valid dan edisi belum digantikan
+Sistem
+current
+transition
+Pack edisi baru dengan supersedes terpasang
+Sistem
+transition
+withdrawn
+transition_ends_at terlewat
+Sistem — MS yang masih memakai edisi ini ditandai kritis (BR-33)
+[Heading2] 6.4 storage_object.link_status
+Status
+Arti
+Dihitung sebagai Bukti Sah?
+intact
+Versi terpatok ada dan cocok
+Ya
+moved
+Item dipindah folder, versi tetap
+Ya
+version_changed
+Ada versi lebih baru; versi terpatok masih dapat diambil
+Ya untuk bukti; untuk dokumen memicu tawaran versi baru
+verification_pending
+Belum dapat diverifikasi karena repositori tidak terjangkau
+Ya, selama maksimal 7 hari
+hash_mismatch
+Isi versi terpatok berbeda dari saat ditautkan
+Tidak
+pinned_version_lost
+Versi terpatok sudah tidak tersedia
+Tidak
+missing
+Item tidak ditemukan
+Tidak
+access_denied
+Aplikasi kehilangan izin
+Tidak, setelah masa tenggang 72 jam
+[Heading2] 6.5 State Machine Khusus Framework
+Entitas
+Status
+Transisi Otomatis
+due_diligence (37001)
+draft → completed → expired; completed → superseded
+completed → expired bila valid_until terlewat
+bc_plan (22301)
+draft → approved → tested → approved (setelah revisi) ; tested → untested
+tested → untested bila tidak ada exercise dalam periode program
+concern (37001)
+received → triaged → under_investigation → closed
+Tidak ada; seluruh transisi manual oleh fungsi kepatuhan
+nonconforming_output (9001)
+detected → dispositioned → verified → closed
+Tidak ada
+[Heading2] 6.6 implementation_activity_progress.status
+Dari
+Ke
+Syarat
+Peran
+not_started
+in_progress
+Fase sebelumnya lolos gate (bila fase ini di belakang gate)
+Pemilik aktivitas
+in_progress
+complete
+Output tertaut; completed_at terisi
+Pemilik aktivitas
+complete
+verified
+Output diperiksa; verified_by berbeda dari pemilik
+MS Manager
+complete
+in_progress
+Verifikasi ditolak; alasan dicatat
+MS Manager
+any (bukan verified)
+blocked
+blocker_reason dan blocker_gate_item_ref terisi
+Pemilik aktivitas, MS Manager
+blocked
+in_progress
+Item gate penyebab tertutup
+Pemilik aktivitas
+Status locked adalah turunan tampilan: aktivitas berada pada fase di belakang gate yang belum lolos. Locked tidak disimpan dan tidak dapat ditransisikan pengguna.
+[Heading2] 6.7 audit_prep_task.status
+Dari
+Ke
+Syarat
+Peran
+(dibangkitkan)
+not_started
+Jendela persiapan terbuka (scheduled_at − prep_window_days)
+Sistem
+not_started
+in_progress
+—
+Pemilik tugas
+in_progress
+done
+Bukti penyelesaian atau catatan terisi
+Pemilik tugas
+any
+blocked
+note terisi
+Pemilik tugas, MS Manager
+not_started, in_progress
+overdue
+OTOMATIS bila due_at terlewat
+Sistem
+[Heading2] 6.8 cycle_requirement_status.status
+Status bernilai not_started, in_progress, done, blocked, atau overdue. Item dengan derivation di pack dihitung otomatis — misalnya MGMT_REVIEW menjadi done hanya bila management_review siklus berjalan berstatus closed dan inputs_complete bernilai true untuk MS terkait. Item tanpa derivation diperbarui manual oleh pemilik. Overdue ditetapkan otomatis bila due_at terlewat dan status belum done.
+[Heading2] 6.9 Derivasi Status Record Rantai
+Setiap record pada tahap rantai memiliki satu status tampilan yang diturunkan dari entitas sumbernya. Derivasi dilakukan di satu fungsi server yang dipakai oleh Modul 1, 2, dan 3 (Bagian 9.6).
+Tahap (27001)
+ready
+pending
+overdue
+missing
+Context issue
+Ditinjau dalam 12 bulan
+Review tahunan jatuh tempo dalam 60 hari
+Tidak ditinjau lebih dari 12 bulan
+—
+Risk
+Dinilai dan residual diterima pemilik
+Menunggu persetujuan residual atau penilaian ulang jatuh tempo
+Penilaian lebih dari 12 bulan, atau persetujuan melewati due date
+Risiko tanpa context issue (bila pack mewajibkan)
+Treatment
+implemented, residual_accepted, closed
+proposed, approved, in_progress
+delayed
+Risiko tanpa treatment
+Control
+implemented atau not_applicable
+partially_implemented, planned, not_started
+blocked
+—
+SoA entry
+Applicable berjustifikasi risiko, atau not applicable berjustifikasi
+Applicable tanpa tautan risiko
+—
+Kontrol belum dinilai
+Document
+approved
+in_review, draft
+expired
+Kontrol applicable tanpa dokumen pelaksana
+Evidence
+freshness fresh dan link_status sah
+freshness aging
+freshness expired/critical, atau link_status tidak sah
+Kontrol berjalan tanpa bukti operasi
+Metric
+Diukur dalam periode
+Pengukuran periode berjalan jatuh tempo
+Tidak diukur lebih dari dua periode
+Kontrol berisiko tinggi tanpa metrik
+Framework lain memakai tabel derivasi dari pack dengan struktur yang sama — misalnya BIA overdue bila RTO melebihi MTPD, Associate overdue bila due diligence kedaluwarsa.
+[Heading1] 7. RBAC Permission Matrix
+[Heading2] 7.1 Prinsip
+[ListParagraph] Peran bisnis diberikan per management system (user_ms_role). Satu pengguna dapat menjadi MS Manager di QMS dan Domain Owner di ISMS.
+[ListParagraph] Peran administratif bersifat organisasi (Tenant Admin) atau platform (Platform Operator), dan tidak memberi akses baca ke data bisnis secara otomatis.
+[ListParagraph] Domain Owner hanya melihat entitas miliknya (row-level security berbasis owner_user_id), lintas seluruh MS.
+[ListParagraph] Auditor Eksternal read-only, dibatasi waktu, dibatasi MS yang diaudit, dan seluruh aksesnya tercatat.
+[ListParagraph] Tidak ada peran yang dapat menghapus fisik.
+[ListParagraph] Persetujuan selalu terpisah dari pembuatan.
+[Heading2] 7.2 Peran Baru
+Peran
+Lingkup
+Izin Utama
+Tidak Boleh
+Tenant Administrator
+Organisasi
+Mengaktifkan MS, mengelola pengguna dan SSO, menghubungkan repositori, aturan penempatan, lisensi
+Membaca isi concern dan investigation; menyetujui dokumen atau risiko
+Storage Administrator
+Organisasi
+Mengelola storage_repository dan routing; melihat Link Health Monitor
+Mengubah data bisnis
+Platform Operator
+SaaS: platform. On-Premise: instalasi
+Operasi, pembaruan, diagnostik, job
+Membaca data bisnis tenant (SaaS); akses dicatat bila break-glass
+Compliance Investigator
+MS ISO 37001
+CRU concern dan investigation yang ditugaskan
+Menangani concern di mana ia pihak terlapor
+[Heading2] 7.3 Matriks Izin Entitas Baru
+C = Create, R = Read, U = Update, D = Soft delete, A = Approve/Verify. Tanda — berarti tidak ada akses. Matriks v1.0 untuk entitas lama tetap berlaku per MS.
+Entitas
+Tenant Admin
+Storage Admin
+MS Mgr
+Domain Owner
+Int. Auditor
+Top Mgmt
+Auditor Eks.
+management_system
+CRUD
+R
+RU
+R
+R
+R
+R (yang diaudit)
+framework / pack
+R, pasang pack
+R
+R
+—
+R
+—
+—
+entity_ms_link
+R
+—
+CRUD
+R
+R
+R
+R
+storage_repository
+CRUD
+CRUD
+R
+—
+—
+—
+—
+storage_routing_rule
+CRUD
+CRUD
+R
+—
+—
+—
+—
+storage_object
+R (metadata)
+R
+CRU
+CRU (miliknya)
+R
+—
+R (dalam pack)
+applicability_entry
+—
+—
+CRUD
+RU (miliknya)
+R
+R
+R
+BIA, bc_plan, exercise
+—
+—
+CRUD
+CRU (miliknya)
+R
+R
+R
+business_associate, due_diligence
+—
+—
+CRUD
+CRU (miliknya)
+R
+R
+R
+gift_hospitality_record
+—
+—
+CRUA
+CR (miliknya)
+R
+R
+R
+concern, investigation
+—
+—
+CRU (fungsi kepatuhan)
+—
+R agregat
+R agregat
+—
+license
+CRU
+—
+—
+—
+—
+R
+—
+[Heading2] 7.4 Aturan Pemisahan Peran
+Aturan
+Implementasi
+Seluruh aturan v1.0
+Tetap, dievaluasi per MS
+Penyetuju konsesi output tidak sesuai berbeda dari pelapor
+CHECK nonconforming_output.authorised_by &lt;&gt; created_by
+Penyetuju hadiah/jamuan berbeda dari penerima atau pemberi
+Validasi aplikasi pada gift_hospitality_record
+Penyelidik bukan pihak terlapor
+Validasi aplikasi; dicatat sebagai konflik kepentingan bila dipaksakan
+Tenant Admin yang juga MS Manager tidak dapat mengubah routing penyimpanan MS-nya tanpa persetujuan Tenant Admin lain
+Alur empat mata pada storage_routing_rule bila jumlah admin &gt;= 2
+[Heading2] 7.5 Visibilitas Drill-down dan Pending per Orang
+Tampilan
+MS Manager
+Programme Owner
+Domain Owner
+Top Mgmt
+Int. Auditor
+Auditor Eks.
+Drill-down ringkasan, fase, tahap rantai
+Penuh
+Penuh
+Hanya record miliknya
+Penuh (baca)
+Penuh (baca)
+Hanya dalam evidence pack
+Pending per orang — seluruh orang
+Ya
+Ya
+Tidak
+Agregat per unit
+Tidak
+Tidak
+Pending per orang — diri sendiri
+Ya
+Ya
+Ya (sama dengan My Tasks)
+Ya
+Ya
+Tidak
+Checklist persiapan audit
+Penuh
+Penuh
+Tugas miliknya
+Baca
+Baca
+Tidak
+Drift dan cycle completeness
+Penuh
+Penuh
+Tidak
+Baca
+Baca
+Tidak
+Tampilan pending per orang dapat dipandang sebagai penilaian kinerja individu. Matriks ini adalah usulan dan wajib dikonfirmasi bersama HR sebelum rilis (PRD Bagian 15.4).
+[Heading1] 8. Business Rules — Decision Table
+[Heading2] 8.1 Aturan v1.0 dengan Cakupan Framework
+ID
+Ringkasan
+Cakupan
+Perubahan v2.0
+BR-01
+Implemented tanpa bukti periode berjalan
+ALL
+Ditambah syarat link_status sah
+BR-02
+Applicable tanpa tautan risiko
+ISO27001, ISO37001
+Dibatasi framework
+BR-03
+Justifikasi eksklusi bermakna belum dikerjakan (peringatan)
+ALL
+Kamus frasa per bahasa di pack
+BR-04, BR-05
+Residual acceptance dan eskalasi appetite
+ALL
+Tetap
+BR-06 s.d. BR-09
+RCA, cek sistemik, tanggal verifikasi, verifikator independen
+ALL
+Tetap
+BR-10, BR-11
+Dokumen dan bukti kedaluwarsa
+ALL
+Tetap
+BR-12
+Fase berikutnya sebelum gate kritis
+ALL
+Gate kritis dibaca dari activity_template pack
+BR-13, BR-14
+Kelengkapan input dan keputusan tinjauan manajemen
+ALL
+Input dari review_input_def pack, per MS
+BR-15 s.d. BR-20
+Overdue temuan, self-approve dokumen, risiko tanpa pemilik, register tidak berubah, hapus, akses auditor
+ALL
+BR-20 ditambah pembatasan MS yang diaudit
+[Heading2] 8.2 Aturan Baru
+ID
+Kondisi
+Aksi Sistem
+Pesan ke Pengguna
+BR-21
+Membuat MS pada framework yang tidak ada di lisensi
+Tolak
+Framework ini belum termasuk lisensi organisasi Anda. Hubungi administrator.
+BR-22
+Mengubah entitas bersama yang tertaut ke lebih dari satu MS
+Tampilkan daftar MS terdampak; minta konfirmasi
+Perubahan ini juga berlaku untuk: [daftar sistem]. Lanjutkan?
+BR-23
+Menautkan bukti ke persyaratan framework lain melalui mapping dengan evidence_reusable = false
+Peringatan; izinkan dengan catatan
+Persyaratan ini mirip, tetapi tidak identik. Pastikan bukti ini memang memenuhi keduanya.
+BR-24
+rto_hours &gt; mtpd_hours pada aktivitas prioritas
+Blokir
+Waktu pemulihan tidak boleh melebihi batas maksimum gangguan yang dapat ditoleransi.
+BR-25
+BC plan tanpa exercise dalam periode program
+Ubah ke untested; buat tugas
+Rencana ini belum diuji dalam periode berjalan. Jadwalkan latihan.
+BR-26
+Business associate risiko di atas low tanpa due diligence berlaku
+Tandai; buat tugas
+Mitra ini perlu pemeriksaan kelayakan yang masih berlaku.
+BR-27
+Hadiah/jamuan di atas ambang tanpa persetujuan
+Blokir penyimpanan final
+Nilai ini melebihi batas kebijakan dan memerlukan persetujuan.
+BR-28
+Pengguna di luar fungsi kepatuhan mengakses concern
+Tolak; catat
+Anda tidak memiliki akses ke laporan ini.
+BR-29
+Penyerahan berkas ke repositori yang tidak terjangkau
+Tolak; tanpa fallback diam-diam
+Repositori [nama] tidak dapat dihubungi. Coba lagi nanti atau hubungi administrator.
+BR-30
+Repositori dengan ownership_type personal dipakai untuk bukti
+Peringatan di dashboard; izinkan
+Berkas di penyimpanan pribadi dapat hilang saat pemiliknya keluar. Pertimbangkan library bersama.
+BR-31
+Bukti dengan link_status tidak sah
+Turunkan applicability_entry; buat tugas
+Berkas bukti tidak lagi dapat diverifikasi di [repositori]. Tautkan ulang atau unggah versi yang benar.
+BR-32
+Versi baru terdeteksi pada berkas bukti
+Tandai anomali; tidak menurunkan status
+Berkas bukti ini diubah setelah diserahkan. Bukti yang tercatat tetap versi sebelumnya.
+BR-33
+MS memakai edisi berstatus withdrawn
+Tandai kritis di dashboard dan Executive View
+Edisi standar yang dipakai sudah melewati masa transisi.
+BR-34
+Evidence pack memuat bukti tidak sah
+Cantumkan di bagian pengecualian manifest
+—
+BR-35
+Mode zero_transit dan pengguna meminta pratinjau di aplikasi
+Arahkan ke repositori
+Berkas ini dibuka langsung di [repositori] sesuai kebijakan organisasi.
+BR-36
+produced_at lebih baru dari provider_created_at lebih dari 1 hari
+Peringatan untuk peninjau
+Tanggal bukti lebih baru dari tanggal berkas dibuat. Periksa kembali tanggalnya.
+BR-37
+Lisensi kedaluwarsa melewati masa tenggang
+Mode hanya-baca; tidak ada penghapusan
+Lisensi telah berakhir. Data tetap dapat dibaca dan diekspor.
+BR-38
+Mengubah routing sehingga berkas baru restricted akan masuk Managed Vault SaaS
+Minta konfirmasi Tenant Admin kedua
+Berkas Restricted akan disimpan di cloud penyedia. Perubahan ini memerlukan persetujuan kedua.
+[Heading2] 8.3 Aturan Baru v2.4 — Drill-down
+ID
+Kondisi
+Aksi Sistem
+Pesan ke Pengguna
+BR-39
+Aktivitas diubah ke blocked tanpa rujukan item gate atau alasan
+Tolak
+Sebutkan apa yang menahan aktivitas ini dan item gate mana penyebabnya.
+BR-40
+Aktivitas dengan output dokumen terkendali diubah ke complete tanpa output_document_id
+Tolak
+Tautkan dokumen output dari register sebelum menandai selesai.
+BR-41
+Item tidak siap memiliki due date setelah scheduled_at audit event berikutnya
+Tandai After audit di seluruh daftar
+Tenggat ini jatuh setelah audit pada [tanggal]. Majukan tenggat atau siapkan penjelasan.
+BR-42
+Tanggal audit event diubah
+Hitung ulang penanda After audit; beri tahu pemegang yang terdampak
+Tanggal audit berubah. [n] item Anda kini jatuh tempo setelah audit.
+BR-43
+Tugas persiapan dengan due_at pada atau setelah tanggal audit
+Tolak penyimpanan
+Tugas persiapan harus selesai sebelum audit dimulai.
+BR-44
+Tugas persiapan penutupan temuan dibangkitkan untuk audit pertama sebuah MS
+Lewati tugas tersebut
+—
+BR-45
+Item tertunda tanpa owner_user_id
+Tampilkan sebagai Unassigned; hitung sebagai risiko kesiapan
+Item ini belum punya pemegang. Tugaskan ke satu orang.
+BR-46
+Fase gate berisi aktivitas blocked lebih banyak atau lebih sedikit dari item gate terbuka
+Tandai inkonsistensi untuk MS Manager
+Jumlah aktivitas terblokir tidak sama dengan item gate terbuka. Periksa rujukan blokir.
+BR-47
+Status dokumen output bertentangan dengan status aktivitas (misalnya dokumen approved, aktivitas blocked karena dokumen tersebut)
+Peringatan
+Status dokumen dan aktivitas tidak selaras. Periksa salah satunya.
+BR-48
+drift_rule terpenuhi untuk record
+Buat drift_result; tampilkan pada Regression Detector
+Sesuai message pada drift_rule_def
+BR-49
+Record drift kembali memenuhi kondisi normal
+Isi resolved_at; hilangkan dari hitungan aktif
+—
+BR-50
+Send reminder dikirim ke orang yang sama untuk item yang sama lebih dari sekali dalam 72 jam
+Tahan pengiriman; tampilkan waktu pengingat terakhir
+Pengingat terakhir dikirim [waktu]. Coba lagi setelah [waktu].
+MENGAPA TIDAK ADA FALLBACK OTOMATIS KE MANAGED VAULT (BR-29)
+Fallback terlihat ramah pengguna, tetapi pada pelanggan yang memilih Customer Repository karena larangan berkas keluar, fallback diam-diam adalah pelanggaran kebijakan pelanggan oleh produk itu sendiri. Kegagalan yang terlihat lebih baik daripada kepatuhan yang dilanggar tanpa disadari.
+[Heading1] 9. Read Model dan Kontrak Drill-down
+[Heading2] 9.1 Prinsip
+[ListParagraph] Satu sumber derivasi. Setiap angka, status turunan, dan penanda (freshness, status record rantai, After audit, locked) dihitung oleh fungsi server yang sama untuk seluruh modul. Klien tidak menghitung ulang status.
+[ListParagraph] Agregasi di server. Kartu ringkasan, jumlah per chip filter, dan readiness per tahap dikirim sebagai agregat; daftar dikirim terpisah dan bertahap (paginasi).
+[ListParagraph] Filter dan pencarian sebagai parameter. Status, frekuensi, tahap, pemegang, dan kata kunci adalah parameter query yang sama di setiap endpoint.
+[ListParagraph] Tautan silang stabil. Setiap record membawa ref yang cukup untuk membuka entitas asalnya: {module, entity_type, id}.
+[Heading2] 9.2 Endpoint Read Model
+Endpoint
+Parameter Utama
+Mengembalikan
+Modul
+GET /ms/{ms}/implementation/summary
+—
+Lima kartu ringkasan, fase dengan teks turunan
+1
+GET /ms/{ms}/applicability
+status, group, q, page
+Item applicability dengan dokumen, bukti, integritas
+1
+GET /ms/{ms}/documents
+status, type, q, due_within
+Register dokumen dengan dokumen bersama dan tautan item
+1, 3
+GET /ms/{ms}/gates
+—
+Item gate dengan entitas terdampak
+1
+GET /ms/{ms}/phases/{n}/activities
+—
+Aktivitas fase dengan status turunan dan output
+1
+GET /ms/{ms}/audit/event/next
+—
+Audit event berikutnya dan angka panel
+2, 3
+GET /ms/{ms}/audit/stages
+—
+Readiness per tahap rantai
+2
+GET /ms/{ms}/audit/stages/{key}/records
+status, q, page
+Record tahap dengan tindakan, pemegang, due date, hulu, hilir
+2
+GET /ms/{ms}/audit/chain
+anchor_id
+Satu rantai lengkap dari simpul yang dipilih
+2
+GET /ms/{ms}/audit/pending
+owner, stage, overdue_only
+Item tertunda lintas tahap, agregat per orang bila owner kosong
+2
+GET /ms/{ms}/surveillance/events/{id}
+—
+Rincian event, checklist persiapan, temuan untuk ditutup atau hasil
+3
+GET /ms/{ms}/surveillance/cycle
+cycle_id
+Cycle completeness
+3
+GET /ms/{ms}/surveillance/drift
+rule
+Pola drift aktif dengan record terdampak
+3
+GET /ms/{ms}/evidence
+freshness, frequency, q
+Bukti dengan next due, freshness, integritas
+3
+POST /reminders
+entity_ref, recipient
+Pengingat (BR-50)
+2, 3
+[Heading2] 9.3 Kontrak Record Tertunda
+{
+  &quot;ref&quot;: {&quot;module&quot;: &quot;audit&quot;, &quot;stage&quot;: &quot;risk&quot;, &quot;entity_type&quot;: &quot;risk&quot;, &quot;id&quot;: &quot;R-003&quot;},
+  &quot;title&quot;: &quot;Loss of customer data through unencrypted backup media&quot;,
+  &quot;status&quot;: &quot;pending&quot;,            // ready | pending | overdue | missing
+  &quot;state&quot;: &quot;Residual risk awaiting owner sign-off&quot;,
+  &quot;action&quot;: &quot;Sign off residual risk&quot;,
+  &quot;holder&quot;: {&quot;user_id&quot;: &quot;…&quot;, &quot;display_name&quot;: &quot;Bambang Sutrisno&quot;,
+             &quot;role_label&quot;: &quot;Head of IT&quot;},
+  &quot;due_at&quot;: &quot;2026-10-05&quot;, &quot;days_to_due&quot;: 8, &quot;after_audit&quot;: false,
+  &quot;upstream&quot;: [{&quot;stage&quot;: &quot;ctx&quot;, &quot;id&quot;: &quot;INT-004&quot;}],
+  &quot;downstream&quot;: [{&quot;stage&quot;: &quot;treat&quot;, &quot;id&quot;: &quot;TR-003&quot;}],
+  &quot;file&quot;: {&quot;repository&quot;: &quot;SharePoint · Compliance Library&quot;, &quot;link_status&quot;: &quot;intact&quot;}
+}
+[Heading2] 9.4 Derivasi After Audit
+next_event = audit_event WHERE management_system_id = ms AND scheduled_at &gt;= HARI_INI
+             ORDER BY scheduled_at LIMIT 1
+after_audit = status &lt;&gt; &quot;ready&quot; AND due_at IS NOT NULL AND next_event IS NOT NULL
+              AND due_at &gt; next_event.scheduled_at
+[Heading2] 9.5 Kinerja dan Caching
+[ListParagraph] Agregat ringkasan dan readiness per tahap disimpan dalam tabel ringkasan per MS, diperbarui saat write dan diverifikasi ulang oleh job harian.
+[ListParagraph] Daftar drill-down dipaginasi 200 baris; pencarian klien bekerja pada halaman termuat, pencarian server untuk keseluruhan.
+[ListParagraph] Status freshness dan link_status dibaca dari kolom tersimpan; drill-down tidak memanggil repositori eksternal secara sinkron.
+[ListParagraph] Target: drill-down terbuka di bawah 2 detik; filter dan pencarian di bawah 300 milidetik untuk halaman termuat.
+[Heading2] 9.6 Konsistensi Angka Lintas Modul
+SATU ANGKA, SATU FUNGSI
+Jumlah dokumen kedaluwarsa tampil di kartu Modul 1, tahap Document Modul 2, dan kalender review Modul 3. Bila ketiganya dihitung oleh query berbeda, cepat atau lambat angkanya berbeda — dan pengguna berhenti mempercayai seluruh dashboard. Terapkan satu fungsi derivasi per konsep, uji dengan snapshot yang membandingkan angka ketiga modul, dan gagalkan build bila berbeda.
+[Heading1] 10. Catatan Implementasi dan Pertanyaan Terbuka
+[Heading2] 10.1 Urutan Implementasi yang Disarankan
+Tahap
+Cakupan
+Alasan
+1
+Deployment profile, lisensi, user/role per MS, audit trail, KMS abstraction
+Fondasi kedua mode; mahal ditambahkan belakangan
+2
+Framework Engine: tabel referensi generik, pemasang pack, label dictionary; kemas seed v1 menjadi pack ISO27001
+Seluruh entitas bisnis bergantung pada requirement dan catalogue_item
+3
+management_system, entity_ms_link
+Menggantikan scope_id; menentukan bentuk seluruh query
+4
+Storage Abstraction + adapter managed_vault + storage-gateway; document + document_version
+Tanpa kolom file_uri langsung sejak hari pertama
+5
+context_issue, risk (dengan risk_profile), treatment, residual_acceptance, applicability_entry, operating_criteria
+Rantai hulu dan hilir
+6
+State machine dan BR-01 s.d. BR-09, BR-21, BR-22
+Integritas sebelum data nyata masuk
+7
+Paket On-Premise (Helm, Compose), lisensi luring, adapter m365
+Rilis v1.0
+8
+finding, corrective_action, self_assessment; audit gabungan
+Modul 2
+9
+Pack ISO9001, adapter google_drive, Integrated mode
+Rilis v1.5
+10
+certification_cycle, freshness engine, link health check, transition assistant; pack ISO22301
+Modul 3, rilis v2.0
+11
+Pack ISO37001, zero_transit, adapter smb dan s3, offline bundle pembaruan
+Rilis v2.5
+Lintas
+Read model drill-down (Bagian 9) dan komponen UI drill-down bersama; dibangun bersama modulnya, kontrak ditetapkan sejak tahap 5
+Menghindari tiga implementasi drill-down yang berbeda
+UJI PARITAS SEJAK TAHAP 1
+Jalankan pipeline CI yang memasang aplikasi dalam dua profil — multi-tenant SaaS dan single-tenant On-Premise dengan telemetri mati dan tanpa koneksi keluar — pada setiap commit. Fitur yang diam-diam bergantung pada internet akan gagal di profil kedua sebelum mencapai pelanggan.
+[Heading2] 10.2 Pertanyaan yang Harus Dijawab Sebelum Coding
+Pertanyaan
+Dampak Bila Belum Terjawab
+Region dan penyedia cloud SaaS?
+Menentukan KMS, object storage, dan kepatuhan residensi data.
+Distribusi Kubernetes dan versi PostgreSQL minimum untuk On-Premise?
+Menentukan matriks kompatibilitas dan cakupan uji.
+Apakah bundling PostgreSQL dan object storage di paket On-Premise, atau wajib disediakan pelanggan?
+Memengaruhi tanggung jawab dukungan dan lisensi komponen pihak ketiga.
+Apakah zero_transit wajib sejak v1.0?
+Menentukan apakah file picker dan upload langsung dari browser masuk tahap 7.
+Kedalaman minimum pack ISO9001, ISO22301, ISO37001?
+Menentukan kriteria rilis dan kebutuhan pakar domain.
+Apakah pustaka kondisi temuan dapat disunting tenant?
+Menentukan apakah finding_condition perlu salinan per tenant.
+Kebijakan hak cipta atas judul klausul dan kontrol di pack?
+Menentukan isi title_short dan kebutuhan lisensi konten.
+Model akses auditor eksternal untuk berkas di repositori pelanggan?
+Menentukan apakah proksi pada pass_through termasuk rilis awal.
+Siapa yang boleh melihat pending per orang?
+Menentukan filter RBAC pada GET /audit/pending (Bagian 7.5).
+Kanal pengingat yang didukung?
+Menentukan integrasi notifikasi untuk POST /reminders.
+[Heading2] 10.3 Yang Belum Dicakup Dokumen Ini
+[ListParagraph] Kontrak API publik lengkap, versioning, dan rate limiting.
+[ListParagraph] Spesifikasi UI/UX rinci; mockup v2.4 menunjukkan tata letak dan perilaku utama termasuk drill-down.
+[ListParagraph] User stories dan acceptance criteria per fitur.
+[ListParagraph] Rencana pencadangan dan pemulihan bencana rinci per mode, termasuk RPO/RTO layanan.
+[ListParagraph] Threat model storage-gateway dan konektor — disarankan dikerjakan sebelum tahap 7.
+[ListParagraph] Strategi pengujian otomatis, termasuk uji kontrak adapter.
+[Heading1] Disclaimer dan Kepemilikan
+Spesifikasi ini menerjemahkan PRD-MSCD-01 v2.4 menjadi bentuk teknis. Nama tabel, tipe data, ambang nilai, ukuran infrastruktur, dan rujukan teknologi bersifat usulan dan perlu disesuaikan dengan pilihan teknologi serta konvensi rekayasa organisasi Anda.
+Kemampuan API Microsoft 365 dan Google Workspace yang dirujuk wajib diverifikasi terhadap dokumentasi resmi saat implementasi. Fitur yang membantu pemenuhan persyaratan ISO tidak menjamin kesesuaian. Dokumen ini bukan nasihat hukum, keuangan, maupun regulasi.
+Penerima dokumen agar meninjau, memverifikasi, dan mengambil kepemilikan atas seluruh isi sebelum digunakan sebagai dasar pengembangan, serta mengungkapkan penggunaan bantuan AI dalam penyusunannya bila diwajibkan oleh peran, perjanjian klien, atau regulasi yang berlaku.

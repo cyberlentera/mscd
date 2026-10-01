@@ -1,0 +1,1253 @@
+PRODUCT REQUIREMENTS DOCUMENT
+Management System Compliance Dashboard
+Aplikasi dashboard kepatuhan multi-framework untuk ISO/IEC 27001, ISO 9001, ISO 22301, dan ISO 37001 — dengan tiga modul (Implementation, Audit Process, Surveillance/Recertification), dua mode implementasi (SaaS dan On-Premise), serta opsi penyimpanan berkas di repositori milik pelanggan.
+Field
+Detail
+Document ID
+PRD-MSCD-01
+Versi
+2.4 — Draft untuk ditinjau
+Menggantikan
+PRD-MSCD-01 v2.0; PRD-ISMS-DASH-01 v1.0 (ISO 27001 Compliance Dashboard)
+Status
+Menunggu persetujuan stakeholder
+Product Owner
+[Isi]
+Tanggal
+[Isi]
+Dokumen Pendamping
+TS-MSCD-01 v2.4 (Technical Specification), Mockup antarmuka v2.4 (EN)
+Basis Domain
+ISO/IEC 27001:2022 Complete Implementation Guide, Evidence Workbook (75 tab), Rencana Pelaksanaan Audit (28 aktivitas), Daftar Kondisi Temuan (401 kondisi); struktur Harmonized Structure ISO untuk ISO 9001, ISO 22301, dan ISO 37001
+Daftar Isi
+Bidang ini terisi otomatis saat dibuka di Microsoft Word. Jika kosong, klik kanan lalu Update Field, atau tekan Ctrl+A kemudian F9.
+[Heading1] 0. Riwayat Perubahan
+Versi 2.0 memperluas produk dari aplikasi khusus ISO/IEC 27001 menjadi platform kepatuhan sistem manajemen multi-framework. Tiga ketentuan baru menjadi dasar revisi ini, dan masing-masing mengubah fondasi arsitektur — bukan sekadar menambah fitur.
+No
+Ketentuan Baru
+Dampak pada Desain
+Bagian Terkait
+1
+Aplikasi mendukung ISO 9001, ISO 37001, dan ISO 22301 selain ISO/IEC 27001, dengan menu pemilihan framework
+Model data dibuat generik (framework-neutral). Konten standar dipindahkan ke Framework Pack yang berversi. Ditambahkan Management System Switcher, Framework Library, dan mode Integrated Management System.
+5, 6, 7–9, 12
+2
+Dua mode implementasi: SaaS (cloud) dan On-Premise (infrastruktur server pelanggan di data center pelanggan)
+Satu basis kode dan satu jalur rilis untuk kedua mode. Perbedaan hanya pada lapisan operasional: tenancy, identitas, lisensi, distribusi pembaruan, dan pemantauan.
+10, 13, 14
+3
+Kedua mode dapat mengakomodasi pelanggan yang tidak ingin berkasnya diunggah ke aplikasi, melainkan disimpan di repositori pelanggan (misalnya OneDrive atau Google Drive)
+Evidence Vault diganti Storage Abstraction Layer dengan beberapa adapter. Aplikasi menyimpan metadata, rujukan versi, dan sidik jari integritas; isi berkas tetap berada di repositori pelanggan.
+11, 12, 13
+[Heading2] 0.1 Perubahan v2.1 sampai v2.4 — Selaras dengan Mockup
+Versi 2.1 sampai 2.4 tidak mengubah ketiga ketentuan dasar di atas. Revisi ini menambahkan kedalaman informasi pada ketiga modul: setiap angka ringkasan, fase, tahap rantai, dan pola kemunduran kini dapat dibuka sampai ke record, pemegang, dan tanggal jatuh temponya. Nomor versi dokumen disamakan dengan nomor versi mockup agar keduanya dapat ditinjau berpasangan.
+Versi
+Perubahan pada Mockup
+Bagian PRD
+2.1
+Lima kartu ringkasan Modul 1 dapat diklik: kontrol/persyaratan diterapkan, sebagian diterapkan, item gate terbuka, dokumen disetujui, dokumen kedaluwarsa. Isi daftar mengikuti framework aktif.
+7.3
+2.2
+Setiap kartu fase implementasi dapat diklik dan menampilkan aktivitas fase beserta pemilik, output, status, dan alasan blokir.
+7.4
+2.3
+Modul 2: panel audit event berikutnya, rantai keterlacakan interaktif, readiness per tahap rantai, drill-down tiap tahap dengan tindakan tertunda, pemegang, dan due date, serta tampilan pending per orang.
+8.3 – 8.7
+2.4
+Modul 3: linimasa event yang dapat diklik (persiapan, hasil, rencana), cycle completeness, rincian drift, penjelajah kesegaran bukti, dan kalender review dokumen.
+9.4 – 9.8
+2.1 – 2.4
+Pola interaksi drill-down yang seragam dan akuntabilitas bernama (orang, bukan hanya peran) di seluruh modul.
+12.2, 12.3
+Perubahan Istilah
+v1.0
+v2.0
+Nama produk
+ISO 27001 Compliance Dashboard
+Management System Compliance Dashboard (MSCD)
+Unit yang dikelola
+ISMS
+Management System (MS) — satu instans framework pada satu ruang lingkup
+Katalog kontrol
+Annex A (93 kontrol)
+Catalogue Item — Annex A untuk 27001; langkah pengendalian klausul 8 untuk 37001; tidak wajib untuk 9001 dan 22301
+Statement of Applicability
+SoAEntry
+ApplicabilityEntry — label tampilan mengikuti framework (SoA, Requirement Applicability, dst.)
+ISMS Manager
+Peran tetap
+MS Manager — label per framework: ISMS Manager, QMS Manager, BCMS Manager, Anti-Bribery Compliance Function
+Evidence Vault
+Penyimpanan internal tunggal
+Storage Repository — Managed Vault atau Customer Repository (BYOS)
+[Heading1] 1. Ringkasan Eksekutif
+Organisasi yang menjalankan sistem manajemen bersertifikat ISO mengelola puluhan sampai ratusan dokumen, persyaratan klausul 4 sampai 10, dan ratusan butir bukti operasional yang harus diperbarui setiap siklus. Semakin banyak organisasi di Indonesia menjalankan lebih dari satu standar sekaligus — misalnya ISO 9001 untuk mutu, ISO/IEC 27001 untuk keamanan informasi, ISO 22301 untuk keberlangsungan usaha, dan ISO 37001 untuk anti-penyuapan. Tanpa sistem terpadu, pekerjaan yang sama (pengendalian dokumen, audit internal, tinjauan manajemen, tindakan korektif) dikerjakan berulang di empat set spreadsheet yang berbeda.
+Produk ini menjaga rantai keterlacakan tetap utuh secara otomatis untuk setiap framework — dari isu konteks, ke risiko, ke perlakuan atau pengendalian, ke bukti operasional, sampai ke temuan audit dan tindakan korektif — sekaligus memungkinkan artefak yang sama dipakai lintas standar. Produk dapat dijalankan sebagai layanan cloud (SaaS) atau dipasang di data center pelanggan (On-Premise), dan pada kedua mode pelanggan dapat memilih agar berkasnya tetap tersimpan di repositori miliknya sendiri.
+Modul
+Fokus
+Pengguna Utama
+Modul 1 — Implementation Dashboard
+Membangun sistem manajemen: progres aktivitas implementasi per framework, kelengkapan dokumen, applicability, register risiko, dan kesiapan per klausul
+MS Manager, Domain Owner
+Modul 2 — Audit Process Dashboard
+Menjalani audit: persiapan aktivitas audit, self-assessment terhadap pustaka kondisi temuan, pelacakan temuan sampai penutupan, termasuk audit gabungan
+MS Manager, Internal Auditor
+Modul 3 — Surveillance / Recertification
+Mempertahankan sertifikat: siklus tiga tahun per framework, kesegaran bukti, jadwal review dokumen, deteksi kemunduran, transisi edisi standar
+MS Manager, Top Management
+Dimensi Baru
+Pilihan
+Ringkasan
+Framework
+ISO/IEC 27001, ISO 9001, ISO 22301, ISO 37001 — satu per satu atau terintegrasi
+Dipilih melalui Management System Switcher; diaktifkan melalui Framework Library sesuai lisensi
+Mode implementasi
+SaaS atau On-Premise
+Fitur setara; berbeda pada siapa yang mengoperasikan, di mana data terstruktur disimpan, dan cara pembaruan didistribusikan
+Lokasi berkas
+Managed Vault atau Customer Repository (OneDrive/SharePoint, Google Drive, file share, S3-compatible)
+Dapat diatur per management system dan per klasifikasi berkas
+PEMBEDA UTAMA PRODUK INI
+Sebagian besar perangkat GRC di pasar memodelkan kontrol dan kebijakan sebagai daftar terpisah per standar. Produk ini memodelkan rantai keterlacakan sebagai entitas kelas satu yang definisinya dibawa oleh Framework Pack — sehingga sistem dapat mendeteksi rantai putus, bukti kedaluwarsa, dan dokumen yatim untuk standar apa pun yang memakai Harmonized Structure ISO.
+Ditambah dua kemampuan yang jarang tersedia bersamaan: pemasangan di data center pelanggan dengan fitur setara SaaS, dan kepatuhan yang dapat dibuktikan tanpa berkas pelanggan meninggalkan repositorinya sendiri.
+[Heading1] 2. Latar Belakang dan Pernyataan Masalah
+Analisis atas 401 kondisi temuan audit ISO/IEC 27001 yang telah dipetakan menunjukkan bahwa mayoritas temuan Major bukan disebabkan ketiadaan dokumen, melainkan oleh putusnya hubungan antar artefak dan usangnya bukti. Karena ISO 9001, ISO 22301, dan ISO 37001 memakai struktur klausul 4 sampai 10 yang sama (Harmonized Structure), pola kegagalan yang sama berlaku lintas standar.
+Pola Masalah
+Gejala di Lapangan
+Berlaku untuk
+Dampak Audit
+Bukti implementasi tertukar dengan bukti operasi
+Persyaratan atau kontrol berstatus diterapkan, tetapi bukti terakhir berasal dari saat pembangunan awal
+Semua framework
+Major NC — klausul 8.1 (perencanaan dan pengendalian operasional)
+Rantai keterlacakan putus
+Risiko tidak tertelusur ke tindakan; temuan audit internal tidak masuk register tindakan korektif
+Semua framework
+Major NC — klausul 6.1, 9.2, 10.2
+Dokumen yatim dan versi ganda
+Dokumen beredar di luar register; versi usang masih dapat diakses sebagai versi aktif
+Semua framework
+Minor sampai Major NC — klausul 7.5
+Siklus tinjauan terlewat diam-diam
+Tanggal review lewat tanpa peringatan; latihan (exercise) BCM atau due diligence mitra tidak diulang
+Semua; khusus 22301 dan 37001
+Major NC — 7.5.2; 22301 klausul 8.5; 37001 klausul 8.2
+Kemunduran pasca-sertifikasi
+Register risiko tidak berubah lintas siklus; input tinjauan manajemen hilang saat menjadi rutinitas
+Semua framework
+Major NC — 8.2 / 6.1, 9.3
+[Heading2] 2.1 Mengapa Spreadsheet Tidak Memadai
+Spreadsheet mampu menyimpan data, tetapi tidak mampu menegakkan hubungan antar data. Tidak ada mekanisme yang mencegah seseorang menandai kontrol sebagai diterapkan tanpa melampirkan bukti, atau menutup temuan tanpa verifikasi efektivitas. Seluruh penegakan bergantung pada disiplin manusia, yang menurun seiring waktu dan pergantian personel.
+[Heading2] 2.2 Masalah Baru yang Dijawab Versi 2.0
+Masalah
+Gejala
+Jawaban Produk
+Duplikasi kerja pada organisasi multi-standar
+Satu prosedur pengendalian dokumen, satu audit internal, dan satu tinjauan manajemen dicatat ulang di tiap sistem; bukti yang sama diunggah berkali-kali
+Integrated Management System: artefak bersama dan pemetaan persyaratan lintas framework (Bagian 5.5)
+Pelanggan teregulasi tidak dapat memakai SaaS
+Instansi pemerintah, BUMN, dan lembaga keuangan mensyaratkan data kepatuhan berada di infrastruktur sendiri
+Mode On-Premise dengan fitur setara, termasuk operasi tanpa koneksi internet (Bagian 10)
+Pelanggan tidak ingin berkas keluar dari repositorinya
+Kebijakan internal melarang dokumen rahasia disalin ke sistem pihak ketiga; berkas sudah dikelola di SharePoint atau Google Drive dengan retensi tersendiri
+Customer Repository (BYOS): aplikasi hanya menyimpan rujukan dan sidik jari integritas (Bagian 11)
+Edisi standar berganti di tengah siklus
+ISO 9001:2026 terbit 16 September 2026 dan ISO 37001:2025 terbit Februari 2025; organisasi harus bertransisi dalam masa transisi yang ditetapkan
+Framework Pack berversi dengan alat transisi edisi dan gap-analysis otomatis (Bagian 5.2 dan 9)
+[Heading1] 3. Tujuan Produk dan Ukuran Keberhasilan
+[Heading2] 3.1 Tujuan Produk
+[ListParagraph] Menjaga rantai keterlacakan klausul 4 sampai 10 tetap utuh secara otomatis untuk setiap framework yang aktif, dan menampilkan titik putusnya saat terjadi.
+[ListParagraph] Memastikan bukti operasional selalu berasal dari siklus berjalan, bukan dari implementasi awal.
+[ListParagraph] Memangkas waktu persiapan audit dengan evidence pack yang tersusun per klausul, per kontrol, dan per framework.
+[ListParagraph] Mencegah kemunduran pasca-sertifikasi melalui deteksi dini kesegaran bukti dan kelengkapan siklus.
+[ListParagraph] Memberikan manajemen puncak gambaran kesiapan yang dapat dipercaya, bukan persentase yang menyamarkan celah kritis.
+[ListParagraph] Menghapus kerja ganda pada organisasi multi-standar: satu artefak, satu bukti, dipakai oleh semua framework yang memerlukannya.
+[ListParagraph] Memberi pelanggan kendali penuh atas lokasi data: di cloud penyedia, di data center sendiri, dan/atau di repositori berkas sendiri — tanpa kehilangan kemampuan membuktikan integritas bukti.
+[Heading2] 3.2 Ukuran Keberhasilan
+Metrik
+Baseline Saat Ini
+Target
+Waktu menelusuri satu kontrol atau persyaratan sampai bukti operasional
+10–30 menit (manual, lintas berkas)
+Di bawah 30 detik
+Jumlah Major NC pada audit sertifikasi pertama
+Bervariasi; umumnya 3–8
+Nol Major NC
+Waktu penyusunan evidence pack sebelum audit
+2–3 minggu kerja
+Di bawah 1 hari kerja
+Persyaratan berstatus diterapkan tanpa bukti siklus berjalan
+Tidak terdeteksi sampai audit
+Terdeteksi otomatis, nol saat audit
+Dokumen melewati tanggal review tanpa tindakan
+Tidak terpantau
+Nol dokumen terlambat lebih dari 30 hari
+Temuan audit internal yang tidak masuk register tindakan korektif
+Ditemukan saat audit eksternal
+Nol (dicegah sistem)
+Bukti yang dipakai ulang lintas framework (organisasi multi-standar)
+Nol — diunggah ulang per standar
+Minimal 30% bukti klausul 7, 9, dan 10 tertaut ke lebih dari satu framework
+Waktu pemasangan On-Premise sampai siap pakai
+Belum ada
+Di bawah 2 hari kerja pada infrastruktur yang memenuhi prasyarat
+Tautan bukti di repositori pelanggan yang rusak tanpa terdeteksi
+Belum ada
+Nol — setiap tautan rusak terdeteksi dalam satu siklus pemeriksaan
+Waktu menjawab &quot;apa yang masih pending sebelum audit, di siapa, dan kapan jatuh temponya&quot;
+Rapat koordinasi dan rekap manual lintas spreadsheet
+Di bawah 1 menit dari satu layar
+Item pending yang due date-nya jatuh setelah tanggal audit
+Baru diketahui saat audit berlangsung
+Ditandai sejak item dibuat; nol pada hari audit
+Selisih angka ringkasan antar modul untuk data yang sama
+Umum terjadi pada rekap manual
+Nol — seluruh angka dihitung dari satu sumber
+[Heading2] 3.3 Bukan Tujuan Produk
+[ListParagraph] Menggantikan peran auditor internal maupun eksternal — sistem menyediakan bukti, bukan menilai kesesuaian.
+[ListParagraph] Menjadi sistem manajemen dokumen umum (DMS) untuk seluruh organisasi, atau menggantikan OneDrive, SharePoint, maupun Google Drive pelanggan. Pada mode Customer Repository, repositori pelanggan tetap menjadi sistem utama penyimpanan berkas.
+[ListParagraph] Menjadi cadangan (backup) repositori pelanggan. Retensi dan pencadangan berkas di repositori pelanggan tetap menjadi tanggung jawab pelanggan; sistem hanya memverifikasi keberadaan dan integritasnya.
+[ListParagraph] Menjalankan kontrol teknis secara langsung, seperti pemindaian kerentanan, penyaringan transaksi keuangan, atau pemulihan sistem; sistem mengonsumsi bukti dari perkakas tersebut.
+[ListParagraph] Memuat teks resmi standar ISO. Framework Pack hanya memuat penomoran, judul ringkas, dan panduan milik penyedia; teks persyaratan lengkap tetap mengacu pada salinan berlisensi milik pelanggan.
+[ListParagraph] Menjamin keberhasilan sertifikasi — keputusan sertifikasi tetap berada pada lembaga sertifikasi.
+[Heading1] 4. Pengguna dan Kebutuhan
+Persona pada v1.0 dipertahankan dan dibuat netral terhadap framework. Label peran yang tampil di antarmuka mengikuti framework aktif, sehingga pengguna tetap melihat istilah yang dikenalnya.
+Persona
+Peran dalam Sistem Manajemen
+Kebutuhan Utama
+Modul Utama
+MS Manager
+Koordinator harian satu atau beberapa sistem manajemen; pengguna paling intensif
+Melihat celah sebelum auditor melihatnya; menyusun evidence pack cepat; mengelola artefak bersama lintas standar
+Semua modul
+Programme Owner (CISO, Head of Quality, Head of BCM, Head of Compliance)
+Pemilik program, penanggung jawab sumber daya
+Kesiapan agregat, risiko yang belum tertangani, kebutuhan sumber daya
+Modul 1 &amp; 3
+Domain Owner
+Pemilik area: IT, HR, Facilities, Operations, Procurement, Finance
+Daftar tugas jelas tanpa perlu tahu tugas itu untuk standar yang mana
+Modul 1
+Risk Owner
+Pemilik risiko bisnis
+Menyetujui risiko residual; memantau tindakan perlakuan
+Modul 1
+Internal Auditor
+Penyedia jaminan independen
+Program audit, kertas kerja, pencatatan temuan, audit gabungan, verifikasi independensi
+Modul 2
+Top Management / Governing Body
+Pengambil keputusan; pada ISO 37001 termasuk governing body
+Ringkasan satu layar lintas framework; keputusan yang perlu diambil
+Modul 3
+Auditor Eksternal (tamu)
+Pihak ketiga saat audit berlangsung
+Akses baca terbatas ke evidence pack sesuai lingkup sampling dan framework yang diaudit
+Modul 2 (read-only)
+Tenant Administrator (baru)
+Admin aplikasi di sisi pelanggan
+Mengaktifkan framework, mengatur ruang lingkup, menghubungkan repositori, mengelola pengguna dan SSO
+Administrasi
+Platform Operator (baru)
+SaaS: tim operasi penyedia. On-Premise: tim infrastruktur pelanggan
+Memasang, memperbarui, memantau, mencadangkan, dan memulihkan aplikasi
+Konsol operasi
+[Heading2] 4.1 Label Peran per Framework
+Peran Generik
+ISO/IEC 27001
+ISO 9001
+ISO 22301
+ISO 37001
+MS Manager
+ISMS Manager
+QMS Manager / Quality Management Representative
+BCMS Manager / BCM Coordinator
+Anti-Bribery Compliance Function
+Programme Owner
+CISO
+Head of Quality
+Head of BCM / Resilience
+Chief Compliance Officer
+Top Management
+Top Management
+Top Management
+Top Management
+Top Management dan Governing Body
+Domain Owner
+Domain Owner
+Process Owner
+Activity / Plan Owner
+Control Owner
+KEBUTUHAN PALING DIABAIKAN: DOMAIN OWNER
+Domain Owner adalah pengguna paling banyak jumlahnya tetapi paling sedikit memahami standar. Pada organisasi multi-standar, satu Domain Owner bisa menerima tugas dari empat sistem manajemen sekaligus. Mereka tidak perlu tahu bahwa unggahannya memenuhi klausul 8.1 ISO/IEC 27001 dan klausul 7.5 ISO 9001 — mereka hanya perlu tahu apa yang harus diserahkan, kapan, dan apakah sudah cukup.
+Karena itu My Tasks bersifat lintas framework secara default: satu daftar, satu tombol serah bukti, dengan penanda framework yang kecil dan dapat diabaikan.
+[Heading1] 5. Konsep Multi-Framework
+Ketentuan pertama tidak dapat dipenuhi dengan menambahkan tiga set tabel baru di samping tabel ISO/IEC 27001. Pendekatan itu akan melipatgandakan kode, pengujian, dan aturan bisnis, serta membuat integrasi lintas standar mustahil. Desain v2.0 memisahkan mesin (engine) dari konten standar.
+[Heading2] 5.1 Prinsip Desain
+[ListParagraph] Satu mesin, banyak konten. Seluruh perilaku — state machine, aturan integritas, freshness engine, Golden Thread — bekerja atas entitas generik. Hal yang spesifik standar (klausul, katalog, rantai keterlacakan, pustaka temuan, template aktivitas, label) dibawa oleh Framework Pack.
+[ListParagraph] Harmonized Structure sebagai tulang punggung. Keempat standar memakai struktur klausul 4 sampai 10 yang sama. Persyaratan bersama (misalnya 7.5 informasi terdokumentasi, 9.2 audit internal, 9.3 tinjauan manajemen, 10.2 tindakan korektif) dimodelkan sekali dan dipetakan ke setiap framework.
+[ListParagraph] Modul khusus hanya bila benar-benar berbeda. BIA pada ISO 22301 atau due diligence pada ISO 37001 tidak dapat direpresentasikan sebagai kontrol biasa; keduanya menjadi workbench khusus yang diaktifkan oleh pack.
+[ListParagraph] Edisi standar adalah data, bukan kode. Pergantian edisi (misalnya ISO 9001:2015 ke ISO 9001:2026) dilakukan dengan memasang pack edisi baru dan menjalankan transisi — tanpa rilis aplikasi.
+[Heading2] 5.2 Framework Pack
+Framework Pack adalah paket konten berversi dan bertanda tangan digital yang dipasang ke aplikasi. Pada SaaS, pack didistribusikan otomatis; pada On-Premise, pack dapat diimpor sebagai berkas luring (offline bundle).
+Isi Pack
+Keterangan
+Contoh pada ISO/IEC 27001 (setara dataset v1)
+Requirement tree
+Pohon klausul dan subklausul, flag informasi terdokumentasi wajib
+clause_requirements (30 baris)
+Catalogue
+Daftar kontrol atau langkah pengendalian yang dapat dipilih; opsional
+annex_a_controls (93 baris)
+Applicability model
+Aturan applicability: apa yang dinilai, justifikasi apa yang wajib, label artefak
+Statement of Applicability
+Risk profile
+Dimensi dampak, skala, dan objek risiko
+CIA, likelihood x consequence 1–5
+Traceability chain
+Urutan simpul rantai dan simpul yang wajib
+traceability_chain (10 langkah, 6 wajib)
+Activity template
+Fase dan aktivitas implementasi, termasuk gate kritis
+implementation_activities (69 aktivitas, 9 fase)
+Audit template
+Aktivitas audit Stage 1, Stage 2, surveillance
+audit_activities (28 aktivitas)
+Finding condition library
+Kondisi temuan dengan klasifikasi dan rujukan klausul
+finding_conditions (401 kondisi)
+Document templates
+Katalog dokumen dan konvensi ID
+document_templates (105 baris)
+Evidence frequency rules
+Ambang kesegaran bukti per frekuensi
+evidence_frequency_rules (7 aturan)
+Review input definition
+Daftar input wajib tinjauan manajemen
+Tujuh input klausul 9.3.2
+Label dictionary
+Istilah UI per bahasa (ID/EN) dan per peran
+ISMS, ISMS Manager, SoA
+Cross-mapping
+Pemetaan persyaratan ke framework lain
+Baru pada v2.0
+Specialised modules
+Workbench khusus yang diaktifkan
+Tidak ada (27001 memakai modul inti)
+KETERGANTUNGAN TERBESAR ADA PADA KONTEN, BUKAN KODE
+Aset domain yang sudah tervalidasi — 69 aktivitas implementasi, 28 aktivitas audit, 401 kondisi temuan, 105 template dokumen — saat ini hanya tersedia untuk ISO/IEC 27001. Mesin multi-framework dapat dibangun dalam hitungan sprint, tetapi pack ISO 9001, ISO 22301, dan ISO 37001 dengan kedalaman setara memerlukan pekerjaan penyusunan konten oleh pakar domain masing-masing standar.
+Rencanakan jalur penyusunan konten sebagai work-stream terpisah dengan penanggung jawab dan tenggatnya sendiri. Tanpa itu, framework baru akan tampil di menu tetapi terasa kosong — risiko yang sama dengan Golden Thread tanpa data pada v1.0.
+[Heading2] 5.3 Perbandingan Framework yang Didukung
+Edisi berikut adalah edisi rujukan per tanggal dokumen ini. Framework Pack wajib memuat edisi yang berlaku dan edisi sebelumnya selama masa transisi yang ditetapkan lembaga akreditasi dan lembaga sertifikasi.
+Aspek
+ISO/IEC 27001 (ISMS)
+ISO 9001 (QMS)
+ISO 22301 (BCMS)
+ISO 37001 (ABMS)
+Edisi rujukan
+2022 + Amd 1:2024
+2026 (terbit 16 Sep 2026); 2015 + Amd 1:2024 selama transisi
+2019 + Amd 1:2024
+2025 (terbit Feb 2025); 2016 selama transisi
+Fokus
+Kerahasiaan, integritas, ketersediaan informasi
+Kesesuaian produk/jasa dan kepuasan pelanggan
+Kemampuan melanjutkan aktivitas prioritas saat gangguan
+Mencegah, mendeteksi, dan menangani penyuapan
+Katalog kontrol
+Annex A, 93 kontrol
+Tidak ada; persyaratan operasional klausul 8
+Tidak ada; strategi dan solusi BC
+Langkah pengendalian klausul 8 (due diligence, kontrol keuangan dan non-keuangan, hadiah, dst.)
+Artefak applicability
+Statement of Applicability
+Justifikasi persyaratan yang tidak dapat diterapkan dalam ruang lingkup
+Penentuan produk/jasa dan aktivitas dalam lingkup
+Proporsionalitas pengendalian berbasis hasil penilaian risiko penyuapan
+Pendekatan risiko
+Risiko keamanan informasi, dampak CIA
+Risiko dan peluang
+BIA (MTPD, RTO, RPO) dan penilaian risiko gangguan
+Penilaian risiko penyuapan per posisi, transaksi, mitra, dan wilayah
+Artefak khas
+SoA, risk treatment plan
+Peta proses, sasaran mutu, kepuasan pelanggan, output tidak sesuai, penyedia eksternal
+BIA, strategi BC, rencana BC, program latihan, evaluasi kemampuan
+Fungsi kepatuhan anti-penyuapan, due diligence, register hadiah, saluran pelaporan, investigasi
+Workbench khusus
+—
+Process Map, Customer Feedback, Nonconforming Output
+BIA Workbench, BC Plan Library, Exercise Programme
+Due Diligence Register, Gifts &amp; Hospitality Register, Concerns &amp; Investigations
+Penomoran subklausul ISO 9001:2026 wajib diverifikasi terhadap teks resmi saat pack disusun. Seluruh edisi dan masa transisi wajib dikonfirmasi dengan lembaga sertifikasi pelanggan.
+[Heading2] 5.4 Menu Pemilihan Framework
+Pemilihan framework terjadi pada dua tingkat yang berbeda tujuannya. Membedakan keduanya penting: pengguna harian hanya berpindah konteks, sementara aktivasi framework adalah keputusan administratif yang berdampak pada lisensi dan data.
+Tingkat
+Letak di Antarmuka
+Siapa
+Fungsi
+Management System Switcher
+Bilah atas, selalu terlihat, di kiri nama ruang lingkup
+Semua pengguna dengan akses ke lebih dari satu MS
+Berpindah konteks antar sistem manajemen yang aktif, atau ke tampilan Integrated. Seluruh modul, label, katalog, rantai, dan pustaka temuan menyesuaikan.
+Framework Library
+Menu Administrasi
+Tenant Administrator
+Mengaktifkan framework sesuai lisensi, memilih edisi, menetapkan ruang lingkup, lembaga sertifikasi, dan lokasi penyimpanan berkas untuk MS tersebut
+Portfolio Overview
+Halaman awal bila pengguna memiliki lebih dari satu MS
+MS Manager, Programme Owner, Top Management
+Ringkasan kesiapan, siklus sertifikasi, dan temuan terbuka seluruh MS dalam satu layar
+[Heading3] Perilaku Wajib Switcher
+[ListParagraph] Pilihan terakhir diingat per pengguna; tautan langsung (deep link) memuat identitas MS sehingga tautan yang dibagikan membuka konteks yang benar.
+[ListParagraph] Setiap layar menampilkan framework aktif secara eksplisit. Pengguna tidak boleh ragu sedang menyunting risiko ISMS atau risiko BCMS.
+[ListParagraph] Artefak bersama tampil di setiap MS terkait dengan penanda Shared, dan penyuntingannya berdampak ke semua MS tersebut — sistem menampilkan daftar MS yang terdampak sebelum perubahan disimpan.
+[ListParagraph] Pengguna yang hanya memiliki akses ke satu MS tidak melihat switcher; antarmuka tampil seperti produk satu standar.
+[ListParagraph] My Tasks tidak mengikuti switcher: selalu menampilkan tugas dari seluruh MS milik pengguna.
+[Heading2] 5.5 Mode Integrated Management System
+Organisasi yang menjalankan lebih dari satu framework dapat menandai artefak sebagai bersama. Rancangan ini menjawab keluhan paling umum pada organisasi multi-standar: mengerjakan hal yang sama berkali-kali.
+Artefak
+Dapat Dibagi
+Catatan
+Context issue dan interested party
+Ya
+Satu isu konteks dapat relevan untuk beberapa MS; relevansi ditandai per MS
+Dokumen (prosedur pengendalian dokumen, audit internal, tindakan korektif)
+Ya
+Satu dokumen, satu siklus persetujuan, tertaut ke beberapa persyaratan lintas framework
+Bukti operasional
+Ya
+Satu bukti dapat membuktikan persyaratan di beberapa MS melalui cross-mapping
+Program audit internal
+Ya — audit gabungan
+Satu audit event dapat mencakup beberapa framework; temuan tetap diklasifikasikan per framework
+Tinjauan manajemen
+Ya — tinjauan gabungan
+Input wajib digabung dari seluruh framework yang dicakup; kelengkapan dinilai per framework
+Register risiko
+Sebagian
+Satu register fisik boleh dipakai, tetapi setiap risiko wajib memiliki profil risiko framework-nya; risiko informasi dan risiko penyuapan tidak dinilai dengan skala yang sama
+Statement of Applicability, BIA, due diligence
+Tidak
+Artefak khas framework
+Siklus sertifikasi
+Tidak
+Setiap framework memiliki lembaga sertifikasi, sertifikat, dan jadwal sendiri, walau audit dapat digabungkan
+[Heading2] 5.6 Rantai Keterlacakan per Framework
+Golden Thread Viewer merender rantai sesuai definisi pack. Simpul bertanda wajib yang tidak memiliki relasi ditandai sebagai rantai putus.
+[Heading3] ISO/IEC 27001
+ContextIssue → Risk → RiskTreatment → Control → ApplicabilityEntry (SoA) → Document → Evidence → Metric → Finding → CorrectiveAction
+[Heading3] ISO 9001
+ContextIssue / InterestedParty → Risk or Opportunity → Action → Process → QualityObjective → Document → Evidence → Metric → Nonconformity → CorrectiveAction
+[Heading3] ISO 22301
+ContextIssue → Product/Service &amp; Activity → BIA (MTPD, RTO, RPO) → DisruptionRisk → BC Strategy &amp; Solution → BC Plan → Exercise → Evidence → Finding → CorrectiveAction
+[Heading3] ISO 37001
+ContextIssue → BriberyRisk → Control (financial, non-financial, due diligence) → Position / Business Associate → Document → Evidence → Concern / Investigation → Finding → CorrectiveAction
+[Heading1] 6. Model Data dan Arsitektur Informasi
+Seluruh nilai produk bertumpu pada model data yang merepresentasikan rantai keterlacakan sebagai relasi, bukan kolom teks bebas. Pada v2.0, model data ditata dalam tiga lapisan.
+Lapisan
+Isi
+Sifat
+Konten framework (global)
+Framework, FrameworkVersion, Requirement, CatalogueItem, RequirementMapping, pustaka dan template
+Dipasang dari Framework Pack; hanya-baca bagi tenant, kecuali pustaka yang ditandai dapat disunting
+Organisasi dan sistem manajemen
+Organization, ManagementSystem, Scope, CertificationCycle
+Satu organisasi dapat memiliki banyak MS; satu MS = satu framework + edisi + ruang lingkup
+Data operasional
+Seluruh entitas pada v1.0 (risiko, dokumen, bukti, temuan, dst.) ditambah entitas khusus framework dan entitas penyimpanan
+Terikat ke satu MS, atau dibagi ke beberapa MS melalui tabel penghubung
+[Heading2] 6.1 Entitas Inti
+Entitas
+Atribut Kunci
+Relasi Wajib
+Status v2.0
+Framework / FrameworkVersion
+Kode (ISO27001, ISO9001, ISO22301, ISO37001), edisi, status (current, transition, withdrawn), tanggal akhir transisi
+Memiliki → Requirement, CatalogueItem
+Baru
+ManagementSystem
+Framework version, ruang lingkup, status, lokasi penyimpanan default
+Menaungi → seluruh data operasional
+Baru
+Requirement
+ID klausul, judul ringkas, flag informasi terdokumentasi wajib
+Dipetakan → Requirement framework lain
+Menggantikan clause_requirement
+CatalogueItem
+ID item, tema, judul ringkas, jenis
+Dipilih oleh → Treatment; dinilai → ApplicabilityEntry
+Menggantikan annex_a_control
+ContextIssue, InterestedParty, Asset
+Seperti v1.0
+Seperti v1.0; dapat dibagi ke beberapa MS
+Diperluas
+Risk
+Seperti v1.0 + risk_profile (information_security, quality, disruption, bribery)
+Berasal dari → ContextIssue; ditangani → Treatment
+Diperluas
+RiskTreatment / Action
+Seperti v1.0
+Memilih → CatalogueItem atau Requirement
+Diperluas
+ApplicabilityEntry
+Target (CatalogueItem atau Requirement), applicable, justifikasi, status implementasi
+Merujuk → Risk; → Document; → Evidence
+Menggantikan SoAEntry
+Document
+Seperti v1.0 + storage_object
+Mengimplementasi → Requirement/CatalogueItem di satu atau lebih MS
+Diperluas
+Evidence
+Seperti v1.0 + storage_object, integrity_status
+Membuktikan → Requirement/CatalogueItem di satu atau lebih MS
+Diperluas
+StorageRepository
+Jenis (managed_vault, m365, google_drive, smb, s3), konfigurasi, status koneksi
+Menyimpan → StorageObject
+Baru
+StorageObject
+Rujukan item, versi yang dipatok, sidik jari, status tautan
+Dirujuk → Document version, Evidence
+Baru
+OperatingCriteria, Metric
+Seperti v1.0
+Seperti v1.0
+Tetap
+Finding, CorrectiveAction, SelfAssessment
+Seperti v1.0 + framework per temuan
+Seperti v1.0; audit gabungan menghasilkan temuan per framework
+Diperluas
+ManagementReview
+Tanggal, peserta, keputusan; input wajib dari definisi pack
+Mengonsumsi → Metric, Finding, Risk dari MS yang dicakup
+Diubah — input tidak lagi tujuh kolom tetap
+CertificationCycle / AuditEvent
+Seperti v1.0 + management_system
+Satu siklus per MS; audit event dapat gabungan
+Diperluas
+[Heading2] 6.2 Entitas Khusus Framework
+Framework
+Entitas
+Tujuan
+ISO 9001
+Process, QualityObjective, CustomerFeedback, NonconformingOutput, ExternalProviderEvaluation
+Peta proses dan interaksinya, sasaran mutu terukur, umpan balik dan kepuasan pelanggan, pengendalian output tidak sesuai, evaluasi penyedia eksternal
+ISO 22301
+ProductService, PrioritizedActivity, BusinessImpactAnalysis, BCStrategy, BCPlan, Exercise
+Menentukan aktivitas prioritas, MTPD, RTO, RPO, dan sumber daya minimum; strategi dan solusi; rencana; program latihan beserta hasil dan pelajaran
+ISO 37001
+BusinessAssociate, DueDiligence, GiftHospitalityRecord, Concern, Investigation, ComplianceFunctionReport
+Mitra dan posisi berisiko, due diligence berkala, register hadiah/jamuan/donasi, pelaporan kekhawatiran secara aman, investigasi, laporan fungsi kepatuhan ke governing body
+KERAHASIAAN DATA PELAPOR PADA ISO 37001
+Entitas Concern dan Investigation memuat data pelapor dan pihak terlapor yang sangat sensitif. Akses dibatasi pada Anti-Bribery Compliance Function dan penyelidik yang ditunjuk; peran lain, termasuk MS Manager framework lain dan Top Management, hanya melihat statistik agregat. Pelaporan anonim wajib didukung, dan audit trail akses ke entitas ini ditinjau tersendiri.
+[Heading2] 6.3 Aturan Integritas Wajib
+Aturan
+Berlaku untuk
+Penegakan Sistem
+ApplicabilityEntry tidak boleh berstatus diterapkan tanpa minimal satu Evidence pada siklus berjalan
+Semua
+Status ditolak; sistem menawarkan status sebagian diterapkan atau direncanakan
+ApplicabilityEntry applicable=Yes wajib memiliki justifikasi yang merujuk minimal satu Risk
+ISO/IEC 27001, ISO 37001
+Penyimpanan diblokir sampai relasi diisi
+Persyaratan yang dinyatakan tidak dapat diterapkan wajib berjustifikasi dan tidak boleh memengaruhi kemampuan memenuhi persyaratan pelanggan
+ISO 9001
+Penyimpanan diblokir tanpa justifikasi; peringatan bila persyaratan di luar klausul 8
+RiskTreatment tidak dapat selesai tanpa ResidualAcceptance oleh Risk Owner
+Semua
+Alur persetujuan terpisah; pelaksana tidak dapat menyetujui sendiri
+Finding tidak dapat ditutup tanpa RCA, cek sistemik, dan verifikasi efektivitas bertanggal berbeda dari implementasi
+Semua
+Tanggal verifikasi sama dengan tanggal implementasi ditolak
+CorrectiveAction tidak dapat diverifikasi oleh pelaksananya
+Semua
+Pemisahan peran ditegakkan pada level data
+Document yang melewati review date otomatis berstatus Kedaluwarsa
+Semua
+Muncul di dashboard pemilik; memblokir kesiapan klausul terkait di setiap MS yang memakainya
+Aktivitas prioritas wajib memiliki BIA dengan RTO dan MTPD; RTO tidak boleh melebihi MTPD
+ISO 22301
+Penyimpanan diblokir
+BC Plan tanpa Exercise dalam periode program latihan ditandai tidak teruji
+ISO 22301
+Status plan diturunkan; tugas dibuat untuk plan owner
+Business Associate berisiko di atas rendah wajib memiliki DueDiligence yang masih berlaku
+ISO 37001
+Status mitra ditandai; tugas dibuat untuk control owner
+Evidence yang berkasnya tidak dapat diverifikasi di repositori pelanggan tidak dihitung sebagai bukti
+Semua, mode Customer Repository
+Status integritas diturunkan; perlakuan setara bukti kedaluwarsa
+[Heading1] 7. Modul 1 — Implementation Dashboard
+Modul untuk fase membangun sistem manajemen. Fase dan aktivitas diambil dari activity template Framework Pack; untuk ISO/IEC 27001, tetap sembilan fase dan 69 aktivitas seperti v1.0. Pengguna utama: MS Manager dan Domain Owner.
+[Heading2] 7.1 Fitur Utama
+Fitur
+Deskripsi
+Prioritas
+Phase Tracker
+Progres aktivitas implementasi per fase sesuai template framework, dengan penanggung jawab, output, dan outcome
+P0
+Gate Enforcement
+Fase berikutnya terkunci sampai gate criteria terpenuhi. Gate kritis ditentukan pack: Risk &amp; SoA (27001), Risk &amp; Opportunity + Process Map (9001), BIA &amp; Risk Assessment (22301), Bribery Risk Assessment (37001)
+P0
+Document Register
+Seluruh artefak dengan ID, tier, versi, pemilik, approver, tanggal sah, review date, lokasi penyimpanan, dan MS yang memakainya
+P0
+Applicability Builder
+Katalog pra-muat dari pack; applicability, justifikasi, status implementasi, rujukan dokumen dan bukti. Tampil sebagai SoA Builder pada ISO/IEC 27001
+P0
+Risk Register &amp; Treatment
+Risiko dengan pemilik bernama, profil risiko sesuai framework, opsi perlakuan, dan persetujuan residual
+P0
+Clause Readiness Meter
+Skor kesiapan per klausul dan per tema katalog, dengan daftar item gate terbuka
+P0
+My Tasks (Domain Owner)
+Tugas lintas seluruh MS milik pengguna, dengan instruksi bahasa awam dan contoh bukti yang diterima
+P0
+Framework Workbench
+Workbench khusus yang diaktifkan pack: BIA, Process Map, Due Diligence, Gifts &amp; Hospitality, dst.
+P0 untuk framework yang dirilis
+Shared Artefact Manager
+Menandai dan meninjau artefak bersama; menampilkan dampak perubahan ke setiap MS
+P1
+Orphan Detector
+Dokumen yang tidak tertaut ke persyaratan mana pun, dan persyaratan tanpa dokumen pelaksana, per MS
+P1
+Bulk Import
+Impor awal dari workbook Excel atau dari MS lain milik organisasi yang sama
+P1
+Template Library
+Kerangka dokumen untuk artefak yang umumnya baru dibuat, mengikuti konvensi ID
+P2
+[Heading2] 7.2 Layar Utama
+[ListParagraph] Portfolio Overview — ringkasan seluruh MS (bila lebih dari satu).
+[ListParagraph] Overview — kesiapan agregat per klausul untuk MS aktif, fase berjalan, gate berikutnya, dan tiga hambatan teratas.
+[ListParagraph] Phase Board — papan fase dengan status aktivitas, dapat difilter per Domain Owner.
+[ListParagraph] Applicability Workbench — tabel katalog dengan penyuntingan massal, filter per tema, dan indikator kelengkapan relasi.
+[ListParagraph] Risk Workbench — register risiko dengan matriks visual sesuai profil risiko framework.
+[ListParagraph] Document Register — daftar artefak dengan peringatan review date, riwayat versi, dan penanda lokasi berkas.
+[ListParagraph] Framework Workbench — layar khusus sesuai pack.
+[ListParagraph] My Tasks — tampilan pribadi Domain Owner, lintas framework, tanpa jargon standar.
+CATATAN DESAIN — SKOR KESIAPAN TIDAK BOLEH MENYAMARKAN CELAH
+Skor agregat berbentuk persentase tunggal berbahaya karena satu celah kritis dapat tersembunyi di balik angka 95 persen. Pada Portfolio Overview risikonya berlipat: rata-rata empat MS dapat terlihat sehat sementara satu MS tertahan gate kritis. Sistem wajib menampilkan skor bersama item gate yang belum terpenuhi per MS, dan tidak boleh menghitung rata-rata kesiapan lintas framework.
+[Heading2] 7.3 Drill-down Ringkasan Implementasi
+Lima kartu ringkasan di bagian atas Modul 1 berfungsi sebagai pintu masuk ke daftar rinci. Kartu tetap tampil di atas daftar sebagai tab, sehingga pengguna dapat berpindah antar daftar tanpa kembali ke halaman utama. Isi setiap daftar mengikuti framework aktif pada Management System Switcher.
+Kartu
+Daftar yang Dibuka
+Isi per Framework
+Prioritas
+Controls / Requirements implemented
+Daftar item applicability berstatus diterapkan
+ISO/IEC 27001: 93 kontrol Annex A per tema A.5–A.8. ISO 9001, ISO 22301, ISO 37001: persyaratan klausul 4–10 per klausul
+P0
+Partially implemented
+Daftar yang sama, tersaring pada status sebagian diterapkan
+Sama dengan di atas
+P0
+Open gate items
+Setiap item gate beserta daftar entitas terdampak
+Jenis entitas mengikuti pack: kontrol, risiko, dokumen (27001); proses, persyaratan (9001); aktivitas prioritas (22301); mitra usaha (37001)
+P0
+Documents approved
+Register dokumen tersaring pada status disetujui, dikelompokkan per tier
+Register dokumen MS aktif, termasuk dokumen bersama berawalan IMS-
+P0
+Documents expired
+Register dokumen tersaring pada status kedaluwarsa, dengan jumlah hari keterlambatan
+Sama dengan di atas
+P0
+[Heading3] Kebutuhan Daftar Kontrol dan Persyaratan
+[ListParagraph] Filter status dengan jumlah: All, Implemented, Partial, Planned, Not started, Blocked, Not applicable. Filter yang jumlahnya nol disembunyikan.
+[ListParagraph] Pencarian langsung berdasarkan ID, judul, pemilik, catatan, atau dokumen pelaksana.
+[ListParagraph] Kolom: ID, judul dan catatan status, status, pemilik, dokumen pelaksana, bukti terakhir beserta kesegarannya, lokasi berkas beserta status integritasnya.
+[ListParagraph] Penanda item yang sedang menahan gate (misalnya kontrol tanpa justifikasi berbasis risiko) tampil langsung di baris.
+[ListParagraph] Rincian baris memuat applicability dan justifikasinya, risiko yang ditautkan (27001) atau dasar risiko (framework lain), dokumen pelaksana beserta status dan versinya, frekuensi operasi, dan bukti terakhir.
+[ListParagraph] ID dokumen di rincian dapat diklik untuk membuka dokumen tersebut di register; sebaliknya, rincian dokumen memuat daftar kontrol atau persyaratan yang diimplementasikannya.
+[Heading3] Kebutuhan Register Dokumen
+[ListParagraph] Filter status: All, Approved, Expired, In review, Draft; pengelompokan per tier (Policies, Standards, Procedures, Plans, Registers, Records, Forms).
+[ListParagraph] Kolom: ID, judul, status, pemilik, versi, tanggal disetujui, review due beserta penanda terlambat atau segera jatuh tempo, lokasi berkas.
+[ListParagraph] Dokumen bersama menampilkan framework lain yang memakainya.
+[ListParagraph] Dokumen yang tidak tertaut ke kontrol atau persyaratan mana pun ditandai sebagai kandidat Orphan Detector.
+[ListParagraph] Tombol aksi mengikuti status: Start review (kedaluwarsa), Open review (in review), Continue draft (draft), Upload new version (disetujui).
+[Heading2] 7.4 Drill-down Fase Implementasi
+Setiap kartu fase dapat diklik dan membuka rincian aktivitas fase tersebut. Aktivitas berasal dari activity template Framework Pack: 69 aktivitas dalam sembilan fase untuk ISO/IEC 27001, dan template masing-masing untuk framework lain.
+Elemen
+Kebutuhan
+Navigasi fase
+Deretan kartu fase tetap tampil sebagai tab; fase aktif disorot. Teks kartu dihitung dari data aktivitas, bukan diketik.
+Ringkasan fase
+Jumlah aktivitas: Verified, Complete (menunggu verifikasi), In progress, Blocked, Not started atau Locked.
+Banner kondisi
+Gate kritis: seluruh aktivitas wajib Verified sebelum fase berikutnya terbuka; bila gate adalah fase terakhir, sistem tidak dapat dinyatakan siap audit. Fase terkunci: menyebut fase gate yang menahan, dengan tautan ke sana. Fase selesai: menjelaskan status Complete yang menunggu verifikasi MS Manager.
+Tabel aktivitas
+Nomor, aktivitas, tindakan penanggung jawab, pemilik, output wajib, status, tanggal selesai atau due date. Dikelompokkan per klausul bila template memilikinya.
+Rincian aktivitas
+Outcome yang diharapkan, output wajib beserta status dokumennya bila output adalah dokumen terkendali, dan alasan blokir yang merujuk item gate.
+Aksi
+Mengikuti status: Mark complete, Record blocker, Verify output, Open gate item. Aktivitas pada fase terkunci hanya dapat dilihat.
+Bahasa konten
+Konten aktivitas tampil dalam bahasa penyusunan pack; label antarmuka mengikuti bahasa pengguna. Kolom terjemahan disiapkan sesuai README seed data.
+KONSISTENSI GATE, AKTIVITAS, DAN DOKUMEN
+Jumlah aktivitas Blocked pada fase gate wajib sama dengan jumlah item gate terbuka, dan setiap aktivitas Blocked merujuk item gate penyebabnya. Output aktivitas yang berupa dokumen wajib menunjuk dokumen di register, sehingga status aktivitas dan status dokumen tidak bertentangan — misalnya SoA tidak boleh tampil Approved sementara aktivitas penyusunannya masih Blocked.
+[Heading1] 8. Modul 2 — Audit Process Dashboard
+Modul untuk menjalani audit internal maupun eksternal, per framework atau gabungan. Aktivitas audit dan pustaka kondisi temuan berasal dari pack. Pengguna utama: MS Manager dan Internal Auditor.
+[Heading2] 8.1 Fitur Utama
+Fitur
+Deskripsi
+Prioritas
+Audit Activity Planner
+Aktivitas audit Stage 1 dan Stage 2 per framework, dengan auditee, pertanyaan kunci, dan bukti yang akan diminta
+P0
+Finding Condition Library
+Pustaka kondisi temuan per framework (Major/Minor/OFI/Sinyal/Bukan Temuan) sebagai basis self-assessment
+P0
+Self-Assessment Workbench
+Penilaian mandiri per kondisi: status, bukti penyanggah, PIC, target perbaikan
+P0
+Golden Thread Viewer
+Penelusuran rantai sesuai definisi pack dalam satu layar, dengan penanda rantai putus dan status integritas berkas
+P0
+Evidence Pack Generator
+Paket bukti per klausul, per kontrol, per framework. Pada mode Customer Repository, paket berupa manifest dan salinan di repositori pelanggan (Bagian 11.6)
+P0
+Finding Register
+Temuan aktual dengan framework, klasifikasi, sumber, klausul, dan pelacakan sampai penutupan
+P0
+Corrective Action Workflow
+Koreksi → RCA → cek sistemik → tindakan korektif → verifikasi efektivitas oleh pihak berbeda
+P0
+Integrated Audit Planner
+Satu audit event untuk beberapa framework; pemetaan persyaratan bersama agar tidak diaudit dua kali
+P1
+Internal Audit Programme
+Program multi-tahun dengan pemetaan cakupan terhadap seluruh persyaratan tiap MS, serta cek independensi
+P1
+Auditor Guest Access
+Akses baca terbatas dan bertenggat bagi auditor eksternal, dibatasi pada framework yang diaudit
+P1
+Mock Audit Mode
+Simulasi audit menggunakan pustaka kondisi temuan, menghasilkan laporan ala auditor
+P2
+[Heading2] 8.2 Golden Thread Viewer — Spesifikasi Rinci
+Pengguna memilih satu simpul mana pun — risiko, kontrol, dokumen, aktivitas prioritas, atau mitra usaha — lalu sistem merender rantai lengkap sesuai definisi pack framework aktif. Setiap simpul menampilkan:
+[ListParagraph] Identitas dan status entitas, beserta pemilik bernama.
+[ListParagraph] Relasi hulu dan hilir yang diwajibkan, atau penanda merah bila tidak ada, dengan penjelasan klausul yang dilanggar.
+[ListParagraph] Untuk simpul berkas (Document, Evidence): tanggal produksi, penanda siklus, lokasi penyimpanan, dan status integritas (utuh, versi berubah, hilang, akses dicabut).
+[ListParagraph] Penanda Shared bila simpul dipakai MS lain, beserta tautan untuk melihat rantai di MS tersebut.
+Sistem mencatat waktu render sebagai proksi uji keterlacakan auditor. Pemeriksaan integritas berkas pada repositori pelanggan dilakukan asinkron dari hasil pemeriksaan terakhir, sehingga target waktu render tidak bergantung pada ketersediaan repositori eksternal.
+PENEGAKAN ALUR TINDAKAN KOREKTIF
+Sistem wajib memisahkan koreksi dari tindakan korektif pada level formulir. Kolom RCA dan cek sistemik wajib untuk temuan Major. Tanggal verifikasi efektivitas yang sama dengan tanggal implementasi ditolak, dan verifikator tidak boleh sama dengan pelaksana. Karena klausul 10.2 identik di keempat framework, aturan ini berlaku seragam dan satu tindakan korektif dapat menutup temuan sejenis dari audit gabungan.
+[Heading2] 8.3 Panel Audit Event Berikutnya
+Bagian atas Modul 2 menampilkan audit event berikutnya untuk MS aktif — nama, tanggal, dan jumlah hari tersisa — bersama empat angka: item terbuka di sepanjang rantai, item overdue atau missing, item yang due date-nya jatuh setelah tanggal audit, dan jumlah record siap. Panel ini menjawab pertanyaan pertama setiap MS Manager menjelang audit: seberapa jauh kita dari siap.
+[Heading2] 8.4 Traceability Test Interaktif
+[ListParagraph] Pemilih rantai berisi rantai contoh atau rantai yang dipilih auditor (misalnya R-014, R-003, R-022 untuk ISO/IEC 27001). Pada produk, pemilih memuat seluruh risiko atau simpul hulu yang setara dan mendukung pilihan acak.
+[ListParagraph] Setiap simpul diwarnai dari status record: hijau siap, kuning pending, merah putus (overdue, missing, atau tidak ada relasi).
+[ListParagraph] Simpul yang tidak siap menampilkan nama pemegang dan due date langsung di rantai.
+[ListParagraph] Setiap simpul dapat diklik dan membuka drill-down tahap tersebut, langsung pada record terkait dengan rinciannya terbuka.
+[ListParagraph] Teks peringatan disusun otomatis dari data: jumlah titik putus, penyebab tiap titik, pemegang, dan due date; ditambah daftar simpul pending.
+[Heading2] 8.5 Readiness per Tahap Rantai
+Tabel ringkasan menampilkan setiap tahap rantai sesuai definisi pack, dari context issue sampai monitoring metric (27001) atau tahap padanannya pada framework lain.
+Kolom
+Isi
+Tahap dan pertanyaan auditor
+Nama tahap beserta pertanyaan yang kemungkinan diajukan auditor, dibawa oleh pack
+Readiness
+Bar tiga warna (siap, pending, overdue/missing) dan persentase siap
+Records, Pending, Overdue / missing
+Jumlah record pada tahap tersebut per status
+After audit
+Jumlah item tidak siap yang due date-nya jatuh setelah tanggal audit event
+Next due
+Due date terdekat di antara item pending
+[Heading2] 8.6 Drill-down Tahap Rantai
+[ListParagraph] Deretan tahap tampil sebagai tab dengan jumlah item terbuka per tahap.
+[ListParagraph] Ringkasan: Records, Ready, Pending, Overdue, Missing, Due after audit.
+[ListParagraph] Filter: Open (default), All, Pending, Overdue, Missing, Ready; pencarian berdasarkan ID, judul, nama orang, atau status.
+[ListParagraph] Kolom: ID, record dan status saat ini, status, tindakan tertunda, pemegang (nama dan peran), due date beserta penanda terlambat, segera jatuh tempo, dan After audit.
+[ListParagraph] Rincian record: pertanyaan auditor, tautan hulu dan hilir yang dapat diklik untuk menelusuri rantai, lokasi dan integritas berkas, penjelasan bila due date melewati tanggal audit.
+[ListParagraph] Aksi: Send reminder, Reassign, Change due date, Trace from here (menampilkan rantai yang melalui record tersebut).
+[ListParagraph] Tahap Control, SoA, Document, dan Evidence memakai data yang sama dengan Modul 1, sehingga status dan angka identik di kedua modul.
+[Heading2] 8.7 Pending per Orang
+Tabel pemegang item menampilkan setiap orang dengan jumlah item terbuka, overdue, dan yang jatuh tempo setelah audit, due date terdekat, dan tahap-tahap yang dipegangnya — diurutkan dari yang paling banyak overdue. Klik satu orang membuka seluruh itemnya lintas tahap, urut dari due date terdekat, untuk tindak lanjut satu-lawan-satu sebelum audit.
+PENANDA AFTER AUDIT ADALAH FITUR PALING PENTING MODUL INI
+Item pending yang due date-nya jatuh setelah tanggal audit tidak akan selesai tepat waktu kecuali dimajukan. Tanpa penanda ini, item tersebut terlihat tidak bermasalah — belum terlambat — sampai auditor menanyakannya. Sistem wajib menghitung penanda ini terhadap audit event berikutnya MS terkait, menampilkannya di setiap daftar, dan memperbaruinya otomatis saat tanggal audit berubah.
+[Heading1] 9. Modul 3 — Surveillance / Recertification Dashboard
+Modul untuk mempertahankan sertifikat setelah terbit. Setiap MS memiliki siklus sertifikasinya sendiri. Fokus modul: mencegah kemunduran sepanjang siklus tiga tahun, dan mengelola transisi edisi standar.
+[Heading2] 9.1 Fitur Utama
+Fitur
+Deskripsi
+Prioritas
+Certification Cycle Timeline
+Linimasa tiga tahun per MS; tampilan gabungan untuk melihat peluang menggabungkan audit
+P0
+Evidence Freshness Engine
+Memantau usia setiap bukti terhadap frekuensi operasinya; pada mode Customer Repository juga memantau status integritas tautan
+P0
+Document Review Calendar
+Peringatan bertingkat menjelang dan setelah review date
+P0
+Cycle Completeness Check
+Verifikasi tiap siklus: penilaian risiko, audit internal, tinjauan manajemen lengkap sesuai input wajib framework, dan untuk 22301 program latihan terlaksana
+P0
+Regression Detector
+Register risiko tidak berubah lintas siklus, input tinjauan manajemen menghilang, metrik berhenti diperbarui, due diligence kedaluwarsa, BC plan tidak teruji
+P0
+Edition Transition Assistant
+Saat edisi baru dipasang: gap-analysis otomatis persyaratan lama ke baru, daftar tugas transisi, tenggat akhir transisi
+P1
+Change Trigger Monitor
+Pemicu perubahan: sistem baru, pemasok baru, reorganisasi, insiden signifikan, mitra usaha baru di wilayah berisiko
+P1
+Management Review Pack
+Penyusunan otomatis input wajib menjadi satu berkas siap bahas; per framework atau gabungan
+P1
+Executive Summary View
+Satu layar untuk manajemen puncak lintas framework: keputusan yang diperlukan, risiko di atas appetite, tren temuan
+P1
+Surveillance Scope Predictor
+Memperkirakan area yang kemungkinan disampling berdasarkan temuan siklus sebelumnya
+P2
+[Heading2] 9.2 Evidence Freshness Engine — Spesifikasi Rinci
+[ListParagraph] Setiap persyaratan atau kontrol memiliki OperatingCriteria yang menetapkan frekuensi operasi: harian, bulanan, kuartalan, tahunan, atau per kejadian.
+[ListParagraph] Sistem menghitung usia bukti terakhir berdasarkan tanggal bukti dihasilkan, bukan tanggal diunggah atau ditautkan.
+[ListParagraph] Status kesegaran: Segar, Menua, Kedaluwarsa, Kritis — ambang dapat dikonfigurasi per tenant dan per framework.
+[ListParagraph] Status integritas berjalan paralel dengan kesegaran. Bukti yang segar tetapi berkasnya hilang dari repositori pelanggan diperlakukan sama dengan bukti kedaluwarsa.
+[ListParagraph] Bukti Kedaluwarsa atau tidak terverifikasi menurunkan status ApplicabilityEntry dan memunculkan tugas bagi pemilik.
+[Heading2] 9.3 Transisi Edisi Standar
+ISO 9001:2026 yang terbit 16 September 2026 dan ISO 37001:2025 menjadikan transisi edisi kebutuhan nyata, bukan skenario hipotetis. Sistem memperlakukan transisi sebagai proses terkelola:
+[ListParagraph] Pack edisi baru dipasang berdampingan dengan edisi lama; MS tetap berjalan pada edisi lama.
+[ListParagraph] Edition Transition Assistant menjalankan pemetaan persyaratan lama ke baru dan menandai persyaratan baru, berubah, dan dihapus.
+[ListParagraph] Relasi yang dapat dipetakan otomatis (dokumen, bukti, applicability) dipindahkan; sisanya menjadi daftar tugas transisi.
+[ListParagraph] MS dipindahkan ke edisi baru setelah audit transisi, dengan riwayat edisi lama tetap tersimpan untuk keperluan audit.
+MENGAPA MODUL 3 PALING SERING DIABAIKAN SAAT PERANCANGAN
+Kemunduran pasca-sertifikasi terjadi perlahan dan tidak menimbulkan gejala sampai audit surveillance berikutnya. Pada mode Customer Repository ada sumber kemunduran baru: berkas bukti dipindah, diganti nama, atau dihapus oleh pengguna yang tidak tahu berkas itu dirujuk sistem kepatuhan. Karena itu pemberitahuan harus proaktif, dan pemeriksaan tautan harus terjadwal, bukan menunggu pengguna membuka aplikasi.
+[Heading2] 9.4 Drill-down Audit Event
+Setiap titik pada Certification Cycle Timeline dapat diklik. Isi rincian bergantung pada posisi event dalam siklus.
+Posisi Event
+Isi Rincian
+Semua
+Tanggal, jumlah hari audit, jenis audit, lembaga sertifikasi dan lead auditor, ruang lingkup, fokus yang diperkirakan
+Berikutnya
+Readiness dari rantai keterlacakan (dengan tautan ke Modul 2); checklist persiapan berisi tugas, pemilik, status, dan due date yang seluruhnya jatuh sebelum tanggal audit; temuan audit sebelumnya yang harus terbukti ditutup
+Sudah lewat
+Hasil audit dan daftar temuan beserta statusnya hari ini
+Direncanakan
+Tanggal jendela persiapan dibuka (default 60 hari sebelum audit) dan prasyarat siklus yang akan diperiksa auditor
+Checklist persiapan dibangkitkan dari template pack dan disesuaikan: tugas penutupan temuan audit sebelumnya tidak muncul pada audit pertama sebuah MS, dan tugas khusus framework ditambahkan (misalnya latihan BC untuk ISO 22301 atau persetujuan ambang hadiah oleh governing body untuk ISO 37001).
+[Heading2] 9.5 Cycle Completeness
+Daftar hal yang wajib terjadi minimal sekali dalam setiap siklus: penilaian risiko, pengukuran dan analisis kinerja, audit internal, tinjauan manajemen dengan seluruh input wajib, penutupan tindakan korektif, dan review dokumen tepat waktu — ditambah item khusus framework seperti program latihan (22301), laporan fungsi kepatuhan ke governing body (37001), analisis kepuasan pelanggan dan tugas transisi edisi (9001). Setiap item memuat klausul rujukan, pemilik, status, due date, dan catatan kondisi. Halaman utama menampilkan empat item teratas; daftar lengkap tersedia di drill-down.
+[Heading2] 9.6 Drill-down Drift
+Setiap pola pada Regression Detector menampilkan jumlah record terdampak dan dapat dibuka ke daftarnya. Daftar memuat ID, judul, status saat ini, pemegang, dan due date, dengan tautan ke record asal di Modul 1 atau Modul 2. Contoh pola: risiko tidak dinilai ulang dalam 12 bulan, berkas bukti yang tidak dapat diverifikasi di repositori pelanggan, metrik yang berhenti diperbarui, latihan BC yang belum dijadwalkan, due diligence yang kedaluwarsa, dan bukti berupa dokumen asli Google tanpa hash.
+[Heading2] 9.7 Penjelajah Kesegaran Bukti
+[ListParagraph] Enam kartu ringkasan dapat diklik: Evidence fresh, Aging, Expired, Critical, File cannot be verified, Documents due in 30 days.
+[ListParagraph] Baris kesegaran per frekuensi operasi (Daily sampai Per event) dapat diklik untuk menyaring daftar pada frekuensi tersebut.
+[ListParagraph] Filter status kesegaran dan frekuensi dapat dikombinasikan; pencarian berdasarkan kode bukti, kontrol atau persyaratan, dan pemilik.
+[ListParagraph] Kolom: kode bukti, kontrol atau persyaratan, frekuensi, tanggal produksi, due date bukti berikutnya, status kesegaran, lokasi dan integritas berkas, pemilik.
+[ListParagraph] Rincian menjelaskan dampak pada status: bukti Expired, Critical, atau tidak terverifikasi menurunkan kontrol atau persyaratan terkait ke Partial sampai bukti baru diserahkan.
+[Heading2] 9.8 Kalender Review Dokumen
+Dokumen yang melewati tanggal review dan yang jatuh tempo dalam empat bulan ke depan, dikelompokkan per bulan (dengan kelompok Overdue di awal). Baris memakai format register dokumen Modul 1, sehingga pengguna dapat langsung memulai review dari kalender.
+[Heading1] 10. Mode Implementasi
+Produk tersedia dalam dua mode implementasi. Prinsip utamanya adalah paritas: satu basis kode, satu jalur rilis, dan fitur yang sama. Perbedaan hanya berada pada lapisan operasional — siapa yang menjalankan aplikasi dan bagaimana aplikasi terhubung ke lingkungannya.
+[Heading2] 10.1 Perbandingan Mode
+Aspek
+SaaS
+On-Premise
+Lokasi aplikasi dan basis data
+Cloud yang dikelola penyedia; region dipilih sesuai kebutuhan residensi data
+Server pelanggan di data center pelanggan
+Tenancy
+Multi-tenant dengan isolasi per tenant (skema basis data dan kunci enkripsi terpisah)
+Single-tenant; satu instalasi untuk satu organisasi (boleh banyak MS dan entitas anak)
+Pengoperasian
+Penyedia: pemasangan, pembaruan, pemantauan, pencadangan, pemulihan
+Tim infrastruktur pelanggan, dengan dukungan penyedia sesuai kontrak
+Identitas pengguna
+Akun lokal dengan MFA, atau SSO SAML 2.0 / OIDC ke IdP pelanggan
+Sama, ditambah LDAP/Active Directory di jaringan pelanggan
+Pembaruan aplikasi
+Bergulir otomatis dalam jendela pemeliharaan yang diumumkan
+Paket rilis bertanda tangan digital; pelanggan menentukan jadwal
+Pembaruan Framework Pack
+Otomatis; tenant memilih kapan edisi baru diaktifkan
+Daring melalui kanal pembaruan, atau luring melalui offline bundle
+Lisensi
+Langganan, ditegakkan di sisi layanan
+Berkas lisensi bertanda tangan, divalidasi luring; tidak memerlukan koneksi ke penyedia
+Notifikasi surel
+Layanan surel penyedia
+SMTP relay milik pelanggan
+Koneksi keluar
+Tidak relevan bagi pelanggan
+Opsional. Diperlukan hanya untuk kanal pembaruan daring dan konektor repositori cloud (Microsoft 365, Google Workspace)
+Telemetri
+Metrik operasional layanan
+Nonaktif secara default; diagnostik diekspor manual oleh pelanggan setelah disamarkan
+Penyimpanan berkas default
+Managed Vault di cloud penyedia
+Managed Vault pada object storage di infrastruktur pelanggan
+Customer Repository (BYOS)
+Didukung
+Didukung, termasuk repositori di jaringan internal pelanggan
+[Heading2] 10.2 Kebutuhan Mode SaaS
+[ListParagraph] Isolasi tenant berlapis: skema basis data per tenant, pemfilteran tingkat baris sebagai lapisan kedua, dan kunci enkripsi data per tenant.
+[ListParagraph] Pilihan region hosting, termasuk region di Indonesia bagi pelanggan dengan kebutuhan residensi data. Kesesuaian dengan regulasi sektor pelanggan wajib dikonfirmasi oleh penasihat hukum dan kepatuhan pelanggan.
+[ListParagraph] Offboarding tenant: ekspor lengkap data terstruktur dan berkas Managed Vault dalam format terbuka, diikuti penghapusan terverifikasi setelah masa retensi kontraktual.
+[ListParagraph] Sistem itu sendiri dapat diaudit: log akses, log perubahan, dan bukti pengendalian akses tersedia bagi tenant dan auditornya.
+[Heading2] 10.3 Kebutuhan Mode On-Premise
+[ListParagraph] Paket instalasi berbasis container untuk Kubernetes (utama) dan Docker Compose (instalasi kecil atau PoC). Arsitektur rujukan dan ukuran minimum dijabarkan pada TS-MSCD-01.
+[ListParagraph] Dapat beroperasi tanpa koneksi internet (air-gapped): lisensi, Framework Pack, dan pembaruan aplikasi tersedia sebagai paket luring bertanda tangan.
+[ListParagraph] Memakai layanan pendukung milik pelanggan bila tersedia: PostgreSQL, object storage S3-compatible, SMTP, IdP, NTP, dan solusi pencadangan.
+[ListParagraph] Kebijakan dukungan versi: minimal tiga rilis minor terakhir didukung, dengan jalur pembaruan yang terdokumentasi.
+[ListParagraph] Akses dukungan jarak jauh hanya melalui sesi yang dibuka dan diawasi pelanggan.
+PARITAS FITUR ADALAH JANJI PRODUK, BUKAN TARGET
+Bila satu fitur hanya tersedia di SaaS, pelanggan On-Premise — umumnya pelanggan terbesar dan paling teregulasi — akan menjadi warga kelas dua, dan tim akan terjebak memelihara dua cabang kode. Setiap fitur baru wajib lulus pengujian pada kedua mode sebelum dirilis. Pengecualian hanya untuk hal yang secara inheren operasional (misalnya pembaruan otomatis) dan dicantumkan eksplisit pada matriks paritas.
+[Heading1] 11. Repositori Berkas Milik Pelanggan
+Ketentuan ketiga: pada kedua mode implementasi, pelanggan dapat memilih agar berkasnya tidak diunggah ke aplikasi, melainkan tetap berada di repositori miliknya seperti OneDrive atau Google Drive. Bagian ini mendefinisikan apa yang disimpan di mana, dan bagaimana sistem tetap dapat membuktikan integritas bukti.
+[Heading2] 11.1 Batas Cakupan: Berkas, Bukan Register
+Customer Repository berlaku untuk isi berkas — dokumen dan lampiran bukti. Data terstruktur (register risiko, applicability, temuan, status, relasi rantai) tetap berada di basis data aplikasi, karena tanpa data tersebut mesin keterlacakan tidak dapat bekerja. Pelanggan yang menghendaki data terstruktur juga berada di infrastrukturnya sendiri memilih mode On-Premise.
+Konfigurasi
+Data Terstruktur
+Isi Berkas
+Cocok untuk
+A. SaaS + Managed Vault
+Cloud penyedia
+Cloud penyedia
+Organisasi yang mengutamakan kemudahan
+B. SaaS + Customer Repository
+Cloud penyedia (metadata dan rujukan)
+Repositori pelanggan (Microsoft 365, Google Workspace)
+Organisasi yang menerima SaaS tetapi tidak mengizinkan dokumen rahasia disalin keluar
+C. On-Premise + Managed Vault
+Data center pelanggan
+Object storage di data center pelanggan
+Instansi dan lembaga teregulasi yang mensyaratkan seluruh data di dalam
+D. On-Premise + Customer Repository
+Data center pelanggan
+Repositori pelanggan: cloud (Microsoft 365, Google Workspace) atau internal (file share, S3-compatible)
+Organisasi yang sudah memiliki repositori dokumen terkelola dan ingin tetap memakainya
+[Heading2] 11.2 Mode Penyimpanan dan Tingkat Paparan Isi
+Mode
+Perilaku
+Isi berkas melewati server aplikasi?
+Managed Vault
+Berkas diunggah dan disimpan di penyimpanan aplikasi dengan versi dan checksum SHA-256
+Ya, dan disimpan
+Customer Repository — Pass-through
+Pengguna mengunggah melalui aplikasi; aplikasi meneruskan langsung ke folder repositori pelanggan dan menghitung checksum dalam perjalanan, tanpa menyimpan
+Ya, sesaat, tidak disimpan
+Customer Repository — Link
+Pengguna memilih berkas yang sudah ada di repositori melalui file picker; aplikasi mencatat rujukan dan versi
+Tidak
+Customer Repository — Zero-transit
+Browser pengguna mengunggah langsung ke repositori dengan kredensial pengguna; aplikasi hanya menerima metadata. Sidik jari diambil dari hash yang disediakan repositori
+Tidak pernah
+Mode dapat ditetapkan per MS, dan dipersempit dengan aturan per klasifikasi. Contoh: berkas berklasifikasi Restricted wajib Zero-transit, berkas lain boleh Managed Vault.
+[Heading2] 11.3 Repositori yang Didukung
+Repositori
+Mode Implementasi
+Rekomendasi Penggunaan
+Prioritas
+Microsoft 365 — SharePoint Online document library
+SaaS, On-Premise
+Direkomendasikan. Library khusus kepatuhan dengan izin terkelola dan kebijakan retensi
+P0
+Microsoft 365 — OneDrive for Business
+SaaS, On-Premise
+Diizinkan dengan peringatan: berkas melekat pada akun pribadi dan berisiko hilang saat karyawan keluar
+P0
+Google Workspace — Shared Drive
+SaaS, On-Premise
+Direkomendasikan. Kepemilikan berkas pada organisasi, bukan individu
+P1
+Google Workspace — My Drive
+SaaS, On-Premise
+Diizinkan dengan peringatan yang sama dengan OneDrive pribadi
+P1
+File share internal (SMB/CIFS, NFS)
+On-Premise
+Untuk jaringan internal atau air-gapped
+P1
+Object storage S3-compatible milik pelanggan
+SaaS (melalui endpoint publik yang diamankan), On-Premise
+Untuk arsip bukti bervolume besar
+P2
+SharePoint Server, WebDAV, Nextcloud
+On-Premise
+Sesuai permintaan pelanggan
+P2
+REPOSITORI PRIBADI ADALAH TEMUAN YANG MENUNGGU TERJADI
+Menyimpan bukti kepatuhan di OneDrive atau My Drive pribadi seorang karyawan berarti bukti tersebut mengikuti siklus hidup akun orang itu. Saat karyawan keluar dan akunnya dihapus, bukti hilang — dan itu adalah temuan pengendalian informasi terdokumentasi. Sistem mengizinkan repositori pribadi agar tidak menghambat adopsi, tetapi menandainya pada dashboard dan menyarankan pemindahan ke library atau shared drive organisasi.
+[Heading2] 11.4 Integritas dan Pematokan Versi
+Ketika berkas tidak berada di bawah kendali aplikasi, sistem harus tetap dapat menjawab dua pertanyaan auditor: apakah berkas ini masih ada, dan apakah isinya sama dengan saat dijadikan bukti.
+[ListParagraph] Pematokan versi. Setiap bukti merujuk pada versi spesifik berkas di repositori (version ID atau revision ID), bukan hanya pada berkasnya. Perubahan berkas setelahnya tidak mengubah bukti yang tercatat.
+[ListParagraph] Sidik jari. Sistem menyimpan hash yang dihitung sendiri (Managed Vault dan Pass-through) atau hash yang disediakan repositori (Link dan Zero-transit). Algoritma hash dicatat bersama nilainya karena setiap repositori menyediakan algoritma berbeda.
+[ListParagraph] Pemeriksaan kesehatan tautan terjadwal. Sistem memeriksa setiap rujukan secara berkala dan memberi status: utuh, versi berubah, dipindahkan, hilang, akses dicabut, atau tidak dapat diverifikasi.
+[ListParagraph] Perlakuan berbeda untuk dokumen dan bukti. Versi baru pada dokumen terkendali memicu tawaran mendaftarkan versi dokumen baru (mendukung klausul 7.5). Versi baru pada berkas bukti ditandai sebagai anomali karena bukti seharusnya tidak berubah.
+[ListParagraph] Rekomendasi retensi. Sistem menyarankan pelanggan menerapkan kebijakan retensi repositori (misalnya label retensi Microsoft Purview atau aturan Google Vault) pada folder kepatuhan, dan mencatat konfirmasi pelanggan sebagai bagian konfigurasi.
+[Heading2] 11.5 Dampak terhadap Fitur
+Fitur
+Managed Vault
+Customer Repository
+Pratinjau berkas
+Di dalam aplikasi
+Melalui pratinjau repositori atau tautan langsung; pada Pass-through dapat diproksi tanpa disimpan
+Pencarian
+Metadata dan isi berkas
+Metadata saja; isi berkas tidak diindeks aplikasi
+Evidence pack
+Berkas arsip siap unduh
+Manifest (indeks dengan tautan, versi, dan hash) ditambah salinan paket yang dibuat di dalam repositori pelanggan
+Checksum
+SHA-256 dihitung aplikasi
+SHA-256 (Pass-through) atau hash repositori (Link, Zero-transit)
+Retensi berkas
+Ditegakkan aplikasi
+Tanggung jawab pelanggan; aplikasi memverifikasi keberadaan
+Ketersediaan saat repositori terganggu
+Tidak terdampak
+Data terstruktur tetap berfungsi; status integritas memakai hasil pemeriksaan terakhir dan ditandai tertunda
+Akses auditor eksternal
+Akses tamu di aplikasi
+Akses tamu di aplikasi untuk data terstruktur; berkas melalui salinan paket di repositori pelanggan yang dibagikan pelanggan, atau proksi pada Pass-through
+[Heading2] 11.6 Evidence Pack pada Customer Repository
+Menyusun evidence pack dengan mengunduh seluruh berkas ke aplikasi akan melanggar tujuan ketentuan ketiga. Karena itu, pada mode Customer Repository, sistem meminta repositori pelanggan menyalin berkas ke folder paket di dalam repositori itu sendiri — operasi salin terjadi di sisi repositori, tanpa isi berkas melewati aplikasi. Sistem kemudian menghasilkan manifest yang memuat daftar bukti, tautan, versi yang dipatok, hash, dan tanggal produksi. Pelanggan membagikan folder paket kepada auditor sesuai kebijakan berbaginya.
+[Heading2] 11.7 Pembagian Tanggung Jawab
+Tanggung Jawab
+Penyedia (SaaS) / Aplikasi
+Pelanggan
+Kerahasiaan dan integritas data terstruktur
+SaaS: penyedia. On-Premise: aplikasi menyediakan kontrol, pelanggan mengoperasikan
+On-Premise: infrastruktur, akses server, pencadangan basis data
+Kerahasiaan dan ketersediaan isi berkas (Customer Repository)
+Tidak menyimpan; hanya memverifikasi
+Izin akses, retensi, pencadangan, dan pemulihan repositori
+Kredensial konektor
+Menyimpan terenkripsi; meminta izin seminimal mungkin
+Memberi dan mencabut izin; mengelola aplikasi terdaftar di tenant Microsoft 365 atau Google Workspace
+Deteksi tautan rusak
+Memeriksa terjadwal dan memberi peringatan
+Menindaklanjuti peringatan
+[Heading1] 12. Fitur Lintas Modul
+Fitur
+Deskripsi
+Prioritas
+Management System Switcher
+Berpindah konteks antar MS dan ke tampilan Integrated (Bagian 5.4)
+P0
+Framework Library
+Aktivasi framework, pemilihan edisi, ruang lingkup, dan lembaga sertifikasi
+P0
+Role-Based Access Control
+Peran generik dengan label per framework; peran diberikan per MS; peran administratif baru
+P0
+Audit Trail Sistem
+Jejak tidak terhapus atas setiap perubahan status, persetujuan, unggahan, penautan berkas, dan perubahan konfigurasi penyimpanan
+P0
+Notification Engine
+Surel dan dalam aplikasi: review date, bukti menua, tugas terlambat, gate terbuka, tautan berkas rusak
+P0
+Storage Repository Manager
+Menghubungkan, menguji, dan memantau repositori; aturan penempatan per MS dan per klasifikasi
+P0
+Link Health Monitor
+Dashboard status integritas seluruh rujukan berkas di repositori pelanggan
+P1
+License &amp; Entitlement
+Framework, jumlah MS, pengguna, dan fitur sesuai lisensi; luring untuk On-Premise
+P0
+Operations Console
+Kesehatan layanan, antrean job, versi pack, ekspor diagnostik; untuk Platform Operator
+P1
+Search &amp; Traceability Query
+Pencarian lintas entitas dan lintas MS
+P1
+Reporting &amp; Export
+Ekspor evidence pack, laporan kesiapan, dan register ke format yang dapat diserahkan ke auditor
+P1
+Localization
+Antarmuka Bahasa Indonesia dan Inggris; terminologi standar tetap dalam istilah aslinya
+P1
+[Heading2] 12.1 Integrasi
+Integrasi bersifat opsional dan tidak boleh menjadi prasyarat. Sistem tetap berfungsi penuh dengan unggahan manual. Pada On-Premise, integrasi dengan sistem di jaringan pelanggan tidak memerlukan koneksi internet.
+Sumber
+Data yang Ditarik
+Framework Terkait
+Prioritas
+Direktori identitas
+Akun aktif, status MFA, hasil tinjauan akses, peristiwa joiner/mover/leaver
+27001; semua (SSO)
+P1
+Perkakas pemindai kerentanan
+Laporan pemindaian, status remediasi
+27001
+P1
+Sistem tiket / ITSM
+Perubahan, insiden, permintaan akses, keluhan pelanggan
+27001, 9001, 22301
+P1
+Platform pelatihan
+Tingkat penyelesaian pelatihan dan awareness
+Semua (klausul 7.2, 7.3)
+P2
+ERP / sistem pengadaan
+Data pemasok dan mitra untuk due diligence; transaksi berisiko
+37001, 9001
+P2
+Saluran whistleblowing
+Laporan kekhawatiran (terenkripsi, akses terbatas)
+37001
+P2
+Repositori berkas
+Lihat Bagian 11 — bukan lagi integrasi opsional, melainkan bagian inti lapisan penyimpanan
+Semua
+P0
+[Heading2] 12.2 Pola Interaksi Drill-down
+Seluruh drill-down pada ketiga modul memakai pola yang sama agar pengguna cukup mempelajarinya sekali.
+Elemen
+Perilaku
+Breadcrumb
+Menunjukkan posisi dan kembali ke halaman utama modul dengan satu klik
+Ringkasan sebagai tab
+Kartu atau deretan tahap yang membuka drill-down tetap tampil di atas daftar dengan item aktif disorot
+Filter chip
+Status dengan jumlah per status; chip dengan jumlah nol disembunyikan kecuali filter default
+Pencarian
+Menyaring baris secara langsung tanpa memuat ulang; jumlah per kelompok ikut diperbarui
+Baris dapat dibuka
+Tombol + menampilkan rincian tanpa berpindah halaman; status terbuka diingat selama sesi
+Tautan silang
+ID kontrol, dokumen, dan record dapat diklik untuk membuka entitas itu di modul asalnya dengan rinciannya terbuka
+Mengikuti framework
+Berpindah framework saat berada di drill-down mempertahankan jenis daftar, tetapi memuat isi framework baru
+[Heading2] 12.3 Akuntabilitas Bernama
+Setiap item tertunda menampilkan nama orang beserta perannya, bukan hanya peran. Peran menjelaskan mengapa seseorang memegang item; nama menjelaskan siapa yang harus dihubungi. Bila satu peran dipegang beberapa orang, item ditugaskan ke satu orang; item tanpa pemegang ditampilkan sebagai Unassigned dan dihitung sebagai risiko kesiapan.
+[Heading1] 13. Kebutuhan Non-Fungsional
+Aspek
+Kebutuhan
+Keamanan
+Enkripsi saat transit (TLS 1.2 ke atas) dan saat diam, MFA untuk seluruh pengguna, isolasi data antar tenant pada SaaS, pengendalian akses berbasis klasifikasi, dan izin konektor seminimal mungkin (hanya folder atau library yang ditunjuk).
+Ketertelusuran
+Seluruh perubahan status tidak dapat dihapus. Penghapusan bersifat logis dengan jejak siapa dan kapan.
+Ketersediaan
+SaaS: target 99,5 persen per bulan. On-Premise: arsitektur rujukan ketersediaan tinggi disediakan; pencapaian bergantung pada infrastruktur pelanggan.
+Kinerja
+Golden Thread Viewer di bawah 3 detik, tidak bergantung pada respons repositori eksternal. Daftar 5.000 baris bukti di bawah 2 detik. Switcher berpindah MS di bawah 1 detik. Setiap drill-down terbuka di bawah 2 detik; pencarian dan filter di dalam daftar di bawah 300 milidetik.
+Konsistensi Angka
+Angka yang sama tampil identik di seluruh modul (misalnya jumlah dokumen kedaluwarsa di Modul 1, Modul 2, dan Modul 3), karena dihitung dari satu fungsi derivasi.
+Retensi Data
+Bukti dan rekaman minimal satu siklus sertifikasi penuh (3 tahun), idealnya dua siklus. Pada Customer Repository, sistem menyimpan metadata dan riwayat verifikasi selama periode yang sama.
+Auditabilitas Sistem
+Log akses, log perubahan, dan bukti pengendalian akses tersedia bagi auditor eksternal pada kedua mode.
+Skalabilitas
+Per organisasi: hingga 4 framework dan 10 MS, 500 persyaratan dan item katalog per MS, 1.000 dokumen, 2.000 risiko, dan ratusan ribu butir bukti sepanjang siklus.
+Portabilitas
+Satu artefak rilis untuk kedua mode. On-Premise berjalan pada distribusi Kubernetes yang umum dan pada Docker Compose.
+Operasi Luring
+On-Premise dapat berjalan penuh tanpa koneksi internet, kecuali konektor repositori cloud yang secara alami memerlukan koneksi ke penyedia repositori.
+Kemudahan Adopsi
+Domain Owner dapat menyelesaikan tugasnya tanpa pelatihan formal, tanpa memahami nomor klausul, dan tanpa mengetahui framework mana yang memerlukan tugas tersebut.
+[Heading1] 14. Roadmap Rilis
+Urutan rilis mengikuti urutan kebutuhan nyata organisasi: membangun, diaudit, dipertahankan. Dua fondasi baru — mesin framework dan lapisan penyimpanan — wajib ada sejak MVP, walaupun hanya satu framework dan satu adapter penyimpanan yang dirilis. Menambahkannya belakangan berarti migrasi seluruh data pelanggan.
+Rilis
+Cakupan
+Kriteria Selesai
+MVP
+Fondasi multi-framework (Framework, ManagementSystem, Requirement, CatalogueItem, ApplicabilityEntry) + Framework Pack ISO/IEC 27001 + Modul 1 inti + RBAC + Audit Trail + Storage Abstraction dengan adapter Managed Vault + SaaS
+Satu organisasi dapat membangun ISMS penuh tanpa spreadsheet pendamping, di atas model data yang sudah generik
+v1.0
+Modul 1 lengkap + Modul 2 inti + paket instalasi On-Premise (Kubernetes, Compose, lisensi luring) + adapter Microsoft 365 (SharePoint/OneDrive) mode Link dan Pass-through
+Stage 1 dan Stage 2 ISO/IEC 27001 dapat dijalani pada SaaS dan On-Premise, dengan bukti di SharePoint pelanggan
+v1.5
+Framework Pack ISO 9001 (edisi 2026, dengan dukungan 2015 selama transisi) + Management System Switcher dan Integrated mode + Modul 2 lengkap + adapter Google Drive
+Organisasi dengan ISO 9001 dan ISO/IEC 27001 berbagi dokumen, audit internal, dan bukti dalam satu sistem
+v2.0
+Framework Pack ISO 22301 (BIA, BC Plan, Exercise) + Modul 3 lengkap + Link Health Monitor + Edition Transition Assistant
+Organisasi melewati surveillance pertama tanpa temuan akibat kemunduran atau berkas hilang
+v2.5
+Framework Pack ISO 37001 (Due Diligence, Gifts &amp; Hospitality, Concerns &amp; Investigations) + mode Zero-transit + adapter SMB dan S3-compatible + pembaruan air-gapped
+Keempat framework tersedia pada kedua mode dan keempat konfigurasi penyimpanan
+v3.0+
+Integrasi (identitas, kerentanan, ITSM, ERP), Mock Audit Mode, Surveillance Scope Predictor, adapter P2
+Bukti terkumpul otomatis untuk kontrol berfrekuensi tinggi
+Fitur drill-down pada versi dokumen 2.1 sampai 2.4 dipetakan ke rilis produk sebagai berikut. Nomor rilis produk (MVP, v1.0, dst.) berbeda dari nomor versi dokumen.
+Fitur
+Rilis Produk
+Drill-down ringkasan dan fase implementasi (7.3, 7.4)
+MVP untuk ISO/IEC 27001; ikut setiap pack framework baru
+Panel audit event, traceability test interaktif, readiness per tahap, drill-down tahap, pending per orang (8.3 – 8.7)
+v1.0
+Drill-down audit event, cycle completeness, drift, penjelajah kesegaran bukti, kalender review (9.4 – 9.8)
+v2.0, bersama Modul 3 lengkap
+Pola interaksi drill-down dan akuntabilitas bernama (12.2, 12.3)
+MVP, sebagai komponen UI bersama
+URUTAN FRAMEWORK DAPAT DIUBAH SESUAI PIPELINE
+Urutan ISO 9001 → ISO 22301 → ISO 37001 di atas adalah usulan berdasarkan ukuran pasar dan kedekatan dengan konten ISO/IEC 27001 yang sudah ada. Bila pipeline komersial menunjukkan permintaan ISO 37001 lebih tinggi — misalnya dari BUMN dan instansi pemerintah — pack tersebut dapat dimajukan tanpa mengubah arsitektur, karena mesinnya sama. Yang tidak dapat dimajukan tanpa biaya adalah konten: pastikan penyusunan pack dimulai minimal satu rilis sebelum jadwal rilisnya.
+URUTAN YANG DISARANKAN UNTUK MVP
+Bangun Framework dan ManagementSystem lebih dulu, lalu Document Register dan Applicability Builder, karena seluruh relasi bergantung padanya. Storage Abstraction dibangun bersamaan dengan Document Register walau hanya dengan adapter Managed Vault — kolom file_uri langsung pada tabel dokumen adalah utang teknis yang paling mahal dibayar ketika pelanggan pertama meminta Customer Repository. Golden Thread Viewer tetap dibangun paling akhir.
+[Heading1] 15. Risiko Produk, Asumsi, dan Pertanyaan Terbuka
+[Heading2] 15.1 Risiko Produk
+Risiko
+Dampak
+Mitigasi yang Disarankan
+Domain Owner enggan menggunakan sistem
+Bukti tidak terkumpul; sistem menjadi cangkang kosong
+My Tasks lintas framework tanpa jargon; satu langkah serah bukti; pada Customer Repository, serah bukti langsung dari file picker
+Konten pack framework baru dangkal
+Framework tampil di menu tetapi tidak berguna; reputasi produk turun
+Work-stream konten terpisah dengan pakar domain; kriteria kelayakan rilis pack (jumlah minimum aktivitas, kondisi temuan, template)
+Model generik terlalu abstrak
+Pengguna kehilangan istilah yang dikenalnya; antarmuka terasa asing
+Label dictionary per framework; antarmuka menampilkan istilah framework, bukan istilah mesin
+Divergensi SaaS dan On-Premise
+Dua cabang kode; fitur On-Premise tertinggal
+Satu artefak rilis; pengujian otomatis wajib di kedua mode; matriks paritas dipublikasikan
+Beban dukungan On-Premise
+Biaya dukungan tinggi karena infrastruktur pelanggan beragam
+Prasyarat infrastruktur yang tegas; arsitektur rujukan; ekspor diagnostik; program partner implementasi bersertifikat
+Berkas di repositori pelanggan berubah atau hilang
+Bukti tidak lagi valid tanpa disadari
+Pematokan versi, pemeriksaan tautan terjadwal, rekomendasi kebijakan retensi
+Perubahan API penyedia repositori
+Konektor berhenti berfungsi
+Adapter terisolasi di balik antarmuka; pemantauan pengumuman perubahan API; uji kontrak berkala
+Aturan integritas terlalu ketat
+Pengguna mencari jalan pintas
+Status sementara dengan alasan terdokumentasi; pengecualian dicatat sebagai risiko
+Klaim produk menjamin kelulusan
+Ekspektasi keliru
+Posisikan produk sebagai penyedia bukti dan pendeteksi celah
+[Heading2] 15.2 Asumsi
+[ListParagraph] Organisasi sudah memutuskan mengejar atau mempertahankan sertifikasi, dan memiliki dukungan manajemen puncak.
+[ListParagraph] Setiap MS memiliki satu penanggung jawab yang menjadi pengguna harian.
+[ListParagraph] Konvensi penomoran dokumen dapat dikonfigurasi per organisasi.
+[ListParagraph] Auditor eksternal menerima bukti digital, akses baca terbatas, dan paket bukti di repositori pelanggan.
+[ListParagraph] Pelanggan On-Premise memiliki tim infrastruktur yang mampu mengoperasikan platform container.
+[ListParagraph] Pelanggan yang memilih Customer Repository bersedia memberikan izin akses terbatas kepada aplikasi pada folder atau library yang ditunjuk.
+[Heading2] 15.3 Keputusan atas Pertanyaan Terbuka v1.0
+Pertanyaan v1.0
+Keputusan v2.0
+Single-tenant atau multi-tenant?
+Keduanya. SaaS multi-tenant dengan isolasi skema; On-Premise single-tenant. Model data sama.
+Sejauh mana dukungan standar lain?
+ISO 9001, ISO 22301, dan ISO 37001 masuk cakupan. Model kontrol dibuat generik sejak MVP melalui Framework Pack.
+Organisasi dengan beberapa ruang lingkup yang berbagi kontrol?
+Ditangani entitas ManagementSystem dan artefak bersama; berlaku juga lintas framework.
+[Heading2] 15.4 Pertanyaan Terbuka
+[ListParagraph] Di cloud dan region mana SaaS dihosting, dan apakah perlu opsi SaaS dedicated (single-tenant yang dikelola penyedia) bagi pelanggan yang menolak multi-tenant tetapi tidak siap mengoperasikan On-Premise?
+[ListParagraph] Model lisensi: per framework, per MS, per pengguna, atau kombinasi? Ini memengaruhi desain entitlement.
+[ListParagraph] Siapa pemilik dan penyusun konten Framework Pack ISO 9001, ISO 22301, dan ISO 37001, dan berapa kedalaman minimum yang disyaratkan untuk rilis?
+[ListParagraph] Apakah pustaka kondisi temuan dapat disunting tenant, atau hanya ditambah?
+[ListParagraph] Apakah mode Zero-transit wajib tersedia sejak v1.0 untuk calon pelanggan SaaS tertentu?
+[ListParagraph] Apakah repositori pribadi (OneDrive pribadi, My Drive) diizinkan dengan peringatan, atau diblokir sepenuhnya melalui konfigurasi tenant?
+[ListParagraph] Distribusi Kubernetes dan basis data apa yang wajib didukung untuk On-Premise di pasar sasaran?
+[ListParagraph] Bagaimana memastikan kepatuhan hak cipta ISO pada konten pack — terutama judul klausul dan kontrol — dan apakah perlu perjanjian dengan badan standar nasional?
+[ListParagraph] Siapa yang boleh melihat tampilan pending per orang? Tampilan ini dapat dianggap penilaian kinerja individu, sehingga perlu keputusan bersama HR sebelum dirilis.
+[ListParagraph] Melalui kanal apa Send reminder dikirim (surel, dalam aplikasi, kolaborasi seperti Teams atau Slack), dan seberapa sering sebelum dianggap mengganggu?
+[ListParagraph] Apakah data audit event (tanggal, lead auditor, rencana audit) dapat diterima langsung dari lembaga sertifikasi, atau selalu dimasukkan manual?
+[Heading1] Disclaimer dan Kepemilikan
+PRD ini disusun berdasarkan artefak implementasi dan audit ISO/IEC 27001:2022 yang telah dikembangkan sebelumnya, serta struktur umum ISO 9001, ISO 22301, dan ISO 37001. Angka baseline dan target bersifat estimasi berdasarkan pola umum — validasikan dengan data aktual sebelum dijadikan target resmi.
+Edisi standar dan masa transisi yang disebut dalam dokumen ini wajib dikonfirmasi dengan lembaga sertifikasi dan badan akreditasi terkait. Dokumen ini bukan pengganti teks resmi standar ISO mana pun. Fitur yang membantu pemenuhan persyaratan tidak menjamin kesesuaian; penilaian kesesuaian tetap menjadi kewenangan auditor dan lembaga sertifikasi.
+Pernyataan mengenai residensi data, regulasi sektor, dan kebijakan retensi bukan nasihat hukum atau regulasi. Konsultasikan dengan penasihat hukum dan kepatuhan yang kompeten sebelum mengambil keputusan penempatan data.
+Penerima dokumen agar meninjau, memverifikasi, dan mengambil kepemilikan atas seluruh isi sebelum digunakan sebagai dasar pengembangan, serta mengungkapkan penggunaan bantuan AI dalam penyusunannya bila diwajibkan oleh peran, perjanjian klien, atau regulasi yang berlaku.

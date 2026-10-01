@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<script src="./doc-page.js"></script>
+<style>
+doc-page:not(:defined){visibility:hidden}
+doc-page{--doc-sheet-bg:linear-gradient(165deg,#fffdf9 0%,#fbf3ea 40%,#f7eee3 100%)}
+body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#1c1a17}
+a{color:#c25c0f;text-decoration:none}a:hover{color:#e8731a}
+.pp{font-family:'IBM Plex Sans',system-ui,sans-serif}
+.pp h1,.pp h2,.pp h3{letter-spacing:-.02em;font-weight:600;line-height:1.15}
+.pp h2{font-size:22pt;margin:0 0 14pt;break-after:avoid;display:flex;align-items:center;gap:12pt}
+.pp h2 .n{flex:none;width:34pt;height:34pt;border-radius:10pt;background:#e8731a;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:14pt;font-weight:500}
+.pp h3{font-size:13.5pt;margin:18pt 0 8pt;break-after:avoid;color:#1c1a17}
+.pp p,.pp li{font-size:11pt;line-height:1.6;color:#2a2722}
+.pp p{margin:0 0 9pt}
+.pp ul,.pp ol{margin:0 0 10pt;padding-left:20pt}
+.pp li{margin-bottom:4pt}
+.pp figure{margin:12pt 0 16pt;break-inside:avoid}
+.pp figure{width:0;min-width:100%}
+.pp figure img{display:block;width:100%;max-width:100%;height:auto;border:1px solid #d9d3c8;border-radius:8px}
+.pp img{max-width:100%}
+.pp figcaption{font-size:10.5pt;color:#6b655a;margin-top:6pt}
+.pp table{width:100%;border-collapse:collapse;font-size:10.5pt;margin:6pt 0 14pt}
+.pp th{text-align:left;font-size:10.5pt;padding:7pt 8pt;border-bottom:1.5px solid #1c1a17}
+.pp td{padding:7pt 8pt;border-bottom:1px solid #e6e1d7;vertical-align:top;line-height:1.5}
+.pp .sec{break-before:page}
+.pp .card{break-inside:avoid;border:1px solid #e6e1d7;border-radius:10pt;padding:12pt 14pt;background:#fff}
+.pp .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10pt;margin:8pt 0 14pt}
+.pp .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10pt;margin:8pt 0 14pt}
+.pp .tile{break-inside:avoid;border-radius:10pt;padding:12pt 14pt;color:#fff}
+.pp .tile p,.pp .tile li{color:#fff}
+.pp .kicker{font-family:'IBM Plex Mono',monospace;font-size:10.5pt;letter-spacing:.08em;color:#c25c0f}
+.pp .callout{break-inside:avoid;border-radius:10pt;padding:12pt 16pt;margin:10pt 0 14pt;font-size:11pt;line-height:1.6;background:#1c1a17;color:#f2eee7}
+.pp .ico{width:22pt;height:22pt;border-radius:7pt;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.pp .ico svg{width:13pt;height:13pt}
+.pp .tl{position:relative;padding-left:26pt;margin:6pt 0 14pt}
+.pp .tl:before{content:"";position:absolute;left:8pt;top:6pt;bottom:6pt;width:2pt;background:#e6e1d7;border-radius:1pt}
+.pp .tl .st{position:relative;break-inside:avoid;padding:0 0 12pt}
+.pp .tl .st:before{content:"";position:absolute;left:-22.5pt;top:5pt;width:9pt;height:9pt;border-radius:50%;background:#e8731a;border:2pt solid #fff;box-shadow:0 0 0 1.5pt #e8731a}
+.pp .tl .wk{font-family:'IBM Plex Mono',monospace;font-size:10.5pt;color:#c25c0f}
+.pp .tl .tt{font-weight:600;font-size:12pt;margin:1pt 0 2pt}
+.pp .kpi{break-inside:avoid;border:1px solid #e6e1d7;border-radius:10pt;padding:10pt 12pt;display:flex;gap:10pt;align-items:flex-start}
+.pp .kpi .arrow{flex:none;width:26pt;height:26pt;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:13pt}
+.pp .role{break-inside:avoid;border-radius:10pt;padding:11pt 12pt;background:#faf9f6;border:1px solid #e6e1d7}
+@media screen{
+  .pp .rise{animation:rise .7s cubic-bezier(.2,.7,.2,1) both}
+  .pp .d1{animation-delay:.1s}.pp .d2{animation-delay:.2s}.pp .d3{animation-delay:.3s}.pp .d4{animation-delay:.4s}.pp .d5{animation-delay:.5s}
+  .pp .draw{stroke-dasharray:1200;stroke-dashoffset:1200;animation:draw 2.6s cubic-bezier(.2,.7,.2,1) .4s both}
+  .pp .pop{transform-origin:center;animation:pop .5s cubic-bezier(.2,.7,.2,1) both}
+  .pp .glow{animation:glow 6s ease-in-out infinite}
+  .pp .grow{transform-origin:left;animation:growx 1s cubic-bezier(.2,.7,.2,1) .3s both}
+}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes pop{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
+@keyframes glow{0%,100%{opacity:.55}50%{opacity:.9}}
+@keyframes growx{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+</style>
+</helmet>
+<doc-page margin="0.8in" size="a4">
+
+<div slot="footer" style="height:0.36in;border-radius:6pt;background:linear-gradient(90deg,#1c1a17 0%,#3a2412 55%,#e8731a 100%);color:#f2eee7;display:flex;align-items:center;justify-content:space-between;padding:0 14pt;font-family:'IBM Plex Mono',monospace;font-size:10pt"><span>CyberLentera</span></div>
+<div class="pp">
+
+  <!-- ===== COVER ===== -->
+  <div style="break-after:page;break-inside:avoid;margin:0;padding:0.55in 0.6in;height:9.2in;box-sizing:border-box;border-radius:14pt;background:#0f0e0c;color:#f2eee7;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between">
+    <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);background-size:44px 44px"><svg viewBox="0 0 560 170" width="78%" style="display: block; overflow: visible; margin-bottom: 18pt; width: 507px; height: 147px; position: absolute; left: 59px; top: 208px">
+        <path d="M20 120 C 110 120, 110 40, 200 40 S 290 120, 380 120 S 470 60, 540 40" fill="none" stroke="rgba(255,255,255,.16)" stroke-width="2"></path>
+        <path class="draw" d="M20 120 C 110 120, 110 40, 200 40 S 290 120, 380 120 S 470 60, 540 40" fill="none" stroke="#e8731a" stroke-width="3"></path>
+        <g font-family="IBM Plex Mono, monospace" font-size="12" fill="#cfc7b8">
+          <circle class="pop d1" cx="20" cy="120" r="8" fill="#0f0e0c" stroke="#e8731a" stroke-width="3"></circle><text x="20" y="150" text-anchor="middle">Context</text>
+          <circle class="pop d2" cx="110" cy="80" r="8" fill="#0f0e0c" stroke="#e8731a" stroke-width="3"></circle><text x="110" y="60" text-anchor="middle">Risk</text>
+          <circle class="pop d3" cx="200" cy="40" r="8" fill="#0f0e0c" stroke="#e8731a" stroke-width="3"></circle><text x="200" y="20" text-anchor="middle">Control</text>
+          <circle class="pop d4" cx="290" cy="80" r="8" fill="#0f0e0c" stroke="#e8731a" stroke-width="3"></circle><text x="290" y="110" text-anchor="middle">Document</text>
+          <circle class="pop d5" cx="380" cy="120" r="8" fill="#e8731a" stroke="#e8731a" stroke-width="3"></circle><text x="380" y="150" text-anchor="middle">Evidence</text>
+          <circle class="pop d5" cx="470" cy="80" r="8" fill="#0f0e0c" stroke="#e8731a" stroke-width="3"></circle><text x="470" y="60" text-anchor="middle">Finding</text>
+          <circle class="pop d5" cx="540" cy="40" r="8" fill="#0f0e0c" stroke="#e8731a" stroke-width="3"></circle><text x="540" y="20" text-anchor="middle">Action</text>
+        </g>
+      </svg></div>
+    <div class="glow" style="position:absolute;left:0;bottom:0;width:100%;height:70%;background:radial-gradient(ellipse at 30% 100%,rgba(232,115,26,.45),transparent 62%)"><div style="font-family: 'IBM Plex Mono',monospace; font-size: 11pt; color: #e8731a; letter-spacing: .1em; position: absolute; left: 54px; top: 130px">MANAGEMENT SYSTEM COMPLIANCE DASHBOARD</div><h1 style="margin: 10pt 0 0; font-size: 32pt; line-height: 1.08; max-width: 6in; color: #fff; position: absolute; left: 57px; top: 157px">Run your internal audit on MSCD. Walk into next year's external audit already prepared.</h1></div>
+    <div style="position:relative;display:flex;align-items:center;justify-content:space-between">
+      <div style="background:#fff;border-radius:8px;padding:6px 10px;display:inline-flex"><img src="assets/cyberlentera-logo.png" alt="CyberLentera" style="height:26px;display:block"></div>
+      
+    </div>
+    <div style="position:relative" class="rise">
+      
+      
+      
+      
+    </div>
+    
+  </div>
+
+  <!-- ===== TOC ===== -->
+  <div style="break-after:page">
+    <div class="kicker">CONTENTS</div>
+    <h1 style="font-size:28pt;margin:8pt 0 18pt">What is in this proposal</h1>
+    <div class="grid2">
+      <div class="card rise d1" style="display:grid;grid-template-columns:auto 1fr;gap:12pt;align-items:start"><div style="width:34pt;height:34pt;border-radius:9pt;background:#e8731a;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:12.5pt">01</div><div><div style="font-weight:600;font-size:13pt;margin-top:2pt">Executive summary</div><div style="color:#6b655a;font-size:10.5pt;margin-top:3pt">The two decisions you will make and what each one costs you in time.</div></div></div>
+      <div class="card rise d1" style="display:grid;grid-template-columns:auto 1fr;gap:12pt;align-items:start"><div style="width:34pt;height:34pt;border-radius:9pt;background:#e8731a;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:12.5pt">02</div><div><div style="font-weight:600;font-size:13pt;margin-top:2pt">Your situation</div><div style="color:#6b655a;font-size:10.5pt;margin-top:3pt">How the internal audit runs today and the five places it hurts.</div></div></div>
+      <div class="card rise d2" style="display:grid;grid-template-columns:auto 1fr;gap:12pt;align-items:start"><div style="width:34pt;height:34pt;border-radius:9pt;background:#3a6fd8;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:12.5pt">03</div><div><div style="font-weight:600;font-size:13pt;margin-top:2pt">How MSCD works</div><div style="color:#6b655a;font-size:10.5pt;margin-top:3pt">The traceability chain, three working areas, named accountability, fresh evidence.</div></div></div>
+      <div class="card rise d2" style="display:grid;grid-template-columns:auto 1fr;gap:12pt;align-items:start"><div style="width:34pt;height:34pt;border-radius:9pt;background:#3a6fd8;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:12.5pt">04</div><div><div style="font-weight:600;font-size:13pt;margin-top:2pt">Stage 1, internal audit</div><div style="color:#6b655a;font-size:10.5pt;margin-top:3pt">Scope, an eleven-week plan, and what changes in the audit itself.</div></div></div>
+      <div class="card rise d3" style="display:grid;grid-template-columns:auto 1fr;gap:12pt;align-items:start"><div style="width:34pt;height:34pt;border-radius:9pt;background:#1f8a8a;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:12.5pt">05</div><div><div style="font-weight:600;font-size:13pt;margin-top:2pt">Stage 2, external audit</div><div style="color:#6b655a;font-size:10.5pt;margin-top:3pt">Preparation window, cycle completeness, evidence pack, auditor access.</div></div></div>
+      <div class="card rise d3" style="display:grid;grid-template-columns:auto 1fr;gap:12pt;align-items:start"><div style="width:34pt;height:34pt;border-radius:9pt;background:#1f8a8a;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:12.5pt">06</div><div><div style="font-weight:600;font-size:13pt;margin-top:2pt">Deployment and security</div><div style="color:#6b655a;font-size:10.5pt;margin-top:3pt">SaaS or your data centre, files in your own repository, controls in place.</div></div></div>
+      <div class="card rise d4" style="display:grid;grid-template-columns:auto 1fr;gap:12pt;align-items:start"><div style="width:34pt;height:34pt;border-radius:9pt;background:#7a4fd3;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:12.5pt">07</div><div><div style="font-weight:600;font-size:13pt;margin-top:2pt">Approach, roles and team</div><div style="color:#6b655a;font-size:10.5pt;margin-top:3pt">Who does what, how we govern the work, who you will meet, support after go-live.</div></div></div>
+      <div class="card rise d4" style="display:grid;grid-template-columns:auto 1fr;gap:12pt;align-items:start"><div style="width:34pt;height:34pt;border-radius:9pt;background:#7a4fd3;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:12.5pt">08</div><div><div style="font-weight:600;font-size:13pt;margin-top:2pt">Success, commercials, next steps</div><div style="color:#6b655a;font-size:10.5pt;margin-top:3pt">Indicators, the two-stage commercial structure, assumptions, risks, acceptance.</div></div></div>
+    </div>
+    <div style="margin-top:12pt;padding:14pt 16pt;border-radius:10pt;background:#faf9f6;border:1px solid #e6e1d7;display:flex;gap:14pt;align-items:center"><div style="flex:none;width:44pt;height:44pt;border-radius:12pt;background:#e8731a;display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4"></path></svg></div><div><div style="font-weight:600;font-size:12pt">Appendices</div><div style="color:#4a453d;font-size:10.5pt">A. How MSCD features map to the standard. B. Terms used in this proposal.</div></div></div>
+  </div>
+
+  <!-- ===== 1 ===== -->
+  <h2><span class="n">01</span>Executive summary</h2>
+  <div class="grid3" style="margin-top:4pt">
+    <div class="card rise d1" style="border-top:4pt solid #bf2f25"><div class="kicker" style="color:#bf2f25">WHAT YOU TOLD US</div><div style="font-weight:600;font-size:12.5pt;margin-top:4pt">Two audits, two kinds of pain</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.55;margin-top:4pt">This year's internal audit means chasing evidence by email. Next year's external audit means weeks of preparation that still leaves gaps.</div></div>
+    <div class="card rise d2" style="border-top:4pt solid #8a6508"><div class="kicker" style="color:#8a6508">THE ROOT CAUSE</div><div style="font-weight:600;font-size:12.5pt;margin-top:4pt">Links live in heads and spreadsheets</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.55;margin-top:4pt">Requirement to risk to control to document to evidence. When these drift apart, nobody can answer "are we ready" without a round of meetings.</div></div>
+    <div class="card rise d3" style="border-top:4pt solid #1f7a48"><div class="kicker" style="color:#1f7a48">WHAT CHANGES</div><div style="font-weight:600;font-size:12.5pt;margin-top:4pt">The links become data</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.55;margin-top:4pt">Every requirement has a named owner, a document and dated evidence. A broken link becomes a task with a person and a due date, visible to everyone.</div></div>
+  </div>
+  <figure style="margin:4pt 0 14pt"><svg viewBox="0 0 720 120" width="100%" style="display:block;overflow:visible">
+    <path d="M30 60 H690" stroke="#e6e1d7" stroke-width="3" stroke-linecap="round"></path>
+    <path class="grow" d="M30 60 H690" stroke="#e8731a" stroke-width="3" stroke-linecap="round"></path>
+    <g font-family="IBM Plex Sans, sans-serif" font-size="11.5" text-anchor="middle" fill="#1c1a17">
+      <g class="pop d1"><circle cx="30" cy="60" r="10" fill="#fff" stroke="#1f7a48" stroke-width="3"></circle><text x="30" y="92">Context</text></g>
+      <g class="pop d1"><circle cx="140" cy="60" r="10" fill="#fff" stroke="#1f7a48" stroke-width="3"></circle><text x="140" y="92">Risk</text></g>
+      <g class="pop d2"><circle cx="250" cy="60" r="10" fill="#fff" stroke="#1f7a48" stroke-width="3"></circle><text x="250" y="92">Control</text></g>
+      <g class="pop d2"><circle cx="360" cy="60" r="10" fill="#bf2f25" stroke="#bf2f25" stroke-width="3"></circle><text x="360" y="92" font-weight="600" fill="#bf2f25">Document</text><text x="360" y="30" font-size="10.5" fill="#bf2f25">Review date passed, B. Prasetyo</text></g>
+      <g class="pop d3"><circle cx="470" cy="60" r="10" fill="#fff" stroke="#8a6508" stroke-width="3"></circle><text x="470" y="92" fill="#8a6508">Evidence</text><text x="470" y="30" font-size="10.5" fill="#8a6508">Due 14 Oct, before audit</text></g>
+      <g class="pop d3"><circle cx="580" cy="60" r="10" fill="#fff" stroke="#1f7a48" stroke-width="3"></circle><text x="580" y="92">Finding</text></g>
+      <g class="pop d4"><circle cx="690" cy="60" r="10" fill="#fff" stroke="#1f7a48" stroke-width="3"></circle><text x="690" y="92">Action</text></g>
+    </g></svg><figcaption>One traceability chain as MSCD keeps it. Green is ready, amber is pending before the audit, red is a break with a named holder.</figcaption></figure>
+  <div class="grid2">
+    <div class="tile rise d1" style="background:linear-gradient(135deg,#e8731a,#c25c0f)"><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5pt;letter-spacing:.08em;opacity:.85">STAGE 1</div><div style="font-size:20pt;font-weight:600;margin:4pt 0 6pt">Your internal audit, on the platform</div><div style="font-size:11pt;line-height:1.5">Ten weeks. Configuration for your scope, your registers loaded, one full internal audit run with our lead auditor beside your team. You end with the report, findings inside the corrective action workflow, and effort data against your last cycle.</div></div>
+    <div class="tile rise d2" style="background:linear-gradient(135deg,#2a58b8,#1f3f8a)"><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5pt;letter-spacing:.08em;opacity:.85">STAGE 2</div><div style="font-size:20pt;font-weight:600;margin:4pt 0 6pt">Same records, external audit ready</div><div style="font-size:11pt;line-height:1.5">If Stage 1 convinces you. The preparation window opens sixty days before the audit date, the checklist is generated from the framework pack, and every item due after the audit is flagged the moment it is created. Nothing gets rebuilt.</div></div>
+  </div>
+  <figure><img src="screenshots/portfolio.png" alt="Portfolio Overview"><figcaption>Portfolio Overview. Every management system in one view, with what needs attention first.</figcaption></figure>
+  <div class="callout"><strong style="color:#e8731a">What you commit to in Stage 1.</strong> One management system manager for roughly two days a week during configuration, one IT contact for single sign-on and repository access, and the department heads who normally supply evidence. Files can stay in your SharePoint or Google Drive. The platform stores references and version fingerprints; it copies files only if you choose the managed vault.</div>
+
+  <!-- ===== 2 ===== -->
+  <div class="sec"></div>
+  <h2><span class="n">02</span>Your situation as we understand it</h2>
+  <p>Certification runs on a three-year cycle. After the certificate is issued, the certification body returns for surveillance audits in years one and two and a recertification audit in year three. Internal audits sit inside that cycle as the organisation's own check, and clause 9.2 requires that they cover every requirement at planned intervals.</p>
+  <figure style="margin-top:6pt"><div style="margin:6pt 0 4pt"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8pt;align-items:end">
+  <div style="text-align:center"><div style="height:22pt"><span style="display:inline-block;padding:2pt 9pt;border-radius:999pt;background:#fdeee1;color:#c25c0f;font-size:10.5pt;font-weight:600">Stage 1 here</span></div><div style="position:relative;height:18pt"><div style="position:absolute;left:0;right:0;top:8pt;height:3pt;background:#e8731a"></div><div style="position:relative;margin:0 auto;width:14pt;height:14pt;border-radius:50%;background:#1c1a17;border:3pt solid #fff;box-shadow:0 0 0 1.5pt #1c1a17"></div></div><div style="font-weight:600;margin-top:6pt">Certificate</div><div style="font-size:10.5pt;color:#6b655a">year 0</div></div><div style="text-align:center"><div style="height:22pt"><span style="display:inline-block;padding:2pt 9pt;border-radius:999pt;background:#fdeee1;color:#c25c0f;font-size:10.5pt;font-weight:600">Stage 2 here</span></div><div style="position:relative;height:18pt"><div style="position:absolute;left:0;right:0;top:8pt;height:3pt;background:#e8731a"></div><div style="position:relative;margin:0 auto;width:14pt;height:14pt;border-radius:50%;background:#e8731a;border:3pt solid #fff;box-shadow:0 0 0 1.5pt #e8731a"></div></div><div style="font-weight:600;margin-top:6pt">Surveillance 1</div><div style="font-size:10.5pt;color:#6b655a">year 1</div></div><div style="text-align:center"><div style="height:22pt"></div><div style="position:relative;height:18pt"><div style="position:absolute;left:0;right:0;top:8pt;height:3pt;background:#e8731a"></div><div style="position:relative;margin:0 auto;width:14pt;height:14pt;border-radius:50%;background:#e8731a;border:3pt solid #fff;box-shadow:0 0 0 1.5pt #e8731a"></div></div><div style="font-weight:600;margin-top:6pt">Surveillance 2</div><div style="font-size:10.5pt;color:#6b655a">year 2</div></div><div style="text-align:center"><div style="height:22pt"></div><div style="position:relative;height:18pt"><div style="position:absolute;left:0;right:0;top:8pt;height:3pt;background:#e8731a"></div><div style="position:relative;margin:0 auto;width:14pt;height:14pt;border-radius:50%;background:#1c1a17;border:3pt solid #fff;box-shadow:0 0 0 1.5pt #1c1a17"></div></div><div style="font-weight:600;margin-top:6pt">Recertification</div><div style="font-size:10.5pt;color:#6b655a">year 3</div></div>
+  </div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8pt;margin-top:8pt;padding:0 12.5%"><div style="text-align:center"><span style="display:inline-block;padding:2pt 10pt;border-radius:999pt;background:#e3ebfb;color:#2a58b8;font-size:10.5pt;font-weight:600">Internal audit</span></div><div style="text-align:center"><span style="display:inline-block;padding:2pt 10pt;border-radius:999pt;background:#e3ebfb;color:#2a58b8;font-size:10.5pt;font-weight:600">Internal audit</span></div><div style="text-align:center"><span style="display:inline-block;padding:2pt 10pt;border-radius:999pt;background:#e3ebfb;color:#2a58b8;font-size:10.5pt;font-weight:600">Internal audit</span></div></div></div><figcaption>The three-year certification cycle. Stage 1 runs your internal audit; Stage 2 prepares the surveillance or recertification audit that follows.</figcaption></figure>
+  <p>From our conversations, the current internal audit runs like this. The coordinator holds a kick-off, agrees a schedule with each department, and requests evidence by email. Evidence arrives as attachments or lands in a shared folder. The auditor works through a spreadsheet checklist, writes findings into a report, and follow-up happens through more email and meetings until each finding is declared closed. The pattern does get organisations through audits. It also has a few costs that repeat every year.</p>
+  <div class="grid2">
+    <div class="card rise d1" style="display:flex;gap:10pt"><span class="ico" style="background:#fbe3df;color:#bf2f25"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 11h-6"></path></svg></span><div><div style="font-weight:600">Status lives with the coordinator</div><div style="color:#4a453d;font-size:10.5pt;line-height:1.5">Management cannot see readiness without asking for a summary. When the coordinator is away, the status goes with them.</div></div></div>
+    <div class="card rise d2" style="display:flex;gap:10pt"><span class="ico" style="background:#fbf1d3;color:#8a6508"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4zM4 9h16M9 9v11"></path></svg></span><div><div style="font-weight:600">Evidence spread across mailboxes and folders</div><div style="color:#4a453d;font-size:10.5pt;line-height:1.5">The same evidence is requested twice. During the external audit, someone searches for the file while the auditor waits.</div></div></div>
+    <div class="card rise d3" style="display:flex;gap:10pt"><span class="ico" style="background:#e3ebfb;color:#2a58b8"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4"></path></svg></span><div><div style="font-weight:600">Reminders are manual</div><div style="color:#4a453d;font-size:10.5pt;line-height:1.5">In the organisations we have worked with, roughly a third of requests need more than one reminder, and the people who chase are the same people who should be reviewing.</div></div></div>
+    <div class="card rise d4" style="display:flex;gap:10pt"><span class="ico" style="background:#e4f3ea;color:#1f7a48"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"></path></svg></span><div><div style="font-weight:600">Findings closed without effectiveness checks</div><div style="color:#4a453d;font-size:10.5pt;line-height:1.5">The same finding reappears at the next audit with a different number.</div></div></div>
+  </div>
+  <p>For the external audit next year, the concern is preparation time. Assembling an evidence pack by hand typically takes a team two to three weeks and still leaves gaps that only surface when the auditor asks. In our experience many of those gaps are items that did have a due date, just one that fell after the audit.</p>
+  <h3>Success criteria we propose to measure</h3>
+  <div class="grid2" style="margin-top:4pt">
+    <div class="card" style="display:flex;gap:10pt;align-items:flex-start"><span style="flex:none;width:20pt;height:20pt;border-radius:50%;background:#e8731a;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10pt;font-weight:700">1</span><span style="font-size:10.5pt;line-height:1.5">Every requirement in scope has a named owner, an implementing document and operating evidence traceable from risk to evidence in under thirty seconds.</span></div>
+    <div class="card" style="display:flex;gap:10pt;align-items:flex-start"><span style="flex:none;width:20pt;height:20pt;border-radius:50%;background:#e8731a;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10pt;font-weight:700">2</span><span style="font-size:10.5pt;line-height:1.5">The coordinator sees pending items, their holders and their due dates from one screen without sending a summary request.</span></div>
+    <div class="card" style="display:flex;gap:10pt;align-items:flex-start"><span style="flex:none;width:20pt;height:20pt;border-radius:50%;background:#e8731a;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10pt;font-weight:700">3</span><span style="font-size:10.5pt;line-height:1.5">The external audit is prepared without searching for evidence on the day.</span></div>
+    <div class="card" style="display:flex;gap:10pt;align-items:flex-start"><span style="flex:none;width:20pt;height:20pt;border-radius:50%;background:#e8731a;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10pt;font-weight:700">4</span><span style="font-size:10.5pt;line-height:1.5">Management receives a readiness view that names the specific gaps behind the percentage, and you have enough data to judge how promptly each unit contributes.</span></div>
+  </div>
+  <p>We will confirm and baseline these during the first two weeks of Stage 1 so that the comparison at the end of the cycle is fair.</p>
+
+  <!-- ===== 3 ===== -->
+  <div class="sec"></div>
+  <h2><span class="n">03</span>How MSCD works</h2>
+  <h3 style="margin-top:0">3.1 The traceability chain</h3>
+  <p>Most audit findings come from a broken link between artefacts. A risk with no treatment. A control implemented in 2024 whose last evidence is from 2024. A procedure everyone follows but whose approved version expired in March. MSCD models the chain as data, so these breaks are detected by the system whether or not anyone is looking.</p>
+  <figure><div><div style="display:flex;gap:6pt"><div style="flex:1 1 0;min-width:0;border:1.5px solid #1f7a48;background:#e4f3ea;border-radius:9pt;padding:9pt 4pt;text-align:center"><div style="font-size:9.5pt;font-weight:700;letter-spacing:.06em;color:#1f7a48">CONTEXT</div><div style="font-family:'IBM Plex Mono',monospace;font-size:11pt;margin-top:3pt;white-space:nowrap">CI-02</div></div><div style="flex:1 1 0;min-width:0;border:1.5px solid #bf2f25;background:#fbe3df;border-radius:9pt;padding:9pt 4pt;text-align:center"><div style="font-size:9.5pt;font-weight:700;letter-spacing:.06em;color:#bf2f25">RISK</div><div style="font-family:'IBM Plex Mono',monospace;font-size:11pt;margin-top:3pt;white-space:nowrap">R-014</div></div><div style="flex:1 1 0;min-width:0;border:1.5px solid #1f7a48;background:#e4f3ea;border-radius:9pt;padding:9pt 4pt;text-align:center"><div style="font-size:9.5pt;font-weight:700;letter-spacing:.06em;color:#1f7a48">CONTROL</div><div style="font-family:'IBM Plex Mono',monospace;font-size:11pt;margin-top:3pt;white-space:nowrap">A.8.2</div></div><div style="flex:1 1 0;min-width:0;border:1.5px solid #1f7a48;background:#e4f3ea;border-radius:9pt;padding:9pt 4pt;text-align:center"><div style="font-size:9.5pt;font-weight:700;letter-spacing:.06em;color:#1f7a48">SOA</div><div style="font-family:'IBM Plex Mono',monospace;font-size:11pt;margin-top:3pt;white-space:nowrap">A.8.2</div></div><div style="flex:1 1 0;min-width:0;border:1.5px solid #bf2f25;background:#fbe3df;border-radius:9pt;padding:9pt 4pt;text-align:center"><div style="font-size:9.5pt;font-weight:700;letter-spacing:.06em;color:#bf2f25">DOCUMENT</div><div style="font-family:'IBM Plex Mono',monospace;font-size:11pt;margin-top:3pt;white-space:nowrap">PRC-07</div></div><div style="flex:1 1 0;min-width:0;border:1.5px solid #8a6508;background:#fbf1d3;border-radius:9pt;padding:9pt 4pt;text-align:center"><div style="font-size:9.5pt;font-weight:700;letter-spacing:.06em;color:#8a6508">EVIDENCE</div><div style="font-family:'IBM Plex Mono',monospace;font-size:11pt;margin-top:3pt;white-space:nowrap">EV-0280</div></div><div style="flex:1 1 0;min-width:0;border:1.5px solid #1f7a48;background:#e4f3ea;border-radius:9pt;padding:9pt 4pt;text-align:center"><div style="font-size:9.5pt;font-weight:700;letter-spacing:.06em;color:#1f7a48">METRIC</div><div style="font-family:'IBM Plex Mono',monospace;font-size:11pt;margin-top:3pt;white-space:nowrap">M-02</div></div></div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8pt;margin-top:8pt;font-size:10.5pt;line-height:1.4"><div style="padding:7pt 10pt;border-radius:8pt;background:#fbe3df;color:#bf2f25"><strong>R-014</strong> Annual reassessment overdue since 10 Sep. Held by B. Prasetyo.</div><div style="padding:7pt 10pt;border-radius:8pt;background:#fbe3df;color:#bf2f25"><strong>PRC-07</strong> Review date passed on 24 Sep. Every control it implements is held back.</div><div style="padding:7pt 10pt;border-radius:8pt;background:#fbf1d3;color:#8a6508"><strong>EV-0280</strong> Aging. Next evidence due 14 Oct, before the audit.</div></div></div><figcaption>One chain for ISO/IEC 27001, rendered from live records. Green nodes are ready, amber are pending before the audit, red are broken and show who holds them.</figcaption></figure>
+  <p>For ISO/IEC 27001 the chain runs from context issue to risk, risk treatment, Annex A control, Statement of Applicability entry, document, evidence and metric, then on to findings and corrective actions. ISO 9001, ISO 22301 and ISO 37001 each carry their own chain definition inside their framework pack. The engine is the same in every case.</p>
+  <figure><img src="screenshots/goldenthread.png" alt="Golden Thread Viewer"><figcaption>Golden Thread Viewer. Enter any identifier and the full chain renders. Red nodes are mandatory relations that are missing or overdue, with the clause at risk.</figcaption></figure>
+
+  <h3>3.2 Three working areas</h3>
+  <div class="grid3">
+    <div class="tile rise d1" style="background:#e8731a"><div style="font-family:'IBM Plex Mono',monospace;font-size:10pt;letter-spacing:.08em;opacity:.85">IMPLEMENTATION</div><div style="font-size:15pt;font-weight:600;margin:4pt 0 6pt">Build and maintain</div><div style="font-size:10.5pt;line-height:1.5">Phase board with gate enforcement, controls and requirements with status and evidence, document register, clause readiness.</div><div style="margin-top:8pt;font-size:10pt;opacity:.85">MS Manager, department heads</div></div>
+    <div class="tile rise d2" style="background:#2a58b8"><div style="font-family:'IBM Plex Mono',monospace;font-size:10pt;letter-spacing:.08em;opacity:.85">AUDIT</div><div style="font-size:15pt;font-weight:600;margin:4pt 0 6pt">Run the audit</div><div style="font-size:10.5pt;line-height:1.5">Next audit panel, traceability test, open items per chain stage, pending per person, finding register, corrective action workflow.</div><div style="margin-top:8pt;font-size:10pt;opacity:.85">MS Manager, Internal Auditor</div></div>
+    <div class="tile rise d3" style="background:#1f8a8a"><div style="font-family:'IBM Plex Mono',monospace;font-size:10pt;letter-spacing:.08em;opacity:.85">SURVEILLANCE</div><div style="font-size:15pt;font-weight:600;margin:4pt 0 6pt">Keep the certificate</div><div style="font-size:10.5pt;line-height:1.5">Three-year timeline, evidence freshness against operating frequency, review calendar, cycle completeness, regression detector.</div><div style="margin-top:8pt;font-size:10pt;opacity:.85">MS Manager, Top Management</div></div>
+  </div>
+
+  <h3>3.3 Named accountability</h3>
+  <p>Every pending item carries a named person as well as a role. The role explains why someone holds the item. The name tells you who to call. Items without a holder appear as Unassigned and count against readiness. The Pending per person view sorts holders by overdue items and turns audit preparation into short one-to-one conversations instead of a coordination meeting.</p>
+  <figure><img src="screenshots/chain.png" alt="Chain stages"><figcaption>Chain stages. Each stage shows open records, the action pending, the holder and the due date. The After audit flag marks items that will not be ready on audit day unless the date moves.</figcaption></figure>
+
+  <h3>3.4 Evidence that stays fresh</h3>
+  <p>Each control has an operating frequency. Evidence age is calculated from the date the evidence was produced. The upload date is ignored. A monthly control whose last evidence is ninety days old is downgraded to partially implemented until current evidence is linked, and the owner receives a task. When files live in your own repository, the platform pins the file version and records the provider's hash, then checks every reference on a schedule. A file that was moved, renamed or deleted is treated the same way as expired evidence.</p>
+  <figure><div><div style="font-size:10.5pt;color:#6b655a;margin-bottom:5pt">Monthly control, evidence age in days</div><div style="display:flex;height:24pt;border-radius:12pt;overflow:hidden;font-size:10.5pt;font-weight:600;color:#fff"><div style="flex:31;background:#1f7a48;display:flex;align-items:center;padding-left:10pt">Fresh, to 31 d</div><div style="flex:7;background:#c9a25b;display:flex;align-items:center;justify-content:center">Aging</div><div style="flex:22;background:#8a6508;display:flex;align-items:center;padding-left:10pt">Expired, to 60 d</div><div style="flex:30;background:#bf2f25;display:flex;align-items:center;padding-left:10pt">Critical, over 60 d</div></div><div style="display:flex;justify-content:space-between;font-size:10.5pt;color:#6b655a;margin-top:5pt;font-family:'IBM Plex Mono',monospace"><span>0</span><span>31</span><span>38</span><span>60</span><span>90+</span></div><div style="font-size:10.5pt;color:#4a453d;margin-top:4pt">The control drops to Partial from day 39 and returns to Implemented when current evidence is linked.</div></div><figcaption>Freshness thresholds for a monthly control. Thresholds are configurable per tenant and per framework.</figcaption></figure>
+  <figure><img src="screenshots/freshness.png" alt="Evidence freshness"><figcaption>Evidence freshness. Distribution by operating frequency, and each record with its production date, next due date and file integrity status.</figcaption></figure>
+
+  <h3>3.5 Department heads see tasks, not clause numbers</h3>
+  <p>The people who supply most of the evidence are the ones least interested in clause numbers. My Tasks gives them one list across all management systems, in plain language, with examples of what counts as acceptable evidence and a single submit button. The framework marker is small enough to ignore.</p>
+  <figure><img src="screenshots/tasks.png" alt="My Tasks"><figcaption>My Tasks for a department head. Overdue first, then this week, then later.</figcaption></figure>
+
+  <!-- ===== 4 ===== -->
+  <div class="sec"></div>
+  <h2><span class="n">04</span>Stage 1: your internal audit on MSCD</h2>
+  <h3 style="margin-top:0">4.1 Scope</h3>
+  <div class="grid2">
+    <div class="card" style="display:flex;gap:10pt"><span class="ico" style="background:#fdeee1;color:#c25c0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path></svg></span><div><div style="font-weight:600">One management system</div><div style="color:#4a453d;font-size:10.5pt;line-height:1.5">One certification scope, typically the ISO/IEC 27001 ISMS. Additional systems come in Stage 2 or by separate agreement.</div></div></div>
+    <div class="card" style="display:flex;gap:10pt"><span class="ico" style="background:#e3ebfb;color:#2a58b8"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zM4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7"></path></svg></span><div><div style="font-weight:600">Platform and pack</div><div style="color:#4a453d;font-size:10.5pt;line-height:1.5">MSCD on SaaS in the Jakarta region, or on your infrastructure. Framework pack for the chosen standard at its current edition.</div></div></div>
+    <div class="card" style="display:flex;gap:10pt"><span class="ico" style="background:#e4f3ea;color:#1f7a48"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6zM14 3v4h4M9 13h6M9 17h6"></path></svg></span><div><div style="font-weight:600">Your registers loaded</div><div style="color:#4a453d;font-size:10.5pt;line-height:1.5">Document register, risk register, Statement of Applicability, previous findings and the list of owners, cleaned and mapped with your MS Manager.</div></div></div>
+    <div class="card" style="display:flex;gap:10pt"><span class="ico" style="background:#f0e8fb;color:#7a4fd3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 11a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg></span><div><div style="font-weight:600">Connected to what you already use</div><div style="color:#4a453d;font-size:10.5pt;line-height:1.5">Single sign-on with your identity provider. Connector to the SharePoint library or Google Shared Drive where evidence already lives.</div></div></div>
+    <div class="card" style="display:flex;gap:10pt"><span class="ico" style="background:#fbf1d3;color:#8a6508"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h14v14H5zM8 12l3 3 5-6"></path></svg></span><div><div style="font-weight:600">The audit itself</div><div style="color:#4a453d;font-size:10.5pt;line-height:1.5">One full internal audit cycle through the platform. Our lead auditor works alongside your internal auditor and can act as co-auditor.</div></div></div>
+    <div class="card" style="display:flex;gap:10pt"><span class="ico" style="background:#fbe3df;color:#bf2f25"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM19 8l3 3-3 3"></path></svg></span><div><div style="font-weight:600">Training and reporting</div><div style="color:#4a453d;font-size:10.5pt;line-height:1.5">Role-based sessions in Bahasa Indonesia or English. Audit report and management review inputs generated from the platform, plus an effort comparison against your baseline.</div></div></div>
+  </div>
+
+  <h3>4.2 Eleven weeks</h3>
+  <p>The plan assumes SaaS. On-premise adds four to six weeks for installation, mostly waiting on infrastructure.</p>
+  <figure style="margin-top:0"><div><div style="display:grid;grid-template-columns:2fr 2fr 2fr 4fr 1fr;gap:4pt"><div style="min-width:0"><div style="background:#1c1a17;color:#fff;border-radius:7pt;padding:7pt 8pt;font-weight:600;font-size:10.5pt;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Mobilise, discover</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5pt;color:#c25c0f;margin-top:5pt">wk 1</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.35">Baseline, migration list</div></div><div style="min-width:0"><div style="background:#2a58b8;color:#fff;border-radius:7pt;padding:7pt 8pt;font-weight:600;font-size:10.5pt;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Design</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5pt;color:#c25c0f;margin-top:5pt">wk 3</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.35">Configuration design</div></div><div style="min-width:0"><div style="background:#1f8a8a;color:#fff;border-radius:7pt;padding:7pt 8pt;font-weight:600;font-size:10.5pt;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Configure, load</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5pt;color:#c25c0f;margin-top:5pt">wk 5</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.35">Acceptance test passed</div></div><div style="min-width:0"><div style="background:#e8731a;color:#fff;border-radius:7pt;padding:7pt 8pt;font-weight:600;font-size:10.5pt;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Run the internal audit</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5pt;color:#c25c0f;margin-top:5pt">wk 7</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.35">Audit report, findings in workflow</div></div><div style="min-width:0"><div style="background:#7a4fd3;color:#fff;border-radius:7pt;padding:7pt 8pt;font-weight:600;font-size:10.5pt;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Review</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5pt;color:#c25c0f;margin-top:5pt">wk 11</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.35">Decision</div></div></div></div></figure>
+  <div class="tl">
+    <div class="st"><div class="wk">Weeks 1 to 2</div><div class="tt">Mobilise and discover</div><p style="margin:0">Kick-off, scope confirmation, interviews with the MS Manager and internal auditor, baseline measurement of the current audit effort, inventory of registers to migrate. You receive the project charter, the baseline report and the migration list.</p></div>
+    <div class="st"><div class="wk">Weeks 3 to 4</div><div class="tt">Design</div><p style="margin:0">Map organisation units, roles and owners. Agree document conventions, evidence freshness thresholds, approval flows and the repository connection. The configuration design is approved in a workshop.</p></div>
+    <div class="st"><div class="wk">Weeks 5 to 6</div><div class="tt">Configure and load</div><p style="margin:0">Tenant set-up, single sign-on, repository connector, data migration, functional test. Ends with a passed acceptance test and a migration report.</p></div>
+    <div class="st"><div class="wk">Weeks 7 to 10</div><div class="tt">Run the audit</div><p style="margin:0">Audit programme approved in the platform. Evidence requests go out through My Tasks. Review, findings and corrective actions recorded. Twice-weekly fifteen-minute stand-ups. Ends with the internal audit report and findings inside the corrective action workflow.</p></div>
+    <div class="st"><div class="wk">Week 11</div><div class="tt">Review</div><p style="margin:0">Effort comparison against the baseline, lessons learned, and the Stage 2 decision.</p></div>
+  </div>
+  <figure><img src="screenshots/phases.png" alt="Phase board"><figcaption>Phase board. Activities come from the framework pack. A gate phase cannot be verified while a gate item remains open, and every blocked activity names the item that blocks it.</figcaption></figure>
+
+  <h3>4.3 What changes in the audit itself</h3>
+  <figure style="margin-top:4pt"><div><div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6pt"><div style="min-width:0"><div style="background:#fdeee1;border-radius:9pt;padding:9pt 7pt;text-align:center;min-height:62pt"><div style="font-weight:700;color:#c25c0f">Plan</div><div style="font-size:10.5pt;color:#4a453d;margin-top:4pt;line-height:1.35">Programme from clause coverage</div></div><div style="font-size:10.5pt;color:#6b655a;text-align:center;margin-top:5pt">Internal Auditor</div></div><div style="min-width:0"><div style="background:#e3ebfb;border-radius:9pt;padding:9pt 7pt;text-align:center;min-height:62pt"><div style="font-weight:700;color:#2a58b8">Request</div><div style="font-size:10.5pt;color:#4a453d;margin-top:4pt;line-height:1.35">Owners get tasks with examples</div></div><div style="font-size:10.5pt;color:#6b655a;text-align:center;margin-top:5pt">Department heads</div></div><div style="min-width:0"><div style="background:#e4f3ea;border-radius:9pt;padding:9pt 7pt;text-align:center;min-height:62pt"><div style="font-weight:700;color:#1f7a48">Receive</div><div style="font-size:10.5pt;color:#4a453d;margin-top:4pt;line-height:1.35">Version pinned, hash recorded</div></div><div style="font-size:10.5pt;color:#6b655a;text-align:center;margin-top:5pt">Platform</div></div><div style="min-width:0"><div style="background:#fbf1d3;border-radius:9pt;padding:9pt 7pt;text-align:center;min-height:62pt"><div style="font-weight:700;color:#8a6508">Review</div><div style="font-size:10.5pt;color:#4a453d;margin-top:4pt;line-height:1.35">Finding condition library</div></div><div style="font-size:10.5pt;color:#6b655a;text-align:center;margin-top:5pt">Internal Auditor</div></div><div style="min-width:0"><div style="background:#fbe3df;border-radius:9pt;padding:9pt 7pt;text-align:center;min-height:62pt"><div style="font-weight:700;color:#bf2f25">Correct</div><div style="font-size:10.5pt;color:#4a453d;margin-top:4pt;line-height:1.35">Root cause, action and verification</div></div><div style="font-size:10.5pt;color:#6b655a;text-align:center;margin-top:5pt">Owner, MS Manager</div></div><div style="min-width:0"><div style="background:#f0e8fb;border-radius:9pt;padding:9pt 7pt;text-align:center;min-height:62pt"><div style="font-weight:700;color:#7a4fd3">Report</div><div style="font-size:10.5pt;color:#4a453d;margin-top:4pt;line-height:1.35">Generated from the same data</div></div><div style="font-size:10.5pt;color:#6b655a;text-align:center;margin-top:5pt">MS Manager</div></div></div><div style="margin-top:10pt;padding:10pt 12pt;border-radius:9pt;background:#faf9f6;border:1px solid #e6e1d7;font-size:10.5pt;line-height:1.5"><strong>Separation of duties is enforced by the platform.</strong> The verifier of a corrective action cannot be the person who implemented it, and the verification date must differ from the implementation date.</div></div></figure>
+  <p>The kick-off meeting still happens. Its purpose changes from assigning work to confirming assignments the system already made based on ownership. Reminders are automatic and logged, so escalation is based on a record instead of an impression.</p>
+
+  <!-- ===== 5 ===== -->
+  <div class="sec"></div>
+  <h2><span class="n">05</span>Stage 2: external audit preparation</h2>
+  <p>Stage 2 starts only if you choose to continue after the Stage 1 review. It runs on the same tenant and the same records. Nothing from Stage 1 is discarded, and the internal audit you ran becomes the evidence that clause 9.2 has been met.</p>
+  <h3>5.1 What Stage 2 adds</h3>
+  <div class="grid2">
+    <div class="card rise d1"><div class="kicker" style="color:#1f8a8a">TIMELINE</div><div style="font-weight:600;margin-top:2pt">Certification cycle with your audit dates</div><div style="color:#4a453d;font-size:10.5pt;line-height:1.5">Each event opens to a preparation checklist generated from the framework pack, with owners and due dates that all fall before the audit.</div></div>
+    <div class="card rise d2"><div class="kicker" style="color:#1f8a8a">COMPLETENESS</div><div style="font-weight:600;margin-top:2pt">Everything that must happen once per cycle</div><div style="color:#4a453d;font-size:10.5pt;line-height:1.5">Risk assessment reviewed, performance measured, internal audit done, management review held with all mandatory inputs, corrective actions verified, document reviews on time.</div></div>
+    <div class="card rise d3"><div class="kicker" style="color:#1f8a8a">REGRESSION</div><div style="font-weight:600;margin-top:2pt">Detect quiet decay</div><div style="color:#4a453d;font-size:10.5pt;line-height:1.5">Risks not reassessed in twelve months, metrics that stopped updating, evidence files that can no longer be verified, management review inputs that disappeared.</div></div>
+    <div class="card rise d4"><div class="kicker" style="color:#1f8a8a">EVIDENCE PACK</div><div style="font-weight:600;margin-top:2pt">Per clause and per control</div><div style="color:#4a453d;font-size:10.5pt;line-height:1.5">When files stay in your repository, the pack is a manifest plus a copy made inside your own repository. Auditor guest access is read-only and time-boxed.</div></div>
+  </div>
+  <figure><img src="screenshots/timeline.png" alt="Certification timeline"><figcaption>Certification timeline. Every management system on one axis, the next event with its checklist and previous findings to prove closed, cycle completeness and regression patterns.</figcaption></figure>
+  <h3>5.2 Countdown to the audit</h3>
+  <div class="tl">
+    <div class="st"><div class="wk">Months 1 to 2 after go-ahead</div><div class="tt">Load the cycle</div><p style="margin:0">Certification cycle, previous external findings and the certifier's audit plan loaded. Freshness monitoring and the review calendar switched on for all documents. Remaining owners onboarded.</p></div>
+    <div class="st"><div class="wk">60 days before</div><div class="tt">Preparation window opens</div><p style="margin:0">Weekly readiness review with the MS Manager on the Audit readiness screen. Items due after the audit date are moved earlier or escalated.</p></div>
+    <div class="st"><div class="wk">14 days before</div><div class="tt">Pack and briefing</div><p style="margin:0">Evidence pack generated. Auditees briefed on the expected sampling focus. Guest access prepared for the auditor.</p></div>
+    <div class="st"><div class="wk">Audit days</div><div class="tt">On site or on call</div><p style="margin:0">Our consultant is available. Auditor questions are answered from the Golden Thread Viewer in seconds.</p></div>
+    <div class="st"><div class="wk">After</div><div class="tt">Close the loop</div><p style="margin:0">Findings from the certification body enter the same corrective action workflow. Surveillance planning starts on the timeline.</p></div>
+  </div>
+  <div class="callout"><strong style="color:#e8731a">The single most valuable flag.</strong> An item due after the audit date looks fine in every spreadsheet, because it is not late yet. It will still be missing when the auditor asks. MSCD computes this flag against the next audit event for each system, shows it on every list, and recalculates it automatically when the audit date changes. We recommend confirming the Stage 2 decision at least four months before the audit.</div>
+
+  <!-- ===== 6 ===== -->
+  <div class="sec"></div>
+  <h2><span class="n">06</span>Deployment and security</h2>
+  <p>MSCD ships as one codebase with one release train. SaaS and on-premise offer the same features. The differences are operational: who runs the application and where the data sits.</p>
+  <div class="grid2">
+    <div class="card rise d1"><div style="display:inline-block;padding:3pt 9pt;border-radius:999pt;background:#e3ebfb;color:#2a58b8;font-family:'IBM Plex Mono',monospace;font-size:10pt;letter-spacing:.06em;margin-bottom:6pt">CLOUD</div><div style="font-size:15pt;font-weight:600">SaaS</div><div style="color:#6b655a;font-size:10.5pt">Provider cloud, Jakarta region</div><ul style="margin-top:8pt;font-size:10.5pt"><li>Schema per tenant, row-level security, per-tenant encryption keys</li><li>SAML 2.0 or OIDC to your identity provider, MFA for everyone</li><li>Rolling updates in announced windows</li><li>Ready in under two weeks</li></ul></div>
+    <div class="card rise d2"><div style="display:inline-block;padding:3pt 9pt;border-radius:999pt;background:#fdeee1;color:#c25c0f;font-family:'IBM Plex Mono',monospace;font-size:10pt;letter-spacing:.06em;margin-bottom:6pt">YOUR DATA CENTRE</div><div style="font-size:15pt;font-weight:600">On-premise</div><div style="color:#6b655a;font-size:10.5pt">Your servers, your data centre</div><ul style="margin-top:8pt;font-size:10.5pt"><li>Kubernetes or Docker Compose, air-gapped operation supported</li><li>LDAP and Active Directory, your SMTP relay</li><li>Signed release bundles on your schedule, licence validated offline</li><li>Typically four to six weeks end to end</li></ul></div>
+  </div>
+  <h3>Where the bytes go</h3>
+  <p>In either mode you can decide that documents and evidence never leave your repository. The platform keeps structured data in its own database, because the traceability engine cannot work without it. File contents stay where they are.</p>
+  <figure style="margin-top:4pt"><div><div style="display:grid;grid-template-columns:1.1fr 1.4fr 1.4fr 1.4fr 1.1fr;gap:0;align-items:center">
+  <div style="background:#1c1a17;color:#fff;border-radius:10pt;padding:10pt 8pt;text-align:center"><div style="font-weight:600">Your browser</div><div style="font-size:10.5pt;color:#cfc7b8">MS Manager, owners</div></div>
+  <div style="padding:0 6pt"><div style="font-size:10.5pt;font-weight:600;color:#1f7a48;text-align:center">Pass-through</div><div style="height:2.5pt;background:#1f7a48;margin:3pt 0"></div><div style="font-size:10.5pt;font-weight:600;color:#7a4fd3;text-align:center;margin-top:8pt">Link</div><div style="height:2.5pt;background:#7a4fd3;margin:3pt 0"></div></div>
+  <div style="background:#e8731a;color:#fff;border-radius:10pt;padding:10pt 8pt;text-align:center"><div style="font-weight:600">MSCD</div><div style="font-size:10.5pt">registers, statuses, relations, fingerprints</div></div>
+  <div style="padding:0 6pt"><div style="font-size:10.5pt;color:#1f7a48;text-align:center">checksum in transit, not stored</div><div style="height:2.5pt;background:#1f7a48;margin:3pt 0"></div><div style="font-size:10.5pt;color:#7a4fd3;text-align:center;margin-top:8pt">reference and version only</div><div style="height:2.5pt;border-top:2.5pt dashed #7a4fd3;margin:3pt 0"></div></div>
+  <div style="background:#2a58b8;color:#fff;border-radius:10pt;padding:10pt 8pt;text-align:center"><div style="font-weight:600">Your repository</div><div style="font-size:10.5pt">SharePoint, Drive, file share, S3</div></div>
+  </div><div style="margin:10pt 10% 0;border:2.5pt solid #1c1a17;border-top:0;border-radius:0 0 14pt 14pt;height:14pt"></div><div style="text-align:center;font-size:10.5pt;font-weight:600;margin-top:4pt">Zero-transit: the browser uploads straight to your repository, MSCD receives metadata only</div><div style="text-align:center;font-size:10.5pt;color:#6b655a;margin-top:6pt">Managed vault is optional. Every reference is checked on a schedule; moved, renamed or deleted files are flagged and treated like expired evidence.</div></div></figure>
+  <p>Supported repositories at the start of Stage 1 are SharePoint Online and OneDrive for Business, followed by Google Shared Drive. Internal file shares and S3-compatible storage are available for on-premise installations. Personal repositories are allowed but flagged, since evidence stored in a departing employee's OneDrive disappears with the account.</p>
+  <figure><img src="screenshots/storage.png" alt="Storage repositories"><figcaption>Storage repositories. Connector status, routing rules per management system and classification, and the health of every file reference.</figcaption></figure>
+  <h3>Security controls</h3>
+  <div class="grid2">
+    <div class="card" style="display:flex;gap:9pt"><span class="ico" style="background:#e3ebfb;color:#2a58b8"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path></svg></span><div style="font-size:10.5pt;line-height:1.5"><strong>Identity</strong><br>SSO through SAML 2.0, OIDC or LDAP. MFA for all users. Roles per management system.</div></div>
+    <div class="card" style="display:flex;gap:9pt"><span class="ico" style="background:#fbe3df;color:#bf2f25"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 11h-6"></path></svg></span><div style="font-size:10.5pt;line-height:1.5"><strong>Segregation of duties</strong><br>Enforced at data level. Nobody approves their own work.</div></div>
+    <div class="card" style="display:flex;gap:9pt"><span class="ico" style="background:#e4f3ea;color:#1f7a48"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4"></path></svg></span><div style="font-size:10.5pt;line-height:1.5"><strong>Encryption</strong><br>TLS 1.2 or higher in transit. At rest with per-tenant keys on SaaS.</div></div>
+    <div class="card" style="display:flex;gap:9pt"><span class="ico" style="background:#fbf1d3;color:#8a6508"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 11a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg></span><div style="font-size:10.5pt;line-height:1.5"><strong>Connectors</strong><br>Least privilege: the designated library only. Credentials encrypted with the tenant key.</div></div>
+    <div class="card" style="display:flex;gap:9pt"><span class="ico" style="background:#f0e8fb;color:#7a4fd3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h2M9 6h11M4 12h2M9 12h11M4 18h2M9 18h11"></path></svg></span><div style="font-size:10.5pt;line-height:1.5"><strong>Audit trail</strong><br>Every change recorded and never deleted. Logs available to you and to your external auditor.</div></div>
+    <div class="card" style="display:flex;gap:9pt"><span class="ico" style="background:#fdeee1;color:#c25c0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg></span><div style="font-size:10.5pt;line-height:1.5"><strong>Sensitive records</strong><br>ISO 37001 concerns and investigations visible only to the compliance function and named investigators.</div></div>
+  </div>
+  <h3>Your data stays yours</h3>
+  <p>Structured data and any files in the managed vault belong to you. At any point, and in particular at the end of Stage 1, you can export registers, statuses, relations and audit trail in open formats (CSV and JSON) together with the vault contents. On SaaS, tenant data is deleted after the contractual retention period and the deletion is confirmed in writing. Framework pack content remains licensed from CyberLentera; your configuration, records and evidence do not.</p>
+  <p>Whether the chosen data placement satisfies your sector regulation is a decision for your legal and compliance function. We provide the technical documentation needed for that review.</p>
+
+  <!-- ===== 7 ===== -->
+  <div class="sec"></div>
+  <h2><span class="n">07</span>Approach, roles and team</h2>
+  <p>We do not begin by moving everything into a new system. We begin with one management system, run one real cycle of work inside it, and expand from there. This keeps the first weeks focused on the people who will use the platform most and gives you a real result before any broader commitment.</p>
+  <h3>Who does what</h3>
+  <div class="grid3">
+    <div class="role"><div style="font-weight:600;font-size:12pt;display:flex;align-items:center;gap:8pt"><span style="width:10pt;height:10pt;border-radius:3pt;background:#e8731a;flex:none"></span>CyberLentera</div><div style="font-size:10.5pt;line-height:1.55;color:#4a453d;margin-top:4pt">Runs the project. Discovery, configuration design, single sign-on and connector, data migration, training, and co-auditing during weeks 7 to 10. Consulted on the Stage 1 decision.</div></div>
+    <div class="role"><div style="font-weight:600;font-size:12pt;display:flex;align-items:center;gap:8pt"><span style="width:10pt;height:10pt;border-radius:3pt;background:#2a58b8;flex:none"></span>Your sponsor</div><div style="font-size:10.5pt;line-height:1.55;color:#4a453d;margin-top:4pt">Accountable for the charter, for adoption, and for the Stage 2 decision. Chairs the steering committee. Makes the platform the only channel for submitting evidence.</div></div>
+    <div class="role"><div style="font-weight:600;font-size:12pt;display:flex;align-items:center;gap:8pt"><span style="width:10pt;height:10pt;border-radius:3pt;background:#1f8a8a;flex:none"></span>Your MS Manager</div><div style="font-size:10.5pt;line-height:1.55;color:#4a453d;margin-top:4pt">Accountable for discovery, design and migration decisions, and for running the internal audit. About two days a week in weeks 1 to 6, then the daily owner of the platform.</div></div>
+    <div class="role"><div style="font-weight:600;font-size:12pt;display:flex;align-items:center;gap:8pt"><span style="width:10pt;height:10pt;border-radius:3pt;background:#7a4fd3;flex:none"></span>Your IT</div><div style="font-size:10.5pt;line-height:1.55;color:#4a453d;margin-top:4pt">Accountable for single sign-on and the repository connector permission. Consulted on design and migration.</div></div>
+    <div class="role"><div style="font-weight:600;font-size:12pt;display:flex;align-items:center;gap:8pt"><span style="width:10pt;height:10pt;border-radius:3pt;background:#8a6508;flex:none"></span>Department heads</div><div style="font-size:10.5pt;line-height:1.55;color:#4a453d;margin-top:4pt">Own the controls and supply the evidence through My Tasks. Consulted during discovery and acceptance testing.</div></div>
+    <div class="role"><div style="font-weight:600;font-size:12pt;display:flex;align-items:center;gap:8pt"><span style="width:10pt;height:10pt;border-radius:3pt;background:#1c1a17;flex:none"></span>Governance</div><div style="font-size:10.5pt;line-height:1.55;color:#4a453d;margin-top:4pt">Monthly steering committee and at stage gates. Weekly project check-in. Twice-weekly fifteen-minute audit stand-up in weeks 7 to 10. Scope changes through a short change request.</div></div>
+  </div>
+  <h3>Adoption</h3>
+  <p>The success of this engagement is decided by department heads submitting evidence on time. They usually have a full-time job elsewhere and little patience for compliance tooling. We train them on their actual tasks in the first week of the audit, keep My Tasks free of standard jargon, let the platform send the reminders, and ask the sponsor to make the platform the only channel for evidence. Half-adopted tools produce two sources of truth, which is worse than one spreadsheet.</p>
+  <h3>The team you will meet</h3>
+  <div class="grid3">
+    <div class="role"><div style="font-weight:600">Engagement lead</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.5">Accountable for the outcome. Escalation point. Steering committee member. Part time.</div></div>
+    <div class="role"><div style="font-weight:600">Project manager</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.5">Planning, schedule, risks and issues, weekly reporting. Full time in Stage 1.</div></div>
+    <div class="role"><div style="font-weight:600">Solution architect</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.5">Configuration design, deployment architecture, integration and security review.</div></div>
+    <div class="role"><div style="font-weight:600">ISO lead auditor</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.5">Gap assessment, framework pack tuning, co-auditor during the internal audit, external audit coaching in Stage 2.</div></div>
+    <div class="role"><div style="font-weight:600">Implementation and integration engineers</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.5">Configuration, migration, functional test, single sign-on, connectors, notifications. Full time in build weeks.</div></div>
+    <div class="role"><div style="font-weight:600">Change and training lead</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.5">Adoption plan, training material, role-based sessions from week 5.</div></div>
+  </div>
+  <p>Profiles of the named team members are attached separately.</p>
+  <h3>Support after go-live</h3>
+  <div class="grid3">
+    <div class="card"><div style="font-weight:600">Hypercare, weeks 7 to 11</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.5">Our team is reachable on a shared channel during working hours. Configuration adjustments raised during the audit are applied within two working days.</div></div>
+    <div class="card"><div style="font-weight:600">Standard support, Stage 2</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.5">Working days 08:00 to 18:00 WIB. Response within four working hours for issues that stop an audit activity, next working day for everything else.</div></div>
+    <div class="card"><div style="font-weight:600">Updates and packs</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.5">Application updates in announced windows on SaaS, or as signed bundles on your schedule for on-premise. New framework pack editions installed side by side and activated when you decide.</div></div>
+  </div>
+
+  <!-- ===== 8 ===== -->
+  <div class="sec"></div>
+  <h2><span class="n">08</span>Success, commercials and next steps</h2>
+  <h3 style="margin-top:0">How we will measure success</h3>
+  <p>We do not quote target numbers before the baseline is measured. The indicators below are what we propose to track, with targets agreed at the end of week two.</p>
+  <div class="grid2">
+    <div class="kpi"><span class="arrow" style="background:#e4f3ea;color:#1f7a48">↓</span><div><div style="font-weight:600">Internal audit coordination effort</div><div style="font-size:10.5pt;color:#4a453d">Working days from programme approval to report issue</div></div></div>
+    <div class="kpi"><span class="arrow" style="background:#e4f3ea;color:#1f7a48">↓</span><div><div style="font-weight:600">Time to trace a control to evidence</div><div style="font-size:10.5pt;color:#4a453d">From minutes to seconds, measured in a simulation</div></div></div>
+    <div class="kpi"><span class="arrow" style="background:#e3ebfb;color:#2a58b8">↑</span><div><div style="font-weight:600">Evidence accepted on first submission</div><div style="font-size:10.5pt;color:#4a453d">Share accepted by the auditor without rework</div></div></div>
+    <div class="kpi"><span class="arrow" style="background:#e3ebfb;color:#2a58b8">↑</span><div><div style="font-weight:600">Evidence submitted on time</div><div style="font-size:10.5pt;color:#4a453d">Share of items submitted by the due date</div></div></div>
+    <div class="kpi"><span class="arrow" style="background:#fbe3df;color:#bf2f25">0</span><div><div style="font-weight:600">Items due after the audit date</div><div style="font-size:10.5pt;color:#4a453d">Count on audit day</div></div></div>
+    <div class="kpi"><span class="arrow" style="background:#fbe3df;color:#bf2f25">0</span><div><div style="font-weight:600">Major nonconformities at the external audit</div><div style="font-size:10.5pt;color:#4a453d">Stage 2, count per audit</div></div></div>
+  </div>
+
+  <h3>Commercial structure</h3>
+  <div class="grid2">
+    <div class="tile" style="background:linear-gradient(135deg,#e8731a,#c25c0f)"><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5pt;letter-spacing:.08em;opacity:.85">STAGE 1</div><div style="font-size:16pt;font-weight:600;margin:4pt 0 6pt">Fixed fee</div><ul style="margin:0;padding-left:16pt;font-size:10.5pt;line-height:1.55"><li>Platform for one management system for four months</li><li>Configuration, data loading, training, co-audited internal audit</li><li>No commitment beyond Stage 1; data export in open formats at any time</li><li>On-premise installation priced separately</li></ul></div>
+    <div class="tile" style="background:linear-gradient(135deg,#2a58b8,#1f3f8a)"><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5pt;letter-spacing:.08em;opacity:.85">STAGE 2</div><div style="font-size:16pt;font-weight:600;margin:4pt 0 6pt">Annual subscription</div><ul style="margin:0;padding-left:16pt;font-size:10.5pt;line-height:1.55"><li>Per management system, named users, frameworks per licence</li><li>Preparation support and audit-day presence included</li><li>Twelve months, renewable; Stage 1 records carry over</li><li>Stage 1 fee credited against the first year</li></ul></div>
+  </div>
+
+  <h3>Assumptions</h3>
+  <ul>
+    <li>The sponsor and the MS Manager are available for about forty percent of their time from week one to week six.</li>
+    <li>Existing registers are available electronically by the end of week two.</li>
+    <li>Your IT team grants the connector permission on your Microsoft 365 or Google Workspace tenant. If approval takes longer, the managed vault is used temporarily with your agreement.</li>
+    <li>Decisions requested in the design workshop are given within five working days.</li>
+    <li>External audit dates are set by you with your certification body. This engagement does not change them.</li>
+    <li>Legal review of data placement and of the use of individual contribution data is performed by your legal function. We recommend that contribution data is used for coordination and coaching first.</li>
+  </ul>
+
+  <h3>Risks and how we handle them</h3>
+  <div class="grid2">
+    <div class="card"><div style="font-weight:600">Evidence keeps arriving by email</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.5">Task-based training in week 7, automatic reminders, and sponsor support for a single submission channel.</div></div>
+    <div class="card"><div style="font-weight:600">Initial data quality is poor</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.5">Cleaning in weeks 1 to 2, staged migration, unverified records marked until the owner confirms them.</div></div>
+    <div class="card"><div style="font-weight:600">Connector approval is delayed</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.5">Permission request raised in week 3. Managed vault as the interim path if you agree.</div></div>
+    <div class="card"><div style="font-weight:600">Audit date is close to Stage 2 go-live</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.5">Stage 2 decision at least four months before the audit. The Stage 1 internal audit already covers clause 9.2.</div></div>
+  </div>
+
+  <h3>Why CyberLentera</h3>
+  <p>We build and operate security software, and we implement ISO management systems. The two experiences rarely sit in the same team. It matters here because what we are proposing is a way of working for your MS Manager, your internal auditor and your department heads, with software underneath it. The people who configure the platform are the same people who understand what an auditor will ask. Support and training are in Bahasa Indonesia, and we know the certification bodies operating in Indonesia. Team credentials, project references and customer contacts are provided in the attached profile.</p>
+
+  <div style="break-inside:avoid;margin-top:14pt;border-radius:12pt;background:#0f0e0c;color:#f2eee7;padding:20pt 22pt;position:relative;overflow:hidden">
+    <div style="position:absolute;right:0;top:0;width:200pt;height:200pt;border-radius:0 12pt 0 0;background:radial-gradient(circle at 100% 0%,rgba(232,115,26,.45),transparent 65%)"></div>
+    <div style="position:relative"><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5pt;color:#e8731a;letter-spacing:.1em">NEXT STEPS</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14pt;margin-top:10pt">
+      <div><div style="font-size:22pt;font-weight:600;color:#e8731a">1</div><div style="font-weight:600;margin-top:2pt">Ninety-minute working session</div><div style="font-size:10.5pt;color:#cfc7b8;line-height:1.5">With your MS Manager and internal auditor, to confirm the scope of the first internal audit cycle and the repository you use for evidence.</div></div>
+      <div><div style="font-size:22pt;font-weight:600;color:#e8731a">2</div><div style="font-weight:600;margin-top:2pt">Two decisions</div><div style="font-size:10.5pt;color:#cfc7b8;line-height:1.5">SaaS or on-premise, and which identity provider we connect to.</div></div>
+      <div><div style="font-size:22pt;font-weight:600;color:#e8731a">3</div><div style="font-weight:600;margin-top:2pt">Start date</div><div style="font-size:10.5pt;color:#cfc7b8;line-height:1.5">We can mobilise within two weeks of signature. A live demonstration on your own risk register takes about forty-five minutes.</div></div>
+    </div></div>
+  </div>
+
+  <h3>Stage gates and acceptance</h3>
+  <div class="grid2">
+    <div class="card"><div style="font-weight:600">End of week 6</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.5">Configuration accepted when the acceptance test passes and the MS Manager confirms that migrated registers match the source. Corrections before this point are included.</div></div>
+    <div class="card"><div style="font-weight:600">End of week 11</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.5">Stage 1 is complete when the internal audit report has been issued from the platform and the closure report, including the effort comparison, has been presented to the sponsor.</div></div>
+  </div>
+  <div style="break-inside:avoid;margin-top:18pt;border:1px solid #e6e1d7;border-radius:12pt;padding:16pt 18pt">
+    <div style="font-weight:600;font-size:12.5pt">Acceptance of this proposal</div>
+    <p style="margin:6pt 0 14pt;font-size:10.5pt;color:#4a453d">Confirmation of the scope of Stage 1 as described in section 4.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24pt">
+      <div><div style="font-size:10.5pt;color:#6b655a;margin-bottom:30pt">For PT TASPEN (Persero)</div><div style="border-top:1.5px solid #1c1a17;padding-top:6pt;font-size:10.5pt;color:#4a453d">Name, position, date</div></div>
+      <div><div style="font-size:10.5pt;color:#6b655a;margin-bottom:30pt">For CyberLentera</div><div style="border-top:1.5px solid #1c1a17;padding-top:6pt;font-size:10.5pt;color:#4a453d">Name, position, date</div></div>
+    </div>
+  </div>
+
+  <!-- ===== Appendix ===== -->
+  <div class="sec"></div>
+  <h2><span class="n" style="background:#1c1a17">A</span>How MSCD features map to the standard</h2>
+  <p>The clauses below are the core Harmonized Structure clauses common to ISO/IEC 27001, ISO 9001, ISO 22301 and ISO 37001. Detailed numbering for each edition is carried in the framework pack.</p>
+  <table><thead><tr><th style="width:1in">Clause</th><th style="width:2.2in">Topic</th><th>Supporting feature</th></tr></thead><tbody>
+    <tr><td>4.1, 4.2</td><td>Context and interested parties</td><td>Context issue and interested party registers, referenced by risks</td></tr>
+    <tr><td>4.3</td><td>Scope</td><td>Scope per management system, exclusions justified</td></tr>
+    <tr><td>5.1, 5.3</td><td>Leadership and roles</td><td>Named owner for every item, segregation of duties</td></tr>
+    <tr><td>6.1</td><td>Risks and opportunities</td><td>Risk register with owners, treatments and residual acceptance</td></tr>
+    <tr><td>6.2</td><td>Objectives</td><td>Measurable objectives linked to metrics</td></tr>
+    <tr><td>7.2, 7.3</td><td>Competence and awareness</td><td>Training records and competence evidence</td></tr>
+    <tr><td>7.5</td><td>Documented information</td><td>Document register with version, approval, review date and file location</td></tr>
+    <tr><td>8.1</td><td>Operational planning and control</td><td>Operating evidence with freshness against control frequency</td></tr>
+    <tr><td>9.1</td><td>Monitoring and measurement</td><td>Metrics with update monitoring</td></tr>
+    <tr><td>9.2</td><td>Internal audit</td><td>Audit programme, evidence requests, finding condition library, finding register</td></tr>
+    <tr><td>9.3</td><td>Management review</td><td>Mandatory inputs per standard and a completeness check</td></tr>
+    <tr><td>10.2</td><td>Nonconformity and corrective action</td><td>Corrective action workflow with root cause analysis and effectiveness verification</td></tr>
+  </tbody></table>
+
+  <h2 style="margin-top:22pt"><span class="n" style="background:#1c1a17">B</span>Terms used in this proposal</h2>
+  <div class="grid2">
+    <div class="card"><div style="font-weight:600">MS Manager</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.5">The day-to-day owner of a management system. ISMS Manager for ISO/IEC 27001, QMS Manager for ISO 9001, and so on.</div></div>
+    <div class="card"><div style="font-weight:600">Department head</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.5">The owner of a work area who operates controls and supplies evidence. Called Domain Owner in the platform.</div></div>
+    <div class="card"><div style="font-weight:600">Evidence</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.5">A record showing that a control or requirement operated, such as a report, a log export or a signed form.</div></div>
+    <div class="card"><div style="font-weight:600">Traceability chain</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.5">The linked path from context issue and risk through control, document and evidence to finding and corrective action.</div></div>
+    <div class="card"><div style="font-weight:600">Framework pack</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.5">The versioned content package for one standard and edition: clause structure, control catalogue, activity templates, finding conditions and labels.</div></div>
+    <div class="card"><div style="font-weight:600">Gate</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.5">A phase that must be fully verified before the next phase opens. For ISO/IEC 27001 this is risk assessment and the Statement of Applicability.</div></div>
+    <div class="card"><div style="font-weight:600">Repository</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.5">Where files live. SharePoint, OneDrive, Google Drive, an internal file share, or the managed vault.</div></div>
+    <div class="card"><div style="font-weight:600">Surveillance</div><div style="font-size:10.5pt;color:#4a453d;line-height:1.5">The certification body's audit in years one and two of the cycle. Recertification is the year three audit.</div></div>
+  </div>
+  <p style="margin-top:20pt;font-size:10.5pt;color:#6b655a">This proposal does not replace the official text of any ISO standard. Features that help meet a requirement do not by themselves guarantee conformity; that judgement remains with the auditor and the certification body.</p>
+</div>
+</doc-page>
+</x-dc>
+</body>
+</html>

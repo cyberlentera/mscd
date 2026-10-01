@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0f0e0c;color:#f2eee7;font-family:'IBM Plex Sans',system-ui,sans-serif}
+a{color:#e8731a;text-decoration:none}a:hover{color:#f39a52}
+@keyframes up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes glow{0%,100%{opacity:.55}50%{opacity:.85}}
+@keyframes flow{from{stroke-dashoffset:120}to{stroke-dashoffset:0}}
+@keyframes meshA{0%{transform:translate(-10%,-10%) scale(1)}50%{transform:translate(12%,8%) scale(1.15)}100%{transform:translate(-10%,-10%) scale(1)}}
+@keyframes meshB{0%{transform:translate(10%,0) scale(1.1)}50%{transform:translate(-12%,-14%) scale(.95)}100%{transform:translate(10%,0) scale(1.1)}}
+@keyframes meshC{0%{transform:translate(0,10%) scale(.9)}50%{transform:translate(6%,-10%) scale(1.2)}100%{transform:translate(0,10%) scale(.9)}}
+@keyframes orbit{from{stroke-dashoffset:0}to{stroke-dashoffset:-400}}
+@keyframes converge{0%,15%{opacity:0;transform:translateX(0)}35%,70%{opacity:1;transform:translateX(0)}100%{opacity:0;transform:translateX(0)}}
+@keyframes travel{0%{offset-distance:0%;opacity:0}8%{opacity:1}92%{opacity:1}100%{offset-distance:100%;opacity:0}}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(232,115,26,.45)}70%{box-shadow:0 0 0 12px rgba(232,115,26,0)}100%{box-shadow:0 0 0 0 rgba(232,115,26,0)}}
+.ld-card{transition:transform .25s ease,border-color .25s ease}.ld-card:hover{transform:translateY(-3px);border-color:rgba(232,115,26,.55)!important}
+.ld-nav a{color:#b9b2a6;font-size:14px;font-weight:500;white-space:nowrap}.ld-cta a{white-space:nowrap;flex:none}@media (max-width:1000px){.ld-nav{display:none!important}}.ld-nav a:hover{color:#f2eee7}
+</style>
+</helmet>
+<div style="min-height:100vh;background:#0f0e0c;color:#f2eee7;font-family:'IBM Plex Sans',system-ui,sans-serif;overflow:hidden">
+
+  <!-- nav -->
+  <div style="position:sticky;top:0;z-index:10;backdrop-filter:blur(12px);background:rgba(15,14,12,.72);border-bottom:1px solid rgba(255,255,255,.07)">
+    <div style="max-width:1200px;margin:0 auto;padding:0 28px;height:64px;display:flex;align-items:center;justify-content:space-between;gap:24px">
+      <div style="display:flex;align-items:center;gap:14px"><img src="assets/cyberlentera-logo.png" alt="CyberLentera" style="height:30px;display:block;filter:brightness(0) invert(1) drop-shadow(0 0 0 transparent)"><span style="width:1px;height:22px;background:rgba(255,255,255,.18)"></span><span style="font-weight:700;letter-spacing:.06em;font-size:15px">MSCD</span></div>
+      <nav class="ld-nav" style="display:flex;gap:28px;align-items:center"><a href="#product">Product</a><a href="#frameworks">Frameworks</a><a href="#deploy">Deployment</a><a href="#modules">Modules</a></nav>
+      <div class="ld-cta" style="display:flex;gap:10px;align-items:center;flex:none"><a href="MSCD Login.dc.html" style="color:#f2eee7;font-size:14px;font-weight:500;padding:9px 14px;border-radius:9px;border:1px solid rgba(255,255,255,.14)">Sign in</a><a href="MSCD Login.dc.html" style="color:#0f0e0c;background:#e8731a;font-size:14px;font-weight:600;padding:10px 16px;border-radius:9px">Request a demo</a></div>
+    </div>
+  </div>
+
+  <!-- hero -->
+  <section style="position:relative;padding:96px 28px 40px">
+    <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(ellipse 70% 60% at 50% 0%,#000 30%,transparent 80%);-webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 0%,#000 30%,transparent 80%)"></div>
+    <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none">
+      <div style="position:absolute;left:10%;top:-30%;width:60vw;height:60vw;max-width:900px;max-height:900px;border-radius:50%;background:radial-gradient(circle,rgba(232,115,26,.38),transparent 60%);filter:blur(40px);animation:meshA 18s ease-in-out infinite"></div>
+      <div style="position:absolute;right:0;top:-20%;width:50vw;height:50vw;max-width:760px;max-height:760px;border-radius:50%;background:radial-gradient(circle,rgba(122,79,211,.28),transparent 60%);filter:blur(50px);animation:meshB 22s ease-in-out infinite"></div>
+      <div style="position:absolute;left:35%;top:10%;width:40vw;height:40vw;max-width:620px;max-height:620px;border-radius:50%;background:radial-gradient(circle,rgba(31,138,138,.22),transparent 60%);filter:blur(50px);animation:meshC 26s ease-in-out infinite"></div>
+    </div>
+    <div style="display:none;position:absolute;left:50%;top:-220px;width:900px;height:520px;transform:translateX(-50%);background:radial-gradient(ellipse at center,rgba(232,115,26,.32),rgba(232,115,26,0) 65%);animation:glow 7s ease-in-out infinite;pointer-events:none"></div>
+    <div style="position:relative;max-width:1200px;margin:0 auto;text-align:center">
+      <h1 style="margin:0 auto;max-width:900px;font-size:64px;line-height:1.04;letter-spacing:-.035em;font-weight:600;animation:up .7s ease .08s both">Prove compliance from context to evidence.</h1>
+      <p style="margin:22px auto 0;max-width:600px;font-size:20px;line-height:1.5;color:#b9b2a6;animation:up .7s ease .16s both">One traceability chain for ISO/IEC 27001, 9001, 22301 and 37001. When a link breaks, you see it before the auditor does.</p>
+      <div style="display:flex;justify-content:center;gap:12px;margin-top:34px;animation:up .7s ease .24s both">
+        <a href="MSCD Login.dc.html" style="color:#0f0e0c;background:#e8731a;font-size:15px;font-weight:600;padding:14px 22px;border-radius:11px;display:inline-flex;align-items:center;gap:8px">Open the dashboard <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+        <a href="#product" style="color:#f2eee7;font-size:15px;font-weight:500;padding:14px 22px;border-radius:11px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.03)">See how it works</a>
+      </div>
+    </div>
+    <div id="product" style="position:relative;max-width:1180px;margin:64px auto 0;animation:up .9s cubic-bezier(.2,.7,.2,1) .35s both">
+      <div style="position:absolute;inset:auto 10% -40px 10%;height:120px;background:radial-gradient(ellipse at center,rgba(232,115,26,.35),transparent 70%);filter:blur(30px)"></div>
+      <div style="position:relative;border-radius:16px;border:1px solid rgba(255,255,255,.12);background:#1c1a17;box-shadow:0 40px 120px rgba(0,0,0,.6);overflow:hidden">
+        <div style="height:40px;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid rgba(255,255,255,.08);background:#14120f"><span style="width:10px;height:10px;border-radius:50%;background:#3a3631"></span><span style="width:10px;height:10px;border-radius:50%;background:#3a3631"></span><span style="width:10px;height:10px;border-radius:50%;background:#3a3631"></span></div>
+        <img src="screenshots/portfolio.png" alt="MSCD portfolio overview" style="display:block;width:100%;height:auto">
+      </div>
+      <div style="position:absolute;left:-18px;top:120px;background:#f2eee7;color:#1c1a17;border-radius:12px;padding:12px 14px;box-shadow:0 20px 50px rgba(0,0,0,.45);animation:up .8s ease .9s both;min-width:200px"><div style="font-weight:600;font-size:15px">16 items due after the audit</div><div style="font-size:14px;color:#4a453d;margin-top:2px">Flagged the day they were created.</div></div>
+      <div style="position:absolute;right:-14px;top:260px;background:#f2eee7;color:#1c1a17;border-radius:12px;padding:12px 14px;box-shadow:0 20px 50px rgba(0,0,0,.45);animation:up .8s ease 1.1s both;min-width:210px"><div style="font-weight:600;font-size:15px;color:#bf2f25">Evidence file missing</div><div style="font-size:14px;color:#4a453d;margin-top:2px">Control held at Partial until re-linked.</div></div>
+    </div>
+  </section>
+
+  <!-- frameworks -->
+  <section id="frameworks" style="max-width:1200px;margin:0 auto;padding:110px 28px 20px">
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:60px;align-items:end">
+      <div><div style="font-size:14px;font-weight:600;color:#e8731a;letter-spacing:.02em">One engine, many frameworks</div><h2 style="margin:12px 0 0;font-size:40px;line-height:1.1;letter-spacing:-.025em;font-weight:600">Harmonized Structure as the backbone.</h2></div>
+      <p style="margin:0;font-size:17px;line-height:1.6;color:#b9b2a6">Four standards, one chain. A multi-standard organisation stops doing the same work four times.</p>
+    </div>
+    <div style="position:relative;margin-top:44px;border-radius:18px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.025);overflow:hidden;padding:36px 28px">
+      <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:36px 36px;pointer-events:none"></div>
+      <svg viewBox="0 0 1100 320" width="100%" style="display:block;overflow:visible;position:relative">
+        <defs><linearGradient id="gEng" x1="0" x2="1"><stop offset="0" stop-color="#e8731a"></stop><stop offset="1" stop-color="#c25c0f"></stop></linearGradient></defs>
+        <g stroke-width="2" fill="none" stroke-linecap="round">
+          <path d="M210 60 C 330 60, 330 160, 440 160" stroke="rgba(232,115,26,.55)"></path>
+          <path d="M210 125 C 330 125, 330 160, 440 160" stroke="rgba(42,88,184,.6)"></path>
+          <path d="M210 195 C 330 195, 330 160, 440 160" stroke="rgba(31,138,138,.6)"></path>
+          <path d="M210 260 C 330 260, 330 160, 440 160" stroke="rgba(122,79,211,.6)"></path>
+          <path d="M210 60 C 330 60, 330 160, 440 160" stroke="#e8731a" stroke-dasharray="6 394" style="animation:orbit 4s linear infinite"></path>
+          <path d="M210 125 C 330 125, 330 160, 440 160" stroke="#93b3f5" stroke-dasharray="6 394" style="animation:orbit 4s linear infinite;animation-delay:1s"></path>
+          <path d="M210 195 C 330 195, 330 160, 440 160" stroke="#5fcfcf" stroke-dasharray="6 394" style="animation:orbit 4s linear infinite;animation-delay:2s"></path>
+          <path d="M210 260 C 330 260, 330 160, 440 160" stroke="#b79cf0" stroke-dasharray="6 394" style="animation:orbit 4s linear infinite;animation-delay:3s"></path>
+          <path d="M640 160 H 1080" stroke="rgba(255,255,255,.18)"></path>
+          <path d="M640 160 H 1080" stroke="#e8731a" stroke-dasharray="40 400" style="animation:orbit 3s linear infinite"></path>
+        </g>
+        <g font-family="IBM Plex Sans, sans-serif" font-size="15" fill="#f2eee7">
+          <g><rect x="0" y="36" width="210" height="48" rx="12" fill="rgba(232,115,26,.12)" stroke="rgba(232,115,26,.5)"></rect><circle cx="22" cy="60" r="5" fill="#e8731a"></circle><text x="38" y="65" font-weight="600">ISO/IEC 27001</text><text x="150" y="65" fill="#b9b2a6" font-size="13">2022</text></g>
+          <g><rect x="0" y="101" width="210" height="48" rx="12" fill="rgba(42,88,184,.12)" stroke="rgba(42,88,184,.5)"></rect><circle cx="22" cy="125" r="5" fill="#2a58b8"></circle><text x="38" y="130" font-weight="600">ISO 9001</text><text x="112" y="130" fill="#b9b2a6" font-size="13">2015 to 2026</text></g>
+          <g><rect x="0" y="171" width="210" height="48" rx="12" fill="rgba(31,138,138,.12)" stroke="rgba(31,138,138,.5)"></rect><circle cx="22" cy="195" r="5" fill="#1f8a8a"></circle><text x="38" y="200" font-weight="600">ISO 22301</text><text x="150" y="200" fill="#b9b2a6" font-size="13">2019</text></g>
+          <g><rect x="0" y="236" width="210" height="48" rx="12" fill="rgba(122,79,211,.12)" stroke="rgba(122,79,211,.5)"></rect><circle cx="22" cy="260" r="5" fill="#7a4fd3"></circle><text x="38" y="265" font-weight="600">ISO 37001</text><text x="150" y="265" fill="#b9b2a6" font-size="13">2025</text></g>
+          <g><rect x="440" y="104" width="200" height="112" rx="16" fill="url(#gEng)"></rect><text x="540" y="156" text-anchor="middle" font-weight="600" font-size="18">Harmonized Structure</text><text x="540" y="180" text-anchor="middle" font-size="14" fill="rgba(255,255,255,.9)">Clauses 4 to 10, modelled once</text></g>
+          <g font-size="14" fill="#cfc7b8" text-anchor="middle">
+            <g><circle cx="700" cy="160" r="9" fill="#0f0e0c" stroke="#e8731a" stroke-width="2.5"></circle><text x="700" y="190">Risk</text></g>
+            <g><circle cx="776" cy="160" r="9" fill="#0f0e0c" stroke="#e8731a" stroke-width="2.5"></circle><text x="776" y="190">Control</text></g>
+            <g><circle cx="852" cy="160" r="9" fill="#0f0e0c" stroke="#e8731a" stroke-width="2.5"></circle><text x="852" y="190">Document</text></g>
+            <g><circle cx="928" cy="160" r="9" fill="#e8731a" stroke="#e8731a" stroke-width="2.5"></circle><text x="928" y="190">Evidence</text></g>
+            <g><circle cx="1004" cy="160" r="9" fill="#0f0e0c" stroke="#e8731a" stroke-width="2.5"></circle><text x="1004" y="190">Finding</text></g>
+            <g><circle cx="1080" cy="160" r="9" fill="#0f0e0c" stroke="#e8731a" stroke-width="2.5"></circle><text x="1080" y="190">Action</text></g>
+            <text x="890" y="122" fill="#b9b2a6" font-size="14" font-weight="600">One traceability chain</text>
+          </g>
+        </g>
+      </svg>
+    </div>
+  </section>
+
+  <!-- feature 1: traceability -->
+  <section style="max-width:1200px;margin:0 auto;padding:110px 28px 0;position:relative"><div style="position:absolute;left:28px;right:28px;top:0;height:1px;background:linear-gradient(90deg,transparent,rgba(232,115,26,.45),transparent)"></div>
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:56px;align-items:center">
+      <div>
+        <div style="font-size:14px;font-weight:600;color:#e8731a;letter-spacing:.02em">Traceability test</div>
+        <h2 style="margin:12px 0 0;font-size:36px;line-height:1.12;letter-spacing:-.025em;font-weight:600">Pick any risk. Watch the auditor's question answered node by node.</h2>
+        <p style="margin:18px 0 0;font-size:16px;line-height:1.6;color:#b9b2a6">Live records, colour-coded by status. Every unready node names the holder and the due date.</p>
+        <div style="margin-top:22px;display:flex;flex-direction:column;gap:10px;font-size:14.5px;color:#e6e0d4">
+          <div style="display:flex;gap:10px;align-items:center"><span style="width:8px;height:8px;border-radius:50%;background:#5fcf90"></span>Ready: relation exists and evidence is from this cycle</div>
+          <div style="display:flex;gap:10px;align-items:center"><span style="width:8px;height:8px;border-radius:50%;background:#e8bd4a"></span>Pending: assigned, due before the audit</div>
+          <div style="display:flex;gap:10px;align-items:center"><span style="width:8px;height:8px;border-radius:50%;background:#f5776c"></span>Broken: overdue, missing, or no mandatory relation</div>
+        </div>
+      </div>
+      <div style="border-radius:14px;border:1px solid rgba(255,255,255,.12);overflow:hidden;background:#1c1a17;box-shadow:0 30px 80px rgba(0,0,0,.5)"><img src="screenshots/audit.png" alt="Audit readiness with traceability test" style="display:block;width:100%;height:auto"></div>
+    </div>
+  </section>
+
+  <!-- feature 2: accountability -->
+  <section style="max-width:1200px;margin:0 auto;padding:110px 28px 0;position:relative"><div style="position:absolute;left:28px;right:28px;top:0;height:1px;background:linear-gradient(90deg,transparent,rgba(232,115,26,.45),transparent)"></div>
+    <div style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:56px;align-items:center">
+      <div style="border-radius:14px;border:1px solid rgba(255,255,255,.12);overflow:hidden;background:#1c1a17;box-shadow:0 30px 80px rgba(0,0,0,.5)"><img src="screenshots/chain.png" alt="Chain stage drill-down with pending per person" style="display:block;width:100%;height:auto"></div>
+      <div>
+        <div style="font-size:14px;font-weight:600;color:#e8731a;letter-spacing:.02em">Named accountability</div>
+        <h2 style="margin:12px 0 0;font-size:36px;line-height:1.12;letter-spacing:-.025em;font-weight:600">What is still pending, who holds it, and when is it due.</h2>
+        <p style="margin:18px 0 0;font-size:16px;line-height:1.6;color:#b9b2a6">One screen. Items due after the audit are flagged the moment they are created.</p>
+        <div style="margin-top:22px;display:flex;flex-direction:column;gap:12px;font-size:14.5px;color:#e6e0d4">
+          <div style="display:flex;gap:12px;align-items:center"><span style="width:30px;height:30px;border-radius:9px;background:rgba(232,115,26,.14);color:#e8731a;display:inline-flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"></path></svg></span>A named person on every pending item, never just a role</div>
+          <div style="display:flex;gap:12px;align-items:center"><span style="width:30px;height:30px;border-radius:9px;background:rgba(232,115,26,.14);color:#e8731a;display:inline-flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4"></path></svg></span>Reminders sent and logged by the platform</div>
+          <div style="display:flex;gap:12px;align-items:center"><span style="width:30px;height:30px;border-radius:9px;background:rgba(232,115,26,.14);color:#e8731a;display:inline-flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4"></path></svg></span>After-audit flag recalculated when the audit date moves</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- deployment -->
+  <section id="deploy" style="max-width:1200px;margin:0 auto;padding:110px 28px 0">
+    <div style="text-align:center;max-width:720px;margin:0 auto"><div style="font-size:14px;font-weight:600;color:#e8731a;letter-spacing:.02em">Deployment and data residency</div><h2 style="margin:12px 0 0;font-size:40px;line-height:1.1;letter-spacing:-.025em;font-weight:600">Your cloud, your data centre, your repository.</h2><p style="margin:16px 0 0;font-size:16px;line-height:1.6;color:#b9b2a6">Who operates it and where the bytes live is your call.</p></div>
+    <div data-dp-stage="1" onMouseMove="{{ dp.move }}" onMouseLeave="{{ dp.leave }}" style="position:relative;margin-top:44px;border-radius:18px;border:1px solid rgba(255,255,255,.1);background:#0c0b09;overflow:hidden;padding:0;height:600px">
+      <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none"><div style="position:absolute;left:-10%;bottom:-60%;width:60%;height:120%;border-radius:50%;background:radial-gradient(circle,rgba(42,88,184,.22),transparent 60%);filter:blur(50px);animation:meshB 24s ease-in-out infinite"></div><div style="position:absolute;right:-10%;top:-60%;width:60%;height:120%;border-radius:50%;background:radial-gradient(circle,rgba(232,115,26,.22),transparent 60%);filter:blur(50px);animation:meshA 20s ease-in-out infinite"></div></div>
+      <div style="position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 3px);mix-blend-mode:overlay"></div>
+      <!-- controls -->
+      <div style="position:absolute;left:24px;top:22px;z-index:5;display:flex;gap:10px;align-items:center;flex-wrap:wrap;max-width:46%">
+        <div style="display:inline-flex;border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:3px;background:rgba(0,0,0,.35);backdrop-filter:blur(6px)">
+          <button onClick="{{ dp.setSaas }}" style="height:30px;padding:0 14px;border-radius:999px;border:0;background:{{ dp.saasBg }};color:{{ dp.saasFg }};font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap">SaaS</button>
+          <button onClick="{{ dp.setOnprem }}" style="height:30px;padding:0 14px;border-radius:999px;border:0;background:{{ dp.onBg }};color:{{ dp.onFg }};font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap">On-premise</button>
+        </div>
+        
+      </div>
+      <div style="position:absolute;right:24px;top:22px;z-index:5;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:50%">
+        <sc-for list="{{ dp.routes }}" as="r" hint-placeholder-count="3"><button onClick="{{ r.go }}" style="height:30px;padding:0 12px;border-radius:999px;border:1px solid {{ r.bd }};background:{{ r.bg }};color:{{ r.fg }};font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:all .2s;backdrop-filter:blur(6px);white-space:nowrap"><span style="width:7px;height:7px;border-radius:50%;background:{{ r.dot }}"></span>{{ r.label }}</button></sc-for>
+      </div>
+      <!-- 3D stage -->
+      <div style="position:absolute;inset:0;perspective:2000px;perspective-origin:50% 30%;container-type:inline-size">
+        <div style="position:absolute;left:50%;top:50%;width:1100px;height:520px;margin-left:-550px;margin-top:-270px;transform-style:preserve-3d;transform:scale(clamp(0.6, calc(100cqw / 1180px), 1)) rotateX({{ dp.rx }}deg) rotateZ({{ dp.rz }}deg);transition:transform .25s ease-out">
+          <!-- floor grid -->
+          <div style="position:absolute;inset:-200px;background-image:linear-gradient(rgba(232,115,26,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(232,115,26,.10) 1px,transparent 1px);background-size:60px 60px;transform:translateZ(-2px);mask-image:radial-gradient(ellipse at center,black 35%,transparent 72%);-webkit-mask-image:radial-gradient(ellipse at center,black 35%,transparent 72%)"></div>
+          <div style="position:absolute;inset:-200px;background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);background-size:12px 12px;transform:translateZ(-3px);mask-image:radial-gradient(ellipse at center,black 25%,transparent 60%);-webkit-mask-image:radial-gradient(ellipse at center,black 25%,transparent 60%)"></div>
+          <!-- links -->
+          <svg viewBox="0 0 1100 520" width="1100" height="520" style="position:absolute;left:0;top:0;overflow:visible;transform:translateZ(2px)">
+            <defs><filter id="neon" filterUnits="userSpaceOnUse" x="-50" y="-50" width="1200" height="620"><feGaussianBlur stdDeviation="3" result="b"></feGaussianBlur><feMerge><feMergeNode in="b"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter></defs>
+            <g fill="none" stroke-width="2.5" stroke-linecap="round">
+              <path d="M200 228 H470" stroke="#5fcf90" stroke-opacity="{{ dp.o_pass }}" filter="url(#neon)"></path><path d="M630 228 H900" stroke="#5fcf90" stroke-opacity="{{ dp.o_pass }}" filter="url(#neon)"></path>
+              <path d="M200 268 H470" stroke="#b79cf0" stroke-opacity="{{ dp.o_link }}" filter="url(#neon)"></path><path d="M630 268 H900" stroke="#b79cf0" stroke-opacity="{{ dp.o_link }}" stroke-dasharray="5 7" filter="url(#neon)"></path>
+              <path d="M120 290 C 120 430, 980 430, 980 290" stroke="#f2eee7" stroke-opacity="{{ dp.o_zero }}" filter="url(#neon)"></path>
+            </g>
+            <g font-family="IBM Plex Sans, sans-serif" font-size="13" text-anchor="middle" font-weight="600">
+              <text x="335" y="218" fill="#5fcf90" opacity="{{ dp.o_pass }}">Pass-through</text><text x="765" y="218" fill="#5fcf90" opacity="{{ dp.o_pass }}">Checksum in transit</text>
+              <text x="335" y="290" fill="#b79cf0" opacity="{{ dp.o_link }}">Link</text><text x="765" y="290" fill="#b79cf0" opacity="{{ dp.o_link }}">Reference and version</text>
+              <text x="550" y="420" fill="#f2eee7" opacity="{{ dp.o_zero }}">Zero-transit, only metadata reaches MSCD</text>
+            </g>
+          </svg>
+          <!-- packets -->
+          <sc-for list="{{ dp.packets }}" as="pk" hint-placeholder-count="6"><div style="position:absolute;left:0;top:0;width:10px;height:10px;margin:-5px;border-radius:50%;background:{{ pk.color }};box-shadow:0 0 12px {{ pk.color }},0 0 24px {{ pk.color }};offset-path:path('{{ pk.path }}');animation:travel {{ pk.dur }}s linear infinite;animation-delay:{{ pk.delay }}s;opacity:{{ pk.o }};transform:translateZ(4px)"></div></sc-for>
+          <!-- tiles -->
+
+          <div style="position:absolute;left:120px;top:246px;width:0;height:0;transform-style:preserve-3d">
+            <div style="position:absolute;left:-70px;top:-20px;width:140px;height:40px;border-radius:50%;background:radial-gradient(ellipse,#f2eee766,transparent 70%);filter:blur(6px);transform:translateZ(0)"></div>
+            <div onMouseEnter="{{ dp.hover_browser }}" onMouseLeave="{{ dp.unhover }}" style="position:absolute;left:-110px;bottom:0;width:220px;transform-origin:50% 100%;transform:rotateZ({{ dp.urz }}deg) rotateX({{ dp.urx }}deg) translateZ({{ dp.z_browser }}px);transition:transform .35s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column-reverse;align-items:center;gap:10px;cursor:default">
+              <div style="width:80px;height:80px;border-radius:22px;background:#1f1c18;border:1px solid #f2eee788;box-shadow:0 18px 40px rgba(0,0,0,.55),0 0 0 6px #f2eee714,0 0 46px #f2eee744;display:flex;align-items:center;justify-content:center;color:#f2eee7;position:relative;overflow:hidden">
+                <div style="position:absolute;inset:0;background:linear-gradient(160deg,rgba(255,255,255,.18),transparent 55%)"></div>
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="position:relative"><path d="M3 5h18v11H3zM8 20h8M12 16v4M7 9h10M7 12h6"></path></svg>
+              </div>
+              <div style="text-align:center"><div style="font-size:13px;font-weight:600;color:#f2eee7">Your people</div><div style="font-size:17px;font-weight:600;color:#f2eee7;margin-top:2px;white-space:nowrap">Browser</div><div style="font-size:14px;color:#b9b2a6;margin-top:2px;white-space:nowrap">SSO, MFA, per-system roles</div></div>
+            </div>
+          </div>
+
+          <div style="position:absolute;left:550px;top:246px;width:0;height:0;transform-style:preserve-3d">
+            <div style="position:absolute;left:-90px;top:-26px;width:180px;height:52px;border-radius:50%;background:radial-gradient(ellipse,#ffd0a866,transparent 70%);filter:blur(6px);transform:translateZ(0)"></div>
+            <div onMouseEnter="{{ dp.hover_mscd }}" onMouseLeave="{{ dp.unhover }}" style="position:absolute;left:-110px;bottom:0;width:220px;transform-origin:50% 100%;transform:rotateZ({{ dp.urz }}deg) rotateX({{ dp.urx }}deg) translateZ({{ dp.z_mscd }}px);transition:transform .35s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column-reverse;align-items:center;gap:10px;cursor:default">
+              <div style="width:96px;height:96px;border-radius:26px;background:linear-gradient(160deg,#f08a3a,#c25c0f);border:1px solid #ffd0a888;box-shadow:0 18px 40px rgba(0,0,0,.55),0 0 0 6px #ffd0a814,0 0 46px #ffd0a844;display:flex;align-items:center;justify-content:center;color:#ffd0a8;position:relative;overflow:hidden">
+                <div style="position:absolute;inset:0;background:linear-gradient(160deg,rgba(255,255,255,.18),transparent 55%)"></div>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="position:relative"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM12 8v5M9.5 10.5L12 13l2.5-2.5"></path></svg>
+              </div>
+              <div style="text-align:center"><div style="font-size:13px;font-weight:600;color:#ffd0a8">{{ dp.mscdKicker }}</div><div style="font-size:20px;font-weight:600;color:#f2eee7;margin-top:2px;white-space:nowrap">MSCD</div><div style="font-size:14px;color:#b9b2a6;margin-top:2px;white-space:nowrap">{{ dp.mscdSub }}</div></div>
+            </div>
+          </div>
+
+          <div style="position:absolute;left:980px;top:246px;width:0;height:0;transform-style:preserve-3d">
+            <div style="position:absolute;left:-70px;top:-20px;width:140px;height:40px;border-radius:50%;background:radial-gradient(ellipse,#93b3f566,transparent 70%);filter:blur(6px);transform:translateZ(0)"></div>
+            <div onMouseEnter="{{ dp.hover_repo }}" onMouseLeave="{{ dp.unhover }}" style="position:absolute;left:-110px;bottom:0;width:220px;transform-origin:50% 100%;transform:rotateZ({{ dp.urz }}deg) rotateX({{ dp.urx }}deg) translateZ({{ dp.z_repo }}px);transition:transform .35s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column-reverse;align-items:center;gap:10px;cursor:default">
+              <div style="width:80px;height:80px;border-radius:22px;background:#121a2e;border:1px solid #93b3f588;box-shadow:0 18px 40px rgba(0,0,0,.55),0 0 0 6px #93b3f514,0 0 46px #93b3f544;display:flex;align-items:center;justify-content:center;color:#93b3f5;position:relative;overflow:hidden">
+                <div style="position:absolute;inset:0;background:linear-gradient(160deg,rgba(255,255,255,.18),transparent 55%)"></div>
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="position:relative"><path d="M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zM4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"></path></svg>
+              </div>
+              <div style="text-align:center"><div style="font-size:13px;font-weight:600;color:#93b3f5">Your repository</div><div style="font-size:17px;font-weight:600;color:#f2eee7;margin-top:2px;white-space:nowrap">Files stay here</div><div style="font-size:14px;color:#b9b2a6;margin-top:2px;white-space:nowrap">SharePoint, Drive, SMB, S3</div></div>
+            </div>
+          </div>
+          <!-- region marker under MSCD -->
+        </div>
+      </div>
+      <!-- caption -->
+      <div style="position:absolute;left:24px;right:24px;bottom:22px;z-index:5;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;pointer-events:none">
+        <div style="max-width:600px"><div style="font-size:16px;font-weight:600;color:#f2eee7">{{ dp.routeTitle }}</div><div style="font-size:14.5px;color:#b9b2a6;line-height:1.5;margin-top:4px">{{ dp.routeText }}</div></div>
+        
+      </div>
+    </div>
+  </section>
+
+  <!-- modules -->
+  <section id="modules" style="max-width:1200px;margin:0 auto;padding:110px 28px 0">
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px">
+      <div class="ld-card" style="border:1px solid rgba(255,255,255,.1);border-radius:14px;overflow:hidden;background:rgba(255,255,255,.03)"><img src="screenshots/phases.png" alt="Implementation phase board" style="display:block;width:100%;height:210px;object-fit:cover;object-position:left top;border-bottom:1px solid rgba(255,255,255,.08)"><div style="padding:20px"><div style="font-size:13.5px;font-weight:600;color:#e8731a">Implementation</div><div style="font-size:20px;font-weight:600;margin-top:6px">Build the system</div><p style="margin:8px 0 0;color:#b9b2a6;font-size:14px;line-height:1.6">Gate enforcement keeps the SoA honest before anything else opens.</p></div></div>
+      <div class="ld-card" style="border:1px solid rgba(255,255,255,.1);border-radius:14px;overflow:hidden;background:rgba(255,255,255,.03)"><img src="screenshots/goldenthread.png" alt="Golden Thread Viewer" style="display:block;width:100%;height:210px;object-fit:cover;object-position:left top;border-bottom:1px solid rgba(255,255,255,.08)"><div style="padding:20px"><div style="font-size:13.5px;font-weight:600;color:#e8731a">Audit</div><div style="font-size:20px;font-weight:600;margin-top:6px">Go through the audit</div><p style="margin:8px 0 0;color:#b9b2a6;font-size:14px;line-height:1.6">Any auditor question answered from a single identifier.</p></div></div>
+      <div class="ld-card" style="border:1px solid rgba(255,255,255,.1);border-radius:14px;overflow:hidden;background:rgba(255,255,255,.03)"><img src="screenshots/timeline.png" alt="Certification timeline" style="display:block;width:100%;height:210px;object-fit:cover;object-position:left top;border-bottom:1px solid rgba(255,255,255,.08)"><div style="padding:20px"><div style="font-size:13.5px;font-weight:600;color:#e8731a">Surveillance</div><div style="font-size:20px;font-weight:600;margin-top:6px">Keep the certificate</div><p style="margin:8px 0 0;color:#b9b2a6;font-size:14px;line-height:1.6">Evidence age and quiet decay caught between audits.</p></div></div>
+    </div>
+  </section>
+
+  <!-- cta -->
+  <section style="max-width:1200px;margin:0 auto;padding:120px 28px 90px">
+    <div style="position:relative;border-radius:20px;border:1px solid rgba(255,255,255,.12);padding:64px 40px;text-align:center;overflow:hidden;background:#151310">
+      <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none"><div style="position:absolute;left:-10%;bottom:-70%;width:70%;height:140%;border-radius:50%;background:radial-gradient(circle,rgba(232,115,26,.35),transparent 60%);filter:blur(40px);animation:meshA 16s ease-in-out infinite"></div><div style="position:absolute;right:-10%;top:-70%;width:60%;height:140%;border-radius:50%;background:radial-gradient(circle,rgba(122,79,211,.25),transparent 60%);filter:blur(50px);animation:meshC 20s ease-in-out infinite"></div></div>
+      <h2 style="position:relative;margin:0;font-size:40px;line-height:1.1;letter-spacing:-.025em;font-weight:600">Zero Major NC at the first certification audit.</h2>
+      <p style="position:relative;margin:14px auto 0;max-width:520px;font-size:17px;color:#b9b2a6;line-height:1.6">Start with one management system. Bring the others onto the same chain.</p>
+      <div style="position:relative;display:flex;justify-content:center;gap:12px;margin-top:30px"><a href="MSCD Login.dc.html" style="color:#0f0e0c;background:#e8731a;font-size:15px;font-weight:600;padding:14px 22px;border-radius:11px">Sign in to MSCD</a><a href="MSCD User Guide.dc.html" style="color:#f2eee7;font-size:15px;font-weight:500;padding:14px 22px;border-radius:11px;border:1px solid rgba(255,255,255,.16)">Read the user guide</a></div>
+    </div>
+  </section>
+
+  <footer style="border-top:1px solid rgba(255,255,255,.08)">
+    <div style="max-width:1200px;margin:0 auto;padding:28px;display:flex;justify-content:space-between;align-items:center;gap:20px;font-size:14px;color:#8f877a;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:10px"><div style="display:flex"><img src="assets/cyberlentera-logo.png" alt="CyberLentera" style="height:24px;display:block;filter:brightness(0) invert(1)"></div><span>CyberLentera, Management System Compliance Dashboard</span></div>
+      <div style="display:flex;gap:22px;flex:none;white-space:nowrap"><a href="#" style="color:#8f877a">Security</a><a href="#" style="color:#8f877a">Privacy</a><a href="#" style="color:#8f877a">Status</a><a href="MSCD Login.dc.html" style="color:#8f877a">Sign in</a></div>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { mode:'saas', route:'all', hover:null, rx:26, rz:0 };
+
+  renderVals(){
+    const st=this.state; const on=st.mode==='onprem'; const r=st.route;
+    const o=(k)=>r==='all'||r===k?1:0.14;
+    const chip=(id,label,dot)=>{ const act=r===id; return {label,dot,go:()=>this.setState(s=>({route:s.route===id?'all':id})),bd:act?dot:'rgba(255,255,255,.14)',bg:act?dot+'22':'rgba(0,0,0,.35)',fg:act?'#f2eee7':'#b9b2a6'}; };
+    const P1='M200 228 H470', P2='M630 228 H900', L1='M200 268 H470', L2='M630 268 H900', Z='M120 290 C 120 430, 980 430, 980 290';
+    const packets=[{path:P1,color:'#5fcf90',dur:2.2,delay:0,o:o('pass')},{path:P2,color:'#5fcf90',dur:2.2,delay:1.1,o:o('pass')},{path:P1,color:'#5fcf90',dur:2.2,delay:0.7,o:o('pass')},{path:L1,color:'#b79cf0',dur:2.8,delay:0.4,o:o('link')},{path:L2,color:'#b79cf0',dur:2.8,delay:1.8,o:o('link')},{path:Z,color:'#f2eee7',dur:4.5,delay:0,o:o('zero')},{path:Z,color:'#f2eee7',dur:4.5,delay:2.2,o:o('zero')}];
+    const texts={all:['Three ways a file can travel','Pick a route to see which bytes reach MSCD. Structured data (registers, statuses, relations) always lives in MSCD; file contents never have to.'],pass:['Pass-through','Uploaded through MSCD and forwarded to your repository. The checksum is computed in transit and nothing is stored on the way.'],link:['Link','You pick a file that already exists in your repository. MSCD records the reference, pins the version and checks it on a schedule.'],zero:['Zero-transit','Your browser uploads straight to your repository with your own credentials. MSCD receives metadata only, so your files never leave your tenant.']};
+    const move=(e)=>{ const el=e.currentTarget; const b=el.getBoundingClientRect(); const px=(e.clientX-b.left)/b.width-0.5, py=(e.clientY-b.top)/b.height-0.5; this.setState({rx:26+py*-4,rz:px*4}); };
+    return { dp:{
+      rx:st.rx.toFixed(2), rz:st.rz.toFixed(2), move, leave:()=>this.setState({rx:26,rz:0,hover:null}), urx:(-st.rx).toFixed(2), urz:(-st.rz).toFixed(2),
+      setSaas:()=>this.setState({mode:'saas'}), setOnprem:()=>this.setState({mode:'onprem'}),
+      saasBg:on?'transparent':'#e8731a', saasFg:on?'#b9b2a6':'#0f0e0c', onBg:on?'#e8731a':'transparent', onFg:on?'#0f0e0c':'#b9b2a6',
+      modeNote:on?'Your servers, signed offline bundles':'Isolated tenant, region Jakarta',
+      mscdKicker:on?'Your data centre':'CyberLentera cloud', mscdSub:on?'Kubernetes or Compose, air-gapped':'Schema per tenant, per-tenant keys',
+      region:on?'ON-PREMISE, AIR-GAPPED OK':'SAAS, ID-JAKARTA',
+      routes:[chip('pass','Pass-through','#5fcf90'),chip('link','Link','#b79cf0'),chip('zero','Zero-transit','#f2eee7')],
+      o_pass:o('pass'), o_link:o('link'), o_zero:o('zero'), packets,
+      routeTitle:texts[r][0], routeText:texts[r][1],
+      hover_browser:()=>this.setState({hover:'browser'}), hover_mscd:()=>this.setState({hover:'mscd'}), hover_repo:()=>this.setState({hover:'repo'}), unhover:()=>this.setState({hover:null}),
+      z_browser:st.hover==='browser'?44:14, z_mscd:st.hover==='mscd'?60:30, z_repo:st.hover==='repo'?44:14,
+    } };
+  }
+}
+</script>
+</body>
+</html>
