@@ -73,6 +73,21 @@ describe('pino redaction with the F.12 paths', () => {
     expect(line.body).toEqual({ password: REDACTED, clientSecret: REDACTED, code: REDACTED, mfa_secret_sealed: REDACTED, name: 'kept' });
   });
 
+  it('censors secrets at the top level of a log object too', () => {
+    const lines: string[] = [];
+    const stream = new Writable({
+      write(chunk, _encoding, callback) {
+        lines.push(chunk.toString());
+        callback();
+      },
+    });
+    const logger = pino({ redact: { paths: [...LOG_REDACT_PATHS], censor: REDACTED } }, stream);
+    logger.warn({ password: 'Mscd-Demo-2026!', clientSecret: 'kc-secret', code: 'oidc-code', token: 't', refreshToken: 'r', context: 'kept' }, 'sign-in');
+    const line = JSON.parse(lines[0]!);
+    expect(line).toMatchObject({ password: REDACTED, clientSecret: REDACTED, code: REDACTED, token: REDACTED, refreshToken: REDACTED, context: 'kept' });
+    expect(lines[0]).not.toContain('Mscd-Demo-2026!');
+  });
+
   it('serializes requests with a redacted URL and no separate query object', () => {
     expect(
       serializeRequest({ id: 'r', method: 'GET', url: '/a?token=x', query: { token: 'x' }, params: {}, headers: {}, remoteAddress: '1.2.3.4' }),

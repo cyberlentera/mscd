@@ -23,6 +23,16 @@ export const LOG_REDACT_PATHS: readonly string[] = [
   '*.certificatePem',
   '*.token',
   '*.code',
+  // The same keys at the top level of a log object (logger.warn({ password })): `*.x` matches one level down only.
+  'password',
+  'secret',
+  'clientSecret',
+  'refreshToken',
+  'sealedBlob',
+  'privateKeyPem',
+  'certificatePem',
+  'token',
+  'code',
 ];
 
 /** F.12: values of these query parameters never reach a log line. */
