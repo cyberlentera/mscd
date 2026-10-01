@@ -6,7 +6,7 @@ import { checkNewPassword } from '../../src/auth/ResetPasswordPage';
 import { emailDomain } from '../../src/auth/LoginPage';
 import { groupSecret, qrPath } from '../../src/auth/QrCode';
 import { looksLikeEmail } from '../../src/auth/api';
-import { readStep, storeReturnTo, storeStep, takeReturnTo } from '../../src/auth/routes';
+import { markStepReplacing, readStep, storeReturnTo, storeStep, takeReturnTo } from '../../src/auth/routes';
 import { decideBoot } from '../../src/auth/session';
 import { ME, PROFILE, fakeEnv, json, makeApi, memoryStore, problem } from './helpers';
 
@@ -66,6 +66,26 @@ describe('decideBoot', () => {
     expect(await decideBoot({ api, pathname: '/login/mfa', search: '', store })).toEqual({ kind: 'auth', page: 'mfa', profile: PROFILE, enrolMode: 'enrol', guest: true });
     await api.verifyMfa({ code: '123456' });
     expect(calls[1].headers['x-csrf-token']).toBe('pending-token-0123456789');
+  });
+
+  it('a reloaded enrolment page knows that the step replaces a factor, and the start still sends no proof', async () => {
+    const { api, calls } = makeApi({
+      'GET /api/v1/system/profile': json(PROFILE),
+      'POST /api/v1/auth/mfa/enrol/start': json({ secret: 'JBSWY3DPEHPK3PXP', otpauthUrl: 'otpauth://totp/MSCD:x?secret=JBSWY3DPEHPK3PXP', issuer: 'MSCD', account: 'x' }),
+    });
+    const store = memoryStore();
+    storeStep(store, { stage: 'enrol', csrfToken: 'pending-token-0123456789' });
+    markStepReplacing(store);
+    expect(await decideBoot({ api, pathname: '/login/enrol', search: '', store })).toEqual({ kind: 'auth', page: 'enrol', profile: PROFILE, enrolMode: 'enrol', replacing: true });
+    await api.enrolStart({});
+    expect(calls.map((c) => [c.path, c.headers['x-csrf-token'], c.body])).toEqual([
+      ['/api/v1/system/profile', undefined, undefined],
+      ['/api/v1/auth/mfa/enrol/start', 'pending-token-0123456789', {}],
+    ]);
+    // A new sign-in through an identity provider is a new step: it does not replace a factor yet.
+    const d = await decideBoot({ api, pathname: '/login/enrol', search: '', store, csrfFromFragment: 'handed-over-token-0123456789' });
+    expect(d).toEqual({ kind: 'auth', page: 'enrol', profile: PROFILE, enrolMode: 'enrol' });
+    expect(readStep(store)).toEqual({ stage: 'enrol', csrfToken: 'handed-over-token-0123456789' });
   });
 
   it('takes the CSRF token an identity provider callback handed over in the fragment', async () => {

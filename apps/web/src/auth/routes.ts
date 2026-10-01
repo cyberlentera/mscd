@@ -166,6 +166,12 @@ export interface PendingStep {
   csrfToken: string;
   /** Set for guest sign-ins (F.14). */
   guest?: boolean;
+  /**
+   * Enrolment only: the page switched to its current-code form because the account has a confirmed factor (WP-11),
+   * so this enrolment replaces that factor and the server signs the other sessions out. Kept so the page still
+   * says so after a reload.
+   */
+  replacing?: boolean;
 }
 
 export function storeStep(store: StorageLike | null, step: PendingStep | null): void {
@@ -178,12 +184,23 @@ export function readStep(store: StorageLike | null): PendingStep | null {
   try {
     const v = JSON.parse(raw) as Partial<PendingStep>;
     if ((v.stage === 'mfa' || v.stage === 'enrol') && typeof v.csrfToken === 'string' && v.csrfToken) {
-      return { stage: v.stage, csrfToken: v.csrfToken, ...(v.guest ? { guest: true } : {}) };
+      return {
+        stage: v.stage,
+        csrfToken: v.csrfToken,
+        ...(v.guest ? { guest: true } : {}),
+        ...(v.stage === 'enrol' && v.replacing === true ? { replacing: true } : {}),
+      };
     }
   } catch {
     // ignore a damaged entry
   }
   return null;
+}
+
+/** Marks the enrolment step kept for this tab as the replacement of a confirmed factor; no step, nothing to mark. */
+export function markStepReplacing(store: StorageLike | null): void {
+  const step = readStep(store);
+  if (step && step.stage === 'enrol' && !step.replacing) storeStep(store, { ...step, replacing: true });
 }
 
 /** An organisation switch that needs a new sign-in (D-26): the accepted methods and the organisation asked for. */

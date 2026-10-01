@@ -149,10 +149,13 @@ export type IdentityProviderView = z.infer<typeof IdentityProviderView>;
 
 export const IdentityProviderTestResult = named(
   'IdentityProviderTestResult',
-  z.object({ ok: z.boolean(), issuer: z.string(), endpoints: z.record(z.string(), z.string()) }),
-  'Result of a discovery test of a provider',
+  z.object({ ok: z.boolean(), issuer: z.string(), endpoints: z.record(z.string(), z.string()), message: z.string().optional() }),
+  'Result of a provider test: OIDC discovery (issuer and endpoints), or for SAML the configured endpoints and the validity of the signing certificates; message says why a test failed',
   {
-    valid: [{ ok: true, issuer: 'https://sso.example.co.id/realms/mscd', endpoints: { authorization: 'https://sso.example.co.id/realms/mscd/protocol/openid-connect/auth' } }],
+    valid: [
+      { ok: true, issuer: 'https://sso.example.co.id/realms/mscd', endpoints: { authorization: 'https://sso.example.co.id/realms/mscd/protocol/openid-connect/auth' } },
+      { ok: false, issuer: 'https://sso.example.co.id/realms/mscd', endpoints: {}, message: 'The issuer could not be reached' },
+    ],
     invalid: [{ ok: true, issuer: 'x' }],
   },
 );
@@ -192,14 +195,14 @@ export const adminIdpUpdateRoute = defineRoute({
   owner: 'WP-16',
   method: 'PATCH',
   path: '/api/v1/admin/identity-providers/:id',
-  summary: 'Change an identity provider; disabling it revokes its sessions',
+  summary: 'Change an identity provider; disabling it revokes its sessions; 409 when it changed meanwhile',
   auth: 'session',
   permission: 'idp.manage',
   scope: 'org',
   params: IdParams,
   body: IdentityProviderPatch,
   response: IdentityProviderView,
-  errors: [404, 422],
+  errors: [404, 409, 422],
 });
 
 export const adminIdpTestRoute = defineRoute({

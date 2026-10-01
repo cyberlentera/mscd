@@ -115,6 +115,12 @@ export const TEXT = {
     'Confirm it is you first: enter the current code from your authenticator, or your password.',
     'Konfirmasi bahwa ini Anda terlebih dahulu: masukkan kode saat ini dari autentikator, atau kata sandi Anda.',
   ],
+  enrolFactorLead: [
+    'Your account already has an authenticator, added in another sign-in. Enter its current code to replace it, or sign in again and enter that code.',
+    'Akun Anda sudah memiliki autentikator yang ditambahkan pada proses masuk lain. Masukkan kode saat ini dari autentikator tersebut untuk menggantinya, atau masuk kembali dan masukkan kode tersebut.',
+  ],
+  currentCodeWrong: ['The current code is not correct.', 'Kode saat ini tidak benar.'],
+  signInAgain: ['Sign in again', 'Masuk kembali'],
   currentCode: ['Current code', 'Kode saat ini'],
   usePasswordProof: ['Use my password instead', 'Gunakan kata sandi saya'],
   useCodeProof: ['Use my current code instead', 'Gunakan kode saat ini'],
@@ -177,8 +183,8 @@ export const TEXT = {
   haveAccount: ['I already have an MSCD account with a password', 'Saya sudah memiliki akun MSCD dengan kata sandi'],
   choosePassword: ['Choose a password to accept the invitation.', 'Pilih kata sandi untuk menerima undangan.'],
   inviteExistingLead: [
-    'Enter the current password of your MSCD account to accept the invitation. The password stays the same.',
-    'Masukkan kata sandi akun MSCD Anda saat ini untuk menerima undangan. Kata sandi tidak berubah.',
+    'Enter the current password of your MSCD account to accept the invitation. An account without a password would take the value entered here as its new password.',
+    'Masukkan kata sandi akun MSCD Anda saat ini untuk menerima undangan. Akun yang belum memiliki kata sandi akan memakai nilai yang dimasukkan di sini sebagai kata sandi barunya.',
   ],
   accountPassword: ['Current password', 'Kata sandi saat ini'],
   inviteAccept: ['Accept invitation', 'Terima undangan'],

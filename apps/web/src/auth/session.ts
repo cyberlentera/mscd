@@ -11,7 +11,8 @@ import type { AuthPage, StorageLike } from './routes';
 
 export type BootDecision =
   | { kind: 'failed'; error: ApiError; profile: SystemProfile | null }
-  | { kind: 'auth'; page: AuthPage; profile: SystemProfile; enrolMode?: EnrolMode; guest?: boolean; me?: Me }
+  /** `replacing`: the reloaded enrolment step replaces a confirmed factor (routes.ts `PendingStep.replacing`). */
+  | { kind: 'auth'; page: AuthPage; profile: SystemProfile; enrolMode?: EnrolMode; guest?: boolean; replacing?: boolean; me?: Me }
   /** `url`: the address to show before the application renders, or null to keep the current one. */
   | { kind: 'app'; me: Me; profile: SystemProfile; url: string | null };
 
@@ -41,7 +42,11 @@ export async function decideBoot({ api, pathname, search, store, csrfFromFragmen
     const step = readStep(store);
     if (step && step.stage === page) {
       api.client.setCsrfToken(step.csrfToken);
-      return { kind: 'auth', page, profile, enrolMode: 'enrol', ...(step.guest ? { guest: true } : {}) };
+      return {
+        kind: 'auth', page, profile, enrolMode: 'enrol',
+        ...(step.guest ? { guest: true } : {}),
+        ...(step.replacing ? { replacing: true } : {}),
+      };
     }
   }
 

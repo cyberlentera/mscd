@@ -383,13 +383,16 @@ export const authOidcStartRoute = defineRoute({
   owner: 'WP-16',
   method: 'GET',
   path: '/api/v1/auth/oidc/:slug/start',
-  summary: 'Redirect to the OIDC identity provider (authorisation code with PKCE)',
+  summary: 'Redirect to the OIDC identity provider (authorisation code with PKCE); an invalid invitation or a failed discovery redirects to /login?error=<code>',
   auth: 'public',
   params: ProviderParams,
   query: SsoStartQuery,
   response: NoBody,
   status: 302,
-  errors: [404],
+  errors: [404, 429],
+  // Every start writes a sign-in transaction: the same per-address limit as POST /auth/login (F.3) bounds what an
+  // anonymous client can make the server store until the transactions expire.
+  rateLimits: [{ key: 'ip', max: 30, windowSeconds: 900 }],
 });
 
 export const authOidcCallbackRoute = defineRoute({
@@ -496,11 +499,11 @@ export const meIdentityLinkRoute = defineRoute({
   owner: 'WP-16',
   method: 'POST',
   path: '/api/v1/me/identities/:slug/link',
-  summary: 'Link an identity of a provider to the session user (password or TOTP verified in the last 5 minutes)',
+  summary: 'Link an identity of a provider to the session user (password or TOTP verified in the last 5 minutes); sets the browser binding cookie of the flow',
   auth: 'session',
   params: ProviderParams,
   response: IdentityLinkStart,
-  errors: [401, 404],
+  errors: [401, 404, 503],
 });
 
 export const routes: RouteDef[] = [

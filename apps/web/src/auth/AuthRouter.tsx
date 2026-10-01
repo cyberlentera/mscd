@@ -28,6 +28,8 @@ export interface AuthRouterProps {
   onCancelReauth?: () => void;
   /** Enrolment during sign-in, or re-enrolment from an active session. */
   enrolMode?: EnrolMode;
+  /** The enrolment during sign-in replaces a confirmed factor, as the step kept for this tab says after a reload. */
+  enrolReplacing?: boolean;
   /** The second factor belongs to a guest sign-in (F.14). */
   guest?: boolean;
   /** Token of a reset or invitation link, taken from the fragment by the boot. */
@@ -42,7 +44,7 @@ export function AuthRouter(props: AuthRouterProps) {
     case 'mfa':
       return <MfaPage env={env} guest={props.guest} />;
     case 'enrol':
-      return <EnrolPage env={env} mode={props.enrolMode ?? 'enrol'} />;
+      return <EnrolPage env={env} mode={props.enrolMode ?? 'enrol'} replacing={props.enrolReplacing} />;
     case 'forgot':
       return <ForgotPasswordPage env={env} notice={props.notice} />;
     case 'reset':

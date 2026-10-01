@@ -124,11 +124,11 @@ export const meAcceptMembershipRoute = defineRoute({
   owner: 'WP-39',
   method: 'POST',
   path: '/api/v1/me/memberships/:org/accept',
-  summary: 'Accept an invited membership of another organisation',
+  summary: 'Accept an invited membership of another organisation; 422 LIC-USERS when that organisation is at its licence user limit (D-15)',
   auth: 'session',
   params: MembershipParams,
   response: Me,
-  errors: [404],
+  errors: [404, 422],
 });
 
 export const mePreferencesRoute = defineRoute({

@@ -104,8 +104,10 @@ const readInMsOrMetadata = [
   { permission: 'audit_trail.metadata.read', scope: 'org' },
 ] as const;
 /**
- * D.3: `audit_trail.read` in at least one system (MS Manager), or `audit_trail.metadata.read`. These routes name no
- * system, so the F.7 rule (external auditors only on GET routes of the audited system, WP-39) keeps external auditors out.
+ * D.3: `audit_trail.read` in at least one system, or `audit_trail.metadata.read`. These routes name no system, so
+ * only the MS Manager's grant counts: an `any_ms` check never counts the `external_auditor` role
+ * (`evaluatePermissionInAnySystem`, F.7: external auditors only on GET routes of the audited system), and the
+ * external auditor holds no organisation permission. External auditors therefore get 403 on both routes.
  */
 const readInAnyMsOrMetadata = [
   { permission: 'audit_trail.read', scope: 'any_ms' },

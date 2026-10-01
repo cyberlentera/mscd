@@ -257,8 +257,8 @@ describe('authorisation metadata', () => {
         if (c.scope === 'ms') return evaluatePermission(c.permission, inMs) !== null;
         return evaluatePermission(c.permission, ctx) !== null;
       });
-    // F.7: an external auditor passes only GET routes that name a system (the audited one, checked by WP-39), on top
-    // of the permission check.
+    // F.7: an external auditor passes only GET routes that name a system (the audited one), on top of the permission
+    // check (the guard enforces the method rule, WP-39).
     const namesSystem = (id: string) => Boolean(routeById(id).msSource) || /:ms(\/|$)/.test(routeById(id).path);
     const auditorPasses = (id: string, ctx: Parameters<typeof evaluatePermission>[1], inMs: Parameters<typeof evaluatePermission>[1]) =>
       routeById(id).method === 'GET' && namesSystem(id) && passes(id, ctx, inMs);
@@ -270,10 +270,15 @@ describe('authorisation metadata', () => {
       expect(passes(id, manager, base), `${id} MS Manager`).toBe(true);
       expect(passes(id, tenantAdmin, base), `${id} Tenant Admin`).toBe(true);
       expect(passes(id, domainOwner, base), `${id} Domain Owner`).toBe(false);
-      // The any_ms alternative alone would admit the auditor; the route names no system, so F.7 denies them.
       expect(namesSystem(id), `${id} names no system`).toBe(false);
-      expect(auditorPasses(id, externalAuditor, base), `${id} external auditor`).toBe(false);
+      // The any_ms check never counts the external auditor role, so the permission check itself refuses them.
+      expect(passes(id, externalAuditor, base), `${id} external auditor`).toBe(false);
+      expect(passes(id, { ...externalAuditor, anyMsRoles: ['external_auditor', 'domain_owner'] }, base), `${id} auditor and owner`).toBe(false);
+      expect(passes(id, { ...externalAuditor, anyMsRoles: ['external_auditor', 'ms_manager'] }, base), `${id} auditor and manager`).toBe(true);
     }
+    expect(evaluatePermissionInAnySystem('audit_trail.read', externalAuditor), 'any_ms ignores the auditor role').toBeNull();
+    expect(evaluatePermissionInAnySystem('ms.read', externalAuditor), 'any_ms ignores the auditor role for every permission').toBeNull();
+    expect(evaluatePermission('audit_trail.read', { ...externalAuditor, msRoles: ['external_auditor'] }), 'in the audited system').toBe('full');
     expect(passes('audit-trail.list', manager, { ...manager, msRoles: ['ms_manager'] }), 'MS Manager of the query system').toBe(true);
     expect(passes('audit-trail.list', manager, manager), 'MS Manager of another system').toBe(false);
     expect(passes('audit-trail.list', tenantAdmin, tenantAdmin), 'Tenant Admin').toBe(true);

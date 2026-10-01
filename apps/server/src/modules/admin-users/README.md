@@ -1,3 +1,5 @@
 # admin-users module
-Users, memberships, identity registration, organisation policy and role grants with four-eyes approval (F.6).
-Owner: WP-39; skeleton by WP-03 (build plan B.4).
+
+Members of the organisation and the Tenant Admin limits of F.6 (`GET`, `POST`, `PATCH /admin/users`, MFA reset, identity pre-registration), the local sign-in policy (`PATCH /admin/organization`), and role grants with the four-eyes approval flow of C.13 (`/admin/management-systems/{id}/roles`).
+
+Owner: WP-39.

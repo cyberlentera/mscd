@@ -136,6 +136,7 @@ export function ApiRoot({ api, store, authLang, initial, settings, App, createDa
   const [notice, setNotice] = useState<Notice | null>(null);
   const [reauth, setReauth] = useState<PendingReauth | null>(() => readReauth(store));
   const [enrolMode, setEnrolMode] = useState<EnrolMode>('enrol');
+  const [enrolReplacing, setEnrolReplacing] = useState(false);
   const [guestStep, setGuestStep] = useState(false);
   const [appKey, setAppKey] = useState(0);
   // The `?error=` code is shown once, on the first sign-in page.
@@ -198,6 +199,7 @@ export function ApiRoot({ api, store, authLang, initial, settings, App, createDa
     }
     meRef.current = decision.me ?? null;
     setEnrolMode(decision.enrolMode ?? 'enrol');
+    setEnrolReplacing(Boolean(decision.replacing));
     setGuestStep(Boolean(decision.guest));
     showAuth(decision.page, { replace: true });
   }, [api, store, initial.csrf, openApp, showAuth, setMode]);
@@ -307,7 +309,11 @@ export function ApiRoot({ api, store, authLang, initial, settings, App, createDa
       setErrorCode(null);
       // A new sign-in replaces the session cookie, so an earlier session is gone from here on.
       if (options.signInStep) meRef.current = null;
-      if (page === 'enrol') setEnrolMode(meRef.current ? 'reenrol' : 'enrol');
+      if (page === 'enrol') {
+        setEnrolMode(meRef.current ? 'reenrol' : 'enrol');
+        // A new sign-in step: whether it replaces a factor is not known yet.
+        setEnrolReplacing(false);
+      }
       if (page === 'mfa' || page === 'enrol') setGuestStep(Boolean(options.guest));
       showAuth(page, options);
     },
@@ -339,6 +345,7 @@ export function ApiRoot({ api, store, authLang, initial, settings, App, createDa
       reauth={mode.page === 'login' ? reauth : null}
       onCancelReauth={reauth && meRef.current ? cancelReauth : undefined}
       enrolMode={enrolMode}
+      enrolReplacing={enrolReplacing}
       guest={guestStep}
       linkToken={initial.linkToken}
       guestStart={initial.guestStart}

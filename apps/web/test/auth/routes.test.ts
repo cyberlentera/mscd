@@ -1,7 +1,7 @@
 // Paths, fragment tokens (F.4, F.14), return addresses and the per-tab sign-in state (H.6, H.7).
 import { describe, expect, it, vi } from 'vitest';
 import {
-  AUTH_PATHS, authPageOf, beginGuestAccess, keptSearch, peekReturnTo, readReauth, readStep, safeReturnTo, ssoStartUrl, storeReauth,
+  AUTH_PATHS, authPageOf, beginGuestAccess, keptSearch, markStepReplacing, peekReturnTo, readReauth, readStep, safeReturnTo, ssoStartUrl, storeReauth,
   storeReturnTo, storeStep, takeCsrfFragment, takeFragmentToken, takeReturnTo,
 } from '../../src/auth/routes';
 import type { StorageLike } from '../../src/auth/routes';
@@ -118,6 +118,29 @@ describe('per-tab sign-in state', () => {
     expect(readStep(store)).toBeNull();
     store.setItem('mscd.auth.step', JSON.stringify({ stage: 'other', csrfToken: 'x' }));
     expect(readStep(store)).toBeNull();
+  });
+
+  it('keeps for the tab that the enrolment step replaces a factor, until the step is cleared', () => {
+    const store = memoryStore();
+    markStepReplacing(store); // no step: nothing to mark
+    expect(store.data.size).toBe(0);
+    storeStep(store, { stage: 'mfa', csrfToken: 'pending-token-0123456789' });
+    markStepReplacing(store); // only an enrolment step replaces a factor
+    expect(readStep(store)).toEqual({ stage: 'mfa', csrfToken: 'pending-token-0123456789' });
+    storeStep(store, { stage: 'enrol', csrfToken: 'pending-token-0123456789', guest: true });
+    markStepReplacing(store);
+    expect(readStep(store)).toEqual({ stage: 'enrol', csrfToken: 'pending-token-0123456789', guest: true, replacing: true });
+    expect(JSON.parse(store.getItem('mscd.auth.step') ?? '{}')).toEqual({ stage: 'enrol', csrfToken: 'pending-token-0123456789', guest: true, replacing: true });
+    markStepReplacing(store);
+    expect(readStep(store)).toEqual({ stage: 'enrol', csrfToken: 'pending-token-0123456789', guest: true, replacing: true });
+    storeStep(store, null);
+    expect(readStep(store)).toBeNull();
+    // A damaged or foreign value of the flag, or the flag on a second-factor step, is not read.
+    store.setItem('mscd.auth.step', JSON.stringify({ stage: 'enrol', csrfToken: 'pending-token-0123456789', replacing: 'yes' }));
+    expect(readStep(store)).toEqual({ stage: 'enrol', csrfToken: 'pending-token-0123456789' });
+    store.setItem('mscd.auth.step', JSON.stringify({ stage: 'mfa', csrfToken: 'pending-token-0123456789', replacing: true }));
+    expect(readStep(store)).toEqual({ stage: 'mfa', csrfToken: 'pending-token-0123456789' });
+    markStepReplacing(null); // without storage the page still works
   });
 
   it('keeps an organisation switch that needs a new sign-in', () => {

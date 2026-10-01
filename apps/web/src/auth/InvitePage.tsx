@@ -1,8 +1,10 @@
 // Invitation page `/invite#token=` (BUILD-PLAN H.6, F.4, F.6, D-25). The invitation is accepted with a password
 // (shared contract `InvitationAcceptRequest`): a new one for an account without a password (then MFA enrolment), or
-// the current password of an account that already has one, which the server checks and never replaces. The page
-// offers both forms, and also the organisation's identity providers, which redeem the invitation on the provider's
-// callback (F.8 step 4). The token comes out of the URL fragment before the page renders.
+// the current password of an account that already has one, which the server checks and never replaces. The request
+// cannot say which form sent the value, so an account without a password takes the value of the current-password
+// form as its new password when it meets the policy; that form's lead says so. The page offers both forms, and also
+// the organisation's identity providers, which redeem the invitation on the provider's callback (F.8 step 4). The
+// token comes out of the URL fragment before the page renders.
 import React, { useEffect, useState } from 'react';
 import type { AuthProviders } from '@mscd/shared';
 import type { ApiError } from '../data/api/ApiClient';

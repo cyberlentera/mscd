@@ -6,10 +6,10 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { AuthRouter } from '../../src/auth/AuthRouter';
 import type { AuthRouterProps } from '../../src/auth/AuthRouter';
-import { EnrolPage } from '../../src/auth/EnrolPage';
+import { EnrolPage, enrolRefusal, enrolTexts } from '../../src/auth/EnrolPage';
 import { ForgotPasswordPage } from '../../src/auth/ForgotPasswordPage';
 import { GuestPage } from '../../src/auth/GuestPage';
-import { LOGIN_ERROR_MESSAGES, TEXT, li } from '../../src/auth/i18n';
+import { LOGIN_ERROR_MESSAGES, MESSAGE_KEYS, TEXT, li } from '../../src/auth/i18n';
 import { InvitePage, inviteOutcome } from '../../src/auth/InvitePage';
 import type { ApiError } from '../../src/data/api/ApiClient';
 import { LoginPage } from '../../src/auth/LoginPage';
@@ -157,6 +157,83 @@ describe('enrolment /login/enrol', () => {
     expect(text).toContain(li(TEXT.reenrolLead, 'en'));
     expect(html).toContain('id="au-proof-code"');
     expect(text).toContain('Use my password instead');
+    expect(text).not.toContain(li(TEXT.signInAgain, 'en'));
+  });
+
+  it('asks only for the current code during sign-in when the account has a factor, and offers to sign in again', () => {
+    for (const lang of ['en', 'id'] as const) {
+      const html = render(EnrolPage, { env: envFor(lang), mode: 'enrol', startWithProof: true });
+      const text = textOf(html);
+      expect(text).toContain(li(TEXT.reenrolTitle, lang));
+      expect(text).toContain(li(TEXT.enrolFactorLead, lang));
+      expect(html).toMatch(/id="au-proof-code" name="code"[^>]*autoComplete="one-time-code"/);
+      expect(html).not.toContain('au-proof-password');
+      expect(html).not.toContain('type="password"');
+      for (const key of ['usePasswordProof', 'reenrolLead', 'enrolLead'] as const) expect(text).not.toContain(li(TEXT[key], lang));
+      // A password is not accepted in this state (WP-11), so the page does not mention one.
+      expect(text).not.toMatch(/password|kata sandi/i);
+      expect(html).toContain(`<button type="button" class="au-link-btn">${li(TEXT.signInAgain, lang)}</button>`);
+      expect(html).not.toContain('Please wait');
+      expect(FORBIDDEN.test(text)).toBe(false);
+    }
+  });
+
+  it('after a reload of a sign-in step that replaces a factor, starts without a proof under the replacement title', () => {
+    for (const lang of ['en', 'id'] as const) {
+      // The boot reads the flag of the stored step (session.test.ts) and the router hands it to the page.
+      const html = renderToStaticMarkup(createElement(AuthRouter, { page: 'enrol', env: envFor(lang), enrolMode: 'enrol', enrolReplacing: true }));
+      const text = textOf(html);
+      expect(text).toContain(li(TEXT.reenrolTitle, lang));
+      expect(text).not.toContain(li(TEXT.enrolTitle, lang));
+      expect(html).toContain(`<p class="au-lead" role="status">${li(TEXT.working, lang)}</p>`);
+      expect(html).not.toContain('<form');
+      // Without the flag it is a first enrolment; in re-enrolment the flag changes nothing.
+      expect(textOf(renderToStaticMarkup(createElement(AuthRouter, { page: 'enrol', env: envFor(lang), enrolMode: 'enrol' })))).toContain(li(TEXT.enrolTitle, lang));
+      const reenrol = renderToStaticMarkup(createElement(AuthRouter, { page: 'enrol', env: envFor(lang), enrolMode: 'reenrol', enrolReplacing: true }));
+      expect(reenrol).toContain('id="au-proof-code"');
+    }
+  });
+
+  it('says on the recovery codes that the other sessions were signed out whenever a factor was replaced', () => {
+    // During sign-in, also after a reload (the flag of the stored step), and from an active session.
+    expect(enrolTexts('codes', 'enrol', true)).toEqual({ title: TEXT.recoveryTitle, lead: TEXT.recoveryLead, otherSessionsEnded: true });
+    expect(enrolTexts('codes', 'reenrol', false).otherSessionsEnded).toBe(true);
+    // A first enrolment signs no session out.
+    expect(enrolTexts('codes', 'enrol', false).otherSessionsEnded).toBe(false);
+    for (const phase of ['proof', 'starting', 'scan'] as const) {
+      expect(enrolTexts(phase, 'enrol', true).otherSessionsEnded).toBe(false);
+      expect(enrolTexts(phase, 'enrol', true).title).toEqual(TEXT.reenrolTitle);
+      expect(enrolTexts(phase, 'reenrol', false).title).toEqual(TEXT.reenrolTitle);
+    }
+    expect(enrolTexts('starting', 'enrol', false).title).toEqual(TEXT.enrolTitle);
+    expect(enrolTexts('scan', 'enrol', false)).toEqual({ title: TEXT.enrolTitle, lead: TEXT.enrolLead, otherSessionsEnded: false });
+    expect(enrolTexts('proof', 'enrol', true).lead).toEqual(TEXT.enrolFactorLead);
+    expect(enrolTexts('proof', 'reenrol', false).lead).toEqual(TEXT.reenrolLead);
+    expect(li(TEXT.otherSessionsEnded, 'en')).toBe('Your other sessions were signed out.');
+  });
+
+  it('reads a refused start or confirmation: current code during sign-in, sign in again, or a message', () => {
+    const key = (messageKey: string, status = 401): ApiError => ({ status, slug: 'unauthenticated', message: ['x', 'x'], messageKey });
+    // Sign-in step, account with a factor confirmed in another session (WP-11): the current-code form, at start or confirmation.
+    expect(enrolRefusal(key('auth.proof_required'), 'enrol')).toEqual({ next: 'current-code' });
+    // The page sends only codes during sign-in: a wrong proof is a wrong current code, without a word about a password.
+    expect(enrolRefusal(key('auth.proof_invalid'), 'enrol')).toEqual({ next: 'stay', text: TEXT.currentCodeWrong });
+    expect(TEXT.currentCodeWrong.join(' ')).not.toMatch(/password|kata sandi/i);
+    expect(TEXT.enrolFactorLead.join(' ')).not.toMatch(/password|kata sandi/i);
+    // Re-enrolment keeps the messages about the code or the password.
+    expect(enrolRefusal(key('auth.proof_required'), 'reenrol')).toEqual({ next: 'stay', text: MESSAGE_KEYS['auth.proof_required'] });
+    expect(enrolRefusal(key('auth.proof_invalid'), 'reenrol')).toEqual({ next: 'stay', text: MESSAGE_KEYS['auth.proof_invalid'] });
+    for (const mode of ['enrol', 'reenrol'] as const) {
+      expect(enrolRefusal(key('auth.mfa_invalid'), mode)).toEqual({ next: 'stay', text: MESSAGE_KEYS['auth.mfa_invalid'] });
+      // Any other 401: the step ended (for example revoked as mfa_enrolled by a first enrolment elsewhere).
+      const ended = enrolRefusal({ status: 401, slug: 'unauthenticated', message: ['x', 'x'] }, mode);
+      expect(ended.next).toBe('sign-in');
+      expect(ended.next === 'sign-in' && ended.text[0]).toBe('Your sign-in has expired. Sign in again.');
+      expect(enrolRefusal({ status: 429, slug: 'rate-limited', message: ['x', 'x'], retryAfter: 300 }, mode))
+        .toEqual({ next: 'stay', text: ['Too many attempts. Try again in 5 minutes.', 'Terlalu banyak percobaan. Coba lagi dalam 5 menit.'] });
+      expect(enrolRefusal({ status: 0, message: ['Connection lost. Try again.', 'Koneksi terputus. Coba lagi.'] }, mode))
+        .toEqual({ next: 'stay', text: ['Connection lost. Try again.', 'Koneksi terputus. Coba lagi.'] });
+    }
   });
 });
 
@@ -212,6 +289,9 @@ describe('invitation /invite#token=', () => {
         expect(text).toContain(li(TEXT[key], lang));
       }
       for (const key of ['inviteLead', 'passwordRules', 'repeatPassword', 'haveAccount'] as const) expect(text).not.toContain(li(TEXT[key], lang));
+      // The request cannot say which form sent the value: an account without a password takes it as its new password.
+      expect(text).not.toMatch(/stays the same|tidak berubah/);
+      expect(li(TEXT.inviteExistingLead, lang)).toMatch(lang === 'en' ? /new password/ : /kata sandi barunya/);
       expect(html).not.toContain(TOKEN);
     }
   });

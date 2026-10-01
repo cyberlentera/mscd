@@ -16,6 +16,7 @@ import { FileResponder } from '../../common/file-response';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../common/problems';
 import { Clock } from '../../common/clock';
 import type { AuthzState, Principal } from '../../common/tokens';
+import { TenantScope, tenantContextOf } from '../tenancy/tenant-scope';
 import { AuditTrailService, type Page } from './audit-trail.service';
 import { AuditChainVerifier } from './chain-verifier';
 
@@ -31,6 +32,7 @@ export class AuditTrailController {
     private readonly verifier: AuditChainVerifier,
     private readonly files: FileResponder,
     private readonly clock: Clock,
+    private readonly scope: TenantScope,
   ) {}
 
   /** Full entries of a system with `audit_trail.read` there; metadata with `audit_trail.metadata.read`. */
@@ -58,13 +60,15 @@ export class AuditTrailController {
     const org = orgOf(principal);
     const today = this.clock.todayIn(org.timeZone);
     const fileName = `audit-trail-${org.slug}-${query.ms}-${today}.csv`;
+    // The entry names the system by id (404 for an unknown slug), so the system's full-entry view lists it (F.11).
+    const msId = await this.scope.withTenant(tenantContextOf(principal), (trx) => this.trail.msIdOf(trx, query.ms));
     await this.files.send(reply, {
       body: this.trail.exportCsv(principal, query.ms),
       storedType: 'text/csv',
       fileName,
       audit: {
         action: 'file.downloaded',
-        msSlug: query.ms,
+        msId,
         entityType: 'audit_trail',
         entityCode: fileName.slice(0, 80),
         after: { ms: query.ms, format: 'csv' },

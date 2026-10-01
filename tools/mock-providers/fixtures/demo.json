@@ -1,0 +1,5208 @@
+{
+  "version": 1,
+  "description": "Demo fixture of the MSCD seed (BUILD-PLAN G.8), written by apps/web/scripts/export-sample-snapshot.mjs: the SharePoint library with the ISMS evidence and documents and the picker files, the disabled OneDrive of F. Nugroho, and the BCMS Shared Drive whose delegated token has expired. Do not edit by hand.",
+  "credentials": [
+    {
+      "kind": "m365_certificate",
+      "tenantId": "6d3f1a2b-4c5d-4e6f-8a7b-9c0d1e2f3a4b",
+      "clientId": "2f8e7d6c-5b4a-4c3d-9e2f-1a0b9c8d7e6f",
+      "certificatePem": "-----BEGIN CERTIFICATE-----\nMIIC7DCCAdSgAwIBAgIQNYtCWy/nck8q41iWDbM8nTANBgkqhkiG9w0BAQsFADAp\nMScwJQYDVQQDDB5NU0NEIERlbW8gQ29tcGxpYW5jZSBDb25uZWN0b3IwHhcNMjYw\nMTAxMDAwMDAwWhcNMzUxMjMxMjM1OTU5WjApMScwJQYDVQQDDB5NU0NEIERlbW8g\nQ29tcGxpYW5jZSBDb25uZWN0b3IwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK\nAoIBAQDTa3UcIM+MSw2o1totD3hOnlLB1EnMYxS+e5bc9Vi4cI/k3lEysAb1v4/R\nEfhEbYddtQExymhsYll+T4/kX0IfV105FWei8Uj+AEpxXA4kDT1RclS3wzHl8eIb\nXbrKwiwRL5idAXGBeu6UIy8PSUUwLGVMiEvVO1tn/y7227LChNMVm1FU/ex9VZk4\nlPAwdpf1MBGNldhtb1lcnkgjJccRwIAFGug/7H+aauZWGJE9jpz6DsWTROilWF+e\nrYhgH1AARaFpCVTXMZh5bsHNZVwMxcNHPK0SWbJMonX6NHf4OUpiSJ2vSQiFWly6\nHnTTrL+s/95eheTKAiHdj3I41g4PAgMBAAGjEDAOMAwGA1UdEwEB/wQCMAAwDQYJ\nKoZIhvcNAQELBQADggEBAL0mbp/qILzEn8GzNyHw+b2ptyMIS3camZSeE9kSmY/L\n3qsYJ+exDxK9MHUs+7t88hSNXD+kD8TXx2ZnIL+GHwHBr+D4rZ37gjWPy9VUZtTp\nn/QE78E6hwkq6iEYQZbViUlF/dqJ3WUa/RW1VmrGtbIIGcAs46yXdMkwd0WqtvBw\nKB7UAK0vsTj3/u2u+DjVXkrI4j9wv7lx1tlENZnC7PZ7MF1hRzrsnGjJO/4cSUTx\nQ/wwg03sgTU0R+KoCnTB7JvObtGmS0lhuT+/B052e9OGMg4TgzF1fGymcn6MLC1k\n70zspr/GIBlCz95uIYXANwvOfOB6cTgVDjalZQ8ye3Q=\n-----END CERTIFICATE-----\n",
+      "displayName": "MSCD Demo Compliance Connector",
+      "tenantAliases": [
+        "nusantaradigital.onmicrosoft.com"
+      ]
+    },
+    {
+      "kind": "google_oauth_client",
+      "clientId": "mscd-demo-bcms.apps.googleusercontent.com",
+      "clientSecret": "mscd-demo-google-client-secret",
+      "redirectUris": [
+        "http://localhost:18080/api/v1/admin/storage/repositories/oauth/callback",
+        "https://localhost:18443/api/v1/admin/storage/repositories/oauth/callback",
+        "http://localhost:4174/api/v1/admin/storage/repositories/oauth/callback",
+        "http://localhost:3000/api/v1/admin/storage/repositories/oauth/callback"
+      ],
+      "defaultAccount": {
+        "displayName": "Tono Hartono",
+        "email": "tono.hartono@nusantaradigital.co.id"
+      }
+    },
+    {
+      "kind": "google_refresh_token",
+      "clientId": "mscd-demo-bcms.apps.googleusercontent.com",
+      "refreshToken": "1//mscd-demo-expired-delegated-token",
+      "account": {
+        "displayName": "Tono Hartono",
+        "email": "tono.hartono@nusantaradigital.co.id"
+      },
+      "scope": "https://www.googleapis.com/auth/drive.file",
+      "revoked": true
+    }
+  ],
+  "m365": {
+    "drives": [
+      {
+        "id": "drive-sp-compliance",
+        "name": "Compliance",
+        "driveType": "documentLibrary",
+        "tenantId": "6d3f1a2b-4c5d-4e6f-8a7b-9c0d1e2f3a4b",
+        "webUrl": "https://nusantaradigital.sharepoint.com/sites/compliance/Shared%20Documents",
+        "folders": [
+          {
+            "id": "demo-sp-compliance",
+            "path": "Compliance"
+          },
+          {
+            "id": "demo-sp-isms",
+            "path": "Compliance/ISMS"
+          },
+          {
+            "id": "demo-sp-qms",
+            "path": "Compliance/QMS"
+          },
+          {
+            "id": "demo-sp-bcms",
+            "path": "Compliance/BCMS"
+          },
+          {
+            "id": "demo-sp-abms",
+            "path": "Compliance/ABMS"
+          }
+        ],
+        "items": [
+          {
+            "id": "demo-sp-EV-0100",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0100.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-08-30T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Rina Kusuma",
+              "email": "rina.kusuma@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-08-30T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "v4w6znRvhP5p+wx6BKxENVoVEuw="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-09-29T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "LIfLiWO1k/8cDyK2XY6TKiTbocM="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0103",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0103.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-07-18T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Hendra Wijaya",
+              "email": "hendra.wijaya@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-07-18T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "FBXuidI3QUazZL4o7uc0coUydVs="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-08-17T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "lAi8bsEuhEeVVxUVmfEqU7tBjms="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-09-16T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "4YvO9Qth8X5Zy5m+k+NYOD8tuAM="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0106",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0106.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-06-05T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Hendra Wijaya",
+              "email": "hendra.wijaya@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-06-05T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "gf7ubXoF4p+hSEBRqyMYC5wfmbE="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-07-05T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "4IaG8GxwhFCO/mj1n6qbUy9ddd8="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-08-04T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "uBjuZLyUl7KCDQtd2X/P/zn2Lio="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-09-03T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "1SgJ7C7JgIDPK8cIks2pegCO4wU="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0109",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0109.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-04-23T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Dewi Anggraini",
+              "email": "dewi.anggraini@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-04-23T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "wPZW6L6vAKXf7Laut0htufBcWmE="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-05-23T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "FyzMEjm1yQSIebdRb/mMMQE0v/U="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-06-22T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "C9qJsY6I4VP+bjlDi2+qGAJjy0U="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-07-22T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "gRy+o1Tqpi/mCIKBvfInRuNoYEo="
+              },
+              {
+                "id": "5.0",
+                "modifiedAt": "2026-08-21T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "HpnB+9KbFZD6Z8Kn2gWvG2ppTU4="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0112",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0112.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-07-09T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Lina Marlina",
+              "email": "lina.marlina@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-07-09T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Lina Marlina"
+                },
+                "size": 1024,
+                "quickXorHash": "UD4/02gkBQaAaGYfqUs+OFM7tRE="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-08-08T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Lina Marlina"
+                },
+                "size": 1024,
+                "quickXorHash": "c4E085M9kAi07HCS9xw1cGU5W+c="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0115",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0115.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-05-27T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Dewi Anggraini",
+              "email": "dewi.anggraini@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-05-27T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "xfcsc5ERK6J0bkb91rFlnorU5ZE="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-06-26T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "BltgunSR7mF+KYwPzjdQtumeVao="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-07-26T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "1UGUIOQpwx9zuXA9bk/JwodPTAo="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0121",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0121.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-03-02T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Rina Kusuma",
+              "email": "rina.kusuma@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-03-02T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "kHUzl6BopkKdx0aBjjWQuNH3xDc="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-04-01T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "yVF9W0IQOQKeB7w9KJ3YQz+pD/A="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-05-01T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "/P35yo1Q5/cMI4nml3GLdquBGa8="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-05-31T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "HMLTPK5mBrL6V2PmJPIn+YAdX+E="
+              },
+              {
+                "id": "5.0",
+                "modifiedAt": "2026-06-30T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "mArq1+yUgv4bnkkFC/0yyXRh3JE="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0124",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0124.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-05-21T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-05-21T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "ltYfWPdZteFCz71qMtKw/yOS1XA="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-06-20T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "nRYtZ5YDwJdsoIReKEtsvxUboV4="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-06-21T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "KxIDm5eRq2XNMmnm1/25EURZJeY="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0127",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0127.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-04-05T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Rina Kusuma",
+              "email": "rina.kusuma@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-04-05T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "Lew2Q3CrmNyyYLVjcVAgaiHiIhc="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-05-05T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "QgjUS8kwytNhm7CY9SrNfzDKUNY="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-06-04T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "+5rY1lO39vVjx7BdxY+bZ/zKZB4="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0130",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0130.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-06-21T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-06-21T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "hCYs4Jj7cuML/4llSmzo37I9/oo="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-07-21T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "+tCLPNZjMwt8NEi2U4zQbyDXQRc="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-08-20T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "Tt6mbNWL58owQ/EJhjUnnyjMvKI="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-09-19T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "FD5uKYRRC7ZyL+P3JNb2IE+vU2k="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0133",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0133.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2025-04-01T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Rina Kusuma",
+              "email": "rina.kusuma@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2025-04-01T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "zRNyiIsvnGrWRoZ32LTqgdQuHMQ="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2025-05-01T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "zbulm5F8bfYdLgSNgDBNV0xp4nE="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2025-05-31T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "HonOQM3HvqE7hmKdU9snIxkznNI="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2025-06-30T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "lLADsaFpbTyP1/Ubw1ARZE4CtAA="
+              },
+              {
+                "id": "5.0",
+                "modifiedAt": "2025-07-30T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "wV5ERwWZd6/Fdd0LqEGQor3xu1s="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0136",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0136.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2025-06-19T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2025-06-19T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "34RPHQT6ku86CZcltNsgFAdBMac="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2025-07-19T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "tVgq8d9ZWs0op1naqUOcx2q9VPk="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0139",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0139.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-02-12T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Rina Kusuma",
+              "email": "rina.kusuma@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-02-12T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "sX82OrUkL4Sahzs4w4O6cmv2RGM="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-03-14T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "vkipwYhfGaHH/t8hZ7ZCdDRInU0="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-04-13T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "PnHWlxVGL+b2Im4uPYcxI/b9jAg="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0142",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0142.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2025-12-31T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2025-12-31T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "pQfWZRjCckCbHFugs5LWO0y1ZvU="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-01-30T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "2E3vzgZgMxs0njlvNgZaaHKFRAE="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-03-01T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "arNl6kiul3WihZWWj/U2UpzSISY="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-03-31T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "49k+aS1nt5SSlnK+qi1+dcj82WY="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0145",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0145.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2025-11-18T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2025-11-18T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "maa1bi9xu97KS1rSMJtBKZd4ZnM="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2025-12-18T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "cUy+PjdOYoqYATcB84NxdmXSQ+4="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-01-17T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "RSI3EZ05rNY99yb7GI8MMeYopwI="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-02-16T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "po31/7Hcz3gKJHrZQ+8iDhKnup0="
+              },
+              {
+                "id": "5.0",
+                "modifiedAt": "2026-03-18T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "DlgcWB5GgrOl7rI1KWI1MMPvZVQ="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0148",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0148.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-02-03T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-02-03T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "EyEVg7OBqxdoqOZohkJHCAuaHYQ="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-03-05T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "jM8Sij41mBFNYQ6Yf7ppGFti89Y="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0151",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0151.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-06-04T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-06-04T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "5f7ZhLtSem2PFBamwmXQhxeWg78="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-07-04T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "DuJKjGYDpulg9NTgfIQE3fYPlOs="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-08-03T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "0xSN8j21xSEr4I5os4RfyMmKCjE="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0154",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0154.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2025-05-17T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Andi Saputra",
+              "email": "andi.saputra@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2025-05-17T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Andi Saputra"
+                },
+                "size": 1024,
+                "quickXorHash": "98tJUXbI+HuLQVyXz5WEmhxIzzM="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2025-06-16T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Andi Saputra"
+                },
+                "size": 1024,
+                "quickXorHash": "lwccnnZ2NHPN0XE+QvfYfVAcLd0="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2025-07-16T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Andi Saputra"
+                },
+                "size": 1024,
+                "quickXorHash": "zulIiQXAbMb2B/UVQpgOlgwRnT0="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2025-08-15T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Andi Saputra"
+                },
+                "size": 1024,
+                "quickXorHash": "Ya0nKPXDGVl4EFPya+ET7PC8UxM="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0157",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0157.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2025-09-27T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Andi Saputra",
+              "email": "andi.saputra@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2025-09-27T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Andi Saputra"
+                },
+                "size": 1024,
+                "quickXorHash": "HWy9lDf8pVSAV+agQfYs50S8NBk="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2025-10-27T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Andi Saputra"
+                },
+                "size": 1024,
+                "quickXorHash": "RIzOsAnmIp3ay2N0NT242oPDMEA="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2025-11-26T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Andi Saputra"
+                },
+                "size": 1024,
+                "quickXorHash": "Jh6Z9vaGehInF7xGin4h8lDjlwE="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2025-12-26T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Andi Saputra"
+                },
+                "size": 1024,
+                "quickXorHash": "x8DYVrG5SPCqSqx/xhrxcviI85c="
+              },
+              {
+                "id": "5.0",
+                "modifiedAt": "2026-01-25T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Andi Saputra"
+                },
+                "size": 1024,
+                "quickXorHash": "mFq5lB9XUPrXlwWiTc5lJMpkxj0="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0160",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0160.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2025-06-21T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Andi Saputra",
+              "email": "andi.saputra@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2025-06-21T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Andi Saputra"
+                },
+                "size": 1024,
+                "quickXorHash": "rnACvsTYvZwl63ttRLraWFQAqRs="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2025-07-21T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Andi Saputra"
+                },
+                "size": 1024,
+                "quickXorHash": "WnjtX6fc33uqf9oiw/EwK1nbQnk="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0163",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0163.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-03-08T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Andi Saputra",
+              "email": "andi.saputra@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-03-08T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Andi Saputra"
+                },
+                "size": 1024,
+                "quickXorHash": "xybWbogjEzEy2N+P0XrCBxGPWRw="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-04-07T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Andi Saputra"
+                },
+                "size": 1024,
+                "quickXorHash": "VA1mC8Eso7OM6bLLK/QCKR17Pp8="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-05-07T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Andi Saputra"
+                },
+                "size": 1024,
+                "quickXorHash": "b9FpSGU2Cg/Wu9xmp9v8UQNfgrs="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0169",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0169.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-04-03T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Hendra Wijaya",
+              "email": "hendra.wijaya@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-04-03T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "Fq93gN98Ik33UIH05yH8o0roYGc="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-05-03T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "U5AxdYu/WAi/MtJpsDE5tgscJuA="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-06-02T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "W4CdR9X6H6wi1dLwRrijOWewfzU="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-07-02T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "N+fy1DHwUcwjmNAdd8+cW2zDFLc="
+              },
+              {
+                "id": "5.0",
+                "modifiedAt": "2026-08-01T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "tjOBTJ83dUc2Cj5inrkciUKfAfU="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0172",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0172.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-06-19T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Hendra Wijaya",
+              "email": "hendra.wijaya@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-06-19T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "+Ypco0493cb0M4wp78UEELqRiHs="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-07-19T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "PujNZaIN94Y0tOG+NBuAol31iI4="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0175",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0175.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-05-07T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Hendra Wijaya",
+              "email": "hendra.wijaya@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-05-07T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "LlME0z2Kok1sAdOD5WybhNc+G8U="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-06-06T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "pX4Od4HN26OP0y1X22ue4hGp9qI="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-07-06T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "tMf0FVewpvgPfHSl5VS1U8BgPcQ="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0178",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0178.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-03-25T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Hendra Wijaya",
+              "email": "hendra.wijaya@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-03-25T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "epv8wNnqbynkg+y6wxw1Sc3CunE="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-04-24T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "pqVKlzncDByZYOUGcA53RaprW5o="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-05-24T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "/T2kTfaxZzB3qh62TgMJgfb17vw="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-06-23T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "bHBpy5UNv79k00vU0HblfJykAG8="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0181",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0181.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-02-10T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Hendra Wijaya",
+              "email": "hendra.wijaya@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-02-10T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "/lCA2tKt55n3djbDuw5qRY0ezNI="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-03-12T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "N5gj166HlZoPfglkVeAB1bW/sN0="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-04-11T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "ztNa0SBq4LhDZbyLR7PGA2lhBgQ="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-05-11T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "LURgG9rBXnPPLqQCXl+kMF6djHA="
+              },
+              {
+                "id": "5.0",
+                "modifiedAt": "2026-06-10T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "fi1A/kyV3Ksmj8uAFCPaH680kxc="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0184",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0184.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-07-26T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Rina Kusuma",
+              "email": "rina.kusuma@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-07-26T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "qm07Jx5vDZUME/3lS7aZT6mCRNU="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-08-25T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "ZfQyl2WU02e1yar05qQtP1dX79s="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0187",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0187.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-06-13T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Rina Kusuma",
+              "email": "rina.kusuma@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-06-13T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "se+vMULr96jeeC4/D3Qgmk+VmBY="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-07-13T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "Wruio4P6LUyUmhYgib173Oj70rg="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-08-12T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "iaQ68zm/mwSEAQx9qq9fdyzqGJs="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0190",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0190.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-05-01T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Lina Marlina",
+              "email": "lina.marlina@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-05-01T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Lina Marlina"
+                },
+                "size": 1024,
+                "quickXorHash": "1tX0oov6d2AKte+2iK4hii01RmY="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-05-31T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Lina Marlina"
+                },
+                "size": 1024,
+                "quickXorHash": "dOxjeJAEZfiYYk9Ks421ji+xYzY="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-06-30T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Lina Marlina"
+                },
+                "size": 1024,
+                "quickXorHash": "I+vj5QHOUpQVLF6lSHOR7st15a8="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-07-30T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Lina Marlina"
+                },
+                "size": 1024,
+                "quickXorHash": "+O5H1brHdY1vYQCr+oAYJoVXcmk="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0193",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0193.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-03-19T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Lina Marlina",
+              "email": "lina.marlina@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-03-19T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Lina Marlina"
+                },
+                "size": 1024,
+                "quickXorHash": "WSi0dWP3HAAphnFtGGZkfYFVuJo="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-04-18T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Lina Marlina"
+                },
+                "size": 1024,
+                "quickXorHash": "YWiVytYU06I/u0AIwpMdZSsvaKQ="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-05-18T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Lina Marlina"
+                },
+                "size": 1024,
+                "quickXorHash": "EZ9jekX2WM1VMtqRcVCFxAoH5yo="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-06-17T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Lina Marlina"
+                },
+                "size": 1024,
+                "quickXorHash": "bleM4UNnONNx0BDneytrzowq9TY="
+              },
+              {
+                "id": "5.0",
+                "modifiedAt": "2026-07-17T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Lina Marlina"
+                },
+                "size": 1024,
+                "quickXorHash": "f4hdzVbK8/2HxiVCLZtCBS87fW0="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0196",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0196.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-06-04T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Lina Marlina",
+              "email": "lina.marlina@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-06-04T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Lina Marlina"
+                },
+                "size": 1024,
+                "quickXorHash": "EhCjVB/cDnnXtyHWGIcVh8maiio="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-07-04T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Lina Marlina"
+                },
+                "size": 1024,
+                "quickXorHash": "wU0jRKsjSbupn5OTSzn8Imzniag="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0199",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0199.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-04-22T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Lina Marlina",
+              "email": "lina.marlina@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-04-22T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Lina Marlina"
+                },
+                "size": 1024,
+                "quickXorHash": "SGb/ljP1nUa9aF4GaTZrG0XYL9E="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-05-22T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Lina Marlina"
+                },
+                "size": 1024,
+                "quickXorHash": "Gd3duhVDFMGLijr8ur02bVBp50c="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-06-21T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Lina Marlina"
+                },
+                "size": 1024,
+                "quickXorHash": "rNtkyARiyVBpiqOgU0NBcSAxyv0="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0205",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0205.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-01-26T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Rina Kusuma",
+              "email": "rina.kusuma@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-01-26T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "uYmffUbo/iiA21sR3lQHrOxHq6I="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-02-25T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "I4TkIw59m9IFQw8Xx3TyUQ3JjiI="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-03-27T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "bxB0eTr5Ur45wWAgknP0mEqdl7M="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-04-26T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "vjSL4H/txO31MoAMWUYj2zUOgO0="
+              },
+              {
+                "id": "5.0",
+                "modifiedAt": "2026-05-26T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "CXCFyrNSB4jYWEe5hq5fp8mA5qI="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0208",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0208.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-04-13T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Rina Kusuma",
+              "email": "rina.kusuma@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-04-13T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "gLa6iVR5kde1hiYhJ0lHJTPUv4Y="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-05-13T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "ieujn0+2iflfat4ba+7PC7XyUbU="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0211",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0211.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-07-30T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Dewi Anggraini",
+              "email": "dewi.anggraini@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-07-30T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "ISm2vOT/2XcCNGVLjdx8PWlTGQY="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-08-29T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "8AwkCE+cc2CguFkWjTIYNnNKVrY="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-09-28T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "0krc6c1k0RICTZ4lcThP15ILRsQ="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0214",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0214.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-06-17T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Dewi Anggraini",
+              "email": "dewi.anggraini@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-06-17T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "t16cJu7CjJBZcouHoCdfepqpKgY="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-07-17T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "8N9X6r0ExV1UZ6yxC3D4v0Z62JE="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-08-16T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "q7Vr7hBhdUAjqsXdvFg1Vuy8J6w="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-09-15T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "InUw6Jxgmfz+zhb7EHIejEXg5Gg="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0217",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0217.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2025-02-20T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Dewi Anggraini",
+              "email": "dewi.anggraini@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2025-02-20T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "lkSGX5Hxj3GXvSNLpIGqKGOoUVQ="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2025-03-22T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "FN5I8H7YMFJtUiTVA0LuG6H/5+g="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2025-04-21T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "gBPQBM+oNw8vU7fw+quqfdJHVfA="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2025-05-21T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "bAZDAkWfkvv4RnOdyBrmQpu6bxU="
+              },
+              {
+                "id": "5.0",
+                "modifiedAt": "2025-06-20T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "JvMvRIQ+gEucx0lUf05mnw2ODcQ="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0220",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0220.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-07-21T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Dewi Anggraini",
+              "email": "dewi.anggraini@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-07-21T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "crm99nhY1Qt0QnasxzC6P05O84I="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-08-20T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "NkkYrTeXDpJV95YMCsUE5uoiPZA="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0223",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0223.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-06-08T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Dewi Anggraini",
+              "email": "dewi.anggraini@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-06-08T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "56ynVCceHp5jjgQGblfqXv08rSI="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-07-08T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "XBuED5CBVOKtWnEyVjG7O5h9Xpw="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-08-07T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "p88aQ8WbA3NVhx/4+anZMFXqP/E="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0226",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0226.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-04-26T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Dewi Anggraini",
+              "email": "dewi.anggraini@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-04-26T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "yXfiXTnRHigmd9BczkvvudO/VJQ="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-05-26T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "IGMqiKeDCFm8ze3Jr9G4vqJoXB0="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-06-25T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "Z9goYd7mgv4VWGii9sVzlYYIqfg="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-07-25T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "rX79nRocTDtTB5L6c6Ij36P+2aw="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0229",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0229.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-02-02T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Dewi Anggraini",
+              "email": "dewi.anggraini@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-02-02T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "beKObJKX89MzItEkVS/dS+v4bSA="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-03-04T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "lYuZ4Y7pU4TkODkesULSo1/oyr0="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-04-03T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "opEKOBB9M0QwSG2S92bB6SKsx8c="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-05-03T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "oAmjZ6gA4tKDFhM8vVP4/vXPiNY="
+              },
+              {
+                "id": "5.0",
+                "modifiedAt": "2026-06-02T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "FwUNeocNb7rXcG6075VlX614HJo="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0232",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0232.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-05-30T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Dewi Anggraini",
+              "email": "dewi.anggraini@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-05-30T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "aXZ8MTX3563W+jI+/yr4NwIkXmk="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-06-29T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "PECsIiyuqjygXj+Bp9bLl5ckiqs="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0235",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0235.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2025-11-17T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Fajar Nugroho",
+              "email": "fajar.nugroho@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2025-11-17T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "uULU6dbTVQP+21YKsWuDsa5eC5s="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2025-12-17T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "mWqvfg7BPBRV/gUDZCHRGrAHyjU="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-01-16T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "ggbbRAy7TDNQWYwXCuezQzVjIWk="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0238",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0238.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-06-27T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Fajar Nugroho",
+              "email": "fajar.nugroho@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-06-27T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "Ka7Y0C+lwQtxPXm/adNyDUApQbo="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-07-27T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "mtyD5K84elHInkfbUJYzA3tHEMQ="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-08-26T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "F0fdzavCbbgVptON37CZ41BUQck="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-09-25T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "RleSHXtzGlvvwhFmfVm5yWWTOzY="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0241",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0241.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2025-08-23T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Fajar Nugroho",
+              "email": "fajar.nugroho@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2025-08-23T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "sXBIW+cxxgBBEzZUbxUksX0ZFkk="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2025-09-22T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "L0E65xzBaBcLF1yYVKDyv4YHC4g="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2025-10-22T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "Q76cOj+Hy43AXg3UwU8+enOo0mI="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2025-11-21T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "zmh/JJGemVFz8zEIHGxqOBw/u7k="
+              },
+              {
+                "id": "5.0",
+                "modifiedAt": "2025-12-21T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "7Ge9/S4iQC84pkOGyDUKoM/s4TI="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0247",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0247.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2025-09-26T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Fajar Nugroho",
+              "email": "fajar.nugroho@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2025-09-26T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "U29PV6ylnC0CP+AJIv4foBBZHVU="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2025-10-26T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "bDbNZfRDMy6wlK14PVoupiWJuBI="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2025-11-25T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "ITml5GXELTc/n5sAiffhZRw7PXE="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0250",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0250.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2025-08-14T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Fajar Nugroho",
+              "email": "fajar.nugroho@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2025-08-14T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "3lur+CuSvOw5tPx1EGZqbt5yFA4="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2025-09-13T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "kBN9QY32SJid8f7KvTOmdMS7FRE="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2025-10-13T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "P0l5WJ0/GauRA2VuRSi8My6dhIU="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2025-11-12T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "3M6HPUznokafjJ6V0rRqy5DO0FY="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0253",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0253.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2025-12-08T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Fajar Nugroho",
+              "email": "fajar.nugroho@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2025-12-08T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "S7YSYAJSvwQIXan/Yh+cYlmGoCo="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-01-07T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "LgLIy3+xFsdyo06IAuWYjijb3Rw="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-02-06T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "4A0clyLeJK91ApypYv0XEiPeE1U="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-03-08T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "Hd5XCv25r10NRCJ5rxOxNfuoeLc="
+              },
+              {
+                "id": "5.0",
+                "modifiedAt": "2026-04-07T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "HLyRbosAHcdMS+ARKspK6AeiTP0="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0256",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0256.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-08-12T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Fajar Nugroho",
+              "email": "fajar.nugroho@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-08-12T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "PHt45Lp5C35I42HMIjKAmchgkYQ="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-09-11T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "MpSwCG167elNXVHucg0ovGQqr/M="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0262",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0262.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-05-18T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Fajar Nugroho",
+              "email": "fajar.nugroho@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-05-18T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "abEPe0NJdM/vtgGM43qsQqA5lCs="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-06-17T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "YhdqAlRODu7TedJGY262rCXY8LI="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-07-17T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "A5tzfTaQi+qRIv1gkJxaWfBFrjA="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-08-16T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "uDTc1S1dCXTsmBMOLROem2nqn8M="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0265",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0265.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-04-05T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Fajar Nugroho",
+              "email": "fajar.nugroho@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-04-05T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "05fkAVRItx78/mnvtuczDQUmkOQ="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-05-05T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "jjVHGr03VN2mfjYn/nQSzBT2A1Q="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-06-04T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "M5IAayCu5/Ss77usFjjkjqeN2/E="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-07-04T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "0Wz/rfIlD3gpltI5yWudzMeJG2s="
+              },
+              {
+                "id": "5.0",
+                "modifiedAt": "2026-08-03T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "m/APO2txbJhtcNpp0rVEBiHM68Q="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0268",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0268.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-06-21T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Fajar Nugroho",
+              "email": "fajar.nugroho@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-06-21T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "jAQ6oZL6oOlifaZwTrv6MtlM3B0="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-07-21T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "DYxnz8mpVjoKn6WH8ItlYDyH64M="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0274",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0274.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-05-28T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Fajar Nugroho",
+              "email": "fajar.nugroho@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-05-28T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "K8UCNhLjxvOFhIHwf5Twu/jvDNU="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-06-27T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "LGZw02GrZ4EguiG4G7MI7ha9Qhs="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-07-27T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "YVBxswGmLZWsgmY0fSA9KfNiAZ8="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-08-26T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "YkC0bu7z0GyS9t9eNyuN8sbNY1Y="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0277",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0277.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-05-03T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-05-03T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "3ua9nrduv+A8x0xVaOjMCfVsw+Q="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-06-02T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "75Olx/UCNebz/BdTx3CyduV47vA="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-07-02T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "oYDurrFL3wgkg0pgRgCpcdOTGog="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-08-01T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "eOuqxDxK3fAjp5tVHmrnEw4UmCg="
+              },
+              {
+                "id": "5.0",
+                "modifiedAt": "2026-08-31T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "sF5xU5Wvstm0ymKAr5cSxkGQ2Rg="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0280",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0280.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-07-19T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-07-19T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "0kKo67vISjxrqdIgcIm4g8PID6s="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-08-18T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "nMEMhHPuUsxt6jQvXBnjarlvi4I="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0283",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0283.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-06-06T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-06-06T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "Z6Aay/Vn0nH/viWGSbx5MsRkfDY="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-07-06T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "EczdoveB1UpU2yu37jleKUx8xJk="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-08-05T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "+ht05BSxf7o1m1EKjtyBgW4//W0="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0286",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0286.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-04-24T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Yusuf Rahman",
+              "email": "yusuf.rahman@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-04-24T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Yusuf Rahman"
+                },
+                "size": 1024,
+                "quickXorHash": "7NKnDsvdBhWmQBGV4u5XIDZfTx8="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-05-24T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Yusuf Rahman"
+                },
+                "size": 1024,
+                "quickXorHash": "bDqAYt7WZ+qKMutz+0qisPNjF1M="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-06-23T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Yusuf Rahman"
+                },
+                "size": 1024,
+                "quickXorHash": "j8sJUDsv7+m7aP35TinpjX+K7KA="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-07-23T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Yusuf Rahman"
+                },
+                "size": 1024,
+                "quickXorHash": "IbPnxU2OPdSBafTOPC7mw9ZZYgY="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0289",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0289.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-03-12T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-03-12T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "Ezm+aJ6lwoXHx++vjM7R4708sVs="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-04-11T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "VsrzDq31p3Ev8e6DezS8gHKfUac="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-05-11T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "FIMh+LMVyzZvXHZDA4nbotdl7Rw="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-06-10T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "34ZQ47XvtAM1XxxasVjzrBl1Mss="
+              },
+              {
+                "id": "5.0",
+                "modifiedAt": "2026-07-10T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "2vK0thP2SkUHALs6C/lSe6BFdL0="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0292",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0292.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-06-24T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-06-24T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "Wc5wNQbjnCvt8wY6CaPwLN0sBjw="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-07-24T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "VuG/qovVOFl07tAGy3PxvnXomFc="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0295",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0295.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-07-31T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-07-31T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "i6Yukv9A0Dq2QtXKEKlCaLJRTko="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-08-30T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "x5gT3jwXpXoyWKdjBfGGa7vIzvo="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-09-29T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "72/5bq3YjfwDZKoXIphb2hMfFCo="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0298",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0298.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-05-02T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-05-02T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "8+P3HDpXLHykl3VcEf0TyvP4H6Y="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-06-01T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "CrT6lfBBMM/UNuVUbRxYHwZorrw="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-07-01T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "/zHMFh2bEaDvh41ODa96Dpvwg9o="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-07-31T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "Nk2JFTDjzssZ+oGyQg/GpH0G/Nk="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0301",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0301.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-02-10T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-02-10T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "VkZxUHNtjSBsqAf+IOwPmrxpGLY="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-03-12T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "d1Xaj9K2O0tmnqZSaEsRdwW9Evg="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-04-11T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "xBiMLKwrnYKllRnRKKkDoop/fdU="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-05-11T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "Gdah0jIM3sSUs66/PyTUHuBAGz4="
+              },
+              {
+                "id": "5.0",
+                "modifiedAt": "2026-06-10T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "aZHB2MWL1dIhLCe0Cd+RmfnB+gc="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0304",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0304.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-07-17T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-07-17T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "P5nhkgcnZPF0EWVy06rjIjc9k1c="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-08-16T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "dGUC7komO/mzOLaHuvFR6uKKSCs="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0316",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0316.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-05-06T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-05-06T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "H496n7RBYJWkQeJGv8mI3FRLK5w="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-06-05T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "RfPl89LVR+vSPssF2ax88Uu7C8Q="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0319",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0319.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-04-08T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-04-08T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "PxZxEM3VjA/5xVrXthIApzx2980="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-05-08T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "H80OY6e6diyhkR+mTCYAjrCxTU4="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-06-07T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "HlwEkjFv7U7W8d09PkM8Ecq56Kg="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0325",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0325.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-03-20T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-03-20T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "kPVEvpqYUH9dTkeP8ZKgtFeh5So="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-04-19T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "9CQCxYXRfpm9Ch6yW5SOL76w0sk="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-05-19T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "tPY4tdbQwsV6FG6I+t8qFN2sBNU="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-06-18T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "Qm6VK5AiSvWJ1aRop6D+vrnBjq0="
+              },
+              {
+                "id": "5.0",
+                "modifiedAt": "2026-07-18T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "sqxc6hOiyjFmqf/5UUH88X9N4A8="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0328",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0328.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-08-26T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-08-26T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "YayqXYEJZbdZQLJSja7GOXIwDRg="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-09-25T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "mMAbbw/9K/njtlCVpppiNjxus6o="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0331",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0331.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2025-12-04T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2025-12-04T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "XSjSe1oudqJ89SAEZcQQWTpbrJc="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-01-03T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "vhcA3qhnxvFURqhPo7sSb9saRwg="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-02-02T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "ep1/L+oncsEkusGmxn3K2A88pZw="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0334",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0334.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-06-01T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-06-01T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "N1GCMH5ou+IdisDoA2LhI/MVL/U="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-07-01T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "dwUIdYbG+zsuoAkWr8QKaN3haG0="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-07-31T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "Vq0izQqQYW5KBzslhDLgol9UmHg="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-08-30T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "vBQTz4h2oT5EwH/v81HntT0uN4I="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0337",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0337.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-04-19T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-04-19T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "yWOl4DndJ0+DTFA+q8UDiYMN/FU="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-05-19T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "Q4Sd+oWDysmE5py1fM9jVogRGGQ="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-06-18T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "TRmnQL0K4FAUmsY09cxNDHXuSDA="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-07-18T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "R0MmCjPEFCfcLbw0HMohoBrt9m0="
+              },
+              {
+                "id": "5.0",
+                "modifiedAt": "2026-08-17T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "a00q8CNCfNsCgatauQyCrrnzocs="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0340",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0340.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-07-05T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-07-05T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "kmxSDmGrw2eAopvw2NfImup8MYw="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-08-04T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "v0i9v8p3FT9YwJ0BRRqCuF6dd58="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0343",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0343.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-05-23T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-05-23T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "Fb0LRrXRzQyZOqmZiPbrIhfg6rQ="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-06-22T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "3TPzLiHs88P43vDWRDHwcEYjnSc="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-07-22T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "Ks57csbzFfTpNeuBWFqe42QQ1r8="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0346",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0346.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-02-28T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-02-28T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "0AiW3ulLH8EEacvHTQmXCfF8SZ8="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-03-30T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "VXpKH6ZSllTpR/c68JElEnGcRlI="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-04-29T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "E5gjhQyGDVxkrfu3YxLCog5AwzU="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-05-29T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "idU6J8ahvoTAdU8bskMuIslF1pc="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0349",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0349.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-05-19T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Yusuf Rahman",
+              "email": "yusuf.rahman@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-05-19T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Yusuf Rahman"
+                },
+                "size": 1024,
+                "quickXorHash": "Nzna2oLcnGOdfLhuOMb3hMMoX6U="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-06-18T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Yusuf Rahman"
+                },
+                "size": 1024,
+                "quickXorHash": "P4IFTJwEuuzuWoFUtmCktqeEhuQ="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-07-18T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Yusuf Rahman"
+                },
+                "size": 1024,
+                "quickXorHash": "e3YJRhtx9p+SUIqjk7w7B9pnrMQ="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-08-17T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Yusuf Rahman"
+                },
+                "size": 1024,
+                "quickXorHash": "o9o/skW6FJ/L+4clRWB6rT/l9kg="
+              },
+              {
+                "id": "5.0",
+                "modifiedAt": "2026-09-16T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Yusuf Rahman"
+                },
+                "size": 1024,
+                "quickXorHash": "On6Xy+yiJWLkA5fo3Vm4Ka5p5Js="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0352",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0352.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-08-04T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Yusuf Rahman",
+              "email": "yusuf.rahman@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-08-04T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Yusuf Rahman"
+                },
+                "size": 1024,
+                "quickXorHash": "MOlX2Qnvqh/O4arxzou9ZK30yaA="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-09-03T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Yusuf Rahman"
+                },
+                "size": 1024,
+                "quickXorHash": "WPaPZbvvzkogsYN/Q17Aw41Q2ag="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0367",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0367.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-07-22T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Yusuf Rahman",
+              "email": "yusuf.rahman@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-07-22T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Yusuf Rahman"
+                },
+                "size": 1024,
+                "quickXorHash": "V0Eb0BZRJOLDxu8M5auHWZpPHY0="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-08-21T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Yusuf Rahman"
+                },
+                "size": 1024,
+                "quickXorHash": "5qEK9d+ZyvHA9ztDM4HUDC02sIU="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-09-20T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Yusuf Rahman"
+                },
+                "size": 1024,
+                "quickXorHash": "Y7SA97sQRozgEMK1ERTWxibjxTM="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-EV-0370",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "EV-0370.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-04-01T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Yusuf Rahman",
+              "email": "yusuf.rahman@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-04-01T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Yusuf Rahman"
+                },
+                "size": 1024,
+                "quickXorHash": "nIYVLdfl/t/+1pREz6sNUM4wU38="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-05-01T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Yusuf Rahman"
+                },
+                "size": 1024,
+                "quickXorHash": "gXa1VViuVz2cNEQ6nfJ93d9L3Wk="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-05-31T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Yusuf Rahman"
+                },
+                "size": 1024,
+                "quickXorHash": "PeHcJ+0VGpwBrNgENx7WYuejZ4M="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-06-30T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Yusuf Rahman"
+                },
+                "size": 1024,
+                "quickXorHash": "5WOYocs5nUhwB7MOpuiyJsChS6g="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-POL-01",
+            "path": "Compliance/ISMS/Documents",
+            "name": "POL-01.docx",
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "createdAt": "2025-11-12T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Hendra Wijaya",
+              "email": "hendra.wijaya@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2025-11-12T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "Hz77luMpurEXboM0nCa3uT/o5l4="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2025-12-12T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "QkhjoH/VrfBSGOF4M6LzXeeWc9k="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-01-11T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "HzS+lHtnSEkB/WFO/646KcJdMKM="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-02-10T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "s3XnosaEcorUnGPG0XI2Cgc1j8w="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-PRC-05",
+            "path": "Compliance/ISMS/Documents",
+            "name": "PRC-05.docx",
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "createdAt": "2026-04-04T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Rina Kusuma",
+              "email": "rina.kusuma@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-04-04T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "3vvfur8d8SX5VH9eAaRZnnuIV68="
+              },
+              {
+                "id": "2.1",
+                "modifiedAt": "2026-05-04T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "sJKxwISeGZN8exqckGvbinNuax8="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-REG-03",
+            "path": "Compliance/ISMS/Documents",
+            "name": "REG-03.docx",
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "createdAt": "2025-03-10T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2025-03-10T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "BCq3tEkyILpO0JiyGLgg6z+a3Xs="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2025-04-09T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "fc1hFWn3r6ejL/cm81mltECdZfA="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2025-05-09T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "Dv+tKEaYe6xQ2z8n9BAD9OXP68c="
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2025-06-08T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "VsP2sXtmR53K+Sbqn4t7U+b4sJE="
+              },
+              {
+                "id": "5.0",
+                "modifiedAt": "2025-07-08T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "fDQXkT2vUEfeS/zoi1VzNMS8ytQ="
+              },
+              {
+                "id": "6.0",
+                "modifiedAt": "2025-08-07T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "+BvlUDkZ6OwckJst9HuId7dD/hk="
+              },
+              {
+                "id": "7",
+                "modifiedAt": "2025-09-06T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "RnOWAOOqOrwtZkATftXIyGLgnh8="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-PRC-07",
+            "path": "Compliance/ISMS/Documents",
+            "name": "PRC-07.docx",
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "createdAt": "2025-07-26T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2025-07-26T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "oO5bNh25rHbrXHZHqc2CMR5xQao="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2025-08-25T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "nm4bfQq0aStrrUsntN6ete20wzk="
+              },
+              {
+                "id": "3.2",
+                "modifiedAt": "2025-09-24T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "hqjvLGjSOFN7ZdJGOyQO4C9syJw="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-PRC-08",
+            "path": "Compliance/ISMS/Documents",
+            "name": "PRC-08.docx",
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "createdAt": "2026-01-15T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Andi Saputra",
+              "email": "andi.saputra@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.3",
+                "modifiedAt": "2026-01-15T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Andi Saputra"
+                },
+                "size": 1024,
+                "quickXorHash": "5k949up49+FN4yTo0I7R/gWgGwA="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-PRC-13",
+            "path": "Compliance/ISMS/Documents",
+            "name": "PRC-13.docx",
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "createdAt": "2026-02-18T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Hendra Wijaya",
+              "email": "hendra.wijaya@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-02-18T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "nmrjOWhuJIeU8Amhalh/pyMkEb4="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-03-20T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "7UDZOeqjWEKJ86yUlw5CZfB31dE="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-PLN-02",
+            "path": "Compliance/ISMS/Documents",
+            "name": "PLN-02.docx",
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "createdAt": "2025-10-30T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.1",
+                "modifiedAt": "2025-10-30T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "kBimxQoEYdMUWI6DFjAunRUOYeI="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-PRC-12",
+            "path": "Compliance/ISMS/Documents",
+            "name": "PRC-12.docx",
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "createdAt": "2026-04-12T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Dewi Anggraini",
+              "email": "dewi.anggraini@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.4",
+                "modifiedAt": "2026-04-12T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Dewi Anggraini"
+                },
+                "size": 1024,
+                "quickXorHash": "aYQwnIE5VWruZW2Mv2XZ5jVEsxk="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-PRC-15",
+            "path": "Compliance/ISMS/Documents",
+            "name": "PRC-15.docx",
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "createdAt": "2025-08-18T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Fajar Nugroho",
+              "email": "fajar.nugroho@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2025-08-18T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "StjVu5pULWvLCSI2jeew4yoetWU="
+              },
+              {
+                "id": "2.2",
+                "modifiedAt": "2025-09-17T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "+SwMSSz4Tv7+I6uaGZgZP565W9Y="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-STD-04",
+            "path": "Compliance/ISMS/Documents",
+            "name": "STD-04.docx",
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "createdAt": "2025-07-23T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2025-07-23T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "uOlGvf+phJnyEXIr2qFAPSd1iDk="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-PRC-10",
+            "path": "Compliance/ISMS/Documents",
+            "name": "PRC-10.docx",
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "createdAt": "2026-05-02T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-05-02T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "6sLcI5eZmTmco7sqfPst4sfebyQ="
+              },
+              {
+                "id": "2.3",
+                "modifiedAt": "2026-06-01T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "2MytPeJczX7S3xbNoj32bnu2b04="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-STD-06",
+            "path": "Compliance/ISMS/Documents",
+            "name": "STD-06.docx",
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "createdAt": "2026-08-19T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Yusuf Rahman",
+              "email": "yusuf.rahman@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.2",
+                "modifiedAt": "2026-08-19T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Yusuf Rahman"
+                },
+                "size": 1024,
+                "quickXorHash": "4PnVc7sgp+cDmqMGoIpx2Y4ERZU="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-PRC-11",
+            "path": "Compliance/ISMS/Documents",
+            "name": "PRC-11.docx",
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "createdAt": "2025-08-19T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.5",
+                "modifiedAt": "2025-08-19T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "KnWzEXWTutNI+dhEVpeRufSlOjo="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-STD-05",
+            "path": "Compliance/ISMS/Documents",
+            "name": "STD-05.docx",
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "createdAt": "2025-10-14T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.1",
+                "modifiedAt": "2025-10-14T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "XoKTPdWcM78ERl3tl8TBlhUd54Y="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-PRC-16",
+            "path": "Compliance/ISMS/Documents",
+            "name": "PRC-16.docx",
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "createdAt": "2026-09-20T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Yusuf Rahman",
+              "email": "yusuf.rahman@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "0.9",
+                "modifiedAt": "2026-09-20T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Yusuf Rahman"
+                },
+                "size": 1024,
+                "quickXorHash": "e57wVrLs654qdP1eboE+enQesvo="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-PRC-09",
+            "path": "Compliance/ISMS/Documents",
+            "name": "PRC-09.docx",
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "createdAt": "2025-12-29T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2025-12-29T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "8JBJO+hyzX4Y7GqlvBbAArlENCA="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-01-28T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "quickXorHash": "UNhdmQZ2tbIkZoefSfWA5LhlQVc="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-SOA-01",
+            "path": "Compliance/ISMS/Documents",
+            "name": "SOA-01.docx",
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "createdAt": "2026-07-17T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Hendra Wijaya",
+              "email": "hendra.wijaya@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-07-17T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "br9J9jAja/P6CsyRCXReCXN8Vw0="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-08-16T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "pKWwnhzdQ4KHgD24XxVxKBuG2ac="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-09-15T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "Y6C3yGz0shH3gIyIrYw/RtRQ9yM="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-POL-14",
+            "path": "Compliance/ISMS/Documents",
+            "name": "POL-14.docx",
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "createdAt": "2026-07-07T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Andi Saputra",
+              "email": "andi.saputra@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-07-07T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Andi Saputra"
+                },
+                "size": 1024,
+                "quickXorHash": "P2iYCrh6Z0hSw09V1Sxs/QY3Mis="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-IMS-01",
+            "path": "Compliance/ISMS/Documents",
+            "name": "IMS-01.docx",
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "createdAt": "2025-12-04T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Rina Kusuma",
+              "email": "rina.kusuma@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2025-12-04T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "X9NOUswbVTQcX49BdR4dKcj/Nk8="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-01-03T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "nYEcef0EO7R4hgGHIscw6xJA5Xc="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-02-02T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "KweUE/xXOouuz59CGtA19zN/xjM="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-IMS-02",
+            "path": "Compliance/ISMS/Documents",
+            "name": "IMS-02.docx",
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "createdAt": "2025-09-20T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Maya Putri",
+              "email": "maya.putri@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2025-09-20T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Maya Putri"
+                },
+                "size": 1024,
+                "quickXorHash": "8/W7RIWHE1KbVWyTi//ARIIQvJM="
+              },
+              {
+                "id": "2.4",
+                "modifiedAt": "2025-10-20T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Maya Putri"
+                },
+                "size": 1024,
+                "quickXorHash": "xM3r14oHvOKCrkmWgTiOIA4Re2U="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-IMS-03",
+            "path": "Compliance/ISMS/Documents",
+            "name": "IMS-03.docx",
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "createdAt": "2026-04-11T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Rina Kusuma",
+              "email": "rina.kusuma@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-04-11T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "4B6rhRlEsHkusC1jQHK1rq32+ww="
+              },
+              {
+                "id": "2.1",
+                "modifiedAt": "2026-05-11T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "size": 1024,
+                "quickXorHash": "xBQWuk2B06PUUy6EMuZVf5flOgo="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-IMS-04",
+            "path": "Compliance/ISMS/Documents",
+            "name": "IMS-04.docx",
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "createdAt": "2025-10-08T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Hendra Wijaya",
+              "email": "hendra.wijaya@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.6",
+                "modifiedAt": "2025-10-08T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Hendra Wijaya"
+                },
+                "size": 1024,
+                "quickXorHash": "8t1cTqlOM073IiuERj8ixMaCWyQ="
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-pick-1",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "Backup-Job-Log-Sep-2026.xlsx",
+            "createdAt": "2026-09-14T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-09-14T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "content": "Backup-Job-Log-Sep-2026.xlsx, version 1 (MSCD demo file)"
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-09-21T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "content": "Backup-Job-Log-Sep-2026.xlsx, version 2 (MSCD demo file)"
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-09-28T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "content": "Backup-Job-Log-Sep-2026.xlsx, version 3 (MSCD demo file)"
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-pick-2",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "Restore-Test-2026-09-26.pdf",
+            "createdAt": "2026-09-26T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-09-26T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "content": "Restore-Test-2026-09-26.pdf, version 1 (MSCD demo file)"
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-pick-3",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "Vuln-Scan-Report-2026-09.pdf",
+            "createdAt": "2026-09-27T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-09-27T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "content": "Vuln-Scan-Report-2026-09.pdf, version 1 (MSCD demo file)"
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-pick-4",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "Access-Review-Q3-2026.xlsx",
+            "createdAt": "2026-09-15T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Rina Kusuma",
+              "email": "rina.kusuma@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-09-15T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "content": "Access-Review-Q3-2026.xlsx, version 1 (MSCD demo file)"
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-09-22T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Rina Kusuma"
+                },
+                "content": "Access-Review-Q3-2026.xlsx, version 2 (MSCD demo file)"
+              }
+            ]
+          },
+          {
+            "id": "demo-sp-pick-5",
+            "path": "Compliance/ISMS/Evidence/2026/Q3",
+            "name": "CAB-Minutes-2026-09-24.docx",
+            "createdAt": "2026-09-03T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2026-09-03T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "content": "CAB-Minutes-2026-09-24.docx, version 1 (MSCD demo file)"
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-09-10T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "content": "CAB-Minutes-2026-09-24.docx, version 2 (MSCD demo file)"
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-09-17T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "content": "CAB-Minutes-2026-09-24.docx, version 3 (MSCD demo file)"
+              },
+              {
+                "id": "4.0",
+                "modifiedAt": "2026-09-24T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "content": "CAB-Minutes-2026-09-24.docx, version 4 (MSCD demo file)"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "drive-od-fnugroho",
+        "name": "OneDrive",
+        "driveType": "personal",
+        "tenantId": "6d3f1a2b-4c5d-4e6f-8a7b-9c0d1e2f3a4b",
+        "owner": {
+          "displayName": "F. Nugroho",
+          "email": "f.nugroho@nusantaradigital.co.id"
+        },
+        "forbidden": true,
+        "folders": [
+          {
+            "id": "demo-od-personal",
+            "path": "Personal"
+          }
+        ],
+        "items": [
+          {
+            "id": "demo-od-EV-0271",
+            "path": "Personal/Documents/DC",
+            "name": "EV-0271.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2025-12-12T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Fajar Nugroho",
+              "email": "fajar.nugroho@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1.0",
+                "modifiedAt": "2025-12-12T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "NpzIGujeE05ePIylBc/C90BLA/0="
+              },
+              {
+                "id": "2.0",
+                "modifiedAt": "2026-01-11T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "M29c7WzyE8vCuuNqvnO2yTrFhy0="
+              },
+              {
+                "id": "3.0",
+                "modifiedAt": "2026-02-10T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Fajar Nugroho"
+                },
+                "size": 1024,
+                "quickXorHash": "i6Rg7TMPUuEK/WPjIiVAr7ZB1NE="
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "google": {
+    "drives": [
+      {
+        "id": "drive-gd-bcms",
+        "name": "Compliance BCMS",
+        "kind": "shared_drive",
+        "folders": [
+          {
+            "id": "demo-gd-compliance-bcms",
+            "path": "Compliance BCMS"
+          }
+        ],
+        "items": [
+          {
+            "id": "demo-gd-EB-0100",
+            "path": "Compliance BCMS/Evidence/2026",
+            "name": "EB-0100",
+            "mimeType": "application/vnd.google-apps.document",
+            "createdAt": "2026-07-31T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Tono Hartono",
+              "email": "tono.hartono@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1",
+                "modifiedAt": "2026-07-31T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                }
+              },
+              {
+                "id": "2",
+                "modifiedAt": "2026-08-30T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                }
+              },
+              {
+                "id": "3",
+                "modifiedAt": "2026-09-29T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                }
+              }
+            ]
+          },
+          {
+            "id": "demo-gd-EB-0103",
+            "path": "Compliance BCMS/Evidence/2026",
+            "name": "EB-0103.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-06-18T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Tono Hartono",
+              "email": "tono.hartono@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "demo-EB-0103-r1",
+                "modifiedAt": "2026-06-18T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "20029cf0ed1f87763cec66fccf9eb150a74f04cd283497b3597b47e81be2c68f"
+              },
+              {
+                "id": "demo-EB-0103-r2",
+                "modifiedAt": "2026-07-18T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "86b7b92eecb561f7777bb13d9dbba9bb66c3def128a43858b10a61159baa89eb"
+              },
+              {
+                "id": "demo-EB-0103-r3",
+                "modifiedAt": "2026-08-17T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "e8adae5a948d188369c8317efcbaa293fc3a868514b062c8f39dfcd697b0f0d0"
+              },
+              {
+                "id": "demo-EB-0103-r4",
+                "modifiedAt": "2026-09-16T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "c2e74252096c733ab6d44324b1b42a629658c5cd90dc3715bf69503db3545a59"
+              }
+            ]
+          },
+          {
+            "id": "demo-gd-EB-0106",
+            "path": "Compliance BCMS/Evidence/2026",
+            "name": "EB-0106.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-05-06T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Tono Hartono",
+              "email": "tono.hartono@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "demo-EB-0106-r1",
+                "modifiedAt": "2026-05-06T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "d360bea59b1450115c5ac2fc2fe7ea20e486bf05eb9999fa5aa188c675506151"
+              },
+              {
+                "id": "demo-EB-0106-r2",
+                "modifiedAt": "2026-06-05T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "e8dcbf51cc759cecb438c5faab970970e6482c0c6119b446fe2baa3aa6b2f133"
+              },
+              {
+                "id": "demo-EB-0106-r3",
+                "modifiedAt": "2026-07-05T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "181cf141013990627a4c36fe72a9586eda4cd469d5bfc24b73bb56b63e474e5a"
+              },
+              {
+                "id": "demo-EB-0106-r4",
+                "modifiedAt": "2026-08-04T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "dbd0c38da08c92ef2691f3240618d695f955ec4a93560863f844373a3f6eab2c"
+              },
+              {
+                "id": "demo-EB-0106-r5",
+                "modifiedAt": "2026-09-03T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "574a51e02a0b1e29c1fd4677ee98fe8381d3a05ad12ed4f2de128596d6b968a8"
+              }
+            ]
+          },
+          {
+            "id": "demo-gd-EB-0109",
+            "path": "Compliance BCMS/Evidence/2026",
+            "name": "EB-0109.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-03-24T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Tono Hartono",
+              "email": "tono.hartono@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "demo-EB-0109-r1",
+                "modifiedAt": "2026-03-24T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "6ea0550d5ec40ee66878762568b61b27af4a2ef380c9cc75cc5defc2f21932d9"
+              },
+              {
+                "id": "demo-EB-0109-r2",
+                "modifiedAt": "2026-04-23T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "bdd030cd798bef99d59632c85e13f50e21b3b32de91a53c5e39c11c4ed17ce0f"
+              },
+              {
+                "id": "demo-EB-0109-r3",
+                "modifiedAt": "2026-05-23T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "60712cd1e3c94a20166683ede06c02c017ac455e2d1d0b2abed7c09748a1e37c"
+              },
+              {
+                "id": "demo-EB-0109-r4",
+                "modifiedAt": "2026-06-22T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "f0edea706d8a2c2547bcad200b8a8458b0192d7986d64901bd2486293ae5ee5a"
+              },
+              {
+                "id": "demo-EB-0109-r5",
+                "modifiedAt": "2026-07-22T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "c8a6c92a912340f1c1879e68369eb9187d114a287a822c63fcc8c14a00cffdd3"
+              },
+              {
+                "id": "demo-EB-0109-r6",
+                "modifiedAt": "2026-08-21T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "406c3acd40995eb76a06422e2a9b6765fa501ab812345abed190c91e3c88fe61"
+              }
+            ]
+          },
+          {
+            "id": "demo-gd-EB-0112",
+            "path": "Compliance BCMS/Evidence/2026",
+            "name": "EB-0112.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-02-09T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Tono Hartono",
+              "email": "tono.hartono@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "demo-EB-0112-r1",
+                "modifiedAt": "2026-02-09T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "8bfba2e1c05047a0e6b43a1d9d64f3b49ad83873981a434c69a80911af0ee5c3"
+              },
+              {
+                "id": "demo-EB-0112-r2",
+                "modifiedAt": "2026-03-11T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "eb1c48cf7b2d43be9abe9785119fae1feabd961712c4838368e20bff56d6f649"
+              },
+              {
+                "id": "demo-EB-0112-r3",
+                "modifiedAt": "2026-04-10T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "d1c18fd62ea74232186404c3711f03fa97e2e9cc0d7f8102c817941861078484"
+              },
+              {
+                "id": "demo-EB-0112-r4",
+                "modifiedAt": "2026-05-10T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "1b5ee2bd41fe5eeb40f68b58a655a18fbe023222db9989edda185090cf65bbc3"
+              },
+              {
+                "id": "demo-EB-0112-r5",
+                "modifiedAt": "2026-06-09T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "1881578aa05bb85b75226057eebd19859f1b56a9354b7686faa46e73a8e6dea9"
+              },
+              {
+                "id": "demo-EB-0112-r6",
+                "modifiedAt": "2026-07-09T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "f57d36b2fefab1837913218036cd6654bc70693e44e6a2bad0ede5da74a3a738"
+              },
+              {
+                "id": "demo-EB-0112-r7",
+                "modifiedAt": "2026-08-08T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "4938698e2f4cc4c87845f7028665d04a926cf2728c9636be8bacf9e0e8a3b08b"
+              }
+            ]
+          },
+          {
+            "id": "demo-gd-EB-0115",
+            "path": "Compliance BCMS/Evidence/2026",
+            "name": "EB-0115.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-05-27T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Tono Hartono",
+              "email": "tono.hartono@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "demo-EB-0115-r1",
+                "modifiedAt": "2026-05-27T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "3180c7816291b171e0390f943fdb1222378b8e927769d2048fc19fe3b1475043"
+              },
+              {
+                "id": "demo-EB-0115-r2",
+                "modifiedAt": "2026-06-26T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "783acb4be3131206562706eb545183bc58a4fbe05e6aba4cee1988f1086d157d"
+              },
+              {
+                "id": "demo-EB-0115-r3",
+                "modifiedAt": "2026-07-26T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "436508bb7f0f0d487404f6ab17ff8caf8394a0a8cd3aeebb366e87aa8bdefdb8"
+              }
+            ]
+          },
+          {
+            "id": "demo-gd-EB-0118",
+            "path": "Compliance BCMS/Evidence/2026",
+            "name": "EB-0118",
+            "mimeType": "application/vnd.google-apps.document",
+            "createdAt": "2026-04-14T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Tono Hartono",
+              "email": "tono.hartono@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1",
+                "modifiedAt": "2026-04-14T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                }
+              },
+              {
+                "id": "2",
+                "modifiedAt": "2026-05-14T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                }
+              },
+              {
+                "id": "3",
+                "modifiedAt": "2026-06-13T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                }
+              },
+              {
+                "id": "4",
+                "modifiedAt": "2026-07-13T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                }
+              }
+            ]
+          },
+          {
+            "id": "demo-gd-EB-0121",
+            "path": "Compliance BCMS/Evidence/2026",
+            "name": "EB-0121.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-03-02T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Tono Hartono",
+              "email": "tono.hartono@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "demo-EB-0121-r1",
+                "modifiedAt": "2026-03-02T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "06dd4844bd4c019055a4f61a5044e276ae90f8983392e3170d9955feebaf3420"
+              },
+              {
+                "id": "demo-EB-0121-r2",
+                "modifiedAt": "2026-04-01T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "6aea199551c4e87102f6f2c9a4d3f7beb3a52ed3da3c413192e4979fb442557c"
+              },
+              {
+                "id": "demo-EB-0121-r3",
+                "modifiedAt": "2026-05-01T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "e246d3c81d8b50b39a60b1493558b59ee92168dcee15514e9fbfb59f66753aa8"
+              },
+              {
+                "id": "demo-EB-0121-r4",
+                "modifiedAt": "2026-05-31T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "e452b0838600a1561686a4f7241953646be167980de21bbab965e2acfe4be191"
+              },
+              {
+                "id": "demo-EB-0121-r5",
+                "modifiedAt": "2026-06-30T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "ce0c86657738c425f6e960c88bcc3a837afffb115c66231beb6a1dcaf81bdfe1"
+              }
+            ]
+          },
+          {
+            "id": "demo-gd-EB-0124",
+            "path": "Compliance BCMS/Evidence/2026",
+            "name": "EB-0124.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-01-18T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Tono Hartono",
+              "email": "tono.hartono@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "demo-EB-0124-r1",
+                "modifiedAt": "2026-01-18T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "23b0c731f7d92c674e0c0ae753cbd0145dc0c9f0e4913c6422b9557d36f56e25"
+              },
+              {
+                "id": "demo-EB-0124-r2",
+                "modifiedAt": "2026-02-17T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "9a5d47af055ecf1fd4f3543bc85831311ab0301adcfee834d43d4769486032e0"
+              },
+              {
+                "id": "demo-EB-0124-r3",
+                "modifiedAt": "2026-03-19T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "130c88731a86393cdefdd7c98887b6fe0a34c5b2c85a52a7cb566601f39d48ca"
+              },
+              {
+                "id": "demo-EB-0124-r4",
+                "modifiedAt": "2026-04-18T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "e9cfb7aff10f46b25c865085bf450ab506d5be4fb9a7065290be524902277634"
+              },
+              {
+                "id": "demo-EB-0124-r5",
+                "modifiedAt": "2026-05-18T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "293736f6303e50b1077fc5f6e1fcafb993c6ac48dd1e1d78cb4e772aeb94b874"
+              },
+              {
+                "id": "demo-EB-0124-r6",
+                "modifiedAt": "2026-06-17T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "98232a5ae7e0eaf86200d3b1d4790955718123903bf7122adff6266f372b5a60"
+              }
+            ]
+          },
+          {
+            "id": "demo-gd-EB-0142",
+            "path": "Compliance BCMS/Evidence/2026",
+            "name": "EB-0142.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2025-10-02T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Tono Hartono",
+              "email": "tono.hartono@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "demo-EB-0142-r1",
+                "modifiedAt": "2025-10-02T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "eda52e23aa45f7fddd42ac46c8959a9faf15dac388261f3f94e4d954edf4ed8c"
+              },
+              {
+                "id": "demo-EB-0142-r2",
+                "modifiedAt": "2025-11-01T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "bc249c1732ff3c8b007037763798cdd4c667b480d2e1207250778dc18bec366a"
+              },
+              {
+                "id": "demo-EB-0142-r3",
+                "modifiedAt": "2025-12-01T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "8c67680c3329fdfbece3b642200721831780c72f85609bba1dc5052f092ee1d8"
+              },
+              {
+                "id": "demo-EB-0142-r4",
+                "modifiedAt": "2025-12-31T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "e3cfeb16fb2fe7228a401fe7cfabbd524d42df8c2128578d48bef3c88830e8b1"
+              },
+              {
+                "id": "demo-EB-0142-r5",
+                "modifiedAt": "2026-01-30T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "5fcae8e16a89edddd56bd3e3f1f0871c1f9ee6db16021e29fb009426b0777556"
+              },
+              {
+                "id": "demo-EB-0142-r6",
+                "modifiedAt": "2026-03-01T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "316c2ae1718ca48fbf133b10f4298e3269989435bacb0a6bb09f55d04d890c8d"
+              },
+              {
+                "id": "demo-EB-0142-r7",
+                "modifiedAt": "2026-03-31T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "de080ca93a8d0002d9f314f793eeabf200510988d67b07473c98b18427306d62"
+              }
+            ]
+          },
+          {
+            "id": "demo-gd-EB-0145",
+            "path": "Compliance BCMS/Evidence/2026",
+            "name": "EB-0145.pdf",
+            "mimeType": "application/pdf",
+            "createdAt": "2026-01-17T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Tono Hartono",
+              "email": "tono.hartono@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "demo-EB-0145-r1",
+                "modifiedAt": "2026-01-17T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "99d85d6621bae658e54d4fcf6a1b41773c74878d4ab85ca410e9b312f880cd18"
+              },
+              {
+                "id": "demo-EB-0145-r2",
+                "modifiedAt": "2026-02-16T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "0cb8630a6efc23af0f14e03f627954d1c94a8c64a533298e48c3a3018c2ba2f2"
+              },
+              {
+                "id": "demo-EB-0145-r3",
+                "modifiedAt": "2026-03-18T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "80ade793235fadfe60f0bc400538c4d36e02021034098f9573b215a177f1fce9"
+              }
+            ]
+          },
+          {
+            "id": "demo-gd-POL-B01",
+            "path": "Compliance BCMS/Documents",
+            "name": "POL-B01.docx",
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "createdAt": "2026-04-02T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Tono Hartono",
+              "email": "tono.hartono@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "demo-POL-B01-r1",
+                "modifiedAt": "2026-04-02T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "5e168cb7ed68cfb1ea5829a7bc257d91a436bf4acd7c28ed6bceaa6503ccd4ff"
+              }
+            ]
+          },
+          {
+            "id": "demo-gd-REG-B01",
+            "path": "Compliance BCMS/Documents",
+            "name": "REG-B01.docx",
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "createdAt": "2026-06-15T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Tono Hartono",
+              "email": "tono.hartono@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "demo-REG-B01-r1",
+                "modifiedAt": "2026-06-15T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "329f156a4f5479e1401120ad46adf7559c3025e7f30fa8fac2fa72b7227051f0"
+              }
+            ]
+          },
+          {
+            "id": "demo-gd-PLN-B01",
+            "path": "Compliance BCMS/Documents",
+            "name": "PLN-B01.docx",
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "createdAt": "2026-09-01T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Tono Hartono",
+              "email": "tono.hartono@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "demo-PLN-B01-r1",
+                "modifiedAt": "2026-09-01T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "size": 1024,
+                "sha256": "38484c2bce6f26569e7315b09ee8137644f2f6a484dea1f0f208509ac42fbbbf"
+              }
+            ]
+          },
+          {
+            "id": "demo-gd-PLN-B02",
+            "path": "Compliance BCMS/Documents",
+            "name": "PLN-B02.docx",
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "createdAt": "2026-11-15T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "demo-PLN-B02-r1",
+                "modifiedAt": "2026-11-15T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "size": 1024,
+                "sha256": "eb4967c1dff6e5eaba0e3f39565ed585ae928efd8e796736d57f909d3d9d6ce5"
+              }
+            ]
+          },
+          {
+            "id": "demo-gd-pick-1",
+            "path": "Compliance BCMS/Evidence/2026",
+            "name": "BIA-Workshop-Notes-Sep.gdoc",
+            "mimeType": "application/vnd.google-apps.document",
+            "createdAt": "2026-08-14T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Tono Hartono",
+              "email": "tono.hartono@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "1",
+                "modifiedAt": "2026-08-14T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                }
+              },
+              {
+                "id": "2",
+                "modifiedAt": "2026-08-21T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                }
+              },
+              {
+                "id": "3",
+                "modifiedAt": "2026-08-28T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                }
+              },
+              {
+                "id": "4",
+                "modifiedAt": "2026-09-04T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                }
+              },
+              {
+                "id": "5",
+                "modifiedAt": "2026-09-11T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                }
+              },
+              {
+                "id": "6",
+                "modifiedAt": "2026-09-18T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                }
+              },
+              {
+                "id": "7",
+                "modifiedAt": "2026-09-25T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                }
+              }
+            ]
+          },
+          {
+            "id": "demo-gd-pick-2",
+            "path": "Compliance BCMS/Evidence/2026",
+            "name": "Prioritised-Activities-v1.xlsx",
+            "createdAt": "2026-09-01T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Tono Hartono",
+              "email": "tono.hartono@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "demo-demo-gd-pick-2-r1",
+                "modifiedAt": "2026-09-01T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "content": "Prioritised-Activities-v1.xlsx, version 1 (MSCD demo file)"
+              },
+              {
+                "id": "demo-demo-gd-pick-2-r2",
+                "modifiedAt": "2026-09-08T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "content": "Prioritised-Activities-v1.xlsx, version 2 (MSCD demo file)"
+              },
+              {
+                "id": "demo-demo-gd-pick-2-r3",
+                "modifiedAt": "2026-09-15T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Tono Hartono"
+                },
+                "content": "Prioritised-Activities-v1.xlsx, version 3 (MSCD demo file)"
+              }
+            ]
+          },
+          {
+            "id": "demo-gd-pick-3",
+            "path": "Compliance BCMS/Evidence/2026",
+            "name": "Utility-Feed-Assessment.pdf",
+            "createdAt": "2026-09-20T01:00:00.000Z",
+            "createdBy": {
+              "displayName": "Bagus Prasetyo",
+              "email": "bagus.prasetyo@nusantaradigital.co.id"
+            },
+            "versions": [
+              {
+                "id": "demo-demo-gd-pick-3-r1",
+                "modifiedAt": "2026-09-20T02:00:00.000Z",
+                "modifiedBy": {
+                  "displayName": "Bagus Prasetyo"
+                },
+                "content": "Utility-Feed-Assessment.pdf, version 1 (MSCD demo file)"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

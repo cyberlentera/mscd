@@ -154,12 +154,44 @@ export function evaluatePermission(permission: Permission, ctx: RoleContext): 'f
 }
 
 /**
- * Grant decision for an ms-scoped permission held in at least one system of the organisation (a `permissionBy`
- * check with scope `any_ms`, D.3 "in at least one system"): the business roles the user holds in any system count.
+ * Grant decision for an ms-scoped permission held in at least one system of the organisation (a check with scope
+ * `any_ms`, D.3 "in at least one system"): the business roles the user holds in any system count, except
+ * `external_auditor`. F.7 admits external auditors only on GET routes of the audited system, and an `any_ms` check
+ * names no system, so the auditor role never satisfies it (for example `GET /admin/audit-trail/verify`).
  */
 export function evaluatePermissionInAnySystem(permission: Permission, ctx: RoleContext): 'full' | 'own' | null {
-  return evaluatePermission(permission, { ...ctx, msRoles: ctx.anyMsRoles });
+  return evaluatePermission(permission, { ...ctx, msRoles: withoutExternalAuditor(ctx.anyMsRoles) });
 }
+
+/** The external auditor role (D-34): read-only, time-boxed, limited to the audited system (F.7). */
+export const EXTERNAL_AUDITOR: BusinessRole = EA;
+
+/** Roles whose grants are only "own" for reads: Domain Owner, Risk Owner and Compliance Investigator (D-04, F.7). */
+export const OWN_SCOPED_ROLES: readonly BusinessRole[] = [DO, RO, CI];
+
+/** Business roles without `external_auditor` (F.7: the auditor role counts only in the audited system). */
+export function withoutExternalAuditor(roles: readonly BusinessRole[]): BusinessRole[] {
+  return roles.filter((r) => r !== EA);
+}
+
+/**
+ * How reads of one system are limited for a user with these business roles in it (F.7 `ScopePolicy`), first match
+ * wins: `full` for MS Manager, Programme Owner or Internal Auditor; `top_management` for Top Management (no storage
+ * object access, pending data as aggregates only); `own` when the roles are only own-scoped (Domain Owner, Risk
+ * Owner, Compliance Investigator: owner scoping, D-04); `external_auditor` for the auditor projection (D-34); null
+ * when the user holds no business role there.
+ */
+export type ReadScopeKind = 'full' | 'top_management' | 'own' | 'external_auditor';
+export function readScopeKind(roles: readonly BusinessRole[]): ReadScopeKind | null {
+  if (roles.includes(MM) || roles.includes(PO) || roles.includes(IA)) return 'full';
+  if (roles.includes(TM)) return 'top_management';
+  if (roles.some((r) => OWN_SCOPED_ROLES.includes(r))) return 'own';
+  if (roles.includes(EA)) return 'external_auditor';
+  return null;
+}
+
+/** Demo personas by UI role (G.3 `ROLES`): the users the demo persona switch signs in as (D-20). */
+export const DEMO_PERSONAS: Readonly<Record<UiRole, string>> = { manager: 'rina', owner: 'bagus', auditor: 'maya', top: 'hendra' };
 
 /** Permissions of one scope that the context grants (full or own), in matrix order. */
 export function permissionsFor(scope: PermissionScope, ctx: RoleContext): Permission[] {

@@ -2,12 +2,14 @@
 // routes are 404 unless the profile enables them; the session resolver finds the caller and the route's auth level
 // is checked (401); session checks of WP-11 (CSRF, F.2); rate limits keyed before validation (F.3); params, query,
 // headers and body are validated (400); rate limits keyed on the body; the permission is evaluated in the system of
-// the request (403, or 404 for an unknown system); BR-37 read-only mode blocks writes (403). The decision is
-// stored on the request for services (`request.mscd`). A route under `/api/` without a contract definition is 404:
-// the guard fails closed.
+// the request (403, or 404 for an unknown system); the external auditor rules (F.7: a grant that comes only from
+// the external auditor role admits GET routes of the audited system only, and guests never write); BR-37 read-only
+// mode blocks writes (403). The decision is stored on the request for services (`request.mscd`); requests of
+// external auditors are marked for the `auditor.read` entry (`auditor-read.ts`). A route under `/api/` without a
+// contract definition is 404: the guard fails closed.
 //
-// WP-08 provides this guard with the default providers of the tokens; WP-39 owns the folder and refines role
-// resolution, scoping and the external auditor rules behind the same tokens.
+// WP-08 built the pipeline; WP-39 owns the folder and added the role-based evaluator, the external auditor rules and
+// the system id on denial entries.
 import { Inject, Injectable, Logger, Optional, type CanActivate, type ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { effectiveGrant, machinePermissions, type Permission, type RouteDef } from '@mscd/shared';
@@ -35,6 +37,15 @@ import {
 } from '../../common/tokens';
 import { MetricsService } from '../platform/metrics';
 import { RateLimitService } from '../platform/rate-limit';
+import { markAuditorRead } from './auditor-read';
+import { isDetailedEvaluator } from './permission-evaluator';
+
+/** The result of one permission check of the guard. */
+interface Outcome {
+  decision: PermissionDecision;
+  /** Granted only through the external auditor role (F.7). */
+  auditorOnly: boolean;
+}
 
 /** One permission check (WP-05 `PermissionCheck`): the permission and where it is checked. */
 interface PermissionByCheck {
@@ -55,6 +66,23 @@ type ContractRoute = Omit<RouteDef, 'anyOf'> & {
     cases: Readonly<Record<string, PermissionByCheck>>;
   };
 };
+
+/**
+ * True for business routes: every authenticated route except the sign-in steps under `/auth/` and the routes of the
+ * user's own session (`me.*`). Guests may only read business routes (F.7, F.14).
+ */
+export function isBusinessRoute(def: RouteDef): boolean {
+  return def.auth !== 'public' && !def.path.startsWith('/api/v1/auth/') && !def.id.startsWith('me.');
+}
+
+/** The guard's decision for one request (F.7). */
+interface Authorisation {
+  authz: AuthzState | null;
+  /** The request relies on a grant that only the external auditor role gives (or on a guest's grant). */
+  externalAuditor: boolean;
+  /** `management_system.id` of the request's system, when the evaluator resolved it. */
+  msId: string | null;
+}
 
 /** True when the route checks a permission (auth-only routes do not). */
 export function routeHasPermission(def: RouteDef): boolean {
@@ -155,8 +183,19 @@ export class AuthzGuard implements CanActivate {
     const input = validateRouteInput(def, request);
     await this.rateLimits?.enforce('late', def, request, reply, principal, { body: input.body, query: input.query });
 
-    const authz = await this.authorise(def, principal, input);
+    const { authz, externalAuditor, msId } = await this.authorise(def, principal, input);
     if (authz?.ms) updateRequestContext({ ms: authz.ms });
+    if (principal) {
+      const guest = principal.user.kind === 'guest';
+      // F.7, F.14: guests (external auditors) never change anything on business routes.
+      if (guest && def.method !== 'GET' && isBusinessRoute(def)) {
+        await this.recordDenial(def, principal, authz?.ms ?? null, msId, []);
+        throw new ForbiddenError('External auditors have read access only');
+      }
+      if (externalAuditor || (guest && isBusinessRoute(def))) {
+        markAuditorRead(request, def, principal, { ms: authz?.ms ?? null, msId }, input.params);
+      }
+    }
 
     if (def.method !== 'GET' && !def.readOnlyAllowed && principal?.org) {
       await this.licence.assertWritable(principal.org.id);
@@ -166,30 +205,43 @@ export class AuthzGuard implements CanActivate {
     return true;
   }
 
-  /** Evaluates the route's permission (F.7); null for auth-only routes. */
-  private async authorise(def: RouteDef, principal: Principal | null, input: RouteInput): Promise<AuthzState | null> {
+  /** Evaluates the route's permission (F.7); `authz` is null for auth-only routes. */
+  private async authorise(def: RouteDef, principal: Principal | null, input: RouteInput): Promise<Authorisation> {
     const route = def as unknown as ContractRoute;
     const ms = msOfRequest(def, input);
-    if (!routeHasPermission(def)) return null;
+    if (!routeHasPermission(def)) return { authz: null, externalAuditor: false, msId: null };
     if (!principal) throw new UnauthenticatedError();
 
     const granted = new Map<Permission, 'full' | 'own'>();
     const tenancy = this.config.profile.tenancy.mode;
+    const detailed = isDetailedEvaluator(this.evaluator) ? this.evaluator : null;
+    let msId: string | null = null;
     /**
      * One check. Without an explicit scope the permission's matrix scope applies. An `ms` check needs the system of
-     * the request: without one it fails (WP-05 contract), so a route never widens an ms check by accident.
+     * the request: without one it fails (WP-05 contract), so a route never widens an ms check by accident. The
+     * outcome says whether only the external auditor role grants it (F.7); with an evaluator that cannot tell
+     * (test fakes), a guest's grant counts as an external auditor grant.
      */
-    const evaluate = async (permission: Permission, scope?: PermissionCheckScope): Promise<PermissionDecision> => {
+    const evaluate = async (permission: Permission, scope?: PermissionCheckScope): Promise<Outcome> => {
       const checkScope: PermissionCheckScope = scope ?? effectiveGrant(permission, tenancy).scope;
-      if (checkScope === 'ms' && !ms) return null;
+      if (checkScope === 'ms' && !ms) return { decision: null, auditorOnly: false };
       const target = checkScope === 'ms' ? { scope: 'ms' as const, ms: ms! } : { scope: checkScope };
-      const decision = await this.evaluator.evaluate(principal, permission, target);
+      let decision: PermissionDecision;
+      let auditorOnly: boolean;
+      if (detailed) {
+        const d = await detailed.evaluateDetailed(principal, permission, target);
+        decision = d.decision;
+        auditorOnly = d.externalAuditorOnly;
+        if (d.system) msId = d.system.id;
+      } else {
+        decision = await this.evaluator.evaluate(principal, permission, target);
+        auditorOnly = decision !== null && principal.user.kind === 'guest';
+      }
       if (decision) granted.set(permission, decision);
-      return decision;
+      return { decision, auditorOnly };
     };
 
-    let allowed = false;
-    let ownOnly = false;
+    let outcomes: Outcome[] = [];
     const checked: Permission[] = [];
     if (route.permissionBy) {
       const { source, member, cases } = route.permissionBy;
@@ -198,9 +250,7 @@ export class AuthzGuard implements CanActivate {
       const check = (typeof value === 'string' && value !== '*' && Object.hasOwn(cases, value) ? cases[value] : undefined) ?? cases['*'];
       if (!check) throw new Error(`Route ${def.id}: permissionBy has no case for ${String(value)} and no * case`);
       checked.push(check.permission);
-      const decision = await evaluate(check.permission, check.scope);
-      allowed = decision !== null;
-      ownOnly = decision === 'own';
+      outcomes = [await evaluate(check.permission, check.scope)];
     } else if (route.machine || route.anyOf?.length) {
       const candidates: PermissionByCheck[] = [];
       const add = (permission: Permission, scope: PermissionCheckScope | undefined) => {
@@ -213,32 +263,35 @@ export class AuthzGuard implements CanActivate {
         else add(item.permission, item.scope);
       }
       if (route.machine) for (const permission of machinePermissions(route.machine)) add(permission, 'ms');
-      const decisions: PermissionDecision[] = [];
       for (const candidate of candidates) {
         checked.push(candidate.permission);
-        decisions.push(await evaluate(candidate.permission, candidate.scope));
+        outcomes.push(await evaluate(candidate.permission, candidate.scope));
       }
-      allowed = decisions.some((d) => d !== null);
-      ownOnly = allowed && !decisions.includes('full');
     } else if (route.permission) {
       checked.push(route.permission);
-      const decision = await evaluate(route.permission, route.scope);
-      allowed = decision !== null;
-      ownOnly = decision === 'own';
-    } else {
-      allowed = true;
+      outcomes = [await evaluate(route.permission, route.scope)];
     }
+    const grants = outcomes.filter((o) => o.decision !== null);
+    let allowed = route.permissionBy || route.machine || route.anyOf?.length || route.permission ? grants.length > 0 : true;
+    // A request relies on the external auditor role when every grant that admits it comes from that role alone.
+    let externalAuditor = allowed && grants.length > 0 && grants.every((o) => o.auditorOnly);
+    const ownOnly = allowed && grants.length > 0 && !grants.some((o) => o.decision === 'full');
     if (allowed && route.allOf?.length) {
       for (const permission of route.allOf) {
         checked.push(permission);
-        if ((await evaluate(permission, route.scope)) === null) allowed = false;
+        const outcome = await evaluate(permission, route.scope);
+        if (outcome.decision === null) allowed = false;
+        else if (outcome.auditorOnly) externalAuditor = true;
       }
     }
+    // F.7: external auditors are allowed only on GET routes of the audited system. Their role grants nothing in an
+    // `any_ms`, organisation or platform check, so a grant that comes only from it always names that system.
+    if (allowed && externalAuditor && def.method !== 'GET') allowed = false;
     if (!allowed) {
-      await this.recordDenial(def, principal, ms, checked);
+      await this.recordDenial(def, principal, ms, msId, checked);
       throw new ForbiddenError();
     }
-    return { ms, granted, ownOnly };
+    return { authz: { ms, granted, ownOnly }, externalAuditor, msId };
   }
 
   /** Request context and log fields of the caller. */
@@ -259,9 +312,9 @@ export class AuthzGuard implements CanActivate {
 
   /**
    * F.7 Denials: `authz.denied` in the tenant audit trail, at most once per user, route and minute, with the system
-   * of the request when it names one (so the system's full-entry view lists it).
+   * of the request when it names one (its id when known, so the system's full-entry view lists it).
    */
-  private async recordDenial(def: RouteDef, principal: Principal, ms: string | null, permissions: Permission[]): Promise<void> {
+  private async recordDenial(def: RouteDef, principal: Principal, ms: string | null, msId: string | null, permissions: Permission[]): Promise<void> {
     this.deniedCounter?.inc({ route: def.id });
     if (!principal.org || !this.audit) return;
     const minute = Math.floor(Date.now() / 60_000);
@@ -273,7 +326,15 @@ export class AuthzGuard implements CanActivate {
     this.recentDenials.add(key);
     try {
       await this.audit.recordDetached(
-        { action: 'authz.denied', msSlug: ms, entityType: 'route', entityCode: def.id, after: { routeId: def.id, permissions, ms } },
+        {
+          action: 'authz.denied',
+          // The system id when the evaluator resolved it, so the system's full-entry view lists the denial (F.11);
+          // otherwise the writer looks the slug up.
+          ...(msId ? { msId } : { msSlug: ms }),
+          entityType: 'route',
+          entityCode: def.id,
+          after: { routeId: def.id, permissions, ms },
+        },
         { orgId: principal.org.id, schema: principal.org.schema },
       );
     } catch (error) {
