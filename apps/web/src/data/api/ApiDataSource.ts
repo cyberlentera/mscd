@@ -69,6 +69,14 @@ const SNAPSHOT_MISSING = new Error('ApiDataSource: load() has not completed');
 /** Integrity codes whose file can still be verified; any other code is relinked (H.4 `linkFile`). */
 const VERIFIABLE = new Set(['ok', 'nohash', 'pending']);
 
+/** Folder below the system root that the picker opens: the current quarter's evidence folder, or the documents folder. */
+export function pickerFolder(kind: string, today: IsoDate | undefined): string {
+  if (kind !== 'ev') return 'Documents';
+  const [y, m] = String(today ?? '').split('-').map(Number);
+  if (!y || !m) return 'Evidence';
+  return `Evidence/${y}/Q${Math.floor((m - 1) / 3) + 1}`;
+}
+
 export function createApiDataSource(options: ApiDataSourceOptions): ApiDataSource {
   return new ApiDataSource(options);
 }
@@ -276,10 +284,12 @@ export class ApiDataSource implements DataSource {
     if ('error' in found) throw new ApiLoadError({ status: found.error.error!.status, message: found.error.error!.message });
     const ms = this.current?.MS.find((m) => m.id === found.k.ms);
     if (!ms) throw new ApiLoadError({ status: 404, message: NOT_FOUND });
-    const res = await this.send<WirePickerListing>('browse', {
-      params: { slug: ms.loc },
-      query: { ms: ms.id, kind: found.k.kind === 'ev' ? 'evidence' : 'document', recordId: found.ref.id },
-    });
+    const query = { ms: ms.id, kind: found.k.kind === 'ev' ? 'evidence' : 'document', recordId: found.ref.id };
+    // The folder of the current period, where uploads also go (WP-21: `Evidence/<year>/Q<n>`, `Documents`); when it
+    // does not exist yet, the system's root folder.
+    const folder = pickerFolder(found.k.kind, this.current?.today);
+    let res = await this.send<WirePickerListing>('browse', { params: { slug: ms.loc }, query: { ...query, path: folder } });
+    if (!res.ok && res.status === 404) res = await this.send<WirePickerListing>('browse', { params: { slug: ms.loc }, query });
     if (!res.ok) throw new ApiLoadError(res.error);
     const data = res.data;
     return { path: data.path, files: data.files.map((f) => [...f] as PickerListing['files'][number]), refs: data.refs.map((r) => ({ ...r })) };

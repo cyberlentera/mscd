@@ -3,7 +3,8 @@
 // shared rows with BR-22 confirmation and their system links (`ndt`, which has four systems), metric values,
 // entity links with the primary rule, operating criteria, and the soft delete of WP-35's route for every kind.
 import { CommandResult, pageOf, RegisterItem } from '@mscd/shared';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { LicenceService } from '../../../src/modules/license/licence.service';
 import { useTestDatabase } from '../../setup/test-db';
 import {
   auditOf, createRiskApp, inOrg, linksOf, msIdOf, REGISTERS_URL, rowOf, sessionFor, verifyChain, type Client, type RegisterPage, type RiskApp,
@@ -152,6 +153,22 @@ describe('risk-side registers', () => {
       // A row linked to one system needs no confirmation.
       const single = await rinaNdt.post(REGISTERS_URL('isms', 'assets'), { code: 'WP36-S2', title: 'Single', ownerHandle: 'rina' });
       expect((await rinaNdt.patch(`${REGISTERS_URL('isms', 'assets')}/${single.body.ref!.id}`, { title: 'Single asset' })).status).toBe(200);
+    });
+
+    it('needs the integrated_mode feature for a second system (LIC-FEATURE)', async () => {
+      const licences = ctx.moduleRef.get(LicenceService);
+      const original = licences.featureLicensed.bind(licences);
+      const spy = vi.spyOn(licences, 'featureLicensed').mockImplementation((evaluated, feature) => feature !== 'integrated_mode' && original(evaluated, feature));
+      try {
+        const shared = await rinaNdt.post(REGISTERS_URL('isms', 'assets'), { code: 'WP36-L1', title: 'Shared asset', ownerHandle: 'rina', linkedMs: ['isms', 'qms'] });
+        expect(shared.status).toBe(422);
+        expect(shared.body.rule).toBe('LIC-FEATURE');
+        expect((await rinaNdt.post('/api/v1/ms/bcms/entity-links', { entityType: 'risk', entityCode: 'R-022' })).body.rule).toBe('LIC-FEATURE');
+        // One system needs no feature.
+        expect((await rinaNdt.post(REGISTERS_URL('isms', 'assets'), { code: 'WP36-L1', title: 'Single asset', ownerHandle: 'rina' })).status).toBe(201);
+      } finally {
+        spy.mockRestore();
+      }
     });
 
     it('links, re-primaries and unlinks a record through the entity link routes', async () => {

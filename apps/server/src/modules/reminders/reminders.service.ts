@@ -93,19 +93,18 @@ export class RemindersService {
         });
       }
 
-      const reminderId = randomUUID();
-      await sql`insert into reminder (id, management_system_id, record_key, entity_type, entity_id, recipient_user_id, sent_by_user_id, sent_at, created_by)
-                values (${reminderId}, ${system.id}, ${item.key}, ${item.ref.entityType}, ${item.ref.id}, ${recipient}, ${actor}, ${now}, ${actor})`.execute(trx);
-      const text = reminderText(item);
+      // `reminder` is insert-only for the api role (C.4), so the notification is created first and referenced.
       const notificationId = await this.notifications.create(trx, {
         recipientUserId: recipient,
         kind: 'reminder',
         title: { en: `Reminder: ${item.title[0]}`, id: `Pengingat: ${item.title[1]}` },
-        body: text,
+        body: reminderText(item),
         msId: system.id,
         ref: item.ref,
       });
-      if (notificationId) await sql`update reminder set notification_id = ${notificationId} where id = ${reminderId}`.execute(trx);
+      await sql`insert into reminder (management_system_id, record_key, entity_type, entity_id, recipient_user_id, sent_by_user_id, sent_at,
+                                      notification_id, created_by)
+                values (${system.id}, ${item.key}, ${item.ref.entityType}, ${item.ref.id}, ${recipient}, ${actor}, ${now}, ${notificationId}, ${actor})`.execute(trx);
       await this.audit.record(trx, {
         action: 'reminder.sent',
         msId: system.id,
@@ -153,7 +152,6 @@ export class RemindersService {
           throw error;
         }
         if (!recipient) continue;
-        const ids: string[] = [];
         const reminded: ItemInfo[] = [];
         for (const item of items) {
           const last = await this.lastSent(trx, recipient, item.key, now);
@@ -161,10 +159,6 @@ export class RemindersService {
             skipped.push({ recipient: handle, recordKey: item.key, lastSentAt: last.toISOString() });
             continue;
           }
-          const id = randomUUID();
-          await sql`insert into reminder (id, management_system_id, record_key, entity_type, entity_id, recipient_user_id, sent_by_user_id, sent_at, bulk_id, created_by)
-                    values (${id}, ${system.id}, ${item.key}, ${item.ref.entityType}, ${item.ref.id}, ${recipient}, ${actor}, ${now}, ${bulkId}, ${actor})`.execute(trx);
-          ids.push(id);
           reminded.push(item);
         }
         if (reminded.length === 0) continue;
@@ -186,7 +180,12 @@ export class RemindersService {
           msId: system.id,
           ...(reminded.length === 1 ? { ref: reminded[0]!.ref } : {}),
         });
-        if (notificationId) await sql`update reminder set notification_id = ${notificationId} where id = any(${ids}::uuid[])`.execute(trx);
+        for (const item of reminded) {
+          await sql`insert into reminder (management_system_id, record_key, entity_type, entity_id, recipient_user_id, sent_by_user_id, sent_at, bulk_id,
+                                          notification_id, created_by)
+                    values (${system.id}, ${item.key}, ${item.ref.entityType}, ${item.ref.id}, ${recipient}, ${actor}, ${now}, ${bulkId}, ${notificationId},
+                            ${actor})`.execute(trx);
+        }
       }
       await this.audit.record(trx, {
         action: 'reminder.sent',

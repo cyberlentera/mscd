@@ -2,7 +2,7 @@
 // the H.4 table, problem to error mapping, 401 handling, the organisation switch with reauth-required, the persona
 // switch, and createDataSource in API mode.
 import { describe, expect, it, vi } from 'vitest';
-import { ApiLoadError } from '../../src/data/api/ApiDataSource';
+import { ApiLoadError, pickerFolder } from '../../src/data/api/ApiDataSource';
 import { findRef, parseKey, rehydrateBundle } from '../../src/data/api/wire';
 import { LOC_VISUALS } from '../../src/data/static.js';
 import { problem } from '../auth/helpers';
@@ -242,6 +242,16 @@ describe('commands', () => {
     expect(only(calls).body).toEqual({ to: 'blocked', blockerGateItemRef: 'A.8.12', blockerReason: 'Blocked by gate item A.8.12' });
   });
 
+  it('listPickerFiles opens the system root when the period folder does not exist', async () => {
+    const listing = { path: 'Compliance / ISMS', files: [], refs: [] };
+    const { ds, calls } = await loaded({
+      'GET /api/v1/storage/repositories/sp/browse': (req) => (new URL(req.url, 'http://x').searchParams.has('path') ? problem(404, 'not-found') : json(listing)),
+    });
+    const got = await ds.listPickerFiles('isms:doc:POL-01', 'sp');
+    expect(calls).toHaveLength(2);
+    expect(got).toEqual(listing);
+  });
+
   it('listPickerFiles browses the default repository of the system for the record', async () => {
     const listing = { path: 'Compliance / ISMS / Evidence', files: [['Backup.xlsx', '28 Sep 2026', 'v3.0', 'quickXorHash', 'Bagus Prasetyo']], refs: [{ repositoryId: 'sp', externalItemId: 'demo-sp-picker-1', externalVersionId: '3.0' }] };
     const { ds, calls, snap } = await loaded({ 'GET /api/v1/storage/repositories/sp/browse': json(listing) });
@@ -250,8 +260,14 @@ describe('commands', () => {
     const req = only(calls);
     const q = new URL(req.url, 'http://x').searchParams;
     expect(req.path).toBe(`/api/v1/storage/repositories/${snap.MS.find((m: AnyRecord) => m.id === 'isms').loc}/browse`);
-    expect(Object.fromEntries(q)).toEqual({ ms: 'isms', kind: 'evidence', recordId: snap.refs[`isms:ev:${ev.code}`].id });
+    // The folder of the current quarter below the system root (where uploads go too).
+    expect(Object.fromEntries(q)).toEqual({ ms: 'isms', kind: 'evidence', recordId: snap.refs[`isms:ev:${ev.code}`].id, path: 'Evidence/2026/Q3' });
     expect(got).toEqual(listing);
+    calls.length = 0;
+    await ds.listPickerFiles('isms:doc:POL-01', 'sp');
+    expect(new URL(calls[0].url, 'http://x').searchParams.get('path')).toBe('Documents');
+    expect(pickerFolder('ev', '2027-01-05')).toBe('Evidence/2027/Q1');
+    expect(pickerFolder('ev', undefined)).toBe('Evidence');
     await expect(ds.listPickerFiles('isms:req:A.8.13', 'sp')).rejects.toBeInstanceOf(ApiLoadError);
   });
 

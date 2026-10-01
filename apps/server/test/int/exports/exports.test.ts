@@ -296,7 +296,7 @@ describe('exports (D.3, E.2, F.13, F.15)', () => {
     expect((await sari.get(done.downloadUrl!)).status).toBe(200);
 
     // After seven days the file is no longer served.
-    await inOrg(db, 'ndt', (trx) => trx.updateTable('export_file').set({ expires_at: new Date(Date.now() - 1000) }).where('background_task_id', '=', done.id).execute());
+    await inOrg(db, 'ndt', (trx) => trx.updateTable('export_file').set({ expires_at: new Date(ctx.clock.now().getTime() - 1000) }).where('background_task_id', '=', done.id).execute());
     expect((await sari.get(done.downloadUrl!)).status).toBe(404);
     expect((await sari.get(`/api/v1/exports/${pending.body.taskId}/download`)).status).toBe(409);
   });

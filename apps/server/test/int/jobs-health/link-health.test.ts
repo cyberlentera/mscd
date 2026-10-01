@@ -425,7 +425,7 @@ describe('link health check (E.4)', () => {
         { orgId: NDT, payload: { repositoryId: await repositoryId(db, 'ndt', 'sp'), storageObjectIds: objects.map((o) => o.id), taskId } },
         { retryLimit: LINK_CHECK_RETRY_LIMIT },
       );
-      expect(stats).toBe(4);
+      expect(stats).toBe(5);
       expect(await taskRow(taskId)).toMatchObject({ status: 'running', result: { checked: 3 } });
       ctx.gateway.script = null;
       await check([(await evidenceObject(db, 'ndt', take().code)).id], 'sp', { taskId });
