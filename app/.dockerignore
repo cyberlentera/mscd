@@ -1,0 +1,13 @@
+# Keep the build context small and free of local build output.
+node_modules
+dist
+e2e
+e2e-report
+test-results
+playwright.config.js
+Dockerfile
+.dockerignore
+.git
+.env*
+*.log
+.DS_Store
