@@ -134,7 +134,11 @@ function tokenize(q: string): Token[] {
   return tokens;
 }
 
-export function parseDriveQuery(q: string): Predicate {
+/**
+ * Parses the `q` subset into a predicate. `isTrashed` gives the effective trashed state (the list handler passes
+ * one that also looks at the parent folders); the default reads the item's own flag.
+ */
+export function parseDriveQuery(q: string, isTrashed: Predicate = (item) => item.trashed): Predicate {
   const tokens = tokenize(q);
   let index = 0;
   const peek = () => tokens[index];
@@ -173,7 +177,7 @@ export function parseDriveQuery(q: string): Predicate {
       if (field === 'trashed') {
         if (!value || value.kind !== 'word' || !['true', 'false'].includes(value.value)) throw badRequest('Invalid Value: trashed needs true or false.', 'q');
         const wanted = value.value === 'true';
-        return (item) => (item.trashed === wanted) !== negate;
+        return (item) => (isTrashed(item) === wanted) !== negate;
       }
       if (field === 'name' || field === 'mimeType') {
         if (!value || value.kind !== 'string') throw badRequest(`Invalid Value: ${field} needs a string.`, 'q');
@@ -343,7 +347,8 @@ export class DriveApi {
     out.createdTime = item.createdAt;
     out.modifiedTime = current && !item.isFolder ? current.modifiedAt : item.modifiedAt;
     out.version = String(item.revision);
-    out.trashed = item.trashed;
+    out.trashed = this.state.isTrashed(item);
+    out.explicitlyTrashed = item.trashed;
     out.webViewLink = this.webViewLink(item);
     out.lastModifyingUser = this.user(current && !item.isFolder ? current.modifiedBy : item.modifiedBy, principal);
     if (!item.isFolder && current) out.size = String(current.size);
@@ -422,7 +427,7 @@ export class DriveApi {
     }
     const parent = this.resolve(principal, parents[0], query);
     if (!parent.item.isFolder) throw badRequest('Invalid Value: the parent is not a folder.', 'parents');
-    if (parent.item.trashed) throw fileNotFound(parents[0]);
+    if (this.state.isTrashed(parent.item)) throw fileNotFound(parents[0]);
     return parent;
   }
 
@@ -461,7 +466,7 @@ export class DriveApi {
       });
     }
     const q = query.get('q');
-    const predicate = q && q.trim() !== '' ? parseDriveQuery(q) : () => true;
+    const predicate = q && q.trim() !== '' ? parseDriveQuery(q, (item) => state.isTrashed(item)) : () => true;
     const driveIds = new Set(drives.map((drive) => drive.id));
     const matches = [...state.items.values()]
       .filter((item) => item.provider === 'google' && driveIds.has(item.driveId) && item.parentId !== null && predicate(item))

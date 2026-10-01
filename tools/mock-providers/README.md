@@ -69,7 +69,7 @@ Google Drive v3 (file, drive and revision ids must match `^[A-Za-z0-9_-]+$`, oth
 | `GET /drive/v3/files/{id}` | `alt=media` downloads binary files (403 `fileNotDownloadable` for Docs, Sheets, Slides) |
 | `GET /drive/v3/files` | `q` subset: `'<id>' in parents`, `name =`, `name !=`, `name contains`, `mimeType =`, `mimeType !=`, `trashed = true or false`, joined by `and`, with parentheses (`or` and `not` answer 400); `corpora=drive&driveId=` needs `includeItemsFromAllDrives` and `supportsAllDrives`; `pageSize` (default 100) and `nextPageToken` |
 | `POST /drive/v3/files` | Metadata only (folders) |
-| `PATCH /drive/v3/files/{id}`, `DELETE /drive/v3/files/{id}` | `name`, `description`, `trashed`; moves with `addParents` and `removeParents` |
+| `PATCH /drive/v3/files/{id}`, `DELETE /drive/v3/files/{id}` | `name`, `description`, `trashed`; moves with `addParents` and `removeParents`. As in Drive, everything inside a trashed folder reports `trashed: true` (with `explicitlyTrashed: false`) and matches `trashed = true` in `q` until the folder is restored; new files and folders in a trashed folder answer 404 |
 | `POST /drive/v3/files/{id}/copy` | Synchronous |
 | `GET /drive/v3/files/{id}/revisions`, `GET` and `PATCH .../revisions/{revision}` | `keepForever` for binary files; `alt=media` on a revision |
 | `GET /drive/v3/drives/{drive}`, `GET /drive/v3/about?fields=...` | `fields` is required on `about` |
@@ -92,7 +92,7 @@ Errors use each API's documented envelope: Graph `{error: {code, message, innerE
 | `POST /_admin/items`, `GET /_admin/items/{id}` | Creates a file as a fixture item (`driveId` plus the fields of a fixture file, for example a zero-transit upload with `createdBy` and a correlation code in the name; in a My Drive, `createdBy` becomes `owners`), all or nothing like a fixture merge; shows an item with all versions and hashes |
 | `POST /_admin/items/{id}/move` | `{parentId}` or `{path}` (created when missing), optional `name`; without a body the item moves to a subfolder `Moved` of its folder |
 | `POST /_admin/items/{id}/new-version` | New current version (`content` or `contentBase64`, `versionId`, `modifiedAt`, `modifiedBy`); older versions stay listed |
-| `POST /_admin/items/{id}/delete` | Removes the item (404 afterwards); `{"mode": "trash"}` trashes a Drive file instead |
+| `POST /_admin/items/{id}/delete` | Removes the item (404 afterwards); `{"mode": "trash"}` trashes a Drive file or folder instead (a folder trashes everything inside it) |
 | `POST /_admin/items/{id}/purge-version` | `{versionId}` removes one older version; without a body every version but the current one |
 | `POST /_admin/items/{id}/corrupt-hash` | Changes the content and hashes of the current version without a new version id |
 | `POST /_admin/drives/{id}/forbid` | Every request touching the drive answers 403 (`{forbidden: false}` restores) |

@@ -312,6 +312,45 @@ describe('Drive files', () => {
     expect((await get(`/drive/v3/files/file-prioritised?${ALL}`)).statusCode).toBe(404);
   });
 
+  it('trashes the files and folders inside a trashed folder and restores them with it', async () => {
+    const evidence = (await get(`/drive/v3/files/folder-bcms-2026?${ALL}&fields=parents`)).json().parents[0] as string;
+    const state = async (id: string) => (await get(`/drive/v3/files/${id}?${ALL}&fields=trashed,explicitlyTrashed`)).json();
+    const listed = async (trashed: boolean) => {
+      const query = new URLSearchParams({
+        q: `'folder-bcms-2026' in parents and trashed = ${trashed}`,
+        corpora: 'drive',
+        driveId: 'drive-gd-bcms',
+        includeItemsFromAllDrives: 'true',
+        supportsAllDrives: 'true',
+        fields: 'files(id)',
+      });
+      return (await get(`/drive/v3/files?${query}`)).json().files.map((f: { id: string }) => f.id);
+    };
+    const notFound = (response: { statusCode: number; json: () => { error: { code: number } } }) => {
+      expect(response.statusCode).toBe(404);
+      expect(response.json().error.code).toBe(404);
+    };
+
+    await call(app, 'PATCH', `/drive/v3/files/file-bia-notes?${ALL}`, { token, json: { trashed: true } });
+    const trashed = await call(app, 'PATCH', `/drive/v3/files/${evidence}?${ALL}&fields=trashed,explicitlyTrashed`, { token, json: { trashed: true } });
+    expect(trashed.json()).toEqual({ trashed: true, explicitlyTrashed: true });
+    expect(await state('folder-bcms-2026')).toEqual({ trashed: true, explicitlyTrashed: false });
+    expect(await state('file-prioritised')).toEqual({ trashed: true, explicitlyTrashed: false });
+    expect(await listed(false)).toEqual([]);
+    expect(await listed(true)).toEqual(['file-bia-notes', 'file-prioritised']);
+    expect((await call(app, 'GET', '/_admin/items/file-prioritised')).json()).toMatchObject({ trashed: true, explicitlyTrashed: false });
+    notFound(await call(app, 'POST', `/upload/drive/v3/files?uploadType=multipart&${ALL}`, multipart({ name: 'late.txt', parents: ['folder-bcms-2026'] }, 'late')));
+    notFound(await call(app, 'POST', `/drive/v3/files?${ALL}`, { token, json: { name: 'Late', mimeType: 'application/vnd.google-apps.folder', parents: ['folder-bcms-2026'] } }));
+
+    await call(app, 'PATCH', `/drive/v3/files/${evidence}?${ALL}`, { token, json: { trashed: false } });
+    expect(await state('file-prioritised')).toEqual({ trashed: false, explicitlyTrashed: false });
+    expect(await state('file-bia-notes')).toEqual({ trashed: true, explicitlyTrashed: true });
+    expect(await listed(false)).toEqual(['file-prioritised']);
+
+    await call(app, 'POST', `/_admin/items/${evidence}/delete`, { json: { mode: 'trash' } });
+    expect(await state('file-prioritised')).toEqual({ trashed: true, explicitlyTrashed: false });
+  });
+
   it('returns shared drives and the about resource', async () => {
     expect((await get('/drive/v3/drives/drive-gd-bcms')).json()).toEqual({ kind: 'drive#drive', id: 'drive-gd-bcms', name: 'Compliance BCMS' });
     expect((await get('/drive/v3/drives/drive-unknown')).statusCode).toBe(404);

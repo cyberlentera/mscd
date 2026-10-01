@@ -424,6 +424,17 @@ export class MockState {
     return false;
   }
 
+  /**
+   * Drive's `trashed`: the item's own flag or the flag of any folder above it (a file inside a trashed folder is
+   * trashed too, and comes back when the folder is restored). The item's own flag is Drive's `explicitlyTrashed`.
+   */
+  isTrashed(item: ItemState): boolean {
+    for (let current: ItemState | undefined = item; current; current = current.parentId ? this.items.get(current.parentId) : undefined) {
+      if (current.trashed) return true;
+    }
+    return false;
+  }
+
   folderSize(item: ItemState): number {
     if (!item.isFolder) return this.currentVersion(item)?.size ?? 0;
     return this.childrenOf(item.id).reduce((sum, child) => sum + this.folderSize(child), 0);

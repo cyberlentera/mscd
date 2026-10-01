@@ -97,7 +97,8 @@ export function itemView(state: MockState, item: ItemState): Record<string, unkn
     createdAt: item.createdAt,
     createdBy: item.createdBy,
     modifiedAt: current && !item.isFolder ? current.modifiedAt : item.modifiedAt,
-    trashed: item.trashed,
+    trashed: state.isTrashed(item),
+    explicitlyTrashed: item.trashed,
     currentVersionId: current && !item.isFolder ? current.id : null,
     versions: item.versions.map((version) => ({
       id: version.id,
