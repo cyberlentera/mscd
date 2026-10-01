@@ -4,10 +4,12 @@
 import type { ApprovalStatus, BusinessRole, OrgRole, UserView } from '@mscd/shared';
 import { sql, type RawBuilder } from 'kysely';
 import type { Trx } from '../../common/tokens';
+import { handleBase } from '../identity/invitation.service';
 
 interface MemberRow {
   id: string;
-  handle: string;
+  /** Null for an invited membership (see `membersQuery`). */
+  handle: string | null;
   email: string;
   display_name: string;
   job_title: string | null;
@@ -37,14 +39,18 @@ function likePattern(text: string): string {
 /**
  * Members of the organisation. Until the user accepts an invited membership the row shows only what the inviting
  * organisation supplied or may know (F.6: `POST /admin/users` never reveals another tenant's account): the account
- * status `invited`, the email as display name, no job title, no last sign-in and no second factor. A new email and an
- * account of another organisation therefore look the same in the list, in search and in the order.
+ * status `invited`, the email as display name, a handle derived from the email (never the account's own handle, which
+ * another organisation may have chosen), no job title, no last sign-in and no second factor. A new email and an
+ * account of another organisation therefore look the same in the list, in search and in the order. Role grants need
+ * an active member, so an invited member is never named by handle before accepting.
  */
 function membersQuery(orgId: string, filter: (cols: { handle: RawBuilder<string>; email: RawBuilder<string>; displayName: RawBuilder<string> }) => RawBuilder<unknown>): RawBuilder<MemberRow> {
   const invited = sql`m.status = 'invited'`;
   const displayName = sql<string>`(case when ${invited} then u.email else u.display_name end)`;
+  // Invited rows: the real handle is neither returned nor searched; `toUserViews` derives one from the email.
+  const handle = sql<string>`(case when ${invited} then null else u.handle end)`;
   return sql<MemberRow>`
-    select u.id, u.handle, u.email, ${displayName} as display_name,
+    select u.id, ${handle} as handle, u.email, ${displayName} as display_name,
            case when ${invited} then null else u.job_title end as job_title,
            u.kind,
            case when ${invited} then 'invited' else u.status end as account_status,
@@ -55,7 +61,7 @@ function membersQuery(orgId: string, filter: (cols: { handle: RawBuilder<string>
     from platform.org_membership m
     join platform.app_user u on u.id = m.user_id
     where m.organization_id = ${orgId} and m.deleted_at is null and u.deleted_at is null and u.kind <> 'system'
-      and ${filter({ handle: sql<string>`u.handle`, email: sql<string>`u.email`, displayName })}`;
+      and ${filter({ handle: sql<string>`coalesce(${handle}, '')`, email: sql<string>`u.email`, displayName })}`;
 }
 
 /** One page of members, ordered by name, with the total. */
@@ -70,7 +76,7 @@ export async function memberPage(
   );
   const total = await sql<{ n: string }>`select count(*) as n from (${members}) x`.execute(trx);
   const { rows } = await sql<MemberRow>`
-    select * from (${members}) x order by lower(x.display_name), x.handle
+    select * from (${members}) x order by lower(x.display_name), x.handle nulls first, lower(x.email), x.id
     limit ${query.pageSize} offset ${(query.page - 1) * query.pageSize}`.execute(trx);
   return { rows, total: Number(total.rows[0]?.n ?? 0) };
 }
@@ -111,7 +117,7 @@ export async function toUserViews(trx: Trx, rows: readonly MemberRow[], otherMem
   );
   return rows.map((row) => ({
     id: row.id,
-    handle: row.handle,
+    handle: row.handle ?? handleBase(row.email),
     email: row.email,
     displayName: row.display_name,
     jobTitle: row.job_title,

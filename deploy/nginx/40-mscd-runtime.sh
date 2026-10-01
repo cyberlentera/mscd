@@ -111,9 +111,11 @@ case "$api_upstream" in
         ;;
 esac
 
-# MSCD_TRUSTED_PROXY_CIDRS: IPv4 or IPv6 addresses or CIDR ranges.
-proxies=$(printf '%s' "$trusted_proxies" | tr ',' ' ')
-for cidr in $proxies; do
+# MSCD_TRUSTED_PROXY_CIDRS: IPv4 or IPv6 addresses or CIDR ranges, separated by
+# commas or white space. Globbing is off while the list is split.
+proxies=""
+set -f
+for cidr in $(printf '%s' "$trusted_proxies" | tr ',' ' '); do
     case "$cidr" in
         *[!0-9A-Fa-f:./]* | */*/* | /* | */)
             log "ERROR: MSCD_TRUSTED_PROXY_CIDRS must list addresses or CIDR ranges such as 10.0.0.0/8, got '$cidr'"
@@ -135,7 +137,9 @@ for cidr in $proxies; do
             fi
             ;;
     esac
+    proxies="${proxies:+$proxies }$cidr"
 done
+set +f
 
 rm -rf "$RUNTIME_DIR"
 mkdir -p "$RUNTIME_DIR/conf.d" "$RUNTIME_DIR/http.d" "$RUNTIME_DIR/https.d" \
@@ -152,13 +156,13 @@ fi
 
 if [ -n "$proxies" ]; then
     {
-        for cidr in $proxies; do
+        printf '%s\n' "$proxies" | tr ' ' '\n' | while IFS= read -r cidr; do
             echo "set_real_ip_from $cidr;"
         done
         echo 'real_ip_header X-Forwarded-For;'
         echo 'real_ip_recursive on;'
     } >"$RUNTIME_DIR/realip.d/realip.conf"
-    log "client address taken from X-Forwarded-For of the trusted proxies: $(echo $proxies)"
+    log "client address taken from X-Forwarded-For of the trusted proxies: $proxies"
 fi
 
 if [ -f /proc/net/if_inet6 ]; then

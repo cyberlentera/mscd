@@ -16,11 +16,13 @@ import { NO_ORGANISATION } from '../authz/authz-infra';
 import { MembershipDirectory } from '../authz/membership-directory';
 import { RoleResolver } from '../authz/role-resolver';
 import { AccountMailer } from '../identity/account-mailer';
-import { INVITATION_TTL_MS, InvitationService } from '../identity/invitation.service';
+import { handleBase, INVITATION_TTL_MS, InvitationService, type CreatedInvitation } from '../identity/invitation.service';
 import { MfaService } from '../identity/mfa.service';
 import { SessionService, type IssuedSession } from '../identity/session.service';
 import { TenantScope, tenantContextOf } from '../tenancy/tenant-scope';
 import { memberPage, memberRow, toUserViews, type MemberRow } from './user-views';
+
+const HANDLE = /^[a-z][a-z0-9._-]{1,39}$/;
 
 function orgOf(principal: Principal): NonNullable<Principal['org']> {
   if (!principal.org) throw new NotFoundError('No current organisation');
@@ -68,89 +70,146 @@ export class UsersService {
   async create(principal: Principal, body: UserCreate): Promise<{ status: 'invited' }> {
     const org = orgOf(principal);
     const adminRoles = [...new Set(body.adminRoles)] as OrgRole[];
-    try {
-      await this.scope.withTenant(tenantContextOf(principal), async (trx) => {
-        const actor = { userId: principal.user.id, kind: 'user' as const };
-        let invited;
-        try {
-          invited = await this.invitations.inviteUser(trx, {
-            orgId: org.id,
-            email: body.email,
-            displayName: body.displayName,
-            jobTitle: body.jobTitle ?? null,
-            adminRoles,
-            actor,
-          });
-        } catch (error) {
-          // A disabled account elsewhere gets the same invited membership as an active one, so the member list does not
-          // tell it apart from a new email (F.6). The owner accepts it only once the account is enabled again.
-          if (error instanceof ConflictError && (await this.inviteDisabledAccount(trx, org.id, body.email, adminRoles, actor.userId))) return;
-          throw error;
-        }
-        if (invited.invitation) {
-          this.mailer.sendAfterCommit(trx, {
-            to: { email: invited.email, userId: invited.userId },
-            template: { name: 'invitation', link: invited.invitation.link, organisation: org.name, hours: INVITATION_TTL_MS / 3_600_000 },
-          });
-        }
-      });
-    } catch (error) {
-      // An existing member, or a disabled account elsewhere: nothing changed, and the answer stays the same (F.6).
-      if (error instanceof ConflictError) {
-        this.logger.log(`POST /admin/users for organisation ${org.slug} changed nothing: ${error.message}`);
-        return { status: 'invited' };
+    await this.scope.withTenant(tenantContextOf(principal), async (trx) => {
+      const sent = await this.invite(trx, org.id, body, adminRoles, principal.user.id);
+      if (sent) {
+        this.mailer.sendAfterCommit(trx, {
+          to: { email: sent.email, userId: sent.userId },
+          template: { name: 'invitation', link: sent.invitation.link, organisation: org.name, hours: INVITATION_TTL_MS / 3_600_000 },
+        });
       }
-      throw error;
-    }
+    });
     return { status: 'invited' };
   }
 
   /**
-   * Gives a disabled account (found by email, not a guest) an `invited` membership of the organisation, as
-   * `InvitationService.inviteUser` does for an active account, without an invitation link. False when the email is not
-   * a disabled account or the account already has a live membership here.
+   * The invitation of `POST /admin/users`, with the same audit shape in the organisation's view whatever the email
+   * names (F.6: a Tenant Admin reads the organisation's `platform.audit_log` rows as metadata, so the rows must not
+   * tell a new email from another tenant's account):
+   * - an active member: nothing changes and nothing is written;
+   * - otherwise the membership becomes (or is created as) `invited` and the organisation gets one `user.invited`
+   *   entry with entity type `user` and the user id, for a new account, an account of another organisation (active,
+   *   invited or disabled) and a former member alike;
+   * - a new account's `user.created` is a platform entry without organisation (the account is global), so it is not
+   *   listed in the organisation's view; the inviting organisation is in its `after` data for the operator;
+   * - an invitation link is issued only for an account that was never activated (new, or invited and not accepted);
+   *   an active account accepts after signing in, a disabled one once it is enabled again.
+   * Returns the link to mail, or null.
    */
-  private async inviteDisabledAccount(trx: Trx, orgId: string, email: string, adminRoles: OrgRole[], actorUserId: string): Promise<boolean> {
-    const account = await trx
+  private async invite(
+    trx: Trx,
+    orgId: string,
+    body: UserCreate,
+    adminRoles: OrgRole[],
+    actorUserId: string,
+  ): Promise<{ userId: string; email: string; invitation: CreatedInvitation } | null> {
+    const actor = { userId: actorUserId, kind: 'user' as const };
+    const email = body.email.trim();
+    await this.licence.assertCanAddUser(trx, orgId);
+    const existing = await trx
       .selectFrom('platform.app_user')
-      .select(['id', 'handle', 'status'])
-      .where(sql<string>`lower(email)`, '=', email.trim().toLowerCase())
+      .select(['id', 'handle', 'email', 'status'])
+      .where(sql<string>`lower(email)`, '=', email.toLowerCase())
       .where('kind', '<>', 'guest')
       .where('deleted_at', 'is', null)
       .forUpdate()
       .executeTakeFirst();
-    if (!account || account.status !== 'disabled') return false;
-    const membership = await trx
-      .selectFrom('platform.org_membership')
-      .select(['status', 'deleted_at'])
-      .where('organization_id', '=', orgId)
-      .where('user_id', '=', account.id)
-      .forUpdate()
-      .executeTakeFirst();
-    if (membership && membership.deleted_at === null && membership.status !== 'disabled') return false;
-    if (membership) {
-      await trx
-        .updateTable('platform.org_membership')
-        .set({ status: 'invited', deleted_at: null, admin_roles: adminRoles, invited_by: actorUserId, accepted_at: null })
+
+    let user: { id: string; handle: string; email: string; status: 'active' | 'invited' | 'disabled' };
+    let newAccount = false;
+    if (existing) {
+      const membership = await trx
+        .selectFrom('platform.org_membership')
+        .select(['status', 'deleted_at'])
         .where('organization_id', '=', orgId)
-        .where('user_id', '=', account.id)
-        .execute();
+        .where('user_id', '=', existing.id)
+        .forUpdate()
+        .executeTakeFirst();
+      if (membership && membership.status === 'active' && membership.deleted_at === null) {
+        this.logger.log(`POST /admin/users for organisation ${orgId} changed nothing: already an active member`);
+        return null;
+      }
+      if (membership) {
+        await trx
+          .updateTable('platform.org_membership')
+          .set({ status: 'invited', deleted_at: null, admin_roles: adminRoles, invited_by: actorUserId, accepted_at: null })
+          .where('organization_id', '=', orgId)
+          .where('user_id', '=', existing.id)
+          .execute();
+      } else {
+        // The default organisation only when the account has no other active membership (read outside the tenant's
+        // RLS view, which shows only this organisation's rows).
+        const others = await this.directory.withOtherActiveMemberships(orgId, [existing.id]);
+        await trx
+          .insertInto('platform.org_membership')
+          .values({ organization_id: orgId, user_id: existing.id, status: 'invited', admin_roles: adminRoles, invited_by: actorUserId, is_default: !others.has(existing.id) })
+          .execute();
+      }
+      user = existing;
     } else {
+      const handle = await this.uniqueHandle(trx, email);
+      const created = await trx
+        .insertInto('platform.app_user')
+        .values({
+          handle,
+          email,
+          display_name: body.displayName.trim() || (email.split('@')[0] ?? handle),
+          job_title: body.jobTitle?.trim() || null,
+          kind: 'person',
+          status: 'invited',
+          mfa_required: true,
+          created_by: actorUserId,
+          updated_by: actorUserId,
+        })
+        .returning(['id', 'handle', 'email'])
+        .executeTakeFirstOrThrow();
       await trx
         .insertInto('platform.org_membership')
-        .values({ organization_id: orgId, user_id: account.id, status: 'invited', admin_roles: adminRoles, invited_by: actorUserId, is_default: false })
+        .values({ organization_id: orgId, user_id: created.id, status: 'invited', admin_roles: adminRoles, invited_by: actorUserId, is_default: true })
         .execute();
+      user = { ...created, status: 'invited' };
+      newAccount = true;
+      await this.audit.record(trx, {
+        action: 'user.created',
+        actor,
+        organizationId: null,
+        entityType: 'user',
+        entityId: user.id,
+        entityCode: user.handle,
+        after: { handle: user.handle, email: user.email, status: 'invited', invitedTo: orgId },
+      });
     }
+
+    const invitation = user.status === 'invited' ? await this.invitations.createInvitation(trx, { orgId, userId: user.id, email: user.email, createdBy: actorUserId }) : null;
     await this.audit.record(trx, {
       action: 'user.invited',
-      actor: { userId: actorUserId, kind: 'user' },
+      actor,
       organizationId: orgId,
       entityType: 'user',
-      entityId: account.id,
-      entityCode: account.handle,
-      after: { userId: account.id, adminRoles, newAccount: false, link: false, at: this.clock.now().toISOString() },
+      entityId: user.id,
+      entityCode: user.handle,
+      after: {
+        userId: user.id,
+        adminRoles,
+        newAccount,
+        link: invitation !== null,
+        ...(invitation ? { invitationId: invitation.invitationId, expiresAt: invitation.expiresAt.toISOString() } : {}),
+        at: this.clock.now().toISOString(),
+      },
     });
-    return true;
+    return invitation ? { userId: user.id, email: user.email, invitation } : null;
+  }
+
+  /** A free handle from the email's local part (`rina.kusuma`, then `rina.kusuma-2`, ...), as `InvitationService` does. */
+  private async uniqueHandle(trx: Trx, email: string): Promise<string> {
+    const base = handleBase(email);
+    for (let n = 1; n < 1000; n += 1) {
+      const candidate = n === 1 ? base : `${base}-${n}`;
+      if (!HANDLE.test(candidate)) continue;
+      const taken = await trx.selectFrom('platform.app_user').select('id').where('handle', '=', candidate).executeTakeFirst();
+      if (!taken) return candidate;
+    }
+    throw new ConflictError('No free user handle for this email address');
   }
 
   /**
@@ -214,7 +273,7 @@ export class UsersService {
           organizationId: org.id,
           entityType: 'org_membership',
           entityId: userId,
-          entityCode: member.handle,
+          entityCode: await this.handleOf(trx, member),
           before: { status: member.membership_status, adminRoles: member.admin_roles },
           after: { status: membershipChanges.status ?? member.membership_status, adminRoles: membershipChanges.admin_roles ?? member.admin_roles },
         });
@@ -253,7 +312,7 @@ export class UsersService {
           organizationId: org.id,
           entityType: 'user',
           entityId: userId,
-          entityCode: member.handle,
+          entityCode: await this.handleOf(trx, member),
           before,
           after,
         });
@@ -333,7 +392,7 @@ export class UsersService {
         organizationId: org.id,
         entityType: 'user',
         entityId: userId,
-        entityCode: member.handle,
+        entityCode: await this.handleOf(trx, member),
         after: { provider: provider.slug, subject: body.subject, linkMethod: 'admin' },
       });
     });
@@ -349,6 +408,13 @@ export class UsersService {
       const [view] = await toUserViews(trx, [row], others);
       return view!;
     });
+  }
+
+  /** The account's own handle for audit entries (an invited member's row carries none, see `membersQuery`). */
+  private async handleOf(trx: Trx, member: MemberRow): Promise<string> {
+    if (member.handle !== null) return member.handle;
+    const row = await trx.selectFrom('platform.app_user').select('handle').where('id', '=', member.id).executeTakeFirstOrThrow();
+    return row.handle;
   }
 
   /** The member row, locked for the change (404 when the user is not a member). */

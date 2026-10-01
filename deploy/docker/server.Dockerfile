@@ -30,8 +30,10 @@
 # build machine and the npm registry or the Alpine mirrors (R-12). Without such a
 # proxy, point it to an empty file (BuildKit does not accept /dev/null).
 #
-# Build arguments: VERSION, REVISION, CREATED, APK_UPGRADE (true, auto or false,
-# default auto, as in web.Dockerfile) and NODE_IMAGE. deploy/docker/README.md
+# Build arguments: VERSION (default: the version in apps/server/package.json;
+# packs name the lowest server version they accept), REVISION, CREATED,
+# APK_UPGRADE (true, auto or false, default auto, as in web.Dockerfile) and
+# NODE_IMAGE. deploy/docker/README.md
 # describes every input.
 
 ARG NODE_IMAGE=node:22-alpine
@@ -89,7 +91,7 @@ RUN printf '%s\n' \
 
 # ---- Release build ---------------------------------------------------------
 FROM sources AS build-release
-ARG VERSION=0.0.0-dev
+ARG VERSION=
 ARG REVISION=unknown
 # gen-build-info.mjs (prebuild of @mscd/server) compiles the keys of the
 # trusted-keys context into the build and refuses a missing folder, a folder
@@ -128,7 +130,7 @@ RUN --mount=type=bind,from=trusted-keys,target=/trusted-keys \
 
 # ---- Demo build ------------------------------------------------------------
 FROM sources AS build-demo
-ARG VERSION=0.0.0-dev
+ARG VERSION=
 ARG REVISION=unknown
 RUN set -eu; \
     mkdir -p apps/server/dist; \
@@ -205,14 +207,14 @@ ENV NODE_ENV=production HOME=/tmp
 
 # ---- Demo target -----------------------------------------------------------
 FROM runtime-base AS demo
-ARG VERSION=0.0.0-dev
+ARG VERSION=
 ARG REVISION=unknown
 ARG CREATED=unknown
 LABEL org.opencontainers.image.title="MSCD Server (demo)" \
       org.opencontainers.image.description="MSCD server, development flavour with demo data: demo, smoke tests and API E2E only, never for production" \
       org.opencontainers.image.vendor="CyberLentera" \
       org.opencontainers.image.url="https://mscd.cyberlentera.com" \
-      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.version="${VERSION:-unspecified}" \
       org.opencontainers.image.revision="${REVISION}" \
       org.opencontainers.image.created="${CREATED}" \
       com.cyberlentera.mscd.flavor="dev"
@@ -237,14 +239,14 @@ CMD ["api"]
 
 # ---- Release target (default) ---------------------------------------------
 FROM runtime-base AS release
-ARG VERSION=0.0.0-dev
+ARG VERSION=
 ARG REVISION=unknown
 ARG CREATED=unknown
 LABEL org.opencontainers.image.title="MSCD Server" \
       org.opencontainers.image.description="MSCD (Management System Compliance Dashboard) server: api, worker, storage-gateway and migrate" \
       org.opencontainers.image.vendor="CyberLentera" \
       org.opencontainers.image.url="https://mscd.cyberlentera.com" \
-      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.version="${VERSION:-unspecified}" \
       org.opencontainers.image.revision="${REVISION}" \
       org.opencontainers.image.created="${CREATED}" \
       com.cyberlentera.mscd.flavor="release"

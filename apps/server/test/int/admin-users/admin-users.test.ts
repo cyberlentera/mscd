@@ -172,6 +172,54 @@ describe('WP-39 administration of users and role grants (F.6, C.13)', () => {
     expect(limited.json().rule).toBe('LIC-USERS');
   });
 
+  it('writes the same audit metadata and list handle for a new email and for another tenant account (F.6)', async () => {
+    // A foreign account whose handle is not derived from its email, active elsewhere; a second one disabled.
+    const foreign = await addUser(db, 'chosen.by.bsd', [{ org: bsd }]);
+    const foreignOff = await addUser(db, 'chosen.off', [{ org: bsd }], { status: 'disabled' });
+    await inScope(db.migrator, { platformScope: true }, async (trx) => {
+      await trx.updateTable('platform.app_user').set({ email: 'audit.foreign@authz.test' }).where('id', '=', foreign.id).execute();
+      await trx.updateTable('platform.app_user').set({ email: 'audit.foreignoff@authz.test' }).where('id', '=', foreignOff.id).execute();
+    });
+    for (const email of ['audit.fresh@authz.test', 'audit.foreign@authz.test', 'audit.foreignoff@authz.test']) {
+      const response = await ta1.post('/api/v1/admin/users', { email, displayName: 'Audit Probe', adminRoles: [] });
+      expect(response.statusCode, email).toBe(202);
+    }
+    const listed = ((await ta1.get('/api/v1/admin/users?pageSize=100')).json() as Page<UserView>).items;
+    const byEmail = (email: string) => listed.find((i) => i.email === email)!;
+    const fresh = byEmail('audit.fresh@authz.test');
+    // Invited rows show a handle derived from the email, never the handle the other organisation chose.
+    expect(fresh.handle).toBe('audit.fresh');
+    expect(byEmail('audit.foreign@authz.test').handle).toBe('audit.foreign');
+    expect(byEmail('audit.foreignoff@authz.test').handle).toBe('audit.foreignoff');
+    expect(((await ta1.get('/api/v1/admin/users?q=chosen')).json() as Page<UserView>).items).toHaveLength(0);
+
+    // The Tenant Admin's metadata view: one `user.invited` entry of entity type `user` per invite, nothing else.
+    const trail = await ta1.get('/api/v1/admin/audit-trail?pageSize=100');
+    expect(trail.statusCode).toBe(200);
+    const entries = (trail.json() as Page<{ action: string; entityType: string | null; entityId: string | null; ms: string | null }>).items;
+    const shapeOf = (userId: string) =>
+      entries
+        .filter((e) => e.entityId === userId)
+        .map((e) => ({ action: e.action, entityType: e.entityType, ms: e.ms }));
+    const expected = [{ action: 'user.invited', entityType: 'user', ms: null }];
+    expect(shapeOf(fresh.id)).toEqual(expected);
+    expect(shapeOf(foreign.id)).toEqual(expected);
+    expect(shapeOf(foreignOff.id)).toEqual(expected);
+    expect(entries.some((e) => e.action === 'user.created')).toBe(false);
+    expect(entries.some((e) => e.entityType === 'invitation')).toBe(false);
+    // The operator still finds the account's creation, without organisation, naming the inviting one in its data.
+    const created = (await platformAudit(db, 'user.created')).find((a) => a.entity_id === fresh.id);
+    expect(created).toMatchObject({ organization_id: null, after_data: { invitedTo: ndt.tenant.id } });
+    // Inviting the same people again keeps the shapes equal (an invited account of another organisation, a new one).
+    for (const email of ['audit.fresh@authz.test', 'audit.foreign@authz.test', 'audit.foreignoff@authz.test']) {
+      expect((await ta1.post('/api/v1/admin/users', { email, displayName: 'Audit Probe', adminRoles: [] })).statusCode).toBe(202);
+    }
+    const again = ((await ta1.get('/api/v1/admin/audit-trail?pageSize=100')).json() as Page<{ action: string; entityId: string | null }>).items;
+    for (const id of [fresh.id, foreign.id, foreignOff.id]) {
+      expect(again.filter((e) => e.entityId === id).map((e) => e.action), id).toEqual(['user.invited', 'user.invited']);
+    }
+  });
+
   it('changes membership fields; disabling a membership ends the sessions in the organisation (F.1, F.6)', async () => {
     const patched = await ta1.patch(`/api/v1/admin/users/${u.dewi!.id}`, { adminRoles: ['storage_admin'] });
     expect(patched.statusCode).toBe(200);

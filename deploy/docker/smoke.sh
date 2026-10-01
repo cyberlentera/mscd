@@ -272,11 +272,17 @@ case "$(header content-type)" in
     *) fail "system profile content type is '$(header content-type)', expected application/json" ;;
 esac
 if grep -q '"deploy"' "$BODY"; then pass "system profile body names the deployment"; else fail "system profile body has no \"deploy\" field: $(head -c 300 "$BODY")"; fi
-[ "$(header cache-control)" = no-store ] && pass "Cache-Control: no-store on /api" || fail "Cache-Control on /api is '$(header cache-control)', expected no-store"
-[ "$(header content-security-policy)" = "default-src 'none'; frame-ancestors 'none'; sandbox" ] \
-    && pass "the api's Content-Security-Policy reaches the client" \
-    || fail "Content-Security-Policy on /api is '$(header content-security-policy)'"
-[ -n "$(header x-request-id)" ] && pass "X-Request-Id set by NGINX is echoed by the api" || fail "no X-Request-Id on /api"
+check() {
+    # check <pass message> <fail message> <test arguments...>
+    local ok=$1 ko=$2
+    shift 2
+    if [ "$@" ]; then pass "$ok"; else fail "$ko"; fi
+}
+check "Cache-Control: no-store on /api" "Cache-Control on /api is '$(header cache-control)', expected no-store" \
+    "$(header cache-control)" = no-store
+check "the api's Content-Security-Policy reaches the client" "Content-Security-Policy on /api is '$(header content-security-policy)'" \
+    "$(header content-security-policy)" = "default-src 'none'; frame-ancestors 'none'; sandbox"
+check "X-Request-Id set by NGINX is echoed by the api" "no X-Request-Id on /api" -n "$(header x-request-id)"
 
 # The request of the acceptance, then one with a value found nowhere else.
 UNIQUE="wp18smoke$(random_hex 8)"
@@ -298,9 +304,9 @@ if grep -q "$UNIQUE" "$WORK/web.log" "$WORK/api.log"; then fail "a token or code
 if grep -q '203\.0\.113\.9' "$WORK/api.log"; then fail "the api log names 203.0.113.9"; else pass "the api log does not name 203.0.113.9"; fi
 
 code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/")
-[ "$code" = 405 ] && pass "POST / on the static site: 405" || fail "POST / on the static site: $code, expected 405"
+check "POST / on the static site: 405" "POST / on the static site: $code, expected 405" "$code" = 405
 code=$(curl -sS -o /dev/null -w '%{http_code}' "$BASE_URL/login")
-[ "$code" = 200 ] && pass "client-side route /login serves the app: 200" || fail "GET /login: $code, expected 200"
+check "client-side route /login serves the app: 200" "GET /login: $code, expected 200" "$code" = 200
 
 if [ "$FAILED" -ne 0 ]; then
     echo "smoke: FAILED" >&2
