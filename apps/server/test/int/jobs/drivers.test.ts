@@ -15,8 +15,14 @@ import { BullMqJobQueue } from '../../../src/modules/jobs/bullmq-job-queue';
 import { createJobQueue, jobDriverOf } from '../../../src/modules/jobs/job-queue-factory';
 import { PgBossJobQueue } from '../../../src/modules/jobs/pgboss-job-queue';
 import { ensurePgBossSchema, PGBOSS_GRANTS } from '../../../src/modules/jobs/pgboss-schema';
+import { Logger } from 'nestjs-pino';
+import { JOB_QUEUE } from '../../../src/common/jobs/job-queue';
+import { JobsModule } from '../../../src/modules/jobs/jobs.module';
+import { OutboxRelay } from '../../../src/modules/jobs/outbox-relay';
+import { TenantScope } from '../../../src/modules/tenancy/tenant-scope';
+import { CORE_MODULES } from '../platform/helpers';
 import { useTestDatabase } from '../../setup/test-db';
-import { startValkey, waitFor, type StartedValkey } from './helpers';
+import { JOB_TEST_ENV, startValkey, waitFor, type StartedValkey } from './helpers';
 
 interface Harness {
   queue: JobQueue;
@@ -247,6 +253,30 @@ describe('job queue drivers (E.1)', () => {
       expect(dispatched.attempts).toBe(2);
     } finally {
       await queue.stop();
+    }
+  });
+
+  it('runs the outbox relay in the api: a job sent in a committed withPlatform transaction reaches BullMQ at once', async () => {
+    const prefixEnv = { ...JOB_TEST_ENV, MSCD_TEST_JOBS_DRIVER: 'profile', MSCD__JOBS__DRIVER: 'bullmq', MSCD__JOBS__BULLMQ__URL: valkey!.url };
+    const moduleRef = await db.createTestingModule({ imports: [...CORE_MODULES, JobsModule] }, prefixEnv).compile();
+    moduleRef.useLogger(moduleRef.get(Logger));
+    await moduleRef.init();
+    try {
+      const queue = moduleRef.get<JobQueue>(JOB_QUEUE);
+      expect(queue).toBeInstanceOf(BullMqJobQueue);
+      const bull = queue as BullMqJobQueue;
+      await bull.queue('notifications.digest').obliterate({ force: true });
+      await moduleRef.get(TenantScope).withPlatform(
+        (trx) => queue.send('notifications.digest', { orgId: null, payload: {} }, { singletonKey: 'ndg:relay' }, trx),
+        { scope: 'job' },
+      );
+      await waitFor(async () => {
+        const counts = await bull.queue('notifications.digest').getJobCounts('waiting');
+        return (counts.waiting ?? 0) === 1;
+      }, 10_000);
+      expect(await moduleRef.get(OutboxRelay).drain()).toBe(0);
+    } finally {
+      await moduleRef.close();
     }
   });
 });

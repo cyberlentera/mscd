@@ -4,7 +4,7 @@
 // Also reads which rules a system's edition activates (`ref.rule_activation`, WP-20 runs only activated rules).
 import { Inject, Injectable } from '@nestjs/common';
 import { sql } from 'kysely';
-import { AUDIT_WRITER, SYSTEM_USER_ID, type AuditWriter, type Trx } from '../../common/tokens';
+import { AUDIT_WRITER, MEMBERSHIP_SERVICE, SYSTEM_USER_ID, type AuditWriter, type MembershipService, type Trx } from '../../common/tokens';
 
 export type RuleTaskRule = 'BR-10' | 'BR-11' | 'BR-15' | 'BR-31';
 
@@ -30,10 +30,17 @@ export type ActiveRules = ReadonlyMap<string, ReadonlySet<string>>;
 
 @Injectable()
 export class RuleTaskService {
-  constructor(@Inject(AUDIT_WRITER) private readonly audit: AuditWriter) {}
+  constructor(
+    @Inject(AUDIT_WRITER) private readonly audit: AuditWriter,
+    @Inject(MEMBERSHIP_SERVICE) private readonly members: MembershipService,
+  ) {}
 
-  /** Opens the task of a rule and entity, or refreshes the open one (owner and due date follow the record). */
+  /**
+   * Opens the task of a rule and entity, or refreshes the open one (owner and due date follow the record). A record
+   * owner who is no longer an active member leaves the task unassigned (BR-45).
+   */
   async open(trx: Trx, input: RuleTaskInput): Promise<OpenedTask> {
+    const owner = input.ownerUserId && (await this.members.isMember(trx, input.ownerUserId)) ? input.ownerUserId : null;
     const row = await trx
       .insertInto('task')
       .values({
@@ -44,7 +51,7 @@ export class RuleTaskService {
         entity_code: input.entityCode,
         title_en: input.title.en,
         title_id: input.title.id,
-        owner_user_id: input.ownerUserId,
+        owner_user_id: owner,
         due_at: input.dueAt,
         status: 'open',
         created_by: SYSTEM_USER_ID,

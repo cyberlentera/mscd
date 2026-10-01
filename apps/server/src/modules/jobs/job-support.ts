@@ -1,6 +1,8 @@
 // Small queries the tenant jobs share: recipients by role and "already notified" checks.
 import { sql } from 'kysely';
 import type { NotificationKind } from '@mscd/shared';
+import type { Clock } from '../../common/clock';
+import { localDate, startOfLocalDay } from '../../common/dates';
 import type { Trx } from '../../common/tokens';
 
 /** Active MS Managers of a system (`user_ms_role`, approved, not expired). */
@@ -47,4 +49,17 @@ export async function notificationSent(trx: Trx, kind: NotificationKind, entityI
     .limit(1)
     .executeTakeFirst();
   return row !== undefined;
+}
+
+/**
+ * The instant the time windows of jobs are measured at (TS 5.7, C.12: 72 hours, 7 days). Normally `clock.now()`.
+ * With `demo.fixed_today` (demo and test installs, D-07) the same local time of day on the fixed date, so windows
+ * agree with the fixed "today" the read model and the jobs use for dates.
+ */
+export function windowNow(clock: Clock, timeZone: string): Date {
+  const now = clock.now();
+  const fixed = clock.fixedToday;
+  if (!fixed) return now;
+  const shift = startOfLocalDay(fixed, timeZone).getTime() - startOfLocalDay(localDate(now, timeZone), timeZone).getTime();
+  return new Date(now.getTime() + shift);
 }

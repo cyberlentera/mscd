@@ -7,6 +7,7 @@ import { Global, Module, type ModuleMetadata, type Type } from '@nestjs/common';
 import type { TestingModule } from '@nestjs/testing';
 import type { JobName } from '@mscd/shared';
 import { Logger } from 'nestjs-pino';
+import pg from 'pg';
 import { Clock } from '../../../src/common/clock';
 import { InMemoryJobQueue } from '../../../src/common/jobs/in-memory-job-queue';
 import { JOB_QUEUE, type JobEnvelope, type JobPayloads, type SendOptions } from '../../../src/common/jobs/job-queue';
@@ -128,4 +129,14 @@ export async function startValkey(): Promise<StartedValkey> {
       await started.stop();
     },
   };
+}
+
+export type AdminClient = pg.Client;
+
+/** A superuser connection to the test database (fixtures that bypass RLS, the chain rewrite of F.11). */
+export async function adminClient(db: Pick<TestDatabase, 'urls'>): Promise<AdminClient> {
+  const client = new pg.Client({ connectionString: db.urls.admin, application_name: 'mscd-test-jobs' });
+  client.on('error', () => undefined);
+  await client.connect();
+  return client;
 }
