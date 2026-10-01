@@ -144,6 +144,13 @@ describe('review calendar feed (D.3, PRD 9.1)', () => {
     expect(actions).toHaveLength(1);
   });
 
+  it('two concurrent creates by the same user both answer 201 and leave one active token', async () => {
+    const [a, b] = await Promise.all([rina.post<CalendarFeed>('/api/v1/ms/isms/calendar-feed', {}), rina.post<CalendarFeed>('/api/v1/ms/isms/calendar-feed', {})]);
+    expect([a.status, b.status]).toEqual([201, 201]);
+    const fetched = [(await fetchFeed(a.body.downloadUrl)).status, (await fetchFeed(b.body.downloadUrl)).status].sort();
+    expect(fetched).toEqual([200, 404]);
+  });
+
   it('a user who lost the role, or the membership, gets 404 on the next fetch', async () => {
     const url = await create(bagus);
     expect((await fetchFeed(url)).status).toBe(200);

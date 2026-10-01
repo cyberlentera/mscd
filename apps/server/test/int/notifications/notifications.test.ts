@@ -10,6 +10,7 @@ import { sql } from 'kysely';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { addDays } from '../../../src/common/dates';
 import { MAX_EMAIL_ATTEMPTS } from '../../../src/modules/notifications/notification-delivery.service';
+import { TenantResolver } from '../../../src/modules/tenancy/tenant-resolver';
 import { inScope } from '../db/helpers';
 import { inOrg, signIn, userId, type FilesClient } from '../files/helpers';
 import { startMailpit, type Mailpit } from '../identity/helpers';
@@ -174,6 +175,35 @@ describe('notifications (E.6)', () => {
     await inScope(db.migrator, { platformScope: true }, (trx) =>
       trx.updateTable('platform.org_membership').set({ status: 'active' }).where('user_id', '=', ids.hendra!).where('organization_id', '=', ORG_IDS.tst).execute(),
     );
+  });
+
+  it('an offboarding organisation still gets its export_ready emails, named and through the sweep', async () => {
+    await mail.clear();
+    const resolver = ctx.moduleRef.get(TenantResolver);
+    const setStatus = async (status: 'active' | 'offboarding') => {
+      await inScope(db.migrator, { platformScope: true }, (trx) => trx.updateTable('platform.organization').set({ status }).where('id', '=', ORG_IDS.tst).execute());
+      resolver.invalidate(ORG_IDS.tst);
+    };
+    const ready = (code: string) => ({
+      recipientUserId: ids.rina!,
+      kind: 'export_ready' as const,
+      title: pairs(`Export ready: ${code}`, `Ekspor siap: ${code}`),
+      body: pairs(`${code} is ready.`, `${code} siap.`),
+      ref: { module: 'admin' as const, entityType: 'background_task' as const, id: randomUUID(), code },
+    });
+    await setStatus('offboarding');
+    try {
+      const named = await ctx.notify('tst', ready('offboarding-named.pdf'));
+      const swept = await ctx.notify('tst', ready('offboarding-sweep.pdf'));
+      await ctx.delivery.dispatch(ORG_IDS.tst, [named!]);
+      await mail.waitFor(emails.rina!, (m) => m.subject.includes('offboarding-named.pdf'));
+      await ctx.dispatchJob.handle({ id: 'job-sweep-offboarding', name: 'notifications.dispatch', attempt: 1, env: { orgId: null, payload: {} } });
+      await mail.waitFor(emails.rina!, (m) => m.subject.includes('offboarding-sweep.pdf'));
+      const rows = await inOrg(db, 'tst', (trx) => trx.selectFrom('notification').select('email_status').where('id', 'in', [named!, swept!]).execute());
+      expect(rows.map((r) => r.email_status)).toEqual(['sent', 'sent']);
+    } finally {
+      await setStatus('active');
+    }
   });
 
   it('a failed send counts attempts, the job retries, and the fifth failure gives up', async () => {

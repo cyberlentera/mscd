@@ -108,22 +108,31 @@ export class NotificationDeliveryService {
     return this.mailer.appLink('/');
   }
 
-  /** Active organisations (the sweep without an organisation in the job envelope). */
-  async activeOrganisations(): Promise<TenantInfo[]> {
+  /**
+   * Organisations whose pending non-digest emails go out (the sweep without an organisation in the job envelope):
+   * `active` ones and `offboarding` ones, which still run exports (D.1) and so still announce them with `export_ready`.
+   */
+  async deliveringOrganisations(): Promise<TenantInfo[]> {
     // Read-only list of organisation ids (`platform.organization` has no RLS) for the installation-wide sweep that
     // WP-22 schedules with `orgId: null`; every row is then handled inside `withTenant`. Follow-up in the WP-24
     // handoff: a `TenantResolver` listing (tenancy module) would remove the need for platform scope here.
     // eslint-disable-next-line no-restricted-syntax
     const rows = await this.scope.withPlatform(
-      (trx) => trx.selectFrom('platform.organization').select('id').where('status', '=', 'active').where('deleted_at', 'is', null).orderBy('position').orderBy('slug').execute(),
+      (trx) => trx.selectFrom('platform.organization').select('id').where('status', 'in', ['active', 'offboarding']).where('deleted_at', 'is', null).orderBy('position').orderBy('slug').execute(),
       { scope: 'job' },
     );
     const out: TenantInfo[] = [];
     for (const row of rows) {
       const org = await this.tenants.resolveById(row.id);
-      if (org && org.status === 'active') out.push(org);
+      if (org && delivers(org)) out.push(org);
     }
     return out;
+  }
+
+  /** The organisation of a dispatch run, or null when it is gone or neither `active` nor `offboarding`. */
+  async deliveringOrganisation(orgId: string): Promise<TenantInfo | null> {
+    const org = await this.tenants.resolveById(orgId);
+    return org && delivers(org) ? org : null;
   }
 
   /** The organisation of a tenant run, or null when it is gone or not active. */
@@ -138,10 +147,10 @@ export class NotificationDeliveryService {
 
   /**
    * Sends pending non-digest notifications: those named, or every pending one of the organisation, or (without an
-   * organisation) of every active organisation.
+   * organisation) of every active or offboarding organisation.
    */
   async dispatch(orgId: string | null, notificationIds?: readonly string[], requestId?: string): Promise<DeliveryCounts> {
-    const orgs = orgId ? [await this.organisation(orgId)].filter((o): o is TenantInfo => o !== null) : await this.activeOrganisations();
+    const orgs = orgId ? [await this.deliveringOrganisation(orgId)].filter((o): o is TenantInfo => o !== null) : await this.deliveringOrganisations();
     const total = emptyCounts();
     for (const org of orgs) addCounts(total, await this.dispatchOrg(org, notificationIds, requestId));
     return total;
@@ -303,4 +312,9 @@ export class NotificationDeliveryService {
   private texts(row: NotificationRow): MailNotification {
     return { title: { en: row.title_en, id: row.title_id }, body: { en: row.body_en, id: row.body_id } };
   }
+}
+
+/** `active` organisations, and `offboarding` ones whose exports still run (D.1), get their notification emails. */
+function delivers(org: TenantInfo): boolean {
+  return org.status === 'active' || org.status === 'offboarding';
 }

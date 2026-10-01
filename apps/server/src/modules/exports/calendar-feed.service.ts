@@ -17,6 +17,7 @@ import { randomBytes } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import type { CalendarFeed, CommandResult } from '@mscd/shared';
 import type { FastifyReply } from 'fastify';
+import { sql } from 'kysely';
 import { Clock } from '../../common/clock';
 import { FileResponder } from '../../common/file-response';
 import { NotFoundError } from '../../common/problems';
@@ -93,6 +94,9 @@ export class CalendarFeedService {
     const token = newCalendarToken(org.id);
     return this.scope.withTenant(tenantContextOf(principal), async (trx) => {
       const system = await this.system(trx, ms);
+      // One create per user and system at a time: a second concurrent call waits here, then revokes the token the
+      // first one inserted, so the partial unique index `calendar_feed_token_active_uq` is never hit (no 500).
+      await sql`select pg_advisory_xact_lock(hashtextextended(${`calendar-feed:${principal.user.id}:${system.id}`}, 0))`.execute(trx);
       const now = this.clock.now();
       const replaced = await trx
         .updateTable('calendar_feed_token')
