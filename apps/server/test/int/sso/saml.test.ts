@@ -70,6 +70,7 @@ describe('SAML rules', () => {
 
   function parsedAssertion(overrides: { format?: string; nameId?: string; inResponseTo?: string; recipient?: string; method?: string; notOnOrAfter?: string; id?: string } = {}) {
     const nameId = { _: overrides.nameId ?? 'G-1234', $: { Format: overrides.format ?? PERSISTENT_NAMEID_FORMAT } };
+    // As the library parses it: the root element an object, every child element a list.
     return {
       Assertion: {
         $: { ID: overrides.id ?? 'ID_abc' },

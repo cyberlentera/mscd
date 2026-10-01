@@ -53,7 +53,9 @@ function date(value: string | undefined): Date | null {
  * signature-checked XML only). Throws `idp_error` when the assertion has no `ID`.
  */
 export function assertionFacts(parsed: unknown): AssertionFacts {
-  const assertion = children(parsed, 'Assertion')[0];
+  // The root element is an object (`explicitRoot`), every child element a list.
+  const root = parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>).Assertion : undefined;
+  const assertion = (Array.isArray(root) ? root[0] : root) as XmlNode | undefined;
   const id = assertion?.$?.ID;
   if (!assertion || typeof id !== 'string' || id.length === 0) throw new SsoFailure('idp_error', 'assertion_id_missing');
   const subject = children(assertion, 'Subject')[0];
