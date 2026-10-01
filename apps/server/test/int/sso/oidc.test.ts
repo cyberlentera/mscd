@@ -369,6 +369,39 @@ describeSso('OIDC sign-in with Keycloak', () => {
     expect((await providerFailures(strict)).at(-1)).toMatchObject({ error: 'mfa_required_by_policy', reason: 'mfa_claim_missing' });
   });
 
+  it('treats an amr claim of only otp as no MFA proof and continues with the local TOTP step', async () => {
+    // A client of its own whose ID token carries amr ["otp"] (a hardcoded claim instead of Keycloak's amr mapper).
+    const clientId = `mscd-amr-otp-${randomBytes(4).toString('hex')}`;
+    const clientUuid = await admin.createClient({
+      clientId,
+      secret: KEYCLOAK_CLIENT_SECRET,
+      defaultClientScopes: ['basic', 'profile', 'email'],
+      protocolMappers: [
+        {
+          name: 'amr otp only',
+          protocol: 'openid-connect',
+          protocolMapper: 'oidc-hardcoded-claim-mapper',
+          consentRequired: false,
+          config: { 'claim.name': 'amr', 'claim.value': '["otp"]', 'jsonType.label': 'JSON', 'id.token.claim': 'true', 'access.token.claim': 'true', 'userinfo.token.claim': 'true' },
+        },
+      ],
+    });
+    try {
+      const otpOnly = await addProvider(orgA.id, 'kc-otp-only', { oidc_client_id: clientId });
+      const user = await addUser('amr.otponly', [orgA], { factor: true });
+      const kcUser = await keycloakUser();
+      await preRegister(otpOnly, kcUser.sub, user.id);
+      const browser = new Browser(ctx.app);
+      const { location } = await ssoSignIn(browser, 'kc-otp-only', kcUser.login);
+      expect(location).toMatch(/^\/login\/mfa#csrf=[A-Za-z0-9_-]+$/);
+      const pending = await sessionRow(db, browser.session!);
+      expect(pending).toMatchObject({ state: 'mfa_pending', auth_method: 'oidc', identity_provider_id: otpOnly, user_id: user.id });
+      expect(pending.amr).toEqual(['otp']);
+    } finally {
+      await admin.deleteClient(clientUuid).catch(() => undefined);
+    }
+  });
+
   it('sends a user without a factor to the enrolment step, which ends the sign-in', async () => {
     const user = await addUser('no.factor', [orgA]);
     const kcUser = await keycloakUser();

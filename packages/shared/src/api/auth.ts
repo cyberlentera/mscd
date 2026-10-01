@@ -390,9 +390,10 @@ export const authOidcStartRoute = defineRoute({
   response: NoBody,
   status: 302,
   errors: [404, 429],
-  // Every start writes a sign-in transaction: the same per-address limit as POST /auth/login (F.3) bounds what an
-  // anonymous client can make the server store until the transactions expire.
-  rateLimits: [{ key: 'ip', max: 30, windowSeconds: 900 }],
+  // Every start writes a sign-in transaction, so a per-address limit bounds what an anonymous client can make the
+  // server store until the transactions expire. It is ten times the POST /auth/login limit: SSO is the main sign-in
+  // of enterprise tenants, and a whole office behind one NAT address shares the bucket.
+  rateLimits: [{ key: 'ip', max: 300, windowSeconds: 900 }],
 });
 
 export const authOidcCallbackRoute = defineRoute({
@@ -414,13 +415,15 @@ export const authSamlStartRoute = defineRoute({
   owner: 'WP-19',
   method: 'GET',
   path: '/api/v1/auth/saml/:slug/start',
-  summary: 'Redirect to the SAML identity provider (HTTP-Redirect binding)',
+  summary: 'Redirect to the SAML identity provider (AuthnRequest through the HTTP-Redirect binding); sets the binding cookie mscd_saml_tx; an invalid invitation redirects to /login?error=invitation_invalid',
   auth: 'public',
   params: ProviderParams,
   query: SsoStartQuery,
   response: NoBody,
   status: 302,
-  errors: [404],
+  errors: [404, 429],
+  // Every start writes a sign-in transaction; the same per-address bound as the OIDC start route.
+  rateLimits: [{ key: 'ip', max: 300, windowSeconds: 900 }],
 });
 
 export const authSamlAcsRoute = defineRoute({
@@ -428,14 +431,16 @@ export const authSamlAcsRoute = defineRoute({
   owner: 'WP-19',
   method: 'POST',
   path: '/api/v1/auth/saml/:slug/acs',
-  summary: 'SAML assertion consumer service (form post from the identity provider; binding cookie required)',
+  summary: 'SAML assertion consumer service (form post from the identity provider; binding cookie required); redirects to returnTo, the second-factor step or /login?error=<code>',
   auth: 'public',
   params: ProviderParams,
   body: SamlAcsBody,
   requestType: 'application/x-www-form-urlencoded',
   response: NoBody,
   status: 302,
-  errors: [],
+  errors: [429],
+  // Each post checks an XML signature; the bound matches the start route, which every genuine post follows.
+  rateLimits: [{ key: 'ip', max: 300, windowSeconds: 900 }],
   csrfExempt: true,
   readOnlyAllowed: true,
 });
@@ -445,7 +450,7 @@ export const authSamlMetadataRoute = defineRoute({
   owner: 'WP-19',
   method: 'GET',
   path: '/api/v1/auth/saml/:slug/metadata',
-  summary: 'SAML service provider metadata',
+  summary: 'SAML service provider metadata of a provider (entity id, ACS URL, persistent NameID, signed assertions wanted)',
   auth: 'public',
   params: ProviderParams,
   response: XmlText,

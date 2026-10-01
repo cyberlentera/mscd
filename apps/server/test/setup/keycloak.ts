@@ -5,13 +5,15 @@
 // MSCD_TEST_CONTAINER_PREFIX when set, and hands its address and administrator to the test files
 // (`inject('mscdKeycloak')`). Without MSCD_TEST_SSO=1 nothing starts and the value is undefined, so the suites skip.
 // MSCD_TEST_KEYCLOAK_URL (with MSCD_TEST_KEYCLOAK_ADMIN and MSCD_TEST_KEYCLOAK_ADMIN_PASSWORD) uses a running
-// Keycloak with that realm instead, for example the developer stack (`http://localhost:58080`, admin `admin-dev`).
+// Keycloak with that realm instead, for example the developer stack (`http://localhost:58080`); the administrator
+// password is then required.
 //
 // The file also holds the helpers the suites use against Keycloak: the administrator REST client (users with
 // passwords and required actions, client attributes) and a cookie-keeping HTTP client that walks the sign-in pages.
 // Keycloak 26 sets `Secure; SameSite=None` sign-in cookies on `localhost` even over HTTP, and the issuer follows the
 // request host, so everything uses `localhost` (never 127.0.0.1) and the cookie jar sends Secure cookies to it.
 import { randomBytes } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { TestProject } from 'vitest/node';
 import { totpAt } from '../../src/modules/identity/totp';
@@ -21,9 +23,29 @@ export const KEYCLOAK_REALM = 'mscd';
 export const KEYCLOAK_REALM_FILE = path.resolve(__dirname, '../../../../deploy/compose/dev/keycloak/realm-mscd.json');
 /** Confidential client of the realm (realm-mscd.json). */
 export const KEYCLOAK_CLIENT_ID = 'mscd';
-export const KEYCLOAK_CLIENT_SECRET = 'mscd-dev-oidc-secret';
+
+interface RealmFile {
+  clients?: { clientId?: string; secret?: string }[];
+  users?: { username?: string; credentials?: { type?: string; value?: string }[] }[];
+}
+
+/**
+ * The development secrets stay only in the realm file (R-11): the client secret of `mscd` and the password of the
+ * realm users are read from it when this module loads, so they cannot drift from what Keycloak imports.
+ */
+function realmSecrets(): { clientSecret: string; userPassword: string } {
+  const realm = JSON.parse(readFileSync(KEYCLOAK_REALM_FILE, 'utf8')) as RealmFile;
+  const clientSecret = realm.clients?.find((c) => c.clientId === KEYCLOAK_CLIENT_ID)?.secret;
+  const userPassword = realm.users?.find((u) => u.username === 'sso.only')?.credentials?.find((c) => c.type === 'password')?.value;
+  if (!clientSecret) throw new Error(`No secret of client ${KEYCLOAK_CLIENT_ID} in ${KEYCLOAK_REALM_FILE}`);
+  if (!userPassword) throw new Error(`No password of the realm users in ${KEYCLOAK_REALM_FILE}`);
+  return { clientSecret, userPassword };
+}
+
+const REALM_SECRETS = realmSecrets();
+export const KEYCLOAK_CLIENT_SECRET = REALM_SECRETS.clientSecret;
 /** Password of every user of the realm file (G.3, WP-02). */
-export const KEYCLOAK_USER_PASSWORD = 'Mscd-Demo-2026!';
+export const KEYCLOAK_USER_PASSWORD = REALM_SECRETS.userPassword;
 /** Fixed subjects of the realm users (WP-02 handoff). */
 export const KEYCLOAK_SUBJECTS = {
   rina: '00000000-0000-4000-8000-0000000000c1',
@@ -62,12 +84,14 @@ export async function setup(project: TestProject): Promise<void> {
 
   const external = process.env.MSCD_TEST_KEYCLOAK_URL;
   if (external) {
+    const adminPassword = process.env.MSCD_TEST_KEYCLOAK_ADMIN_PASSWORD;
+    if (!adminPassword) throw new Error('MSCD_TEST_KEYCLOAK_URL needs MSCD_TEST_KEYCLOAK_ADMIN_PASSWORD (the administrator password of that Keycloak)');
     const baseUrl = localhostUrl(external).replace(/\/+$/, '');
     const server: KeycloakTestServer = {
       baseUrl,
       issuer: `${baseUrl}/realms/${KEYCLOAK_REALM}`,
       adminUser: process.env.MSCD_TEST_KEYCLOAK_ADMIN ?? 'admin',
-      adminPassword: process.env.MSCD_TEST_KEYCLOAK_ADMIN_PASSWORD ?? 'admin-dev',
+      adminPassword,
     };
     await waitForRealm(server.issuer, 60_000);
     project.provide('mscdKeycloak', server);
@@ -181,6 +205,37 @@ export class KeycloakAdmin {
     const { attributes, ...rest } = changes;
     await this.call('PUT', `/clients/${encodeURIComponent(client.id)}`, { ...client, ...rest, attributes: { ...(client.attributes ?? {}), ...(attributes ?? {}) } });
     return client;
+  }
+
+  /**
+   * Creates a confidential OpenID Connect client of the realm (redirect URIs `*`) with the given protocol mappers and
+   * default client scopes, and returns its internal id for `deleteClient`.
+   */
+  async createClient(client: { clientId: string; secret: string; protocolMappers?: Record<string, unknown>[]; defaultClientScopes?: string[] }): Promise<string> {
+    const response = await this.call('POST', '/clients', {
+      clientId: client.clientId,
+      protocol: 'openid-connect',
+      enabled: true,
+      publicClient: false,
+      clientAuthenticatorType: 'client-secret',
+      secret: client.secret,
+      standardFlowEnabled: true,
+      directAccessGrantsEnabled: false,
+      redirectUris: ['*'],
+      webOrigins: ['+'],
+      attributes: { 'pkce.code.challenge.method': 'S256' },
+      protocolMappers: client.protocolMappers ?? [],
+      ...(client.defaultClientScopes ? { defaultClientScopes: client.defaultClientScopes } : {}),
+    });
+    if (response.status !== 201) throw new Error(`Keycloak client ${client.clientId} was not created: ${response.status} ${await response.text()}`);
+    const location = response.headers.get('location') ?? '';
+    const id = location.slice(location.lastIndexOf('/') + 1);
+    if (!id) throw new Error('Keycloak returned no client id');
+    return id;
+  }
+
+  async deleteClient(id: string): Promise<void> {
+    await this.call('DELETE', `/clients/${encodeURIComponent(id)}`);
   }
 
   private async accessToken(): Promise<string> {

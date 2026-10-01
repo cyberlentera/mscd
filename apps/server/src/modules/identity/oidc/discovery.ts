@@ -4,6 +4,8 @@
 // other column through `updated_at`) gives a new cache key, so an edited provider is discovered again at once, also
 // on other api replicas. With `identity.oidc.allow_insecure_http` (demo and test profiles only) plain-HTTP issuers
 // such as the test Keycloak are accepted; otherwise the issuer and every endpoint must use HTTPS.
+import { lookup } from 'node:dns/promises';
+import { BlockList, isIP } from 'node:net';
 import { Injectable, Logger } from '@nestjs/common';
 import * as oidc from 'openid-client';
 import { MscdConfig } from '../../../config/mscd-config';
@@ -99,6 +101,21 @@ interface CacheEntry {
   configuration: Promise<oidc.Configuration>;
 }
 
+const NON_PUBLIC = new BlockList();
+for (const [net, prefix] of [['0.0.0.0', 8], ['10.0.0.0', 8], ['100.64.0.0', 10], ['127.0.0.0', 8], ['169.254.0.0', 16], ['172.16.0.0', 12], ['192.168.0.0', 16], ['198.18.0.0', 15], ['224.0.0.0', 4], ['240.0.0.0', 4]] as const) {
+  NON_PUBLIC.addSubnet(net, prefix, 'ipv4');
+}
+for (const [net, prefix] of [['::', 128], ['::1', 128], ['fc00::', 7], ['fe80::', 10], ['ff00::', 8]] as const) NON_PUBLIC.addSubnet(net, prefix, 'ipv6');
+
+/** True for loopback, private, link-local, CGNAT, benchmark, multicast and unspecified addresses (IPv4-mapped too). */
+export function isNonPublicAddress(address: string): boolean {
+  const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(address);
+  if (mapped) return NON_PUBLIC.check(mapped[1]!, 'ipv4');
+  const family = isIP(address);
+  if (family === 0) return true;
+  return NON_PUBLIC.check(address, family === 4 ? 'ipv4' : 'ipv6');
+}
+
 @Injectable()
 export class OidcDiscovery {
   private readonly logger = new Logger('OidcDiscovery');
@@ -151,6 +168,7 @@ export class OidcDiscovery {
     if (issuer.protocol !== 'https:' && issuer.protocol !== 'http:') throw new DiscoveryError('invalid_issuer');
     if (issuer.username || issuer.password || issuer.hash) throw new DiscoveryError('invalid_issuer');
     if (issuer.protocol === 'http:' && !this.allowInsecureHttp) throw new DiscoveryError('insecure_issuer');
+    await this.assertPublicIssuer(issuer);
     const clientAuth = connection.clientSecret ? oidc.ClientSecretPost(connection.clientSecret) : oidc.None();
     try {
       return await oidc.discovery(issuer, connection.clientId, connection.clientSecret ? { client_secret: connection.clientSecret } : undefined, clientAuth, {
@@ -161,6 +179,29 @@ export class OidcDiscovery {
       const reason = discoveryFailureReason(error);
       this.logger.warn(`OIDC discovery of ${issuer.origin} failed: ${reason}`);
       throw new DiscoveryError(reason, { cause: error });
+    }
+  }
+
+  /**
+   * In multi-tenant mode a Tenant Admin supplies the issuer URL, so discovery must not become a way to reach hosts
+   * inside the installation's network (SSRF). Issuers that resolve to loopback, private, link-local, CGNAT or
+   * unspecified addresses are refused unless the host is in `network.egress_allowlist`. The refusal uses the same
+   * `unreachable` reason as a dead host, so the answer does not reveal what lives on the internal network.
+   * Single-tenant (on-premise) installs commonly run their identity provider on the internal network and are not limited.
+   */
+  private async assertPublicIssuer(issuer: URL): Promise<void> {
+    if (this.config.profile.tenancy.mode !== 'multi') return;
+    const host = issuer.hostname.replace(/^\[|\]$/g, '').toLowerCase();
+    if (this.config.profile.network.egress_allowlist.some((allowed) => allowed.toLowerCase() === host)) return;
+    let addresses: string[];
+    try {
+      addresses = isIP(host) ? [host] : (await lookup(host, { all: true, verbatim: true })).map((entry) => entry.address);
+    } catch (error) {
+      throw new DiscoveryError('unreachable', { cause: error });
+    }
+    if (addresses.length === 0 || addresses.some(isNonPublicAddress)) {
+      this.logger.warn(`OIDC discovery of ${issuer.origin} refused: the issuer resolves to a non-public address`);
+      throw new DiscoveryError('unreachable');
     }
   }
 
