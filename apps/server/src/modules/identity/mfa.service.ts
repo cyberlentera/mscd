@@ -1,0 +1,478 @@
+// Multi-factor authentication (build plan F.5, F.3): TOTP factors sealed with `platform.key` (AAD `mfa:<userId>`),
+// replay protection by the last accepted step, ten single-use recovery codes, enrolment and re-enrolment with a
+// recent proof, and the per-user second-factor lock across sessions: 10 consecutive failures lock the second factor
+// for 15 minutes, doubling with every further lock up to 24 hours; the level decays by one per 24 hours without a
+// lock. Every failure audits `auth.mfa_failed`, every lock `auth.mfa_locked` and emails the user.
+import { Injectable } from '@nestjs/common';
+import type { LoginResponse, MfaEnrolConfirmResponse, MfaEnrolStartRequest, MfaEnrolStartResponse, MfaVerifyRequest } from '@mscd/shared';
+import type { FastifyReply } from 'fastify';
+import { RateLimitedError, UnauthenticatedError } from '../../common/problems';
+import type { Trx } from '../../common/tokens';
+import { AccountMailer } from './account-mailer';
+import { checkPassword } from './credentials';
+import { IdentityInfra } from './identity-infra';
+import { hashSecret, verifySecret } from './password-hasher';
+import { newRecoveryCodes, recoveryCodeKey, RECOVERY_CODE_COUNT } from './recovery-codes';
+import { SessionService, type CurrentSession, type IssuedSession, type SessionRow } from './session.service';
+import { principalUser, SignInResponder, type UserColumns } from './sign-in-responder';
+import { base32Encode, matchTotp, newTotpSecret, otpauthUrl } from './totp';
+
+/** Issuer shown by authenticator apps (F.5). */
+export const TOTP_ISSUER = 'MSCD';
+/** Consecutive second-factor failures of a user that lock the second factor (F.3). */
+export const MFA_FAILURES_BEFORE_LOCK = 10;
+/** First lock length; each further lock doubles it (F.3). */
+export const MFA_LOCK_BASE_MS = 15 * 60_000;
+/** Longest lock (F.3). */
+export const MFA_LOCK_MAX_MS = 24 * 3_600_000;
+/** The lock level drops by one per this time without a lock (F.3). */
+export const MFA_LEVEL_DECAY_MS = 24 * 3_600_000;
+/** Second-factor failures of one session that revoke it (F.3). */
+export const SESSION_MFA_FAILURE_LIMIT = 10;
+/** A password or TOTP proof this recent replaces the proof of a re-enrolment or an identity link (F.5, F.8). */
+export const RECENT_PROOF_MS = 5 * 60_000;
+
+/** True when the session verified a password or a second factor within the last 5 minutes (F.5). */
+export function hasRecentProof(session: Pick<SessionRow, 'password_at' | 'mfa_at'>, now: Date): boolean {
+  const recent = (at: Date | null) => at !== null && now.getTime() - at.getTime() <= RECENT_PROOF_MS && at.getTime() <= now.getTime() + 60_000;
+  return recent(session.password_at) || recent(session.mfa_at);
+}
+
+/** Lock length of a lock at `level` (0 for the first). */
+export function mfaLockDuration(level: number): number {
+  return Math.min(MFA_LOCK_BASE_MS * 2 ** Math.max(0, level), MFA_LOCK_MAX_MS);
+}
+
+/** The lock level after decay: one level less per 24 hours since the last lock ended. */
+export function decayedLockLevel(level: number, lastLockedUntil: Date | null, now: Date): number {
+  if (!lastLockedUntil || level <= 0) return Math.max(0, level);
+  const since = now.getTime() - lastLockedUntil.getTime();
+  if (since <= 0) return level;
+  return Math.max(0, level - Math.floor(since / MFA_LEVEL_DECAY_MS));
+}
+
+export type SecondFactorProof = { code: string } | { recoveryCode: string };
+
+export type SecondFactorOutcome =
+  | { kind: 'ok'; method: 'totp' | 'recovery_code' }
+  /** Wrong code; `lockedUntil` is set when this failure locked the second factor. */
+  | { kind: 'failed'; lockedUntil: Date | null }
+  /** The second factor is locked: the code was not checked (429). */
+  | { kind: 'locked'; until: Date };
+
+/** What an audit entry of a second-factor event needs besides the user. */
+export interface SecondFactorContext {
+  organizationId: string | null;
+}
+
+const USER_COLUMNS = ['id', 'handle', 'email', 'display_name', 'job_title', 'kind'] as const;
+
+function lockedError(until: Date, now: Date): RateLimitedError {
+  return new RateLimitedError(Math.max(1, Math.ceil((until.getTime() - now.getTime()) / 1000)), 'Two-step sign-in is locked after too many wrong codes; try again later');
+}
+
+function wrongCode(): UnauthenticatedError {
+  return new UnauthenticatedError({ messageKey: 'auth.mfa_invalid', detail: 'The code is not valid' });
+}
+
+@Injectable()
+export class MfaService {
+  constructor(
+    private readonly infra: IdentityInfra,
+    private readonly sessions: SessionService,
+    private readonly responder: SignInResponder,
+    private readonly mailer: AccountMailer,
+  ) {}
+
+  /** True when the user has a confirmed second factor. */
+  async hasConfirmedFactor(trx: Trx, userId: string): Promise<boolean> {
+    const row = await trx
+      .selectFrom('platform.mfa_factor')
+      .select('id')
+      .where('user_id', '=', userId)
+      .where('confirmed_at', 'is not', null)
+      .where('deleted_at', 'is', null)
+      .executeTakeFirst();
+    return row !== undefined;
+  }
+
+  /**
+   * Checks a TOTP or recovery code of a user with the per-user lock (F.3, F.5) and records the result in `trx`:
+   * failures, locks, audit entries and the emails (after commit). The caller commits `trx` also when the check
+   * failed, so the failure counts.
+   */
+  async checkSecondFactor(trx: Trx, userId: string, proof: SecondFactorProof, context: SecondFactorContext): Promise<SecondFactorOutcome> {
+    const now = this.infra.clock.now();
+    const user = await trx
+      .selectFrom('platform.app_user')
+      .select(['id', 'email', 'mfa_failed_count', 'mfa_lock_level', 'mfa_locked_until'])
+      .where('id', '=', userId)
+      .forUpdate()
+      .executeTakeFirstOrThrow();
+    if (user.mfa_locked_until && user.mfa_locked_until.getTime() > now.getTime()) return { kind: 'locked', until: user.mfa_locked_until };
+
+    const method = 'code' in proof ? 'totp' : 'recovery_code';
+    const recovery = 'code' in proof ? null : await this.useRecoveryCode(trx, userId, proof.recoveryCode, now);
+    const ok = 'code' in proof ? await this.useTotp(trx, userId, proof.code, now) : recovery !== null;
+    const actor = { userId, kind: 'user' as const };
+    if (ok) {
+      if (user.mfa_failed_count !== 0) await trx.updateTable('platform.app_user').set({ mfa_failed_count: 0 }).where('id', '=', userId).execute();
+      if (recovery !== null) {
+        await this.infra.audit.record(trx, {
+          action: 'auth.recovery_code_used',
+          actor,
+          organizationId: context.organizationId,
+          entityType: 'user',
+          entityId: userId,
+          after: { remainingCodes: recovery.remaining },
+        });
+        this.mailer.sendAfterCommit(trx, {
+          to: { email: user.email, userId },
+          template: { name: 'recovery_code_used', link: this.mailer.appLink('/'), remaining: recovery.remaining },
+        });
+      }
+      return { kind: 'ok', method };
+    }
+
+    const failures = user.mfa_failed_count + 1;
+    await this.infra.audit.record(trx, {
+      action: 'auth.mfa_failed',
+      actor,
+      organizationId: context.organizationId,
+      entityType: 'user',
+      entityId: userId,
+      after: { method, consecutiveFailures: failures },
+    });
+    if (failures < MFA_FAILURES_BEFORE_LOCK) {
+      await trx.updateTable('platform.app_user').set({ mfa_failed_count: failures }).where('id', '=', userId).execute();
+      return { kind: 'failed', lockedUntil: null };
+    }
+    const level = decayedLockLevel(user.mfa_lock_level, user.mfa_locked_until, now);
+    const duration = mfaLockDuration(level);
+    const until = new Date(now.getTime() + duration);
+    await trx
+      .updateTable('platform.app_user')
+      .set({ mfa_failed_count: 0, mfa_lock_level: level + 1, mfa_locked_until: until })
+      .where('id', '=', userId)
+      .execute();
+    await this.infra.audit.record(trx, {
+      action: 'auth.mfa_locked',
+      actor,
+      organizationId: context.organizationId,
+      entityType: 'user',
+      entityId: userId,
+      after: { lockedUntil: until.toISOString(), lockLevel: level + 1, lockMinutes: Math.round(duration / 60_000) },
+    });
+    this.mailer.sendAfterCommit(trx, {
+      to: { email: user.email, userId },
+      template: { name: 'mfa_locked', link: this.mailer.appLink('/login'), until: `${until.toISOString().slice(0, 16).replace('T', ' ')} UTC` },
+    });
+    return { kind: 'failed', lockedUntil: until };
+  }
+
+  /** `POST /auth/mfa/verify` (F.5): the second factor of an `mfa_pending` session; success rotates it to `active`. */
+  async verify(current: CurrentSession, reply: FastifyReply, body: MfaVerifyRequest): Promise<LoginResponse> {
+    const row = current.row;
+    const userId = row.user_id;
+    const now = this.infra.clock.now();
+    const proof: SecondFactorProof = 'code' in body ? { code: body.code } : { recoveryCode: body.recoveryCode };
+    const outcome = await this.infra.scope.withPlatform(
+      async (trx) => {
+        const result = await this.checkSecondFactor(trx, userId, proof, { organizationId: row.auth_org_id });
+        if (result.kind !== 'ok') {
+          if (result.kind === 'failed') await this.countSessionFailure(trx, row, now);
+          return { result, issued: null, user: null };
+        }
+        const issued = await this.sessions.rotate(trx, row, { state: 'active', mfaAt: now });
+        const user = await this.activate(trx, issued, result.method);
+        return { result, issued, user };
+      },
+      { scope: 'auth', userId, orgId: row.auth_org_id },
+    );
+    if (outcome.result.kind === 'locked') throw lockedError(outcome.result.until, now);
+    if (!outcome.issued || !outcome.user) throw wrongCode();
+    return this.responder.respond(reply, outcome.issued, principalUser(outcome.user));
+  }
+
+  /**
+   * `POST /auth/mfa/enrol/start` (F.5): a new TOTP secret, shown once. In state `mfa_enrolment` no proof is asked;
+   * from an active session (re-enrolment) the current code or the password is required unless the session proved
+   * one of them in the last 5 minutes.
+   */
+  async startEnrolment(current: CurrentSession, body: MfaEnrolStartRequest): Promise<MfaEnrolStartResponse> {
+    const row = current.row;
+    const userId = row.user_id;
+    const now = this.infra.clock.now();
+    const secret = newTotpSecret();
+    const sealed = await this.infra.secrets.seal(secret, { purpose: 'mfa', userId });
+    const outcome = await this.infra.scope.withPlatform(
+      async (trx): Promise<{ error: Error | null; email: string }> => {
+        const user = await trx
+          .selectFrom('platform.app_user')
+          .select(['id', 'email', 'password_hash', 'failed_login_count', 'locked_until'])
+          .where('id', '=', userId)
+          .forUpdate()
+          .executeTakeFirstOrThrow();
+        if (row.state === 'active' && !hasRecentProof(row, now)) {
+          const error = await this.checkProof(trx, row, user, body, now);
+          if (error) return { error, email: user.email };
+        }
+        await trx
+          .updateTable('platform.mfa_factor')
+          .set({ deleted_at: now })
+          .where('user_id', '=', userId)
+          .where('confirmed_at', 'is', null)
+          .where('deleted_at', 'is', null)
+          .execute();
+        await trx.insertInto('platform.mfa_factor').values({ user_id: userId, kind: 'totp', secret_sealed: sealed, label: 'Authenticator app' }).execute();
+        return { error: null, email: user.email };
+      },
+      { scope: 'auth', userId, orgId: row.auth_org_id },
+    );
+    if (outcome.error) throw outcome.error;
+    const secretBase32 = base32Encode(secret);
+    return { secret: secretBase32, otpauthUrl: otpauthUrl(TOTP_ISSUER, outcome.email, secretBase32), issuer: TOTP_ISSUER, account: outcome.email };
+  }
+
+  /**
+   * `POST /auth/mfa/enrol/confirm` (F.5): the first code of the new secret confirms it, replaces an older factor,
+   * issues ten recovery codes (shown once), rotates the session to `active` and, on re-enrolment, revokes the user's
+   * other sessions.
+   */
+  async confirmEnrolment(current: CurrentSession, reply: FastifyReply, code: string): Promise<MfaEnrolConfirmResponse> {
+    const row = current.row;
+    const userId = row.user_id;
+    const now = this.infra.clock.now();
+    // Check the code before the costly hashing of the recovery codes, then again under the user lock.
+    const pending = await this.infra.scope.withPlatform((trx) => this.pendingFactor(trx, userId), { scope: 'auth', userId });
+    if (!pending || (await this.matchPending(pending, userId, code, now)) === null) throw wrongCode();
+    const codes = newRecoveryCodes();
+    const hashes = await Promise.all(codes.map((c) => hashSecret(recoveryCodeKey(c))));
+
+    const outcome = await this.infra.scope.withPlatform(
+      async (trx) => {
+        await trx.selectFrom('platform.app_user').select('id').where('id', '=', userId).forUpdate().executeTakeFirstOrThrow();
+        const factor = await this.pendingFactor(trx, userId);
+        const step = factor ? await this.matchPending(factor, userId, code, now) : null;
+        if (!factor || step === null) return null;
+        const replaced = await trx
+          .updateTable('platform.mfa_factor')
+          .set({ deleted_at: now })
+          .where('user_id', '=', userId)
+          .where('confirmed_at', 'is not', null)
+          .where('deleted_at', 'is', null)
+          .executeTakeFirst();
+        const wasReplaced = Number(replaced.numUpdatedRows) > 0;
+        await trx.updateTable('platform.mfa_factor').set({ confirmed_at: now, last_used_step: String(step) }).where('id', '=', factor.id).execute();
+        await trx
+          .updateTable('platform.mfa_recovery_code')
+          .set({ deleted_at: now })
+          .where('user_id', '=', userId)
+          .where('used_at', 'is', null)
+          .where('deleted_at', 'is', null)
+          .execute();
+        await trx
+          .insertInto('platform.mfa_recovery_code')
+          .values(hashes.map((code_hash) => ({ user_id: userId, code_hash })))
+          .execute();
+        const issued = await this.sessions.rotate(trx, row, { state: 'active', mfaAt: now });
+        if (wasReplaced) {
+          const revoked = await this.sessions.revokeUserSessions(trx, userId, 'mfa_reenrolled', { except: issued.row.id_hash });
+          if (revoked > 0) {
+            await this.infra.audit.record(trx, {
+              action: 'auth.session_revoked',
+              actor: { userId, kind: 'user' },
+              organizationId: row.auth_org_id,
+              entityType: 'user',
+              entityId: userId,
+              after: { reason: 'mfa_reenrolled', sessions: revoked },
+            });
+          }
+        }
+        await this.infra.audit.record(trx, {
+          action: 'auth.mfa_enrolled',
+          actor: { userId, kind: 'user' },
+          organizationId: row.auth_org_id,
+          entityType: 'user',
+          entityId: userId,
+          after: { kind: 'totp', replaced: wasReplaced, recoveryCodes: RECOVERY_CODE_COUNT },
+        });
+        const user = row.state === 'active' ? await this.userColumns(trx, userId) : await this.activate(trx, issued, 'totp_enrolment');
+        this.mailer.sendAfterCommit(trx, {
+          to: { email: user.email, userId },
+          template: { name: wasReplaced ? 'mfa_replaced' : 'mfa_enrolled', link: this.mailer.appLink('/') },
+        });
+        return { issued, user };
+      },
+      { scope: 'auth', userId, orgId: row.auth_org_id },
+    );
+    if (!outcome) throw wrongCode();
+    const response = await this.responder.respond(reply, outcome.issued, principalUser(outcome.user));
+    if (response.status !== 'ok' || !response.me) throw new Error('An enrolled session must be active');
+    return { recoveryCodes: codes, me: response.me };
+  }
+
+  /**
+   * Removes the second factor of a user (F.5 MFA reset by a Tenant Admin or the platform operator): factors and
+   * recovery codes are deleted, the second-factor lock is cleared, every session of the user is revoked, the reset is
+   * audited (`auth.mfa_reset`) and the user is emailed after commit. Runs in the caller's transaction; the caller
+   * checks who may reset (F.6).
+   */
+  async resetFactor(trx: Trx, userId: string, options: { organizationId: string | null; actor?: { userId: string | null; kind: 'user' | 'operator' | 'system' } }): Promise<void> {
+    const now = this.infra.clock.now();
+    const user = await trx.selectFrom('platform.app_user').select(['id', 'email']).where('id', '=', userId).forUpdate().executeTakeFirstOrThrow();
+    await trx.updateTable('platform.mfa_factor').set({ deleted_at: now }).where('user_id', '=', userId).where('deleted_at', 'is', null).execute();
+    await trx
+      .updateTable('platform.mfa_recovery_code')
+      .set({ deleted_at: now })
+      .where('user_id', '=', userId)
+      .where('deleted_at', 'is', null)
+      .execute();
+    await trx.updateTable('platform.app_user').set({ mfa_failed_count: 0, mfa_locked_until: null }).where('id', '=', userId).execute();
+    const revoked = await this.sessions.revokeUserSessions(trx, userId, 'mfa_reset');
+    await this.infra.audit.record(trx, {
+      action: 'auth.mfa_reset',
+      ...(options.actor ? { actor: options.actor } : {}),
+      organizationId: options.organizationId,
+      entityType: 'user',
+      entityId: userId,
+      after: { sessionsRevoked: revoked },
+    });
+    this.mailer.sendAfterCommit(trx, { to: { email: user.email, userId }, template: { name: 'mfa_reset', link: this.mailer.appLink('/login') } });
+  }
+
+  /**
+   * Marks a session active after its second factor (or first enrolment): audits `auth.login` and stamps the user's
+   * last sign-in. Returns the user's columns for the response.
+   */
+  private async activate(trx: Trx, issued: IssuedSession, secondFactor: string): Promise<UserColumns> {
+    const now = this.infra.clock.now();
+    const row = issued.row;
+    const user = await trx
+      .updateTable('platform.app_user')
+      .set({ last_login_at: now })
+      .where('id', '=', row.user_id)
+      .returning([...USER_COLUMNS])
+      .executeTakeFirstOrThrow();
+    await this.infra.audit.record(trx, {
+      action: 'auth.login',
+      actor: { userId: row.user_id, kind: user.kind === 'guest' ? 'guest' : 'user' },
+      organizationId: row.auth_org_id,
+      entityType: 'user',
+      entityId: row.user_id,
+      after: {
+        method: row.auth_method,
+        secondFactor,
+        ...(row.identity_provider_id ? { identityProviderId: row.identity_provider_id } : {}),
+        ...(row.organization_id ? { organizationId: row.organization_id } : {}),
+      },
+    });
+    return user;
+  }
+
+  private async userColumns(trx: Trx, userId: string): Promise<UserColumns> {
+    return trx.selectFrom('platform.app_user').select([...USER_COLUMNS]).where('id', '=', userId).executeTakeFirstOrThrow();
+  }
+
+  /** Re-enrolment proof (F.5): the current TOTP code (with the lock) or the password (with the account lockout). */
+  private async checkProof(
+    trx: Trx,
+    row: SessionRow,
+    user: { id: string; password_hash: string | null; failed_login_count: number; locked_until: Date | null },
+    body: MfaEnrolStartRequest,
+    now: Date,
+  ): Promise<Error | null> {
+    if ('currentCode' in body) {
+      const result = await this.checkSecondFactor(trx, user.id, { code: body.currentCode }, { organizationId: row.auth_org_id });
+      if (result.kind === 'locked') return lockedError(result.until, now);
+      if (result.kind === 'failed') return new UnauthenticatedError({ messageKey: 'auth.proof_invalid', detail: 'The current code is not valid' });
+      await this.sessions.touchProof(trx, row.id_hash, { mfaAt: now });
+      return null;
+    }
+    if ('password' in body) {
+      const result = await checkPassword(trx, user, body.password, now);
+      if (result.kind !== 'ok') return new UnauthenticatedError({ messageKey: 'auth.proof_invalid', detail: 'The password is not valid' });
+      await this.sessions.touchProof(trx, row.id_hash, { passwordAt: now });
+      return null;
+    }
+    return new UnauthenticatedError({ messageKey: 'auth.proof_required', detail: 'Enter your current code or your password to replace the authenticator' });
+  }
+
+  /** Counts a second-factor failure of one session; the 10th revokes it (F.3). */
+  private async countSessionFailure(trx: Trx, row: SessionRow, now: Date): Promise<void> {
+    const window = Math.max(60_000, row.absolute_expires_at.getTime() - now.getTime());
+    const hit = await this.infra.rateBuckets.hit(`mfa-fail:${row.id_hash.toString('hex').slice(0, 40)}`, window);
+    if (hit.current < SESSION_MFA_FAILURE_LIMIT) return;
+    if (await this.sessions.revoke(trx, row.id_hash, 'mfa_failures')) {
+      await this.infra.audit.record(trx, {
+        action: 'auth.session_revoked',
+        actor: { userId: row.user_id, kind: 'user' },
+        organizationId: row.auth_org_id,
+        entityType: 'user',
+        entityId: row.user_id,
+        after: { reason: 'mfa_failures', sessions: 1 },
+      });
+    }
+  }
+
+  private async pendingFactor(trx: Trx, userId: string): Promise<{ id: string; secret_sealed: string } | undefined> {
+    return trx
+      .selectFrom('platform.mfa_factor')
+      .select(['id', 'secret_sealed'])
+      .where('user_id', '=', userId)
+      .where('confirmed_at', 'is', null)
+      .where('deleted_at', 'is', null)
+      .orderBy('created_at', 'desc')
+      .executeTakeFirst();
+  }
+
+  private async matchPending(factor: { secret_sealed: string }, userId: string, code: string, now: Date): Promise<number | null> {
+    const secret = await this.infra.secrets.open(factor.secret_sealed, { purpose: 'mfa', userId });
+    return matchTotp(secret, code, now);
+  }
+
+  /** Accepts a TOTP code of the confirmed factor once (F.5 replay protection); false when wrong or replayed. */
+  private async useTotp(trx: Trx, userId: string, code: string, now: Date): Promise<boolean> {
+    const factor = await trx
+      .selectFrom('platform.mfa_factor')
+      .select(['id', 'secret_sealed', 'last_used_step'])
+      .where('user_id', '=', userId)
+      .where('confirmed_at', 'is not', null)
+      .where('deleted_at', 'is', null)
+      .executeTakeFirst();
+    if (!factor) return false;
+    const secret = await this.infra.secrets.open(factor.secret_sealed, { purpose: 'mfa', userId });
+    const step = matchTotp(secret, code, now, { lastUsedStep: factor.last_used_step === null ? null : Number(factor.last_used_step) });
+    if (step === null) return false;
+    const updated = await trx
+      .updateTable('platform.mfa_factor')
+      .set({ last_used_step: String(step) })
+      .where('id', '=', factor.id)
+      .where((eb) => eb.or([eb('last_used_step', 'is', null), eb('last_used_step', '<', String(step))]))
+      .executeTakeFirst();
+    return Number(updated.numUpdatedRows) === 1;
+  }
+
+  /** Uses one recovery code (F.5); null when no unused code matches, else the number of codes left. */
+  private async useRecoveryCode(trx: Trx, userId: string, code: string, now: Date): Promise<{ remaining: number } | null> {
+    const rows = await trx
+      .selectFrom('platform.mfa_recovery_code')
+      .select(['id', 'code_hash'])
+      .where('user_id', '=', userId)
+      .where('used_at', 'is', null)
+      .where('deleted_at', 'is', null)
+      .execute();
+    const key = recoveryCodeKey(code);
+    const matches = await Promise.all(rows.map((r) => verifySecret(r.code_hash, key)));
+    const index = matches.indexOf(true);
+    if (index < 0) return null;
+    const used = await trx
+      .updateTable('platform.mfa_recovery_code')
+      .set({ used_at: now })
+      .where('id', '=', rows[index]!.id)
+      .where('used_at', 'is', null)
+      .executeTakeFirst();
+    if (Number(used.numUpdatedRows) !== 1) return null;
+    return { remaining: rows.length - 1 };
+  }
+}

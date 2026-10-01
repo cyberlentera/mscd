@@ -22,6 +22,50 @@ export const GATEWAY_PROBLEM_STATUS: Readonly<Record<GatewayProblemSlug, number>
   'unreachable': 502,
 };
 
+/** Common names of the client certificates the gateway accepts in mtls mode (D.5); anchors only from the worker. */
+export const GATEWAY_CALLER_NAMES = ['mscd-api', 'mscd-worker'] as const;
+export type GatewayCallerName = (typeof GATEWAY_CALLER_NAMES)[number];
+
+/** `reason` member of a gateway problem: why a credential or a call was refused. */
+export const GATEWAY_PROBLEM_REASONS = ['credential-binding', 'credential-missing', 'credential-kind', 'tenant-prefix', 'caller', 'token'] as const;
+export type GatewayProblemReason = (typeof GATEWAY_PROBLEM_REASONS)[number];
+
+/** Top-level repository config keys that only label the repository and never bind a credential (D-08). */
+const DISPLAY_CONFIG_KEYS = new Set(['display', 'displayName', 'label']);
+
+/**
+ * The part of a repository config a sealed credential is bound to (D-08, D.5 "Credential binding"): the config
+ * without its display fields (`display`, `displayName`, `label`, and the `path` label of each per-system root).
+ * Site, drive, root folder, OAuth client and every per-system root folder id stay in, so changing any of them needs a
+ * new credential. Both the gateway and the api hash `canonicalJson()` of this value with SHA-256 (`configSha256`).
+ */
+export function credentialBindingConfig(config: Readonly<Record<string, unknown>>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(config)) {
+    if (DISPLAY_CONFIG_KEYS.has(key) || value === undefined) continue;
+    if (key === 'roots' && value !== null && typeof value === 'object' && !Array.isArray(value)) {
+      const roots: Record<string, unknown> = {};
+      for (const [ms, root] of Object.entries(value as Record<string, unknown>)) {
+        if (root !== null && typeof root === 'object' && !Array.isArray(root)) {
+          const { path: _label, ...binding } = root as Record<string, unknown>;
+          roots[ms] = binding;
+        } else {
+          roots[ms] = root;
+        }
+      }
+      result[key] = roots;
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
+/** Additional authenticated data of a sealed repository credential: `cred:<orgId>:<repositoryId>:<configSha256>` (D-08, F.11). */
+export function credentialAad(orgId: string, repositoryId: string, configSha256: string): string {
+  return `cred:${orgId}:${repositoryId}:${configSha256}`;
+}
+
 const TENANT = { orgId: '00000000-0000-4000-8000-00000000a001', wrappedDek: 'v1.1a2b3c4d.aXY.Y2lwaGVydGV4dA' } as const;
 const REPOSITORY = {
   id: '3c4d5e6f-7a8b-4c9d-8e0f-1a2b3c4d5e6f', slug: 'sp', adapter: 'm365', modes: ['link', 'pass_through'],
@@ -214,10 +258,18 @@ export const CopyWithinResult = named('CopyWithinResult', z.object({ items: z.ar
   valid: [{ items: [{ externalItemId: 'demo-sp-EV-0313', newItemId: 'copy-1', location: 'Compliance/_packs/ISMS/Surveillance 1/Backup-Job-Log-Q3.xlsx' }] }],
   invalid: [{ items: [{ newItemId: 'x' }] }],
 });
-export const RehashResult = named('RehashResult', z.object({ hashValue: z.string().regex(/^[0-9a-f]{64}$/), matches: z.boolean() }), 'Result of a Managed Vault re-hash (A-08)', {
-  valid: [{ hashValue: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', matches: true }],
-  invalid: [{ hashValue: 'x', matches: true }],
-});
+export const RehashResult = named(
+  'RehashResult',
+  z.object({ hashValue: z.string().regex(/^[0-9a-f]{64}$/), matches: z.boolean(), detail: z.literal('decryption_failed').optional() }),
+  'Result of a Managed Vault re-hash (A-08). An object that fails decryption (changed or truncated ciphertext) never matches: detail is decryption_failed and hashValue is the SHA-256 of the stored ciphertext',
+  {
+    valid: [
+      { hashValue: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', matches: true },
+      { hashValue: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', matches: false, detail: 'decryption_failed' },
+    ],
+    invalid: [{ hashValue: 'x', matches: true }, { hashValue: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', matches: false, detail: 'other' }],
+  },
+);
 /** `audit-anchors/<segment>/.../<name>.json`; no segment is empty or starts with a dot, so `.` and `..` are rejected. */
 const ANCHOR_KEY_RE = /^audit-anchors\/(?:[A-Za-z0-9_-][A-Za-z0-9_.-]*\/)*[A-Za-z0-9_-][A-Za-z0-9_.-]*\.json$/;
 export const AnchorWriteRequest = named(
@@ -245,6 +297,28 @@ export const AnchorWriteResult = named('AnchorWriteResult', z.object({ location:
   valid: [{ location: 's3://mscd-vault/audit-anchors/platform/2026-09-29.json' }],
   invalid: [{}],
 });
+
+export type DataKeyRequest = z.infer<typeof DataKeyRequest>;
+export type DataKeyResponse = z.infer<typeof DataKeyResponse>;
+export type SealCredentialRequest = z.infer<typeof SealCredentialRequest>;
+export type SealedCredential = z.infer<typeof SealedCredential>;
+export type OAuthExchangeRequest = z.infer<typeof OAuthExchangeRequest>;
+export type TestConnectionRequest = z.infer<typeof TestConnectionRequest>;
+export type TestConnectionResponse = z.infer<typeof TestConnectionResponse>;
+export type ListRequest = z.infer<typeof ListRequest>;
+export type ListResponse = z.infer<typeof ListResponse>;
+export type EnsureFolderRequest = z.infer<typeof EnsureFolderRequest>;
+export type EnsureFolderResponse = z.infer<typeof EnsureFolderResponse>;
+export type LinkRequest = z.infer<typeof LinkRequest>;
+export type RegisterClientUploadRequest = z.infer<typeof RegisterClientUploadRequest>;
+export type ObjectRequest = z.infer<typeof ObjectRequest>;
+export type PinVersionResult = z.infer<typeof PinVersionResult>;
+export type OpenUrlResult = z.infer<typeof OpenUrlResult>;
+export type CopyWithinRequest = z.infer<typeof CopyWithinRequest>;
+export type CopyWithinResult = z.infer<typeof CopyWithinResult>;
+export type RehashResult = z.infer<typeof RehashResult>;
+export type AnchorWriteRequest = z.infer<typeof AnchorWriteRequest>;
+export type AnchorWriteResult = z.infer<typeof AnchorWriteResult>;
 
 // ---------------------------------------------------------------------------------------------------------------
 // Routes

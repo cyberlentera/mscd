@@ -73,13 +73,13 @@ export const licensePutRoute = defineRoute({
   owner: 'WP-12',
   method: 'PUT',
   path: '/api/v1/admin/license',
-  summary: 'Install a signed licence (Tenant Admin with single tenancy, platform operator with multi); allowed in read-only mode',
+  summary: 'Install a signed licence (Tenant Admin with single tenancy, platform operator with multi, who names the organisation); allowed in read-only mode',
   auth: 'session',
   permission: 'license.manage',
   scope: 'org',
   body: LicenceInstallRequest,
   response: LicenceView,
-  errors: [422],
+  errors: [404, 422],
   readOnlyAllowed: true,
 });
 
