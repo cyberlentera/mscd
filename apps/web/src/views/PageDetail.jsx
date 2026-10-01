@@ -37,7 +37,7 @@ export default function PageDetail({ v }) {
                     <button onClick={f?.go} style={{ border: "0", background: "transparent", padding: "0", font: "inherit", color: "var(--acc)", cursor: "pointer", textDecoration: "underline" }}>{txt(f?.v)}</button>
                   </>) : null}
                   {f?.plain ? (<>
-                    <span style={{ color: f?.color }}>{txt(f?.v)}</span>
+                    <span style={{ color: f?.ink }}>{txt(f?.v)}</span>
                   </>) : null}
                 </div>
               </Fragment>))}

@@ -8,7 +8,7 @@ export default function GoldenThread({ v }) {
     <>{v.gt ? (<>
       <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", boxShadow: "var(--sh)", padding: "12px var(--pad)", display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
         <input value={v.gt?.q ?? ''} onChange={v.gt?.setQ} onKeyDown={v.gt?.key} placeholder={v.t?.gtSearch} style={{ flex: "1", minWidth: "280px", height: "36px", padding: "0 12px", borderRadius: "8px", border: "1px solid var(--bd)", background: "var(--sur2)", color: "var(--tx)", fontSize: "var(--fs)", outline: "none", fontFamily: "var(--ffm)" }} />{" "}
-        <button onClick={v.gt?.run} style={{ height: "36px", padding: "0 16px", borderRadius: "8px", border: "1px solid var(--acc)", background: "var(--acc)", color: "#fff", font: "inherit", fontSize: "var(--fs)", fontWeight: "600", cursor: "pointer", whiteSpace: "nowrap", flex: "none" }}>{txt(v.t?.trace)}</button>
+        <button onClick={v.gt?.run} style={{ height: "36px", padding: "0 16px", borderRadius: "8px", border: "1px solid var(--acc)", background: "var(--acc)", color: "var(--onacc)", font: "inherit", fontSize: "var(--fs)", fontWeight: "600", cursor: "pointer", whiteSpace: "nowrap", flex: "none" }}>{txt(v.t?.trace)}</button>
         <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", fontSize: "12px" }}>
           {list(v.gt?.sugg).map((s, $i34) => (<Fragment key={$i34}>
             <button onClick={s?.go} style={{ height: "26px", padding: "0 9px", borderRadius: "999px", border: "1px solid var(--bd)", background: "var(--sur)", color: "var(--tx2)", font: "inherit", fontSize: "12px", cursor: "pointer", fontFamily: "var(--ffm)", whiteSpace: "nowrap" }}>{txt(s?.id)}</button>

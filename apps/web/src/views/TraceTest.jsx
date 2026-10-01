@@ -41,7 +41,7 @@ export default function TraceTest({ v }) {
         <div style={{ padding: "12px var(--pad)", borderTop: "1px solid var(--bd)", display: "flex", gap: "12px", alignItems: "flex-start", background: v.trace?.warnBg, color: v.trace?.warnFg, borderRadius: "0 0 var(--r) var(--r)" }}>
           <span style={{ fontWeight: "700" }}>{txt(v.trace?.warnIcon)}</span>
           <span style={{ lineHeight: "1.55" }}>{txt(v.trace?.warning)}</span>
-          <span style={{ marginLeft: "auto", fontSize: "12px", whiteSpace: "nowrap", opacity: ".7", fontFamily: "var(--ffm)" }}>{txt(v.t?.renderedIn)}{" "}{txt(v.trace?.ms)}{" ms"}</span>
+          <span style={{ marginLeft: "auto", fontSize: "12px", whiteSpace: "nowrap", fontFamily: "var(--ffm)" }}>{txt(v.t?.renderedIn)}{" "}{txt(v.trace?.ms)}{" ms"}</span>
         </div>
       </div>
       <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", boxShadow: "var(--sh)", overflow: "hidden" }}>

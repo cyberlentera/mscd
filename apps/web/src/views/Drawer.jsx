@@ -40,7 +40,7 @@ export default function Drawer({ v }) {
                   <button onClick={f?.go} style={{ border: "0", background: "transparent", padding: "0", font: "inherit", color: "var(--acc)", cursor: "pointer", textDecoration: "underline", textAlign: "left" }}>{txt(f?.v)}</button>
                 </>) : null}
                 {f?.plain ? (<>
-                  <span style={{ color: f?.color }}>{txt(f?.v)}</span>
+                  <span style={{ color: f?.ink }}>{txt(f?.v)}</span>
                 </>) : null}
               </div>
             </Fragment>))}

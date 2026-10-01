@@ -23,7 +23,7 @@ export default function Portfolio({ v }) {
                 </div>
                 {list(g?.items).map((a, $i7) => (<Fragment key={$i7}>
                   <button onClick={a?.go} style={{ display: "grid", gridTemplateColumns: "46px minmax(0,1fr)", alignItems: "start", gap: "10px", width: "100%", textAlign: "left", border: "0", borderTop: "1px solid var(--bd)", background: "transparent", padding: "10px var(--pad)", cursor: "pointer", color: "var(--tx)", fontSize: "var(--fs)", transition: "background .15s" }} className="hv0">
-                    <span style={{ fontSize: "11px", fontWeight: "700", padding: "2px 0", borderRadius: "5px", textAlign: "center", background: a?.color, color: "#fff", marginTop: "2px" }}>{txt(a?.short)}</span>{" "}
+                    <span style={{ fontSize: "11px", fontWeight: "700", padding: "2px 0", borderRadius: "5px", textAlign: "center", background: a?.fill, color: "#fff", marginTop: "2px" }}>{txt(a?.short)}</span>{" "}
                     <span style={{ minWidth: "0" }}>
                       <span style={{ display: "block", fontWeight: "500", lineHeight: "1.3" }}>{txt(a?.text)}</span>
                       {a?.sub ? (<>
@@ -44,7 +44,7 @@ export default function Portfolio({ v }) {
               <div style={{ display: "flex", justifyContent: "space-between", gap: "12px" }}>
                 <div style={{ minWidth: "0" }}>
                   <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-                    <span style={{ fontSize: "12px", fontWeight: "700", padding: "2px 7px", borderRadius: "5px", background: m?.color, color: "#fff" }}>{txt(m?.short)}</span>
+                    <span style={{ fontSize: "12px", fontWeight: "700", padding: "2px 7px", borderRadius: "5px", background: m?.fill, color: "#fff" }}>{txt(m?.short)}</span>
                     <span style={{ fontFamily: "var(--ffm)", fontSize: "12px", color: "var(--tx2)" }}>{txt(m?.code)}{" : "}{txt(m?.ed)}</span>
                   </div>
                   <button onClick={m?.go} style={{ border: "0", background: "transparent", padding: "0", marginTop: "6px", font: "inherit", fontSize: "1.25em", fontWeight: "600", color: "var(--tx)", cursor: "pointer", textAlign: "left" }}>
@@ -97,7 +97,7 @@ export default function Portfolio({ v }) {
                         <span style={{ color: "var(--tx2)", minWidth: "0", overflowWrap: "anywhere" }}>
                           <span style={{ fontFamily: "var(--ffm)", fontWeight: "600", color: "var(--tx)", marginRight: "6px" }}>{txt(c?.n)}</span>{txt(c?.title)}
                         </span>
-                        <span style={{ fontFamily: "var(--ffm)", fontWeight: "600", flex: "none", color: c?.color }}>{txt(c?.pct)}{"%"}</span>
+                        <span style={{ fontFamily: "var(--ffm)", fontWeight: "600", flex: "none", color: c?.ink }}>{txt(c?.pct)}{"%"}</span>
                       </div>
                     </Fragment>))}
                   </div>
@@ -106,7 +106,7 @@ export default function Portfolio({ v }) {
               <div style={{ display: "flex", gap: "0", borderTop: "1px solid var(--bd)", borderBottom: "1px solid var(--bd)" }}>
                 {list(m?.stats).map((s, $i13) => (<Fragment key={$i13}>
                   <button onClick={s?.go} style={{ flex: "1", textAlign: "left", border: "0", borderRight: "1px solid var(--bd)", padding: "10px 12px 10px 0", marginRight: "12px", background: "transparent", cursor: "pointer", color: "var(--tx)", font: "inherit", fontSize: "var(--fs)" }}>
-                    <div style={{ fontSize: "22px", fontWeight: "600", lineHeight: "1.1", color: s?.color }}>{txt(s?.nEl)}</div>
+                    <div style={{ fontSize: "22px", fontWeight: "600", lineHeight: "1.1", color: s?.ink }}>{txt(s?.nEl)}</div>
                     <div style={{ fontSize: "12px", color: "var(--tx3)", marginTop: "3px" }}>{txt(s?.label)}</div>
                   </button>
                 </Fragment>))}

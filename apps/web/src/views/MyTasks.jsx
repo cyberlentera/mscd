@@ -78,7 +78,7 @@ export default function MyTasks({ v }) {
         <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px var(--pad)", borderBottom: "1px solid var(--bd)" }}>
           {list(v.tasks?.filters).map((f, $i70) => (<Fragment key={$i70}>
             <button onClick={f?.go} style={{ height: "28px", padding: "0 10px", borderRadius: "999px", border: `1px solid ${f?.bd ?? ''}`, background: f?.bg, color: f?.fg, font: "inherit", fontSize: "12px", fontWeight: "500", cursor: "pointer", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: "6px" }}>{txt(f?.label)}
-              <span style={{ fontFamily: "var(--ffm)", opacity: ".75" }}>{txt(f?.n)}</span>
+              <span style={{ fontFamily: "var(--ffm)" }}>{txt(f?.n)}</span>
             </button>
           </Fragment>))}{" "}
           <span style={{ marginLeft: "auto", fontSize: "12px", color: "var(--tx3)" }}>{txt(v.tasks?.sortNote)}</span>

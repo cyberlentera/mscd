@@ -62,7 +62,7 @@ export default function FrameworkLibrary({ v }) {
                 <td style={{ padding: "12px var(--pad)", borderBottom: "1px solid var(--bd)", verticalAlign: "top", width: "1%" }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px", alignItems: "stretch" }}>
                     {f?.transition ? (<>
-                      <button onClick={f?.goTransition} style={{ height: "32px", padding: "0 12px", borderRadius: "8px", border: "1px solid var(--acc)", background: "var(--acc)", color: "#fff", font: "inherit", fontSize: "var(--fs)", fontWeight: "600", cursor: "pointer", whiteSpace: "nowrap" }}>{txt(v.t?.transitionShort)}</button>
+                      <button onClick={f?.goTransition} style={{ height: "32px", padding: "0 12px", borderRadius: "8px", border: "1px solid var(--acc)", background: "var(--acc)", color: "var(--onacc)", font: "inherit", fontSize: "var(--fs)", fontWeight: "600", cursor: "pointer", whiteSpace: "nowrap" }}>{txt(v.t?.transitionShort)}</button>
                     </>) : null}
                     <button onClick={f?.go} style={{ height: "32px", padding: "0 12px", borderRadius: "8px", border: "1px solid var(--bd)", background: "var(--sur)", color: "var(--tx)", font: "inherit", fontSize: "var(--fs)", fontWeight: "500", cursor: "pointer", whiteSpace: "nowrap" }}>{txt(v.t?.manage)}</button>
                   </div>

@@ -57,7 +57,7 @@ export default function Modals({ v }) {
         </div>
         <div style={{ padding: "12px 20px", borderTop: "1px solid var(--bd)", display: "flex", justifyContent: "flex-end", gap: "8px" }}>
           <button onClick={v.closeModal} style={{ height: "34px", padding: "0 14px", borderRadius: "8px", border: "1px solid var(--bd)", background: "var(--sur)", color: "var(--tx)", font: "inherit", fontSize: "13px", cursor: "pointer" }}>{txt(v.t?.cancel)}</button>
-          <button onClick={v.modalOk} disabled={v.modal?.okOff} style={{ height: "34px", padding: "0 16px", borderRadius: "8px", border: "1px solid var(--acc)", background: "var(--acc)", color: "#fff", font: "inherit", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}>{txt(v.modal?.ok)}</button>
+          <button onClick={v.modalOk} disabled={v.modal?.okOff} style={{ height: "34px", padding: "0 16px", borderRadius: "8px", border: "1px solid var(--acc)", background: "var(--acc)", color: "var(--onacc)", font: "inherit", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}>{txt(v.modal?.ok)}</button>
         </div>
       </div>
     </>) : null}</>

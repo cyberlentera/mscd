@@ -53,7 +53,7 @@ export default function TopBar({ v }) {
         </button>
         <div style={{ position: "relative" }}>
           <button onClick={v.toggleRoleMenu} style={{ display: "flex", alignItems: "center", gap: "8px", height: "36px", padding: "0 10px 0 4px", borderRadius: "999px", border: "1px solid var(--bd)", background: "var(--sur)", cursor: "pointer", color: "var(--tx)", fontSize: "var(--fs)" }}>
-            <span style={{ width: "28px", height: "28px", borderRadius: "50%", background: "var(--acc)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "600", fontSize: "12px" }}>{txt(v.me?.i)}</span>{" "}
+            <span style={{ width: "28px", height: "28px", borderRadius: "50%", background: "var(--acc)", color: "var(--onacc)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "600", fontSize: "12px" }}>{txt(v.me?.i)}</span>{" "}
             <span style={{ textAlign: "left", lineHeight: "1.2" }}>
               <span style={{ fontWeight: "600", display: "block" }}>{txt(v.me?.name)}</span>
               <span style={{ fontSize: "12px", color: "var(--tx3)" }}>{txt(v.me?.role)}</span>

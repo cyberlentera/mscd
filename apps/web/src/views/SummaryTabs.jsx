@@ -35,7 +35,7 @@ export default function SummaryTabs({ v }) {
           <div style={{ display: "flex", gap: "18px", flex: "none" }}>
             {list(v.stepper?.cur?.counts).map((ct, $i25) => (<Fragment key={$i25}>
               <div style={{ textAlign: "center", minWidth: "56px" }}>
-                <div style={{ fontSize: "24px", fontWeight: "600", lineHeight: "1", color: ct?.color }}>{txt(ct?.n)}</div>
+                <div style={{ fontSize: "24px", fontWeight: "600", lineHeight: "1", color: ct?.ink }}>{txt(ct?.n)}</div>
                 <div style={{ fontSize: "12px", color: "var(--tx3)", marginTop: "4px", whiteSpace: "nowrap" }}>{txt(ct?.label)}</div>
               </div>
             </Fragment>))}

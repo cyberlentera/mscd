@@ -3,6 +3,27 @@
 import React from 'react';
 import AppView from './views/AppView.jsx';
 
+// Management system colours are brand hues. As text and as badge fills behind white text they need
+// theme-specific variants to reach 4.5:1, so every view-model object carrying a colour also gets
+// `ink` (text on the page surfaces) and `fill` (background behind white text).
+const FILL = { '#e8731a': '#ad4f0b', '#3a6fd8': '#3566c7', '#1f8a8a': '#1a7474', '#7a4fd3': '#7a4fd3' };
+const DARK_INK = { '#e8731a': '#e8731a', '#3a6fd8': '#6992e1', '#1f8a8a': '#4ca1a1', '#7a4fd3': '#a284e0' };
+function withInk(root, theme) {
+  const seen = new WeakSet();
+  const walk = (o) => {
+    if (!o || typeof o !== 'object' || seen.has(o) || o.$$typeof || o instanceof Set || o instanceof Map) return;
+    seen.add(o);
+    if (Array.isArray(o)) { o.forEach(walk); return; }
+    if (typeof o.color === 'string') {
+      const c = o.color.toLowerCase();
+      o.fill = FILL[c] || o.color;
+      o.ink = (theme === 'dark' ? DARK_INK[c] : FILL[c]) || o.color;
+    }
+    for (const k of Object.keys(o)) if (k !== 't') walk(o[k]);
+  };
+  walk(root);
+}
+
 export default class MscdApp extends React.Component {
   state = { D:null, screen:'portfolio', ms:'isms', lang:null, theme:null, deploy:null, role:'manager', msMenu:false, roleMenu:false, tab:{}, chip:{}, freq:null, q:'', sel:null, person:null, toast:null, modal:null, anim:0, ov:{}, expanded:{}, traceId:null, gtId:null, gtQ:'', evt:null, cycleAll:false, drift:null, org:'ndt', orgMenu:false, sb:true, tera:false };
   componentDidMount(){ import('./data/mscd-data.js').then(D=>this.setState({D})).catch(e=>console.error('data load failed',e)); window.addEventListener('keydown',this.onKey); }
@@ -84,7 +105,7 @@ export default class MscdApp extends React.Component {
   // ---------- detail builders ----------
   fact(k,v,o={}){ return {k,v:v??'-',ff:o.mono?"'IBM Plex Mono',monospace":'inherit',go:o.go||null,plain:!o.go,color:o.color||'inherit'}; }
   ACT_ICONS = { remind:'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4', reassign:'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM19 8l3 3-3 3M22 11h-6', changeDue:'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4', trace:'M5 19a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM7 14c2-6 8-3 10-6', testConn:'M21 12a9 9 0 1 1-3-6.7M21 3v6h-6', openDoc:'M14 3h7v7M21 3l-9 9M19 14v6H4V5h6', recordBlocker:'M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z' };
-  act(label,go,primary,tone){ const c=primary?{bg:'var(--acc)',fg:'#fff',bd:'var(--acc)'}:tone?{...this.tone(tone),bd:'transparent'}:{bg:'var(--sur)',fg:'var(--tx)',bd:'var(--bd)'}; const key=Object.keys(this.ACT_ICONS).find(k=>this.t(k)===label); const icon=!primary&&key?this.ACT_ICONS[key]:null; return {label,go,...c,icon,txt:icon?null:label,px:icon?'0px':'12px'}; }
+  act(label,go,primary,tone){ const c=primary?{bg:'var(--acc)',fg:'var(--onacc)',bd:'var(--acc)'}:tone?{...this.tone(tone),bd:'transparent'}:{bg:'var(--sur)',fg:'var(--tx)',bd:'var(--bd)'}; const key=Object.keys(this.ACT_ICONS).find(k=>this.t(k)===label); const icon=!primary&&key?this.ACT_ICONS[key]:null; return {label,go,...c,icon,txt:icon?null:label,px:icon?'0px':'12px'}; }
   link(v,go){ return {v,go:go||(()=>this.go('gt',{gtId:v}))}; }
   // 'Managed Vault' plus mode 'Managed Vault' reads as one name, not 'Managed Vault, Managed Vault'.
   locText(name,mode){ return mode&&mode!==name?name+', '+mode:name; }
@@ -346,7 +367,7 @@ export default class MscdApp extends React.Component {
       const KI={ev:'M12 3v12M7 10l5 5 5-5M4 19h16',req:'M4 6h2M9 6h11M4 12h2M9 12h11M4 18h2M9 18h11',doc:'M6 3h8l4 4v14H6zM14 3v4h4M9 13h6M9 17h6',x:'M5 5h14v14H5zM8 12l3 3 5-6'}; const KL={ev:this.t('kEv'),req:this.t('kReq'),doc:this.t('kDoc'),x:this.t('kRec')}; const kind=KI[i.kind]?i.kind:'x';
       const BI={ev:'M12 3v12M7 10l5 5 5-5M4 19h16',req:'M5 12l5 5L20 7',doc:'M14 3H6v18h12V7zM9 13h6M9 17h6',x:'M5 12l5 5L20 7'};
       const primary=tone!=='mute';
-      return {id:i.id,short:m.short,color:m.color,msId:m.id,title,what,examples,due:i.due?(dn<0?this.t('overdue')+' '+(-dn)+'d':dn===0?this.t('today'):D.fmt(i.due,L)+(i.after?', '+this.t('after'):'')):this.t('missing'),dueIso:i.due,bg:c.bg,fg:c.fg,tone:tone==='mute'?'var(--bd)':c.fg,icon:KI[kind],kindLabel:KL[kind],iconBg:tone==='mute'?'var(--sur2)':c.bg,iconFg:tone==='mute'?'var(--tx2)':c.fg,btn,btnIcon:BI[kind],btnBd:primary?'var(--acc)':'var(--bd)',btnBg:primary?'var(--acc)':'var(--sur)',btnFg:primary?'#fff':'var(--tx)',go,dn,st:i.st,kind}; };
+      return {id:i.id,short:m.short,color:m.color,msId:m.id,title,what,examples,due:i.due?(dn<0?this.t('overdue')+' '+(-dn)+'d':dn===0?this.t('today'):D.fmt(i.due,L)+(i.after?', '+this.t('after'):'')):this.t('missing'),dueIso:i.due,bg:c.bg,fg:c.fg,tone:tone==='mute'?'var(--bd)':c.fg,icon:KI[kind],kindLabel:KL[kind],iconBg:tone==='mute'?'var(--sur2)':c.bg,iconFg:tone==='mute'?'var(--tx2)':c.fg,btn,btnIcon:BI[kind],btnBd:primary?'var(--acc)':'var(--bd)',btnBg:primary?'var(--acc)':'var(--sur)',btnFg:primary?'var(--onacc)':'var(--tx)',go,dn,st:i.st,kind}; };
     const items=all.map(mk).sort((a,b)=>((a.dn??9999)-(b.dn??9999)));
     const st=this.state; const flt=st.taskFilter||'all'; const isOver=x=>x.st!=='pending', isWeek=x=>x.st==='pending'&&x.dn!==null&&x.dn<=7, isLater=x=>x.st==='pending'&&(x.dn===null||x.dn>7);
     const nOver=items.filter(isOver).length, nWeek=items.filter(isWeek).length, nLater=items.filter(isLater).length;
@@ -395,7 +416,7 @@ export default class MscdApp extends React.Component {
     const roleOptions=Object.entries(D.ROLES).map(([id,r])=>({name:D.PEOPLE[r.who][0],sub:D.PEOPLE[r.who][1],label:this.li(r.label),bg:id===role?'var(--accbg)':'transparent',go:()=>this.setState({role:id,roleMenu:false,screen:this.landing(id,id==='owner'?'mytasks':id==='top'?'portfolio':st.screen,single),sel:null,expanded:{},person:null,taskFilter:null})}));
     const scrLabel={portfolio:t.portfolio,m1overview:t.nav_overview,controls:t.nav_controls,phases:t.nav_phases,docs:t.nav_docs,audit:t.nav_audit,chain:t.nav_chain,gt:t.nav_gt,timeline:t.nav_timeline,fresh:t.nav_fresh,cal:t.nav_cal,mytasks:t.mytasks,fw:t.nav_fw,storage:t.nav_storage}[screen];
     const tg=(D.TERA||{})[screen]||{what:['',''],how:[]}; const tera={open:st.tera,title:scrLabel,what:this.li(tg.what),how:tg.how.map((h,i)=>({n:i+1,text:this.li(h)})),toggle:()=>this.setState(x=>({tera:!x.tera,msMenu:false,roleMenu:false,orgMenu:false})),close:()=>this.setState({tera:false})};
-    const PA=(label,icon,go,primary)=>({label,icon,go,bd:primary?'var(--acc)':'var(--bd)',bg:primary?'var(--acc)':'var(--sur)',fg:primary?'#fff':'var(--tx)'});
+    const PA=(label,icon,go,primary)=>({label,icon,go,bd:primary?'var(--acc)':'var(--bd)',bg:primary?'var(--acc)':'var(--sur)',fg:primary?'var(--onacc)':'var(--tx)'});
     const IC={export:'M12 3v12M7 10l5 5 5-5M4 19h16',plus:'M12 5v14M5 12h14',play:'M6 4l14 8-14 8z',share:'M4 12v7h16v-7M12 3v12M8 7l4-4 4 4',check:'M20 6L9 17l-5-5',cal:'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4',link:'M10 13a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 11a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1'};
     const say=(m)=>()=>this.toast(m);
     // Page action messages are counted from the active system's records.
@@ -439,5 +460,5 @@ export default class MscdApp extends React.Component {
       else { const ver=this.nextDocVer(rec); this.ovSet(m.key,{ver,appr:D.TODAY_S,rev:D.addD(D.TODAY_S,365),st:'approved'}); this.setState({modal:null}); this.toast(this.li([rec.id+' v'+ver+' uploaded to Managed Vault: SHA-256 recorded',rec.id+' v'+ver+' diunggah ke Managed Vault: SHA-256 dicatat'])); } }
     else if(m.type==='verify'){ this.ovSet(m.key,{st:m.verifyTo||'implemented',by:null}); this.setState({modal:null}); this.toast(this.t('toastVerified')); } }
 
-  render(){ return <AppView v={this.renderVals()} />; }
+  render(){ const v=this.renderVals(); withInk(v, v.theme); return <AppView v={v} />; }
 }

@@ -33,7 +33,7 @@ export default function Timeline({ v }) {
           {list(v.tl?.lanes).map((l, $i37) => (<Fragment key={$i37}>
             <div style={{ position: "relative", height: "58px", borderBottom: "1px solid var(--bd)" }}>
               <div style={{ position: "absolute", left: "-150px", top: "0", bottom: "0", width: "138px", display: "flex", flexDirection: "column", justifyContent: "center", minWidth: "0" }}>
-                <span style={{ fontWeight: "600", color: l?.color }}>{txt(l?.short)}</span>
+                <span style={{ fontWeight: "600", color: l?.ink }}>{txt(l?.short)}</span>
                 <span style={{ fontSize: "12px", color: "var(--tx3)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{txt(l?.certifier)}</span>
               </div>
               <div style={{ position: "absolute", left: `${l?.x0 ?? ''}%`, width: `${l?.w ?? ''}%`, top: "27px", height: "4px", borderRadius: "2px", background: l?.color, opacity: ".35" }}></div>
@@ -76,7 +76,7 @@ export default function Timeline({ v }) {
             <div style={{ display: "flex", gap: "0", border: "1px solid var(--bd)", borderRadius: "8px", overflow: "hidden" }}>
               {list(v.tl?.evt?.ready).map((r, $i39) => (<Fragment key={$i39}>
                 <div style={{ flex: "1", padding: "10px 12px", borderRight: "1px solid var(--bd)" }}>
-                  <div style={{ fontSize: "20px", fontWeight: "600", color: r?.color }}>{txt(r?.n)}</div>
+                  <div style={{ fontSize: "20px", fontWeight: "600", color: r?.ink }}>{txt(r?.n)}</div>
                   <div style={{ fontSize: "12px", color: "var(--tx3)" }}>{txt(r?.l)}</div>
                 </div>
               </Fragment>))}

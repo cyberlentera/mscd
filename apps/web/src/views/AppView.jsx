@@ -81,7 +81,7 @@ export default function AppView({ v }) {
                   </Fragment>))}
                 </ol>
               </div>
-              <button onClick={v.tera?.close} style={{ alignSelf: "flex-end", flex: "none", height: "32px", padding: "0 14px", borderRadius: "8px", border: "1px solid var(--acc)", background: "var(--acc)", color: "#fff", font: "inherit", fontSize: "13px", fontWeight: "600", cursor: "pointer", whiteSpace: "nowrap" }}>{txt(v.t?.gotIt)}</button>
+              <button onClick={v.tera?.close} style={{ alignSelf: "flex-end", flex: "none", height: "32px", padding: "0 14px", borderRadius: "8px", border: "1px solid var(--acc)", background: "var(--acc)", color: "var(--onacc)", font: "inherit", fontSize: "13px", fontWeight: "600", cursor: "pointer", whiteSpace: "nowrap" }}>{txt(v.t?.gotIt)}</button>
             </div>
           </div>
         </>) : null}

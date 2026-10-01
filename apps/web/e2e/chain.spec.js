@@ -211,7 +211,7 @@ test.describe('Chain stages', () => {
     await expect(ui.drawer(page)).toContainText('Missing');
     await expect(drawerFact(page, 'Holder')).toHaveText('Unassigned, -');
     // without a holder the primary action is Reassign
-    await expect(drawerAction(page, 'Reassign')).toHaveCSS('background-color', 'rgb(232, 115, 26)');
+    await expect(drawerAction(page, 'Reassign')).toHaveCSS('background-color', 'rgb(173, 79, 11)');
     await drawerAction(page, 'Reassign').click();
     await ui.modal(page).locator('select').selectOption('rina');
     await ui.modal(page).locator('input[type="date"]').fill('2026-10-20');

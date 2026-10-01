@@ -127,7 +127,25 @@ function interp(raw, scope) {
   const js = '`' + parts.map((s, i) => i & 1 ? '${' + expr(s, scope) + ' ?? \'\'}' : s.replace(/[`\\]/g, '\\$&').replace(/\$\{/g, '\\${')).join('') + '`';
   return { whole: false, js };
 }
-function styleObj(raw, scope) {
+// Contrast rules applied on top of the design template:
+// - white text on a filled accent uses --onacc (dark text in the dark theme, where white on orange is 3:1);
+// - text spans are not dimmed with opacity, which pushed secondary text below 4.5:1.
+function a11yDecls(tag, decls) {
+  const pairs = decls.map(d => { const i = d.indexOf(':'); return i < 0 || !d.trim() ? null : [d.slice(0, i).trim(), d.slice(i + 1).trim()]; }).filter(Boolean);
+  const accentFill = pairs.some(([k, v]) => (k === 'background' || k === 'background-color') && v === 'var(--acc)');
+  const whiteText = pairs.some(([k, v]) => k === 'color' && /^#fff(fff)?$/i.test(v));
+  const boundColor = /^\{\{\s*([\w.]+)\.color\s*\}\}$/;
+  return pairs
+    .filter(([k]) => !(tag === 'span' && k === 'opacity'))
+    .map(([k, v]) => {
+      if (accentFill && k === 'color' && /^#fff(fff)?$/i.test(v)) return [k, 'var(--onacc)'];
+      // Bound colours: text uses the theme-safe `ink`, fills behind white text use `fill` (see withInk in MscdApp.jsx).
+      if (k === 'color' && boundColor.test(v)) return [k, v.replace(boundColor, '{{ $1.ink }}')];
+      if ((k === 'background' || k === 'background-color') && whiteText && boundColor.test(v)) return [k, v.replace(boundColor, '{{ $1.fill }}')];
+      return [k, v];
+    });
+}
+function styleObj(raw, scope, tag) {
   const decls = [];
   let depth = 0, cur = '';
   for (const ch of raw) {
@@ -136,10 +154,7 @@ function styleObj(raw, scope) {
   }
   decls.push(cur);
   const props = [];
-  for (const d of decls) {
-    const i = d.indexOf(':');
-    if (i < 0 || !d.trim()) continue;
-    const k = d.slice(0, i).trim(); const val = d.slice(i + 1).trim();
+  for (const [k, val] of a11yDecls(tag, decls)) {
     const key = k.startsWith('--') ? JSON.stringify(k) : camel(k.replace(/^-ms-/, 'ms-'));
     const r = interp(val, scope);
     props.push(key + ': ' + (r.js ? (r.whole ? r.js : r.js) : JSON.stringify(r.lit)));
@@ -162,7 +177,7 @@ function attrs(el, scope) {
   }
   for (const [name, value] of Object.entries(el.attribs)) {
     if (name.startsWith('hint-') || name === 'style-hover') continue;
-    if (name === 'style') { out.push('style=' + styleObj(value + extraStyle, scope)); extraStyle = ''; continue; }
+    if (name === 'style') { out.push('style=' + styleObj(value + extraStyle, scope, el.name)); extraStyle = ''; continue; }
     let key = ATTR_MAP[name.toLowerCase()] || name;
     if (/^on[a-z]/.test(key)) key = 'on' + key[2].toUpperCase() + key.slice(3);
     if (key.includes('-') && !key.startsWith('data-') && !key.startsWith('aria-')) key = camel(key);
@@ -171,7 +186,7 @@ function attrs(el, scope) {
     else if (r.js) out.push(`${key}={${r.js}}`);
     else out.push(`${key}=${JSON.stringify(r.lit)}`);
   }
-  if (extraStyle) out.push('style=' + styleObj(extraStyle, scope));
+  if (extraStyle) out.push('style=' + styleObj(extraStyle, scope, el.name));
   if (cls) out.push(`className="${cls}"`);
   return out.length ? ' ' + out.join(' ') : '';
 }

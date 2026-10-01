@@ -45,7 +45,7 @@ export default function Overview({ v }) {
                   </svg>
                 </span>
               </Fragment>))}{" "}
-              <span title={c?.levelLabel} style={{ textAlign: "right", fontFamily: "var(--ffm)", fontWeight: "600", fontSize: "1.05em", color: c?.color }}>{txt(c?.level)}</span>
+              <span title={c?.levelLabel} style={{ textAlign: "right", fontFamily: "var(--ffm)", fontWeight: "600", fontSize: "1.05em", color: c?.ink }}>{txt(c?.level)}</span>
             </button>
           </Fragment>))}
           <div style={{ padding: "8px var(--pad)", fontSize: "12px", color: "var(--tx3)", display: "flex", justifyContent: "space-between" }}>
