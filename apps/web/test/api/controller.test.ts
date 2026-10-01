@@ -1,7 +1,7 @@
 // The controller in API mode (BUILD-PLAN H.5 steps 5, 6, 8, 9, 10, 12, 13, 14) over the API source and a fake fetch.
 // MscdApp is used as a plain object (no DOM): setState merges at once, and renderVals() builds the view model of
 // every screen, which is what AppView renders.
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import MscdApp from '../../src/MscdApp.jsx';
 import { json, meOf, readRoutes, sourceWith, uuidOf, wireOf } from './fixtures';
 import type { Routes } from './fixtures';
@@ -67,6 +67,10 @@ async function acme() {
 }
 
 describe('controller in API mode', () => {
+  // The controller logs failed loads and commands; the tests assert what the user sees instead.
+  beforeEach(() => { vi.spyOn(console, 'error').mockImplementation(() => {}); vi.spyOn(console, 'warn').mockImplementation(() => {}); });
+  afterEach(() => { vi.restoreAllMocks(); });
+
   it('a non-demo user of acme: state from Me, role per system, every screen renders', async () => {
     const { routes } = await acme();
     const { app } = await start(routes);
