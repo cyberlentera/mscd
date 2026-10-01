@@ -1,10 +1,11 @@
 // F.11 audit trail: writer (both chains, changed fields, redaction, edition), chain verification with anchors, and
 // the four /admin/audit-trail routes (D.3) with full and metadata views, the CSV export (F.13, F.15) and isolation.
 import { generateKeyPairSync, verify } from 'node:crypto';
-import { canonicalJson } from '@mscd/shared';
+import { Logger } from '@nestjs/common';
+import { AuditAnchor, canonicalJson, type AuditChainVerifyResult } from '@mscd/shared';
 import { parse } from 'csv-parse/sync';
 import { sql } from 'kysely';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { AUDIT_WRITER, type AuditWriter } from '../../../src/common/tokens';
 import { createKysely } from '../../../src/db/kysely';
 import type { CreatedTenant } from '../../../src/db/tenant-provisioner';
@@ -28,6 +29,7 @@ describe('audit trail (F.11, D.3)', () => {
   let ndt: CreatedTenant;
   let bsd: CreatedTenant;
   let isms: string;
+  let qms: string;
   let users: Record<string, string>;
   let ctx: IntApp;
   let writer: AuditWriter;
@@ -40,7 +42,7 @@ describe('audit trail (F.11, D.3)', () => {
     bsd = await createTenant(db, 'bsd');
     const fw = await addFramework(db.migrator);
     isms = await addManagementSystem(db.migrator, ndt, fw.versionId, 'isms');
-    await addManagementSystem(db.migrator, ndt, fw.versionId, 'qms');
+    qms = await addManagementSystem(db.migrator, ndt, fw.versionId, 'qms');
     users = {
       rina: await addUser(db.migrator, 'rina', [ndt.id]),
       ta: await addUser(db.migrator, 'tenant.admin', [ndt.id]),
@@ -107,6 +109,21 @@ describe('audit trail (F.11, D.3)', () => {
     expect(rows[1]!.after_data).toEqual({ title: 'Policy', password: '[redacted]' });
     expect(rows[1]).toMatchObject({ actor_user_id: SYSTEM_USER, actor_kind: 'system' });
     expect(rows[2]).toMatchObject({ edition: 'X 1.0.0', management_system_id: null });
+  });
+
+  it('stores an edition longer than the column cut to 40 characters and logs a warning', async () => {
+    const warn = vi.spyOn(Logger.prototype, 'warn');
+    try {
+      const edition = 'ISO37001-2016 1.10.0, ISO37001-2025 1.0.0';
+      const entry = await writer.recordDetached({ action: 'pack.installed', organizationId: null, entityCode: 'ISO37001-2025', edition });
+      const row = await inScope(db.migrator, { platformScope: true }, (trx) =>
+        trx.selectFrom('platform.audit_log').select('edition').where('id', '=', entry.id).executeTakeFirstOrThrow(),
+      );
+      expect(row.edition).toBe(edition.slice(0, 40));
+      expect(warn.mock.calls.some((call) => String(call[1] ?? call[0]).includes(edition))).toBe(true);
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it('writes platform-level actions to platform.audit_log with the organisation', async () => {
@@ -190,6 +207,15 @@ describe('audit trail (F.11, D.3)', () => {
     expect((await ctx.app.inject({ method: 'GET', url: '/api/v1/admin/audit-trail?ms=nope', headers: as('rina') })).statusCode).toBe(404);
   });
 
+  it('records a denial with the system of the request, so that system lists it', async () => {
+    const denials = await inScope(db.migrator, { orgId: ndt.id, schema: ndt.schemaName }, (trx) =>
+      trx.selectFrom('audit_trail').select(['management_system_id', 'entity_code', 'actor_user_id']).where('action', '=', 'authz.denied').orderBy('seq').execute(),
+    );
+    expect(denials[0]).toEqual({ management_system_id: qms, entity_code: 'audit-trail.list', actor_user_id: users.rina });
+    const forQms = await ctx.app.inject({ method: 'GET', url: '/api/v1/admin/audit-trail?ms=qms', headers: as('ta') });
+    expect(forQms.json().items).toEqual([expect.objectContaining({ action: 'authz.denied', ms: 'qms' })]);
+  });
+
   it('exports a system as formula-safe CSV with the F.13 headers and audits the download', async () => {
     const response = await ctx.app.inject({ method: 'GET', url: '/api/v1/admin/audit-trail/export?ms=isms&format=csv', headers: as('rina') });
     expect(response.statusCode).toBe(200);
@@ -197,14 +223,17 @@ describe('audit trail (F.11, D.3)', () => {
     expect(response.headers['content-disposition']).toMatch(/^attachment; filename="audit-trail-ndt-isms-2026-09-29\.csv"/);
     expect(response.headers['content-security-policy']).toBe("default-src 'none'; sandbox");
     const rows = parse(response.body, { columns: true }) as Record<string, string>[];
-    expect(rows.map((r) => r.action)).toEqual(['register.updated', 'document.created']);
+    // The download entry is written before the bytes (F.13) and belongs to the system, so the file lists it too.
+    expect(rows.map((r) => r.action)).toEqual(['register.updated', 'document.created', 'file.downloaded']);
     expect(JSON.parse(rows[0]!.after!)).toEqual({ title: '=HYPERLINK("http://x")', secret_sealed: '[redacted]' });
     expect(rows[1]!.entity_code).toBe("'@SUM(1)");
     expect(rows[0]).toMatchObject({ seq: '1', actor: 'rina', actor_kind: 'user', ms: 'isms', source_ip: '203.0.113.9' });
     const downloads = await inScope(db.migrator, { orgId: ndt.id, schema: ndt.schemaName }, (trx) =>
-      trx.selectFrom('audit_trail').select(['action', 'entity_type', 'actor_user_id']).where('action', '=', 'file.downloaded').execute(),
+      trx.selectFrom('audit_trail').select(['action', 'entity_type', 'actor_user_id', 'management_system_id']).where('action', '=', 'file.downloaded').execute(),
     );
-    expect(downloads).toEqual([{ action: 'file.downloaded', entity_type: 'audit_trail', actor_user_id: users.rina }]);
+    expect(downloads).toEqual([{ action: 'file.downloaded', entity_type: 'audit_trail', actor_user_id: users.rina, management_system_id: isms }]);
+    const listed = await ctx.app.inject({ method: 'GET', url: '/api/v1/admin/audit-trail?ms=isms&entityType=audit_trail', headers: as('rina') });
+    expect(listed.json().items).toEqual([expect.objectContaining({ action: 'file.downloaded', ms: 'isms', actor: expect.objectContaining({ handle: 'rina' }) })]);
     expect((await ctx.app.inject({ method: 'GET', url: '/api/v1/admin/audit-trail/export?ms=isms&format=csv', headers: as('ta') })).statusCode).toBe(403);
   });
 
@@ -216,12 +245,24 @@ describe('audit trail (F.11, D.3)', () => {
     expect((await ctx.app.inject({ method: 'GET', url: '/api/v1/admin/audit-trail/verify', headers: as('rina') })).statusCode).toBe(200);
   });
 
+  it('reuses a recent verification on the route, while the job entry points verify afresh', async () => {
+    const call = async () =>
+      (await ctx.app.inject({ method: 'GET', url: '/api/v1/admin/audit-trail/verify', headers: as('ta') })).json() as AuditChainVerifyResult[];
+    const first = await call();
+    await writer.recordDetached({ action: 'auth.login', organizationId: bsd.id, actor: { userId: users.budi!, kind: 'user' } });
+    const second = await call();
+    expect(second).toEqual(first);
+    const fresh = await ctx.moduleRef.get(AuditChainVerifier).verifyPlatform();
+    expect(fresh.checked).toBeGreaterThan(second[1]!.checked);
+  });
+
   it('returns signed anchors as NDJSON that verify offline', async () => {
     const response = await ctx.app.inject({ method: 'GET', url: '/api/v1/admin/audit-trail/anchors?from=2026-09-01&to=2026-09-30', headers: as('rina') });
     expect(response.statusCode).toBe(200);
     expect(response.headers['content-type']).toBe('application/x-ndjson; charset=utf-8');
     const lines = response.body.trim().split('\n').map((line) => JSON.parse(line) as Record<string, unknown>);
     expect(lines).toHaveLength(1);
+    expect(AuditAnchor.safeParse(lines[0]).success).toBe(true);
     const { keyId, signature, ...payload } = lines[0]!;
     expect(keyId).toBe(TRUSTED[0]!.keyId);
     const ok = verify(null, Buffer.from(canonicalJson(payload)), anchorKey.publicKey, Buffer.from(String(signature).slice('ed25519:'.length), 'base64'));

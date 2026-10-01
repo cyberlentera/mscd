@@ -3,12 +3,23 @@
 // request replays the stored response, a different request with the same key is a conflict. The table has forced
 // RLS on `app.org_id` (D-31), so every statement runs in a transaction that sets the organisation: keys never
 // replay across organisations.
+//
+// A claim without a stored response is "in progress" for a lease of `IDEMPOTENCY_LEASE_SECONDS` from `created_at`
+// (a repeat gets 409 with `Retry-After`). When the lease has passed, the process that claimed the key is assumed
+// gone (it died, or storing the response failed), and the same request may claim the key again and run. The
+// command may then have run before: the lease trades that rare repeat for never blocking a key for 24 hours.
 import { Inject, Injectable } from '@nestjs/common';
 import { sql, type Transaction } from 'kysely';
 import { DATABASE, type AppDatabase } from '../../db/database.module';
 import type { DB } from '../../db/types';
 
 export const IDEMPOTENCY_TTL_HOURS = 24;
+
+/**
+ * Seconds a claimed key stays "in progress" without a stored response. Longer than any command runs (statements stop
+ * after 30 seconds, C.3; long work is queued as jobs), short enough that a lost response does not block the key.
+ */
+export const IDEMPOTENCY_LEASE_SECONDS = 300;
 
 export interface IdempotencyScope {
   orgId: string;
@@ -17,10 +28,12 @@ export interface IdempotencyScope {
 }
 
 export type IdempotencyClaim =
-  | { kind: 'claimed' }
+  /** The request may run; `reclaimed` when it took over a claim whose lease had passed. */
+  | { kind: 'claimed'; reclaimed: boolean }
   | { kind: 'replay'; status: number; body: unknown }
   | { kind: 'mismatch' }
-  | { kind: 'in_progress' };
+  /** Another request with the key is running; `retryAfter` is the number of seconds until its lease ends. */
+  | { kind: 'in_progress'; retryAfter: number };
 
 @Injectable()
 export class IdempotencyStore {
@@ -28,7 +41,7 @@ export class IdempotencyStore {
 
   /**
    * Claims the key for a request (`routeId`, `requestHash`). A concurrent claim of the same key waits for the first
-   * transaction and then sees it in progress.
+   * transaction and then sees it in progress. A claim of the same request whose lease has passed is taken over.
    */
   async claim(scope: IdempotencyScope, routeId: string, requestHash: string): Promise<IdempotencyClaim> {
     return this.inOrg(scope, async (trx) => {
@@ -54,17 +67,39 @@ export class IdempotencyStore {
         .onConflict((oc) => oc.columns(['organization_id', 'user_id', 'key']).doNothing())
         .returning('key')
         .executeTakeFirst();
-      if (inserted) return { kind: 'claimed' };
+      if (inserted) return { kind: 'claimed', reclaimed: false };
+      // Same request, no response and the lease has passed: take the claim over (the row lock serialises takers).
+      const reclaimed = await trx
+        .updateTable('platform.idempotency_key')
+        .set({
+          route: routeId,
+          created_at: sql<Date>`now()`,
+          expires_at: sql<Date>`now() + ${IDEMPOTENCY_TTL_HOURS} * interval '1 hour'`,
+        })
+        .where('organization_id', '=', scope.orgId)
+        .where('user_id', '=', scope.userId)
+        .where('key', '=', scope.key)
+        .where('request_hash', '=', requestHash)
+        .where('status', 'is', null)
+        .where('created_at', '<=', sql<Date>`now() - ${IDEMPOTENCY_LEASE_SECONDS} * interval '1 second'`)
+        .returning('key')
+        .executeTakeFirst();
+      if (reclaimed) return { kind: 'claimed', reclaimed: true };
       const existing = await trx
         .selectFrom('platform.idempotency_key')
-        .select(['request_hash', 'status', 'response'])
+        .select([
+          'request_hash',
+          'status',
+          'response',
+          sql<number>`ceil(extract(epoch from created_at + ${IDEMPOTENCY_LEASE_SECONDS} * interval '1 second' - now()))::int`.as('lease_left'),
+        ])
         .where('organization_id', '=', scope.orgId)
         .where('user_id', '=', scope.userId)
         .where('key', '=', scope.key)
         .executeTakeFirst();
-      if (!existing) return { kind: 'in_progress' };
+      if (!existing) return { kind: 'in_progress', retryAfter: 1 };
       if (existing.request_hash !== requestHash) return { kind: 'mismatch' };
-      if (existing.status === null) return { kind: 'in_progress' };
+      if (existing.status === null) return { kind: 'in_progress', retryAfter: Math.max(1, Number(existing.lease_left)) };
       const stored = existing.response as { body?: unknown } | null;
       return { kind: 'replay', status: existing.status, body: stored?.body };
     });

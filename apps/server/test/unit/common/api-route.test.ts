@@ -8,7 +8,8 @@ import { defineRoute, MsParams, type RouteDef } from '@mscd/shared';
 import type { FastifyRequest } from 'fastify';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { ApiRoute, CurrentAuthz, CurrentPrincipal, RouteInputParam } from '../../../src/common/api-route';
+import { ApiRoute, CurrentAuthz, CurrentPrincipal, IfMatchHeader, RouteInputParam } from '../../../src/common/api-route';
+import { assertIfMatch, etagOf } from '../../../src/common/etag';
 import { CsrfError, ReadOnlyModeError } from '../../../src/common/problems';
 import { currentRequestContext } from '../../../src/common/request-context';
 import { LICENCE_GATE, SESSION_RESOLVER, type AuthzState, type Principal } from '../../../src/common/tokens';
@@ -66,7 +67,10 @@ const routes = {
   write: defineRoute({ ...base, id: 'probe.write', method: 'POST', path: '/api/v1/probe/write', auth: 'session' }),
   writeAllowed: defineRoute({ ...base, id: 'probe.write-allowed', method: 'POST', path: '/api/v1/probe/write-allowed', auth: 'session', readOnlyAllowed: true }),
   context: defineRoute({ ...base, id: 'probe.context', method: 'GET', path: '/api/v1/ms/:ms/context', auth: 'session', permission: 'ms.read', scope: 'ms', params: MsParams }),
+  transition: defineRoute({ ...base, id: 'probe.transition', method: 'POST', path: '/api/v1/probe/transition', auth: 'public', ifMatch: true, errors: [412] }),
 };
+
+const RECORD_UPDATED_AT = new Date('2026-09-29T03:15:00.000Z');
 
 @Controller()
 class ProbeController {
@@ -129,6 +133,12 @@ class ProbeController {
   context() {
     const ctx = currentRequestContext();
     return { ok: true, ctx: { ...ctx } };
+  }
+
+  @ApiRoute(routes.transition)
+  transition(@IfMatchHeader() ifMatch: string | undefined) {
+    assertIfMatch(ifMatch, RECORD_UPDATED_AT);
+    return { ok: true, etag: etagOf(RECORD_UPDATED_AT) };
   }
 
   /** A route under /api without a contract definition: the guard must refuse it. */
@@ -205,7 +215,7 @@ describe('contract routes through the guard (D.1, F.7)', () => {
     const denials = audit.entries.slice(before);
     expect(denials).toHaveLength(1);
     expect(denials[0]).toMatchObject({
-      entry: { action: 'authz.denied', entityCode: 'probe.ms-read', after: { routeId: 'probe.ms-read', permissions: ['ms.read'], ms: 'isms' } },
+      entry: { action: 'authz.denied', msSlug: 'isms', entityCode: 'probe.ms-read', after: { routeId: 'probe.ms-read', permissions: ['ms.read'], ms: 'isms' } },
       target: { orgId: NDT.id, schema: 'org_ndt' },
     });
     expect((await app.inject({ method: 'GET', url: '/api/v1/probe/org', headers: as('admin') })).statusCode).toBe(200);
@@ -270,6 +280,16 @@ describe('contract routes through the guard (D.1, F.7)', () => {
     expect(byIp.statusCode).toBe(429);
     const otherIp = await app.inject({ method: 'POST', url: '/api/v1/probe/login', payload: { email: 'c@test.invalid' }, remoteAddress: '198.51.100.8' });
     expect(otherIp.statusCode).toBe(200);
+  });
+
+  it('hands If-Match to the service and answers 412 for a stale version (D.1 Concurrency)', async () => {
+    const send = (ifMatch?: string) =>
+      app.inject({ method: 'POST', url: '/api/v1/probe/transition', headers: ifMatch ? { 'if-match': ifMatch } : {} });
+    expect((await send()).statusCode).toBe(200);
+    expect((await send(etagOf(RECORD_UPDATED_AT))).statusCode).toBe(200);
+    const stale = await send('W/"1"');
+    expect(stale.statusCode).toBe(412);
+    expect(stale.json().type).toBe('https://mscd.cyberlentera.com/problems/precondition-failed');
   });
 
   it('applies the per-user limit to authenticated requests', async () => {

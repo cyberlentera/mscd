@@ -16,6 +16,16 @@ export type AnchorKeys = readonly Pick<TrustedKey, 'keyId' | 'publicKeyPem'>[];
 
 export const PLATFORM_CHAIN = 'platform.audit_log';
 
+/**
+ * How long `GET /admin/audit-trail/verify` reuses a verification of the platform chain. The query reads every row of
+ * the installation (all organisations), so callers of every organisation share one run per period.
+ */
+export const PLATFORM_VERIFY_REUSE_MS = 5 * 60_000;
+/** How long the route reuses a verification of one organisation's chain. */
+export const TENANT_VERIFY_REUSE_MS = 60_000;
+/** Entries of the reuse cache before old ones are dropped. */
+const REUSE_CACHE_MAX = 1000;
+
 /** Chain name of a tenant schema's trail (`org_ndt.audit_trail`). */
 export function tenantChainName(schema: string): string {
   return `${schema}.audit_trail`;
@@ -58,6 +68,9 @@ async function runVerification(trx: Trx, table: 'tenant' | 'platform'): Promise<
 
 @Injectable()
 export class AuditChainVerifier {
+  /** Recent and running verifications of the route, by chain name. */
+  private readonly recent = new Map<string, { startedAt: number; result: Promise<AuditChainVerifyResult> }>();
+
   constructor(
     private readonly scope: TenantScope,
     @Inject(AUDIT_ANCHOR_KEYS) private readonly anchorKeys: AnchorKeys,
@@ -83,9 +96,35 @@ export class AuditChainVerifier {
     });
   }
 
-  /** Both chains an organisation's administrators can verify: the tenant chain and the platform chain. */
+  /**
+   * Both chains an organisation's administrators can verify: the tenant chain and the platform chain (whose
+   * `checked` counts the rows of the whole installation, as F.11 verifies the chain as one). Serves the route: a
+   * verification started less than `TENANT_VERIFY_REUSE_MS` (tenant) or `PLATFORM_VERIFY_REUSE_MS` (platform) ago,
+   * or still running, is reused, so repeated calls cost one scan per period. `verifyTenant` and `verifyPlatform`
+   * (the `audit.verify-chain` job) always verify afresh.
+   */
   async verifyForOrganisation(org: { orgId: string; schema: string }): Promise<AuditChainVerifyResult[]> {
-    return [await this.verifyTenant(org), await this.verifyPlatform()];
+    return Promise.all([
+      this.reuse(tenantChainName(org.schema), TENANT_VERIFY_REUSE_MS, () => this.verifyTenant(org)),
+      this.reuse(PLATFORM_CHAIN, PLATFORM_VERIFY_REUSE_MS, () => this.verifyPlatform()),
+    ]);
+  }
+
+  /** A verification of `chain` started less than `maxAgeMs` ago (running or done), else a new one. Failures are not kept. */
+  private reuse(chain: string, maxAgeMs: number, run: () => Promise<AuditChainVerifyResult>): Promise<AuditChainVerifyResult> {
+    const now = Date.now();
+    const recent = this.recent.get(chain);
+    if (recent && now - recent.startedAt < maxAgeMs) return recent.result;
+    if (this.recent.size >= REUSE_CACHE_MAX) {
+      for (const [key, entry] of this.recent) if (now - entry.startedAt >= PLATFORM_VERIFY_REUSE_MS) this.recent.delete(key);
+      if (this.recent.size >= REUSE_CACHE_MAX) this.recent.clear();
+    }
+    const result = run();
+    this.recent.set(chain, { startedAt: now, result });
+    result.catch(() => {
+      if (this.recent.get(chain)?.result === result) this.recent.delete(chain);
+    });
+    return result;
   }
 
   /**

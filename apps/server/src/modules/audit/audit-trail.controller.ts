@@ -62,7 +62,13 @@ export class AuditTrailController {
       body: this.trail.exportCsv(principal, query.ms),
       storedType: 'text/csv',
       fileName,
-      audit: { action: 'file.downloaded', entityType: 'audit_trail', entityCode: fileName.slice(0, 80), after: { ms: query.ms, format: 'csv' } },
+      audit: {
+        action: 'file.downloaded',
+        msSlug: query.ms,
+        entityType: 'audit_trail',
+        entityCode: fileName.slice(0, 80),
+        after: { ms: query.ms, format: 'csv' },
+      },
     });
   }
 

@@ -161,7 +161,8 @@ export class AuthzGuard implements CanActivate {
     if (def.method !== 'GET' && !def.readOnlyAllowed && principal?.org) {
       await this.licence.assertWritable(principal.org.id);
     }
-    request.mscd = { route: def, input, principal, authz };
+    const ifMatch = def.ifMatch ? request.headers['if-match'] : undefined;
+    request.mscd = { route: def, input, principal, authz, ...(typeof ifMatch === 'string' && ifMatch.trim() !== '' ? { ifMatch } : {}) };
     return true;
   }
 
@@ -256,7 +257,10 @@ export class AuthzGuard implements CanActivate {
     }
   }
 
-  /** F.7 Denials: `authz.denied` in the tenant audit trail, at most once per user, route and minute. */
+  /**
+   * F.7 Denials: `authz.denied` in the tenant audit trail, at most once per user, route and minute, with the system
+   * of the request when it names one (so the system's full-entry view lists it).
+   */
   private async recordDenial(def: RouteDef, principal: Principal, ms: string | null, permissions: Permission[]): Promise<void> {
     this.deniedCounter?.inc({ route: def.id });
     if (!principal.org || !this.audit) return;
@@ -269,7 +273,7 @@ export class AuthzGuard implements CanActivate {
     this.recentDenials.add(key);
     try {
       await this.audit.recordDetached(
-        { action: 'authz.denied', entityType: 'route', entityCode: def.id, after: { routeId: def.id, permissions, ms } },
+        { action: 'authz.denied', msSlug: ms, entityType: 'route', entityCode: def.id, after: { routeId: def.id, permissions, ms } },
         { orgId: principal.org.id, schema: principal.org.schema },
       );
     } catch (error) {

@@ -1,11 +1,16 @@
 // D.1 idempotency keys and F.3 rate limits with their PostgreSQL stores, through HTTP.
-import { Controller } from '@nestjs/common';
+import { createHash } from 'node:crypto';
+import { Controller, Req } from '@nestjs/common';
 import { defineRoute, MsParams } from '@mscd/shared';
+import type { FastifyRequest } from 'fastify';
 import { sql } from 'kysely';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { ApiRoute, RouteInputParam } from '../../../src/common/api-route';
+import { ApiRoute, RouteInputParam, StreamedIdempotencyParam } from '../../../src/common/api-route';
+import { idempotencyRequestHash } from '../../../src/common/api-route.interceptor';
 import { BusinessRuleError } from '../../../src/common/problems';
+import type { StreamedIdempotency } from '../../../src/common/route-state';
+import { IDEMPOTENCY_LEASE_SECONDS } from '../../../src/modules/tenancy/idempotency-store';
 import type { CreatedTenant } from '../../../src/db/tenant-provisioner';
 import { RateLimitBucketStore } from '../../../src/modules/tenancy/rate-limit-store';
 import { FAKE_PRINCIPAL_HEADER, type FakeIdentity } from '../../setup/auth-fakes';
@@ -33,6 +38,26 @@ const createRoute = defineRoute({
   errors: [409, 422],
 });
 
+const Uploaded = z.object({ ok: z.literal(true), changed: z.array(z.string()), data: z.object({ n: z.int(), size: z.int() }) });
+
+const uploadBase = {
+  owner: 'WP-08',
+  method: 'POST',
+  auth: 'session',
+  summary: 'probe',
+  body: z.object({}),
+  requestType: 'multipart/form-data',
+  response: Uploaded,
+  status: 202,
+  idempotent: true,
+  errors: [409, 413],
+} as const;
+
+/** A multipart upload that claims its key with the SHA-256 of the file (like `admin.packs.import`). */
+const uploadRoute = defineRoute({ ...uploadBase, id: 'probe.upload', path: '/api/v1/probe-uploads' });
+/** A multipart upload whose handler forgets to claim the key. */
+const uploadUnclaimedRoute = defineRoute({ ...uploadBase, id: 'probe.upload-unclaimed', path: '/api/v1/probe-uploads-unclaimed' });
+
 const limitedRoute = defineRoute({
   id: 'probe.limited',
   owner: 'WP-08',
@@ -47,6 +72,12 @@ const limitedRoute = defineRoute({
 });
 
 let counter = 0;
+let uploads = 0;
+
+async function uploadedBytes(request: FastifyRequest): Promise<Buffer> {
+  const file = await request.file();
+  return file ? file.toBuffer() : Buffer.alloc(0);
+}
 
 @Controller()
 class ProbeController {
@@ -55,6 +86,21 @@ class ProbeController {
     counter += 1;
     if (body.fail) throw new BusinessRuleError('BR-17', { en: 'Owner required', id: 'Pemilik wajib diisi' });
     return { ok: true as const, changed: ['isms'], data: { n: counter, title: body.title } };
+  }
+
+  @ApiRoute(uploadRoute)
+  async upload(@Req() request: FastifyRequest, @StreamedIdempotencyParam() idempotency: StreamedIdempotency) {
+    const bytes = await uploadedBytes(request);
+    await idempotency.claim(createHash('sha256').update(bytes).digest('hex'));
+    uploads += 1;
+    return { ok: true as const, changed: [], data: { n: uploads, size: bytes.length } };
+  }
+
+  @ApiRoute(uploadUnclaimedRoute)
+  async uploadUnclaimed(@Req() request: FastifyRequest) {
+    const bytes = await uploadedBytes(request);
+    uploads += 1;
+    return { ok: true as const, changed: [], data: { n: uploads, size: bytes.length } };
   }
 
   @ApiRoute(limitedRoute)
@@ -68,11 +114,12 @@ describe('idempotency keys (D.1)', () => {
   let ctx: IntApp;
   let ndt: CreatedTenant;
   let bsd: CreatedTenant;
+  let rina: string;
 
   beforeAll(async () => {
     ndt = await createTenant(db, 'ndt');
     bsd = await createTenant(db, 'bsd');
-    const rina = await addUser(db.migrator, 'rina', [ndt.id, bsd.id]);
+    rina = await addUser(db.migrator, 'rina', [ndt.id, bsd.id]);
     const identities: Record<string, FakeIdentity> = {
       'rina@ndt': { user: { id: rina, handle: 'rina' }, org: infoOf(ndt), rolesByMs: { isms: ['ms_manager'] } },
       'rina@bsd': { user: { id: rina, handle: 'rina' }, org: infoOf(bsd), rolesByMs: { isms: ['ms_manager'] } },
@@ -132,6 +179,79 @@ describe('idempotency keys (D.1)', () => {
     const retried = await post('rina@ndt', { title: 'Bad', fail: true }, 'key-0004');
     expect(retried.statusCode).toBe(422);
     expect(counter).toBe(runs + 1);
+  });
+
+  it('answers 409 with Retry-After while a key is in progress, and lets the same request take it over after the lease', async () => {
+    const body = { title: 'Lost response' };
+    const hash = idempotencyRequestHash(ndt.id, 'POST', '/api/v1/ms/isms/probe-items', body);
+    // A claim whose response was never stored (the process died, or storing it failed).
+    await inScope(db.migrator, { orgId: ndt.id }, (trx) =>
+      trx
+        .insertInto('platform.idempotency_key')
+        .values({ organization_id: ndt.id, user_id: rina, key: 'key-0005', route: createRoute.id, request_hash: hash, status: null, response: null, expires_at: sql<Date>`now() + interval '24 hours'` })
+        .execute(),
+    );
+    const runs = counter;
+    const busy = await post('rina@ndt', body, 'key-0005');
+    expect(busy.statusCode).toBe(409);
+    expect(busy.json()).toMatchObject({ messageKey: 'idempotency.in_progress' });
+    const retryAfter = Number(busy.headers['retry-after']);
+    expect(retryAfter).toBeGreaterThan(IDEMPOTENCY_LEASE_SECONDS - 30);
+    expect(retryAfter).toBeLessThanOrEqual(IDEMPOTENCY_LEASE_SECONDS);
+    expect(busy.json().retryAfter).toBe(retryAfter);
+    expect((await post('rina@ndt', { title: 'Other' }, 'key-0005')).statusCode).toBe(409);
+    expect(counter).toBe(runs);
+
+    await inScope(db.migrator, { orgId: ndt.id }, (trx) =>
+      trx
+        .updateTable('platform.idempotency_key')
+        .set({ created_at: sql<Date>`now() - ${IDEMPOTENCY_LEASE_SECONDS + 1} * interval '1 second'` })
+        .where('key', '=', 'key-0005')
+        .execute(),
+    );
+    const other = await post('rina@ndt', { title: 'Other' }, 'key-0005');
+    expect(other.json()).toMatchObject({ messageKey: 'idempotency.key_reused' });
+    const takenOver = await post('rina@ndt', body, 'key-0005');
+    expect(takenOver.statusCode).toBe(201);
+    expect(counter).toBe(runs + 1);
+    const replayed = await post('rina@ndt', body, 'key-0005');
+    expect(replayed.headers['idempotent-replayed']).toBe('true');
+    expect(replayed.json()).toEqual(takenOver.json());
+    expect(counter).toBe(runs + 1);
+  });
+
+  it('claims keys of multipart routes with a digest of the uploaded content', async () => {
+    const send = (url: string, content: string, key?: string) => {
+      const boundary = 'mscd-probe-boundary';
+      const payload = Buffer.from(
+        `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="bundle.pack"\r\n` +
+          `Content-Type: application/octet-stream\r\n\r\n${content}\r\n--${boundary}--\r\n`,
+      );
+      return ctx.app.inject({
+        method: 'POST',
+        url,
+        payload,
+        headers: { [FAKE_PRINCIPAL_HEADER]: 'rina@ndt', 'content-type': `multipart/form-data; boundary=${boundary}`, ...(key ? { 'idempotency-key': key } : {}) },
+      });
+    };
+    const first = await send('/api/v1/probe-uploads', 'pack bundle A', 'upload-0001');
+    expect(first.statusCode).toBe(202);
+    const runs = uploads;
+    const again = await send('/api/v1/probe-uploads', 'pack bundle A', 'upload-0001');
+    expect(again.statusCode).toBe(202);
+    expect(again.headers['idempotent-replayed']).toBe('true');
+    expect(again.json()).toEqual(first.json());
+    expect(uploads).toBe(runs);
+    const otherFile = await send('/api/v1/probe-uploads', 'pack bundle B', 'upload-0001');
+    expect(otherFile.statusCode).toBe(409);
+    expect(otherFile.json()).toMatchObject({ messageKey: 'idempotency.key_reused' });
+    expect(uploads).toBe(runs);
+    expect((await send('/api/v1/probe-uploads', 'pack bundle B')).statusCode).toBe(202);
+    expect(uploads).toBe(runs + 1);
+
+    // A handler that never claims its key is a 500 in development builds (the route's own tests catch it).
+    expect((await send('/api/v1/probe-uploads-unclaimed', 'pack bundle C', 'upload-0002')).statusCode).toBe(500);
+    expect((await send('/api/v1/probe-uploads-unclaimed', 'pack bundle C')).statusCode).toBe(202);
   });
 
   it('rejects a malformed key and runs without a key as usual', async () => {

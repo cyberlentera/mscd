@@ -112,6 +112,8 @@ export interface FileResponseAudit {
   action?: 'file.downloaded' | 'file.opened' | 'export.downloaded' | 'evidence_pack.downloaded';
   /** `management_system.id` of the system the file was read for. */
   msId?: string | null;
+  /** Slug of that system, when the id is not at hand (`AuditEntryInput.msSlug`). */
+  msSlug?: string | null;
   entityType: string;
   entityId?: string | null;
   entityCode?: string | null;

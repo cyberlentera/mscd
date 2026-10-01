@@ -1,8 +1,8 @@
-import { Injectable, Module } from '@nestjs/common';
+import { Injectable, Logger, Module } from '@nestjs/common';
 import { DiscoveryModule } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import type { Transaction } from 'kysely';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { InMemoryJobQueue } from '../../../src/common/jobs/in-memory-job-queue';
 import { JobHandler, JobHandlerRegistry, type JobHandlerInstance } from '../../../src/common/jobs/job-handler';
 import type { JobRun } from '../../../src/common/jobs/job-queue';
@@ -10,6 +10,9 @@ import { discardTransactionHooks, openTransactionHooks, runAfterCommitHooks } fr
 import type { DB } from '../../../src/db/types';
 
 const ORG = '00000000-0000-4000-8000-00000000a001';
+
+// The queue logs failed jobs through Nest's logger; these tests fail jobs on purpose.
+beforeAll(() => Logger.overrideLogger(false));
 
 /** A stand-in for a transaction opened by withTenant (only its identity matters to the hooks). */
 function fakeTrx(): Transaction<DB> {

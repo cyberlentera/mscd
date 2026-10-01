@@ -21,6 +21,36 @@ export interface RouteState {
   input: RouteInput;
   principal: Principal | null;
   authz: AuthzState | null;
+  /**
+   * The `If-Match` header of a route with `ifMatch: true` (D.1 Concurrency), else undefined. Services compare it with
+   * the record's `updated_at` through `assertIfMatch` (412 when stale).
+   */
+  ifMatch?: string;
+  /**
+   * Set by the route interceptor when a route with a streamed body (`hasStreamedBody`) accepts `Idempotency-Key` and
+   * the request sends one: the handler claims the key with a digest of the content (D.1 `request_hash`).
+   */
+  idempotency?: StreamedIdempotency;
+}
+
+/**
+ * Idempotency of a route whose body the handler streams (multipart or `application/octet-stream`). The request hash
+ * of D.1 must cover the body, which only the handler reads, so the interceptor cannot claim the key before the
+ * handler runs. The handler reads the upload, computes a digest of the content (for example the SHA-256 of the file
+ * and of the form fields) and calls `claim(digest)` once, before it changes anything:
+ * - the first request with the key continues, and its response is stored when the handler returns;
+ * - a repeat with the same key and digest ends the request with the stored response (`claim` throws a signal the
+ *   interceptor turns into the replay, so the handler must let it propagate);
+ * - another digest with the same key, or a key still in progress, is a 409 `conflict`.
+ * Without `Idempotency-Key` (or on a route that is not idempotent) `claim` does nothing.
+ */
+export interface StreamedIdempotency {
+  claim(contentDigest: string): Promise<void>;
+}
+
+/** True when the route's body is streamed to the handler instead of parsed and validated (multipart, raw bytes). */
+export function hasStreamedBody(def: RouteDef): boolean {
+  return def.requestType === 'application/octet-stream' || def.requestType === 'multipart/form-data';
 }
 
 declare module 'fastify' {
@@ -58,7 +88,7 @@ export function validateRouteInput(def: RouteDef, request: FastifyRequest): Rout
     body: request.body,
     headers: request.headers,
   };
-  const streamed = def.requestType === 'application/octet-stream' || def.requestType === 'multipart/form-data';
+  const streamed = hasStreamedBody(def);
   const schemas: Record<'params' | 'query' | 'body' | 'headers', ZodType | undefined> = {
     params: def.params,
     query: def.query,

@@ -293,6 +293,11 @@ export interface AuditEntryInput {
   organizationId?: string | null;
   /** `management_system.id` of the system the change belongs to. */
   msId?: string | null;
+  /**
+   * Slug of the system when only the slug is at hand (the `ms` of a request): looked up in the entry's transaction
+   * when `msId` is not given. Tenant entries only; an unknown slug leaves the system empty.
+   */
+  msSlug?: string | null;
   entityType?: string | null;
   entityId?: string | null;
   entityCode?: string | null;

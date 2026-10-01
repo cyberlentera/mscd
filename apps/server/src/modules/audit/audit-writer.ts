@@ -5,7 +5,7 @@
 // `seq`, `prev_hash` or `row_hash`. Only changed fields are kept, and secrets are redacted first.
 import { isIP } from 'node:net';
 import { isDeepStrictEqual } from 'node:util';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { isPlatformAuditAction } from '@mscd/shared';
 import { sql } from 'kysely';
 import { redactAuditData } from '../../common/audit-redaction';
@@ -20,6 +20,9 @@ import {
 import { TenantScope } from '../tenancy/tenant-scope';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Width of `audit_trail.edition` and `audit_log.edition` (C.4, C.6). */
+export const EDITION_COLUMN_LENGTH = 40;
 
 function cut(value: string | null | undefined, length: number): string | null {
   if (value === null || value === undefined || value === '') return null;
@@ -60,6 +63,8 @@ function dataOf(entry: AuditEntryInput): { before: string | null; after: string 
 
 @Injectable()
 export class ChainedAuditWriter implements AuditWriter {
+  private readonly logger = new Logger('AuditWriter');
+
   constructor(private readonly scope: TenantScope) {}
 
   async record(trx: Trx, entry: AuditEntryInput): Promise<RecordedAuditEntry> {
@@ -67,8 +72,11 @@ export class ChainedAuditWriter implements AuditWriter {
     const actor = entry.actor ?? (context?.userId ? { userId: context.userId, kind: context.actorKind ?? 'user' } : { userId: SYSTEM_USER_ID, kind: 'system' as const });
     const ip = entry.sourceIp !== undefined ? entry.sourceIp : (context?.ip ?? null);
     const { before, after } = dataOf(entry);
+    const platform = isPlatformAuditAction(entry.action);
+    const msId =
+      entry.msId === undefined && entry.msSlug && !platform ? await this.msIdOfSlug(trx, entry.msSlug) : uuidOrNull(entry.msId);
     const common = {
-      management_system_id: uuidOrNull(entry.msId),
+      management_system_id: msId,
       actor_user_id: uuidOrNull(actor.userId),
       actor_kind: actor.kind,
       action: entry.action,
@@ -82,7 +90,7 @@ export class ChainedAuditWriter implements AuditWriter {
       user_agent: cut(entry.userAgent !== undefined ? entry.userAgent : (context?.userAgent ?? null), 1000),
     };
 
-    if (isPlatformAuditAction(entry.action)) {
+    if (platform) {
       // Default: the request's organisation, else the organisation of the transaction (`app.org_id`, none with platform scope).
       const organizationId =
         entry.organizationId !== undefined
@@ -95,7 +103,7 @@ export class ChainedAuditWriter implements AuditWriter {
       if (previous !== 'on') await sql`select set_config('app.platform_scope', 'on', true)`.execute(trx);
       const row = await trx
         .insertInto('platform.audit_log')
-        .values({ ...common, organization_id: organizationId, edition: cut(entry.edition ?? null, 40) })
+        .values({ ...common, organization_id: organizationId, edition: this.editionColumn(entry.edition ?? null, entry.action) })
         .returning(['id', 'seq'])
         .executeTakeFirstOrThrow();
       if (previous !== 'on') await sql`select set_config('app.platform_scope', ${previous}, true)`.execute(trx);
@@ -105,7 +113,7 @@ export class ChainedAuditWriter implements AuditWriter {
     const edition = entry.edition !== undefined ? entry.edition : await this.editionOf(trx, common.management_system_id);
     const row = await trx
       .insertInto('audit_trail')
-      .values({ ...common, edition: cut(edition, 40) })
+      .values({ ...common, edition: this.editionColumn(edition, entry.action) })
       .returning(['id', 'seq'])
       .executeTakeFirstOrThrow();
     return { chain: 'tenant', id: row.id, seq: String(row.seq) };
@@ -126,6 +134,27 @@ export class ChainedAuditWriter implements AuditWriter {
     const schema = target?.schema ?? context?.schema;
     if (!orgId || !schema) throw new Error(`Audit entry ${entry.action} needs an organisation`);
     return this.scope.withTenant({ orgId, schema, userId: uuidOrNull(context?.userId) ?? SYSTEM_USER_ID }, (trx) => this.record(trx, entry));
+  }
+
+  /**
+   * The edition as stored. The column holds 40 characters (C.4, C.6), less than two editions of a transition may need
+   * (`ISO37001-2016 1.10.0, ISO37001-2025 1.0.0` has 41): a longer value is cut and a warning names the full one.
+   */
+  private editionColumn(edition: string | null, action: string): string | null {
+    const stored = cut(edition, EDITION_COLUMN_LENGTH);
+    if (edition && stored !== edition) {
+      this.logger.warn(
+        { action, edition, stored },
+        `Audit entry ${action}: the edition "${edition}" is longer than ${EDITION_COLUMN_LENGTH} characters and was stored as "${stored}"`,
+      );
+    }
+    return stored;
+  }
+
+  /** `management_system.id` of a slug in the transaction's organisation; null when there is none. */
+  private async msIdOfSlug(trx: Trx, slug: string): Promise<string | null> {
+    const row = await trx.selectFrom('management_system').select('id').where('slug', '=', slug).where('deleted_at', 'is', null).executeTakeFirst();
+    return row?.id ?? null;
   }
 
   /** `<pack_id> <version>` of the system's active edition, and of the transition target when there is one. */

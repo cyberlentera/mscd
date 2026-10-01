@@ -8,7 +8,7 @@ import type { ExecutionContext } from '@nestjs/common';
 import type { RouteDef } from '@mscd/shared';
 import type { FastifyRequest } from 'fastify';
 import { ApiRouteInterceptor } from './api-route.interceptor';
-import { routeStateOf, type RouteInput } from './route-state';
+import { routeStateOf, type RouteInput, type StreamedIdempotency } from './route-state';
 import type { AuthzState, Principal } from './tokens';
 
 /** Metadata key of the `RouteDef` on a handler. */
@@ -50,6 +50,23 @@ export const RouteInputParam = createParamDecorator((part: keyof RouteInput | un
 /** The caller of the request (null on public routes). */
 export const CurrentPrincipal = createParamDecorator((_data: unknown, ctx: ExecutionContext): Principal | null => {
   return routeStateOf(requestOf(ctx)).principal;
+});
+
+/** The `If-Match` header of a route with `ifMatch: true`, else undefined (D.1 Concurrency). */
+export const IfMatchHeader = createParamDecorator((_data: unknown, ctx: ExecutionContext): string | undefined => {
+  return routeStateOf(requestOf(ctx)).ifMatch;
+});
+
+/** `claim` that does nothing: the request sent no `Idempotency-Key`, or the route accepts none. */
+const NO_IDEMPOTENCY: StreamedIdempotency = { claim: async () => undefined };
+
+/**
+ * Idempotency of a route with a streamed body (`StreamedIdempotency` in route-state.ts): the handler calls
+ * `claim(contentDigest)` after reading the upload and before changing anything.
+ */
+export const StreamedIdempotencyParam = createParamDecorator((_data: unknown, ctx: ExecutionContext): StreamedIdempotency => {
+  const request = requestOf(ctx);
+  return { claim: (contentDigest: string) => (routeStateOf(request).idempotency ?? NO_IDEMPOTENCY).claim(contentDigest) };
 });
 
 /** What the guard decided (system, granted permissions, own-only). Null on routes without a permission. */
