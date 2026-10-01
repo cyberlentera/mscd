@@ -73,6 +73,7 @@ export default async function setup(project: TestProject): Promise<() => Promise
   project.provide('mscdTestDb', server);
   return async () => {
     await stopContainer?.();
+    await removeExpiredTestContainers();
   };
 }
 

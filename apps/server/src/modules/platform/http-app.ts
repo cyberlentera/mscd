@@ -72,12 +72,13 @@ export async function createHttpApplication(
   module: DynamicModule | Type<unknown>,
   config: MscdConfig,
 ): Promise<NestFastifyApplication> {
+  // Nest's console logger stays off: start-up errors are printed once by the caller (configuration errors without
+  // a stack trace), and everything after start goes through pino.
   const app = await NestFactory.create<NestFastifyApplication>(module, new FastifyAdapter(fastifyAdapterOptions(config)), {
-    bufferLogs: true,
+    logger: false,
     abortOnError: false,
   });
   app.useLogger(app.get(Logger));
-  app.flushLogs();
   await configureHttpApplication(app, config);
   app.enableShutdownHooks();
   return app;
