@@ -1,13 +1,17 @@
 {
-  "name": "mscd-app",
+  "name": "@mscd/web",
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "gen:views": "node scripts/convert-template.mjs",
+    "gen:views:check": "node scripts/check-views.mjs",
     "test:e2e": "playwright test"
   },
   "dependencies": {

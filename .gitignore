@@ -1,10 +1,20 @@
-# Dependencies and build output
-app/node_modules/
-app/dist/
+# Dependencies (npm workspaces install into the root node_modules)
+node_modules/
+
+# Build output
+apps/*/dist/
+packages/*/dist/
+tools/*/dist/
+packs/dist/
+*.tsbuildinfo
+apps/server/src/generated/
 
 # Playwright output
-app/test-results/
-app/e2e-report/
+apps/web/test-results/
+apps/web/e2e-report/
 
 # On-premise bundles built by deploy/scripts/build-bundle.sh
 deploy/dist/
+
+# Kubernetes schemas downloaded by the Helm static checks
+deploy/helm/mscd/ci/.schema-cache/

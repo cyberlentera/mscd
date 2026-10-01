@@ -29,7 +29,7 @@ usage() {
 Usage: deploy/scripts/build-bundle.sh [options]
 
 Options:
-  --version VERSION   Release version (default: "version" in app/package.json)
+  --version VERSION   Release version (default: "version" in apps/web/package.json)
   --revision REV      Source revision for the image label (default: git describe)
   --image NAME        Image repository (default: cyberlentera/mscd-web)
   --no-build          Package an image that already exists locally as NAME:VERSION
@@ -88,7 +88,7 @@ build_image() {
     local args=(
         buildx build --load --pull
         --provenance=false --sbom=false
-        -f "$REPO_DIR/app/Dockerfile"
+        -f "$REPO_DIR/deploy/docker/web.Dockerfile"
         --build-context "nginx-config=$REPO_DIR/deploy/nginx"
         --build-arg "VERSION=$VERSION"
         --build-arg "REVISION=$REVISION"
@@ -100,7 +100,8 @@ build_image() {
         [[ -r $BUILD_CA ]] || die "Cannot read --build-ca file $BUILD_CA"
         args+=(--secret "id=build_ca,src=$BUILD_CA")
     fi
-    docker "${args[@]}" "$REPO_DIR/app"
+    # The repository root is the build context (workspace lockfile, .dockerignore).
+    docker "${args[@]}" "$REPO_DIR"
 }
 
 # scan_image TARBALL REPORT: Trivy scan of the saved image, the exact file that
@@ -150,7 +151,7 @@ scan_image() {
         3)
             printf '%s\n' "$out" | sed 's/^/        /'
             fail "The image has HIGH or CRITICAL vulnerabilities that have a fix" \
-                "Rebuild so the latest base image and Alpine updates are used, or move NGINX_IMAGE in app/Dockerfile to a newer tag"
+                "Rebuild so the latest base image and Alpine updates are used, or move NGINX_IMAGE in deploy/docker/web.Dockerfile to a newer tag"
             abort_if_failed
             ;;
         *)
@@ -164,7 +165,7 @@ main() {
     parse_args "$@"
 
     if [[ -z $VERSION ]]; then
-        VERSION=$(sed -n 's/^[[:space:]]*"version":[[:space:]]*"\([^"]*\)".*/\1/p' "$REPO_DIR/app/package.json" | head -n1)
+        VERSION=$(sed -n 's/^[[:space:]]*"version":[[:space:]]*"\([^"]*\)".*/\1/p' "$REPO_DIR/apps/web/package.json" | head -n1)
     fi
     [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$ ]] ||
         die "Version '$VERSION' is not a semantic version such as 1.0.0"
@@ -172,7 +173,7 @@ main() {
         REVISION=$(git -C "$REPO_DIR" describe --always --dirty 2>/dev/null || echo unknown)
         # describe --dirty ignores untracked files; the release sources must count too.
         if [[ $REVISION != unknown && $REVISION != *-dirty ]] &&
-            [[ -n $(git -C "$REPO_DIR" status --porcelain -- app deploy docs 2>/dev/null) ]]; then
+            [[ -n $(git -C "$REPO_DIR" status --porcelain -- apps packages tools package.json package-lock.json deploy docs 2>/dev/null) ]]; then
             REVISION+=-dirty
         fi
     fi
@@ -196,7 +197,7 @@ main() {
         fi
     fi
     if [[ $REVISION == *-dirty ]]; then
-        warn "app/, deploy/ or docs/ have uncommitted or untracked files; the image label says $REVISION"
+        warn "apps/, packages/, tools/, the root package files, deploy/ or docs/ have uncommitted or untracked files; the image label says $REVISION"
         detail "Commit the sources before building a release."
     fi
     if [[ $SCAN == false ]]; then

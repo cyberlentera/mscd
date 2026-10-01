@@ -4,13 +4,23 @@ Everything needed to package MSCD for customer data centres. The customer-facing
 
 | Path | Contents |
 |---|---|
+| `docker/` | `web.Dockerfile`, the web image, built with the repository root as the build context |
 | `nginx/` | NGINX configuration baked into the image, plus the start-up script that turns on HTTPS and optional settings |
-| `compose/` | Docker Compose file and `.env.example` |
+| `compose/` | Docker Compose file and `.env.example`; `compose/dev/` is the developer infrastructure stack (no application containers) |
 | `helm/mscd-web/` | Helm chart, with `values-ha.yaml` as the production reference |
 | `scripts/` | `build-bundle.sh` (release team) and `install.sh`, `upgrade.sh`, `uninstall.sh` (customer) |
 | `dist/` | Built bundles (not committed) |
 
-The image is built from `app/Dockerfile`.
+The image is built from `deploy/docker/web.Dockerfile` with the repository root as the build context, so `npm ci` runs against the workspace lockfile. To build it by hand:
+
+```bash
+docker buildx build --pull --load -f deploy/docker/web.Dockerfile \
+  --build-context nginx-config=deploy/nginx \
+  --secret id=build_ca,src="$MSCD_BUILD_CA" \
+  -t cyberlentera/mscd-web:dev .
+```
+
+`MSCD_BUILD_CA` names the CA certificate of a TLS-inspecting proxy between the build machine and the npm registry or the Alpine mirrors. Without such a proxy, point it to an empty file; BuildKit does not accept `/dev/null`.
 
 ## Build a release bundle
 
@@ -33,7 +43,7 @@ openssl ecparam -name prime256v1 -genkey -noout -out mscd-release.key
 openssl ec -in mscd-release.key -pubout -out mscd-release.pub
 ```
 
-The security scan is a release gate. The build stops when the image has a HIGH or CRITICAL vulnerability that has a fix. The result is written to `SECURITY-SCAN.txt` in the bundle and summarised in `BUNDLE-INFO`. The build warns, and labels the image `<revision>-dirty`, when `app/`, `deploy/` or `docs/` have uncommitted or untracked files.
+The security scan is a release gate. The build stops when the image has a HIGH or CRITICAL vulnerability that has a fix. The result is written to `SECURITY-SCAN.txt` in the bundle and summarised in `BUNDLE-INFO`. The build warns, and labels the image `<revision>-dirty`, when `apps/`, `packages/`, `tools/`, the root `package.json` or `package-lock.json`, `deploy/` or `docs/` have uncommitted or untracked files.
 
 Other options:
 
@@ -48,8 +58,9 @@ Trivy runs from `aquasec/trivy:0.74.0` when it is not installed (`TRIVY_IMAGE` o
 
 ## Image
 
-- Build stage: `node:22-alpine`, `npm ci`, `vite build`, text assets pre-compressed.
-- Runtime: `nginxinc/nginx-unprivileged:1.30-alpine3.24` (current stable NGINX on Alpine 3.24) with `apk upgrade`, user 101, read-only root filesystem, health check on `/healthz`. Move `NGINX_IMAGE` in `app/Dockerfile` to the next stable tag when it is released.
+- Manifests stage: every workspace `package.json` and the root `package-lock.json`, so the dependency layer is rebuilt only when dependencies change.
+- Build stage: `node:22-alpine`, `npm ci`, `npm run build -w @mscd/web`, text assets pre-compressed. The build argument `VITE_DATA_SOURCE` selects the data source of the app: `sample` (the default, the bundled sample organisation) or `api`.
+- Runtime: `nginxinc/nginx-unprivileged:1.30-alpine3.24` (current stable NGINX on Alpine 3.24) with `apk upgrade`, user 101, read-only root filesystem, health check on `/healthz`. Move `NGINX_IMAGE` in `deploy/docker/web.Dockerfile` to the next stable tag when it is released.
 - `index.html` ships without the Google Fonts links. The start-up script adds them back only with `MSCD_EXTERNAL_FONTS=true`.
 - Ports: 8080 (HTTP), 8443 (HTTPS when `/etc/nginx/tls/tls.crt` and `tls.key` are mounted).
 - Settings (environment): `MSCD_DOMAIN`, `MSCD_HTTP_REDIRECT`, `MSCD_HTTPS_PUBLIC_PORT`, `MSCD_HSTS`, `MSCD_HSTS_MAX_AGE`, `MSCD_EXTERNAL_FONTS`. See `nginx/40-mscd-runtime.sh`.

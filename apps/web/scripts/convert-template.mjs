@@ -1,13 +1,37 @@
-// Converts the Claude Design prototype template (project/MSCD Mockup.dc.html)
-// into React JSX view components under src/views. The views render against the
-// view-model object produced by MscdApp.renderVals().
+// Converts the Claude Design prototype template (project/MSCD Mockup.dc.html at the
+// repository root) into React JSX view components under src/views and the hover rules
+// in src/hover.css. The views render against the view-model object produced by
+// MscdApp.renderVals().
+//
+//   node scripts/convert-template.mjs [--out <dir>]
+//
+// --out <dir> writes the views to <dir>/views/ and the hover rules to <dir>/hover.css
+// (default: src, relative to apps/web). scripts/check-views.mjs uses it to regenerate
+// into a temporary folder and compare.
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { parseArgs } from 'node:util';
 import { parseDocument } from 'htmlparser2';
 
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
-const srcFile = path.resolve(root, '../project/MSCD Mockup.dc.html');
-const outDir = path.resolve(root, 'src/views');
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const srcFile = path.resolve(root, '../../project/MSCD Mockup.dc.html');
+
+let args;
+try {
+  args = parseArgs({ options: { out: { type: 'string' }, help: { type: 'boolean', short: 'h' } }, strict: true }).values;
+} catch (err) {
+  console.error(`${err.message}\nUsage: node scripts/convert-template.mjs [--out <dir>]`);
+  process.exit(2);
+}
+if (args.help) {
+  console.log('Usage: node scripts/convert-template.mjs [--out <dir>]\n\nWrites <dir>/views/*.jsx and <dir>/hover.css (default dir: src).');
+  process.exit(0);
+}
+// A relative --out is taken from the current directory; the default is apps/web/src.
+const outBase = args.out ? path.resolve(args.out) : path.resolve(root, 'src');
+const outDir = path.join(outBase, 'views');
+const hoverFile = path.join(outBase, 'hover.css');
 let html = fs.readFileSync(srcFile, 'utf8');
 
 // Layout fixes applied on top of the design template. Each patch must match exactly once,
@@ -229,5 +253,5 @@ for (const [name, body] of Object.entries(components)) {
   fs.writeFileSync(path.join(outDir, name + '.jsx'), `${header(name)}${importsFor(body)}\n\nexport default function ${name}({ v }) {\n  return (\n    ${body}\n  );\n}\n`);
 }
 fs.writeFileSync(path.join(outDir, 'AppView.jsx'), `${header('AppView')}${importsFor(appBody)}\n\nexport default function AppView({ v }) {\n  return (\n    <>\n    ${appBody}\n    </>\n  );\n}\n`);
-fs.writeFileSync(path.join(root, 'src/hover.css'), '/* Generated: hover states from the design prototype */\n' + hoverRules.join('\n') + '\n');
+fs.writeFileSync(hoverFile, '/* Generated: hover states from the design prototype */\n' + hoverRules.join('\n') + '\n');
 console.log('views:', ['AppView', ...Object.keys(components)].join(', '), '| hover rules:', hoverRules.length);

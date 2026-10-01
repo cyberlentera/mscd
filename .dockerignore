@@ -1,0 +1,27 @@
+# Build context of the images in deploy/docker (the repository root).
+# Keep it small and free of local build output, test output and secrets.
+.git
+.github
+**/node_modules
+**/dist
+**/test-results
+**/e2e-report
+**/*.tsbuildinfo
+**/*.log
+**/.DS_Store
+**/.env
+**/.env.*
+!**/.env.example
+apps/server/src/generated
+deploy/dist
+deploy/helm/mscd/ci/.schema-cache
+
+# Browser tests are not part of any image; leaving them out keeps the web build
+# cache valid when only tests change.
+apps/web/e2e
+apps/web/playwright.config.js
+
+# Design handoff material and transcripts: reference only, never part of an image
+project/uploads
+project/screenshots
+chats

@@ -1,0 +1,27 @@
+{
+  "name": "mscd",
+  "private": true,
+  "description": "MSCD (Management System Compliance Dashboard) platform monorepo",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "tools/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint .",
+    "test": "npm run test --workspaces --if-present",
+    "test:int": "npm run test:int -w @mscd/server",
+    "test:e2e": "npm run test:e2e -w @mscd/web",
+    "test:e2e:api": "npm run test:e2e:api -w @mscd/web",
+    "test:smoke": "npm run test -w @mscd/smoke",
+    "openapi": "npm run openapi -w @mscd/shared",
+    "dev:stack": "docker compose -f deploy/compose/dev/compose.yml up -d --wait",
+    "seed:demo": "npm run seed:demo -w @mscd/server",
+    "check:text": "if [ -f tools/scripts/check-text.mjs ]; then node tools/scripts/check-text.mjs docs; else echo 'check:text: not available (tools/scripts/check-text.mjs does not exist yet)'; fi"
+  }
+}
