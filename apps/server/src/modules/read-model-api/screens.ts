@@ -77,8 +77,23 @@ export function personName(d: ScreenData, handle: string | null | undefined): st
   return d.people.get(handle)?.name ?? handle;
 }
 
+/**
+ * True when the caller may see who holds a record and when its pending work is due. External auditors never may
+ * (D-34); Top Management gets pending data only as aggregates (F.7, Q-8), so only for records they hold themselves.
+ */
+function holderShown(d: ScreenData, handle: string | null | undefined): boolean {
+  if (isAuditor(d)) return false;
+  if (d.scope.kind === 'top_management') return !!handle && handle === d.scope.handle;
+  return true;
+}
+
+/** The handle as the caller may see it: `none` when holders of other people are hidden from the caller. */
+function shownHandle(d: ScreenData, handle: string | null | undefined): string {
+  return handle && handle !== NONE && holderShown(d, handle) ? handle : NONE;
+}
+
 function holderOf(d: ScreenData, handle: string | null | undefined): PendingRecord['holder'] {
-  if (isAuditor(d) || !handle || handle === NONE) return null;
+  if (!handle || handle === NONE || !holderShown(d, handle)) return null;
   const person = d.people.get(handle);
   return { handle, displayName: person?.name ?? handle, roleLabel: person?.jobTitle ?? '' };
 }
@@ -277,7 +292,7 @@ export function gateItems(d: ScreenData): GateItemView[] {
       const r = refOf(d.view, key);
       return r ? [r] : [];
     });
-    out.push({ id: g.id, type: pick(g.type, d.lang), why: pick(g.why, d.lang), holder: isAuditor(d) ? NONE : g.h, due: g.due, key: g.key, ref, affected });
+    out.push({ id: g.id, type: pick(g.type, d.lang), why: pick(g.why, d.lang), holder: shownHandle(d, g.h), due: holderShown(d, g.h) ? g.due : null, key: g.key, ref, affected });
   }
   return out;
 }
@@ -446,8 +461,8 @@ function openRecord(d: ScreenData, s: Sources, item: ChainItem): PendingRecord |
     state,
     action: pick(item.act, d.lang),
     holder: holderOf(d, item.h),
-    dueAt: isAuditor(d) ? null : item.due,
-    daysToDue: isAuditor(d) ? null : daysTo(d, item.due),
+    dueAt: holderShown(d, item.h) ? item.due : null,
+    daysToDue: holderShown(d, item.h) ? daysTo(d, item.due) : null,
     afterAudit: item.after,
     upstream: links(s.index, item.up),
     downstream: links(s.index, item.down),
@@ -476,7 +491,7 @@ function readyRecords(d: ScreenData, s: Sources, stage: StageDef): PendingRecord
     case 'document':
       for (const x of d.view.bundle.docs) {
         if (x.st !== 'approved') continue;
-        const due = isAuditor(d) ? null : x.rev || null;
+        const due = holderShown(d, x.owner) ? x.rev || null : null;
         const record = {
           title: x.title, state: pick(DOC_STATUS_LABELS[x.st], d.lang), holder: holderOf(d, x.owner), dueAt: due, daysToDue: daysTo(d, due),
           upstream: links(s.index, d.view.bundle.reqs.filter((r) => r.doc === x.id).map((r) => r.id)), downstream: [],
@@ -488,7 +503,7 @@ function readyRecords(d: ScreenData, s: Sources, stage: StageDef): PendingRecord
     case 'evidence':
       for (const e of d.view.bundle.evs) {
         if (evidenceOpen(e)) continue;
-        const due = isAuditor(d) ? null : e.next;
+        const due = holderShown(d, e.owner) ? e.next : null;
         const record = {
           title: e.title, state: evidenceState(e, d.lang), holder: holderOf(d, e.owner), dueAt: due, daysToDue: daysTo(d, due),
           upstream: links(s.index, [e.ctrl]), downstream: [],
@@ -522,6 +537,7 @@ export function stageRecordsPage(d: ScreenData, key: string, query: StageRecords
   const all = [...open, ...readyRecords(d, s, stage)];
   const rows = all.filter((r) => {
     if (query.status && r.status !== query.status) return false;
+    // Holders hidden from the caller come as null, so Top Management naming someone else finds nothing (F.7).
     if (query.owner && r.holder?.handle !== query.owner) return false;
     return !query.q || matchesQuery(query.q, [r.ref.code, r.title, r.holder?.displayName, r.action, r.state]);
   });
@@ -683,7 +699,6 @@ export function chainFrom(d: ScreenData, anchor: string): ChainResponse {
   const docs = new Map(d.full.bundle.docs.map((x) => [x.id, x]));
   const evs = new Map(d.full.bundle.evs.map((e) => [e.code, e]));
   const records = new Map(d.system.records.map((r) => [r.code, r]));
-  const auditor = isAuditor(d);
   const nodes: ChainNode[] = found.nodes.map(([stageKey, raw]) => {
     const stage = stageByKey(d, stageKey);
     const label = stage ? pick([stage.labelEn, stage.labelId], d.lang) : stageKey;
@@ -709,8 +724,8 @@ export function chainFrom(d: ScreenData, anchor: string): ChainResponse {
       id: code,
       title,
       status,
-      holder: auditor || !owner || owner === NONE ? null : owner,
-      due: auditor ? null : (item?.due ?? null),
+      holder: !owner || owner === NONE || !holderShown(d, owner) ? null : owner,
+      due: holderShown(d, owner) ? (item?.due ?? null) : null,
       clauseAtRisk: status === 'overdue' || status === 'missing' ? clause : null,
     };
     const ref = reqs.has(code)
@@ -778,7 +793,7 @@ export function surveillanceEvent(d: ScreenData, id: string, details: readonly E
         .map((p) => ({
           ref: { module: 'audit' as const, entityType: 'audit_prep_task', id: p.id, code: p.title, etag: etagOf(p.updatedAt) },
           title: p.title,
-          owner: p.owner ?? NONE,
+          owner: shownHandle(d, p.owner),
           dueAt: p.dueAt,
           status: p.status,
           violatesBr43: p.violatesBr43,
@@ -827,7 +842,7 @@ export function cycleItems(d: ScreenData, cycleId: string | undefined): CycleIte
       ref: { module: 'surveillance' as const, entityType: 'cycle_requirement_status', id: r.id, code: r.requirementCode, etag: etagOf(r.updatedAt) },
       requirementCode: r.requirementCode,
       title: r.title,
-      owner: r.owner ?? NONE,
+      owner: shownHandle(d, r.owner),
       dueAt: r.dueAt,
       status: r.status,
       conditionNote: r.conditionNote ?? '',
@@ -855,12 +870,12 @@ export function driftPatterns(d: ScreenData, rule: string | undefined, details: 
   const xRows = (stage: string): DriftPattern['rows'] =>
     (d.view.X[stage] ?? []).map((x) => {
       const ref = refOf(d.view, `${d.ms}:x:${x.id}`);
-      return { ...(ref ? { ref } : {}), code: x.id, title: x.t, holder: x.h, dueAt: x.due };
+      return { ...(ref ? { ref } : {}), code: x.id, title: x.t, holder: shownHandle(d, x.h), dueAt: holderShown(d, x.h) ? x.due : null };
     });
   const evRows = (list: readonly Evidence[]): DriftPattern['rows'] =>
     list.map((e) => {
       const ref = refOf(d.view, `${d.ms}:ev:${e.code}`);
-      return { ...(ref ? { ref } : {}), code: e.code, title: e.title, holder: e.owner ?? NONE, dueAt: e.next };
+      return { ...(ref ? { ref } : {}), code: e.code, title: e.title, holder: shownHandle(d, e.owner), dueAt: holderShown(d, e.owner) ? e.next : null };
     });
   const out: DriftPattern[] = [];
   for (const def of defs) {
@@ -883,7 +898,7 @@ export function driftPatterns(d: ScreenData, rule: string | undefined, details: 
           .sort((a, b) => a.position - b.position)
           .map((r) => {
             const ref = refOf(d.full, `${d.ms}:drift:${r.id}`);
-            return { ...(ref ? { ref } : {}), code: r.entityCode, title: r.title, holder: r.holder ?? NONE, dueAt: r.dueAt, detectedAt: r.detectedOn };
+            return { ...(ref ? { ref } : {}), code: r.entityCode, title: r.title, holder: shownHandle(d, r.holder), dueAt: holderShown(d, r.holder) ? r.dueAt : null, detectedAt: r.detectedOn };
           });
     }
     if (!rule && rows.length === 0) continue;

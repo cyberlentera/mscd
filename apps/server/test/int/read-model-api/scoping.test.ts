@@ -184,6 +184,46 @@ describe('Per-screen read endpoints: scoping (D-04, F.7, D-34)', () => {
     expect(own.total).toBe(full.bundle.chain.items.filter((i) => i.h === 'hendra').length);
   });
 
+  it('gives Top Management no holder names or due dates of other people on stage records, gates, chain and drift (F.7, Q-8)', async () => {
+    const hendra = await screenClient(ctx, db, 'hendra', 'ndt');
+    const people = (await rina.get<{ holder: string; displayName: string }[]>('/api/v1/ms/isms/audit/pending')).body;
+    const others = people.filter((p) => p.holder !== 'hendra' && p.holder !== 'none');
+    expect(others.length).toBeGreaterThan(0);
+    const leaks = (body: unknown): string[] => {
+      const text = JSON.stringify(body);
+      return others.flatMap((p) => [`"${p.holder}"`, p.displayName].filter((needle) => text.includes(needle)));
+    };
+    const stages = (await hendra.get<StageReadiness[]>('/api/v1/ms/isms/audit/stages')).body;
+    expect(stages.length).toBeGreaterThan(0);
+    let records = 0;
+    for (const stage of stages) {
+      const page = await hendra.all<PendingRecord>(`/api/v1/ms/isms/audit/stages/${stage.key}/records`);
+      records += page.total;
+      expect({ stage: stage.key, leaks: leaks(page.items) }).toEqual({ stage: stage.key, leaks: [] });
+      for (const r of page.items) if (r.holder?.handle !== 'hendra') expect({ dueAt: r.dueAt, daysToDue: r.daysToDue }).toEqual({ dueAt: null, daysToDue: null });
+      const named = await hendra.get<{ total: number }>(`/api/v1/ms/isms/audit/stages/${stage.key}/records?owner=${others[0]!.holder}`);
+      expect({ stage: stage.key, total: named.body.total }).toEqual({ stage: stage.key, total: 0 });
+    }
+    expect(records).toBeGreaterThan(0);
+    const gates = (await hendra.get<GateItemView[]>('/api/v1/ms/isms/gates')).body;
+    expect(gates.length).toBeGreaterThan(0);
+    expect(leaks(gates)).toEqual([]);
+    for (const chain of org.CHAINS.isms ?? []) {
+      const response = await hendra.get<ChainResponse>(`/api/v1/ms/isms/audit/chain?anchor_id=${encodeURIComponent(chain.id)}`);
+      if (response.status !== 200) continue;
+      expect({ chain: chain.id, leaks: leaks(response.body) }).toEqual({ chain: chain.id, leaks: [] });
+    }
+    const r014 = (await hendra.get<ChainResponse>('/api/v1/ms/isms/audit/chain?anchor_id=R-014')).body;
+    expect(r014.nodes.some((n) => !('hidden' in n) && n.id !== null)).toBe(true);
+    expect(leaks(r014)).toEqual([]);
+    const drift = (await hendra.get<DriftPattern[]>('/api/v1/ms/isms/surveillance/drift')).body;
+    expect(drift.some((p) => p.rows.length > 0)).toBe(true);
+    expect(leaks(drift)).toEqual([]);
+    expect(leaks((await hendra.get('/api/v1/ms/isms/surveillance/cycle')).body)).toEqual([]);
+    const nextId = (await hendra.get<{ id: string }>('/api/v1/ms/isms/audit/event/next')).body.id;
+    expect(leaks((await hendra.get(`/api/v1/ms/isms/surveillance/events/${nextId}`)).body)).toEqual([]);
+  });
+
   it('gives an external auditor no holders, no pending data and evidence only through ready packs (D-34)', async () => {
     const packed = await inScope(db.migrator, { orgId: ORG_IDS.tst, schema: 'org_tst', platformScope: true }, async (trx) => {
       const ms = await trx.selectFrom('management_system').select('id').where('slug', '=', 'isms').executeTakeFirstOrThrow();
