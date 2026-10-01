@@ -9,7 +9,11 @@
 #   - a request with "X-Forwarded-For: 203.0.113.9" and "?token=secret" leaves no
 #     203.0.113.9 as client and no secret in the NGINX access log, and the token
 #     value reaches neither the NGINX nor the api log;
-#   - the static site still refuses methods other than GET and HEAD.
+#   - a query value of a static request that NGINX refuses with an error line
+#     (body too large) stays out of the NGINX log;
+#   - the static site still refuses methods other than GET and HEAD;
+#   - after the api is recreated at a new address, /api/ answers 200 again
+#     without restarting the web container.
 #
 # Everything it creates is removed at the end (also on failure or Ctrl-C), unless
 # --keep is given.
@@ -68,6 +72,8 @@ case "$PORT" in '' | *[!0-9]*) die "--port must be a number, got '$PORT'" ;; esa
 [[ "$SUBNET" =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.0/24$ ]] || die "--subnet must be a /24 such as 172.31.251.0/24, got '$SUBNET'"
 NET_BASE="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
 WEB_IP="$NET_BASE.10"
+API_IP="$NET_BASE.20"
+API_IP_NEW="$NET_BASE.21"
 [[ "$PREFIX" =~ ^[a-z0-9][a-z0-9_.-]{0,40}$ ]] || die "--prefix must be lower-case letters, digits, '.', '_' or '-', got '$PREFIX'"
 command -v docker >/dev/null || die "docker is required"
 command -v curl >/dev/null || die "curl is required"
@@ -251,8 +257,12 @@ server migrate --rm "${db_env[@]}" -- seed demo --keys gateway
 
 # ---- api and web ------------------------------------------------------------------
 log "starting the api"
-server api -d --name "$C_API" --network-alias api -e MSCD_DATABASE_URL_FILE=/run/secrets/db-app.url -- api >/dev/null
-wait_for "api" 90 in_container_get "$C_API" http://127.0.0.1:3000/readyz
+start_api() {
+    # start_api <address>: the api with the network alias "api" at a fixed address.
+    server api -d --name "$C_API" --network-alias api --ip "$1" -e MSCD_DATABASE_URL_FILE=/run/secrets/db-app.url -- api >/dev/null
+    wait_for "api" 90 in_container_get "$C_API" http://127.0.0.1:3000/readyz
+}
+start_api "$API_IP"
 
 log "starting the web image on 127.0.0.1:$PORT"
 docker run -d --name "$C_WEB" --network "$NETWORK" --ip "$WEB_IP" -p "127.0.0.1:$PORT:8080" \
@@ -303,10 +313,34 @@ if grep -q 'secret' "$WORK/web.log"; then fail "NGINX access log contains the to
 if grep -q "$UNIQUE" "$WORK/web.log" "$WORK/api.log"; then fail "a token or code value reached the NGINX or api log"; else pass "token and code values reach neither the NGINX nor the api log"; fi
 if grep -q '203\.0\.113\.9' "$WORK/api.log"; then fail "the api log names 203.0.113.9"; else pass "the api log does not name 203.0.113.9"; fi
 
+# A query value on a static path whose request NGINX refuses with an error
+# line (the body is larger than the 16k allowed there) stays out of the log.
+code=$(curl -sS -o /dev/null -w '%{http_code}' -X GET -H 'Content-Length: 20000' --data-binary @/dev/null --max-time 5 \
+    "$BASE_URL/reset?token=${UNIQUE}static" || true)
+check "GET /reset with a too large body: 413" "GET /reset with a too large body: $code, expected 413" "$code" = 413
+sleep 1
+docker logs "$C_WEB" >"$WORK/web.log" 2>&1
+if grep -q "${UNIQUE}static" "$WORK/web.log"; then fail "the token value of a refused static request reached the NGINX log"; else pass "the token value of a refused static request is not in the NGINX log"; fi
+
 code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$BASE_URL/")
 check "POST / on the static site: 405" "POST / on the static site: $code, expected 405" "$code" = 405
 code=$(curl -sS -o /dev/null -w '%{http_code}' "$BASE_URL/login")
 check "client-side route /login serves the app: 200" "GET /login: $code, expected 200" "$code" = 200
+
+# The api recreated with a new address (as "docker compose up -d api" can do):
+# NGINX looks the name up again, so /api/ works without restarting the web
+# container.
+log "recreating the api at $API_IP_NEW"
+docker rm -f "$C_API" >/dev/null
+start_api "$API_IP_NEW"
+code=000
+for _ in $(seq 1 30); do
+    code=$(curl -sS -o /dev/null -w '%{http_code}' "$BASE_URL/api/v1/system/profile" || true)
+    [ "$code" = 200 ] && break
+    sleep 1
+done
+check "after the api is recreated at a new address, /api/ answers 200 without a web restart" \
+    "after the api is recreated at a new address, /api/ answers $code, expected 200" "$code" = 200
 
 if [ "$FAILED" -ne 0 ]; then
     echo "smoke: FAILED" >&2
