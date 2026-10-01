@@ -286,9 +286,9 @@ export type PendingPerson = z.infer<typeof PendingPerson>;
 
 export const PendingAggregate = named(
   'PendingAggregate',
-  z.object({ stage: StageKey, role: BusinessRole, open: Count, overdue: Count }),
-  'Pending counts per stage and business role without names (audit.pending.aggregate)',
-  { valid: [{ stage: 'risk', role: 'domain_owner', open: 4, overdue: 1 }], invalid: [{ stage: 'risk', role: 'owner', open: 4, overdue: 1 }] },
+  z.object({ stage: StageKey, role: BusinessRole.nullable(), open: Count, overdue: Count }),
+  'Pending counts per stage and business role without names (audit.pending.aggregate); role is null for unassigned items and holders without a role in the system',
+  { valid: [{ stage: 'risk', role: 'domain_owner', open: 4, overdue: 1 }, { stage: 'risk', role: null, open: 2, overdue: 2 }], invalid: [{ stage: 'risk', role: 'owner', open: 4, overdue: 1 }] },
 );
 export type PendingAggregate = z.infer<typeof PendingAggregate>;
 
@@ -406,7 +406,8 @@ export const readPhaseActivitiesRoute = defineRoute({
 export const readNextAuditEventRoute = defineRoute({
   ...read, id: 'readmodel.audit.next-event', path: '/api/v1/ms/:ms/audit/event/next',
   summary: 'Next audit event and its readiness numbers; 204 when no event is planned',
-  params: MsParams, response: NextAuditEvent, errors: [204, 404],
+  // The 204 answer has no body, so the 200 schema accepts an absent body too.
+  params: MsParams, response: NextAuditEvent.optional(), errors: [204, 404],
 });
 
 export const readAuditStagesRoute = defineRoute({

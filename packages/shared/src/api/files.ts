@@ -92,17 +92,19 @@ export const UploadCompleteRequest = named('UploadCompleteRequest', z.strictObje
 export type UploadCompleteRequest = z.infer<typeof UploadCompleteRequest>;
 
 const FileMode = z.enum(['submit', 'relink']);
+/** Production date of the evidence; the organisation's today when omitted (WP-21). */
+const ProducedAt = IsoDate.optional();
 
 export const EvidenceFileRequest = named(
   'EvidenceFileRequest',
   z.discriminatedUnion('source', [
-    z.strictObject({ source: z.literal('link'), repository: RepositorySlug, externalItemId: ExternalItemId, producedAt: IsoDate, mode: FileMode }),
-    z.strictObject({ source: z.literal('upload'), uploadIntentId: Uuid, producedAt: IsoDate, mode: FileMode }),
-    z.strictObject({ source: z.literal('client_upload'), uploadIntentId: Uuid, producedAt: IsoDate, mode: FileMode }),
+    z.strictObject({ source: z.literal('link'), repository: RepositorySlug, externalItemId: ExternalItemId, producedAt: ProducedAt, mode: FileMode }),
+    z.strictObject({ source: z.literal('upload'), uploadIntentId: Uuid, producedAt: ProducedAt, mode: FileMode }),
+    z.strictObject({ source: z.literal('client_upload'), uploadIntentId: Uuid, producedAt: ProducedAt, mode: FileMode }),
   ]),
-  'POST /ms/{ms}/evidence/{id}/files body: link an existing item, or attach an upload (relink replaces an unverifiable file)',
+  'POST /ms/{ms}/evidence/{id}/files body: link an existing item, or attach an upload (relink replaces an unverifiable file); producedAt defaults to today',
   {
-    valid: [{ source: 'link', repository: 'sp', externalItemId: 'demo-sp-picker-1', producedAt: '2026-09-29', mode: 'submit' }, { source: 'upload', uploadIntentId: '5b6c7d8e-9f0a-4b1c-8d2e-3f4a5b6c7d8e', producedAt: '2026-09-29', mode: 'relink' }],
+    valid: [{ source: 'link', repository: 'sp', externalItemId: 'demo-sp-picker-1', producedAt: '2026-09-29', mode: 'submit' }, { source: 'upload', uploadIntentId: '5b6c7d8e-9f0a-4b1c-8d2e-3f4a5b6c7d8e', producedAt: '2026-09-29', mode: 'relink' }, { source: 'client_upload', uploadIntentId: '5b6c7d8e-9f0a-4b1c-8d2e-3f4a5b6c7d8e', mode: 'submit' }],
     invalid: [{ source: 'link', uploadIntentId: '5b6c7d8e-9f0a-4b1c-8d2e-3f4a5b6c7d8e', producedAt: '2026-09-29', mode: 'submit' }, { source: 'email', producedAt: '2026-09-29', mode: 'submit' }],
   },
 );
