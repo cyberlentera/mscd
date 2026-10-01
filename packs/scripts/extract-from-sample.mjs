@@ -463,12 +463,21 @@ function checkPackAgainstSample(S, def, ms) {
   const card = S.PACKS[ms.id] ?? fail(`sample PACKS has no entry for ${ms.id}`);
   const eds = Array.isArray(card.eds) ? card.eds[0] : card.eds;
   if (def.status === 'withdrawn') {
+    // A withdrawn edition is not in use, so the card names it only in its edition list.
     if (!eds.includes(`${def.edition} withdrawn`)) fail(`${def.packId}: sample PACKS.${ms.id}.eds does not list edition ${def.edition} as withdrawn`);
   } else {
-    if (!card.v.split(', ').some((v) => v.startsWith(def.version))) fail(`${def.packId}: version ${def.version} is not in sample PACKS.${ms.id}.v "${card.v}"`);
+    // Card text: "<version>[ (<edition>)][ (beta)]" per version in use, joined with ", ".
+    const entry = card.v.split(', ').find((v) => {
+      const [version, ...marks] = v.split(' ');
+      const edition = marks.map((m) => m.replace(/[()]/g, '')).find((m) => /^\d{4}$/.test(m));
+      return version === def.version && (edition === undefined || edition === def.edition);
+    });
+    if (!entry) fail(`${def.packId}: version ${def.version} is not in sample PACKS.${ms.id}.v "${card.v}"`);
+    if (def.preRelease !== entry.includes('(beta)')) fail(`${def.packId}: pre_release does not match sample PACKS.${ms.id}.v "${card.v}"`);
     if (!ms.ed.includes(def.edition)) fail(`${def.packId}: edition ${def.edition} is not in sample MS ${ms.id} ed "${ms.ed}"`);
   }
-  if (def.preRelease !== card.v.includes('(beta)')) fail(`${def.packId}: pre_release does not match sample PACKS.${ms.id}.v "${card.v}"`);
+  if (def.packId !== `${def.frameworkCode}-${def.edition}`) fail(`${def.packId}: pack id is not <framework_code>-<edition>`);
+  if (ms.code.replace('/IEC', '').replace(/\s+/g, '') !== def.frameworkCode) fail(`${def.packId}: framework code does not match sample MS ${ms.id} code "${ms.code}"`);
   if (def.supersedes && !eds.includes(`${def.supersedes.edition} in transition`)) {
     fail(`${def.packId}: sample PACKS.${ms.id}.eds does not list edition ${def.supersedes.edition} in transition`);
   }
@@ -680,6 +689,8 @@ function driftRules(S, ms) {
     const d = DRIFT_RULES[r.id] ?? fail(`${ms.id}: no drift rule kind for sample rule ${r.id}`);
     if (r.src && r.src !== d.sourceKind) fail(`${ms.id}: drift rule ${r.id} has src ${r.src}, expected ${d.sourceKind}`);
     if (!r.src && !Array.isArray(r.rows)) fail(`${ms.id}: drift rule ${r.id} has neither src nor rows`);
+    // Rules with sample rows store their results; only stored kinds may carry them.
+    if (!r.src && !STORED_DRIFT_KINDS.has(d.sourceKind)) fail(`${ms.id}: drift rule ${r.id} has rows but kind ${d.sourceKind}`);
     const label = pair(r.l, `DRIFT.${ms.id}.${r.id}.l`);
     return {
       code: r.id,
