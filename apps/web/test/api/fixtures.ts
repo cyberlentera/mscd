@@ -33,6 +33,8 @@ export function refOf(key: string, code: string, kind = key.split(':')[1]) {
   return { module, entityType, id: uuidOf(key), code, etag: `W/"${1790000000000 + code.length}"` };
 }
 
+// Test data of many shapes (wire snapshots, view models) is read field by field.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyRecord = Record<string, any>;
 
 export interface WireFixture {

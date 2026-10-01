@@ -110,6 +110,10 @@ export class NotificationDeliveryService {
 
   /** Active organisations (the sweep without an organisation in the job envelope). */
   async activeOrganisations(): Promise<TenantInfo[]> {
+    // Read-only list of organisation ids (`platform.organization` has no RLS) for the installation-wide sweep that
+    // WP-22 schedules with `orgId: null`; every row is then handled inside `withTenant`. Follow-up in the WP-24
+    // handoff: a `TenantResolver` listing (tenancy module) would remove the need for platform scope here.
+    // eslint-disable-next-line no-restricted-syntax
     const rows = await this.scope.withPlatform(
       (trx) => trx.selectFrom('platform.organization').select('id').where('status', '=', 'active').where('deleted_at', 'is', null).orderBy('position').orderBy('slug').execute(),
       { scope: 'job' },

@@ -7,10 +7,13 @@ import { json, meOf, readRoutes, sourceWith, uuidOf, wireOf } from './fixtures';
 import type { Routes } from './fixtures';
 import { problem } from '../auth/helpers';
 
+// Test data of many shapes (wire snapshots, view models) is read field by field.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyRecord = Record<string, any>;
 const SCREENS = ['portfolio', 'm1overview', 'controls', 'phases', 'docs', 'audit', 'chain', 'gt', 'timeline', 'fresh', 'cal', 'mytasks', 'fw', 'storage'];
 
 function mount(ds: unknown, props: AnyRecord = {}) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the controller is a JavaScript class
   const app = new (MscdApp as any)({ lang: 'en', theme: 'light', deploy: 'saas', ...props, dataSource: ds }) as AnyRecord;
   app.setState = (u: unknown, cb?: () => void) => {
     const patch = typeof u === 'function' ? (u as (s: AnyRecord, p: AnyRecord) => AnyRecord)(app.state, app.props) : u;

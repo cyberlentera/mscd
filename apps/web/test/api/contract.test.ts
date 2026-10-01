@@ -18,6 +18,8 @@ import { TaskList } from '../../../../packages/shared/src/api/ui';
 import { Me } from '../../../../packages/shared/src/api/me';
 import { meOf, readRoutes, sourceWith, uuidOf, wireOf } from './fixtures';
 
+// Test data of many shapes (wire snapshots, view models) is read field by field.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyRecord = Record<string, any>;
 
 describe('API data source routes', () => {

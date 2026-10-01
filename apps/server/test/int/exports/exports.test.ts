@@ -158,14 +158,14 @@ describe('exports (D.3, E.2, F.13, F.15)', () => {
     expect(csv.status).toBe(200);
     expect(csv.headers['content-type']).toBe('text/csv; charset=utf-8');
     expect(String(csv.headers['content-disposition'])).toMatch(/document-register-2026-09-29\.csv/);
-    const text = csv.raw.toString('utf8').replace(/^﻿/, '');
+    const text = csv.raw.toString('utf8').replace(/^\uFEFF/, '');
     expect(text.split('\r\n')[0]).toBe('ID,Title,Type,Version,Status,Approved,Next review,Owner,Shared,System');
     expect(text).toContain(`"'=HYPERLINK(""http://evil.example/steal"",""click me"")"`);
     expect(text).not.toMatch(/(^|,)=HYPERLINK/m);
 
     // Indonesian headers on request.
     const id = await rina.call('GET', '/api/v1/ms/isms/documents/export?format=csv', undefined, { 'accept-language': 'id-ID,id;q=0.9,en;q=0.5' });
-    expect(id.raw.toString('utf8').replace(/^﻿/, '').split('\r\n')[0]).toBe('ID,Judul,Jenis,Versi,Status,Disetujui,Tinjauan berikutnya,Pemilik,Dibagikan,Sistem');
+    expect(id.raw.toString('utf8').replace(/^\uFEFF/, '').split('\r\n')[0]).toBe('ID,Judul,Jenis,Versi,Status,Disetujui,Tinjauan berikutnya,Pemilik,Dibagikan,Sistem');
   });
 
   it('respects ScopePolicy: a restricted document is missing for Top Management; Domain Owners may not export', async () => {
@@ -258,7 +258,7 @@ describe('exports (D.3, E.2, F.13, F.15)', () => {
     const soa = await exportAndBuild(rina, 'tst', { type: 'soa', ms: 'isms', format: 'csv' });
     const csv = await rina.get(soa.downloadUrl!);
     expect(csv.headers['content-type']).toBe('text/csv; charset=utf-8');
-    expect(csv.raw.toString('utf8').replace(/^﻿/, '').split('\r\n')[0]).toBe(
+    expect(csv.raw.toString('utf8').replace(/^\uFEFF/, '').split('\r\n')[0]).toBe(
       'ID,Title,Theme,Applicable,Justification,Status,Owner,Implementing document,Frequency,Last evidence,Freshness,Integrity',
     );
 

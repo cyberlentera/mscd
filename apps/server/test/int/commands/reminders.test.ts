@@ -72,7 +72,7 @@ describe('reminders', () => {
     expect(response.status).toBe(200);
     expect(await remindersOf('bagus', 'isms:doc:PRC-07')).toHaveLength(1);
     const [notification] = await notificationsOf(db, 'tst', 'bagus', 'reminder');
-    expect(notification!.body_en).toMatch(/^Reminder: .+ for PRC-07 .+, due \d{2} \w{3} \d{4}$/);
+    expect(notification!.body_en).toMatch(/^Reminder: Start review: .+ for .+, v.+, due \d{2} \w{3} \d{4}$/);
   });
 
   it('answers 404 for a record of another system or organisation and for an unknown key', async () => {

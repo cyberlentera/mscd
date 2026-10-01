@@ -9,6 +9,8 @@ import { problem } from '../auth/helpers';
 import { json, meOf, readRoutes, sourceWith, uuidOf, wireOf } from './fixtures';
 import type { Routes } from './fixtures';
 
+// Test data of many shapes (wire snapshots, view models) is read field by field.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyRecord = Record<string, any>;
 const CMD = (extra: AnyRecord = {}) => json({ ok: true, changed: ['isms'], ...extra });
 

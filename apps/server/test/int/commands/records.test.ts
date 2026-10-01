@@ -153,7 +153,7 @@ describe('record commands', () => {
       const late = await rina.post(RECORD_URL('isms', 'audit_prep_task', prepRef.id, 'assignment'), { kind: 'prep', holder: 'rina', dueAt: '2026-11-12' });
       expect(late.status).toBe(422);
       expect(late.body.rule).toBe('BR-43');
-      expect(late.body.messages.en).toBe('Preparation tasks must be finished before the audit starts.');
+      expect(late.body.messages!.en).toBe('Preparation tasks must be finished before the audit starts.');
       const noDue = await rina.post(RECORD_URL('isms', 'audit_prep_task', prepRef.id, 'assignment'), { kind: 'prep', holder: 'rina', dueAt: null });
       expect(noDue.status).toBe(400);
       const ok = await rina.post(RECORD_URL('isms', 'audit_prep_task', prepRef.id, 'assignment'), { kind: 'prep', holder: 'bagus', dueAt: '2026-11-01' });
