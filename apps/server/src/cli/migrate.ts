@@ -8,14 +8,17 @@ import { exitOnConfigError, loadConfigOrExit } from '../config/run-context';
 import { migrateFolder, migrationsDir, MIGRATIONS_ROOT, openDedicatedDatabase, type MigrationFolder } from '../db/migrator';
 import { SqlFileMigrationProvider } from '../db/sql-migration-provider';
 import type { DB } from '../db/types';
+import { jobDriverOf } from '../modules/jobs/job-queue-factory';
+import { ensurePgBossSchema, installedVersion, type PgBossSchemaResult } from '../modules/jobs/pgboss-schema';
 import { databaseIdentity, installPacksFromDir, type PackFolderReport } from '../modules/packs/install-from-dir';
 import { installerAuditWriter } from './packs';
 
-// Run mode `migrate` (build plan C.3). This file implements steps 1 (platform), 2 (ref), 4 (every tenant schema)
-// and 5 (the packs of `packs.dir` that are not installed yet, WP-12); WP-22 adds step 3 (pg-boss schema) at the
-// marked place. Steps 1, 2 and 4 run as mscd_migrator, step 5 as mscd_pack_installer (D-17), each on a dedicated
-// connection of its own (never a pool shared with other work) with `app.platform_scope = 'on'` for that session,
-// and the connection is closed when the step is done.
+// Run mode `migrate` (build plan C.3). This file implements steps 1 (platform), 2 (ref), 3 (the pg-boss schema and
+// its grants when the process's job driver is pg-boss, WP-22), 4 (every tenant schema) and 5 (the packs of
+// `packs.dir` that are not installed yet, WP-12). Steps 1 to 4 run as mscd_migrator, step 5 as mscd_pack_installer
+// (D-17), each on a dedicated connection of its own (never a pool shared with other work) with
+// `app.platform_scope = 'on'` for that session (step 3 uses pg-boss's own short-lived connections, which touch only
+// the pgboss schema), and the connections are closed when the step is done.
 
 /** Registers `mscd-server migrate [--dry-run]`. */
 export function register(program: Command): void {
@@ -39,6 +42,8 @@ export interface MigrateReport {
   platform: string[];
   ref: string[];
   tenants: TenantMigrationResult[];
+  /** Step 3, present when `MigrateOptions.pgboss` was true. */
+  pgboss?: PgBossSchemaResult;
   /** Step 5, present when `MigrateOptions.packs` was given. */
   packs?: PackFolderReport;
 }
@@ -57,6 +62,8 @@ export interface MigrateOptions {
   migrationsRoot?: string;
   /** Progress lines (default: none). */
   log?: (line: string) => void;
+  /** Step 3 (WP-22): create or migrate the pg-boss schema and grant mscd_app its rights. Omitted: no step 3. */
+  pgboss?: boolean;
   /** Step 5 (WP-12): install the pack files of a folder. Omitted: no pack step. */
   packs?: MigratePacksOptions;
 }
@@ -79,7 +86,16 @@ export async function migrateAll(options: MigrateOptions): Promise<MigrateReport
     log(appliedLine(folder, report[folder]));
   }
 
-  // Step 3 (WP-22): pg-boss schema creation and its grants to mscd_app, when jobs.driver is pgboss.
+  // Step 3 (WP-22): pg-boss schema creation and its grants to mscd_app, when the job driver is pg-boss.
+  if (options.pgboss) {
+    report.pgboss = await ensurePgBossSchema(options.connectionString);
+    const { before, after, queuesCreated } = report.pgboss;
+    log(
+      before === after
+        ? `pgboss up to date (schema version ${after})${queuesCreated > 0 ? `, ${queuesCreated} queue(s) created` : ''}`
+        : `pgboss ${before === null ? 'created' : `migrated from version ${before}`} (schema version ${after}), ${queuesCreated} queue(s) created`,
+    );
+  }
 
   // Step 4: every organisation schema, each on its own dedicated connection.
   const organizations = await listOrganizations(options.connectionString);
@@ -132,9 +148,9 @@ async function listPackFiles(dir: string): Promise<string[] | null> {
 }
 
 export interface PendingMigration {
-  /** `platform`, `ref` or the tenant schema name. */
+  /** `platform`, `ref`, `pgboss` (C.3 step 3) or the tenant schema name. */
   target: string;
-  folder: MigrationFolder;
+  folder: MigrationFolder | 'pgboss';
   name: string;
 }
 
@@ -142,6 +158,9 @@ export interface PendingMigration {
 export async function pendingMigrations(options: Omit<MigrateOptions, 'log'>): Promise<PendingMigration[]> {
   const root = options.migrationsRoot ?? MIGRATIONS_ROOT;
   const pending: PendingMigration[] = [];
+  if (options.pgboss && (await installedVersion(options.connectionString)) === null) {
+    pending.push({ target: 'pgboss', folder: 'pgboss', name: 'pg-boss schema, job queues and grants to mscd_app' });
+  }
   const names = async (folder: MigrationFolder) =>
     Object.keys(await new SqlFileMigrationProvider(migrationsDir(folder, root)).getMigrations()).sort();
   await withDedicated(options.connectionString, {}, async (migrator) => {
@@ -173,8 +192,9 @@ export async function renderDryRun(pending: readonly PendingMigration[], migrati
     const where = items[0]!.folder === 'tenant' ? `tenant schema ${target} (search_path "${target}", ext)` : `schema ${target}`;
     lines.push(`-- ${where}: ${items.map((i) => i.name).join(', ')}`);
   }
-  const files = [...new Map(pending.map((p) => [`${p.folder}/${p.name}`, p])).values()];
+  const files = [...new Map(pending.filter((p) => p.folder !== 'pgboss').map((p) => [`${p.folder}/${p.name}`, p])).values()];
   for (const file of files) {
+    if (file.folder === 'pgboss') continue;
     const text = await readFile(path.join(migrationsDir(file.folder, migrationsRoot), `${file.name}.sql`), 'utf8');
     lines.push('', `-- >>> ${file.folder}/${file.name}.sql`, text.trimEnd());
   }
@@ -204,7 +224,7 @@ export async function runMigrate(
 ): Promise<number> {
   const connectionString = config.databaseUrl('migrator');
   if (options.dryRun) {
-    const pending = await pendingMigrations({ connectionString, migrationsRoot: options.migrationsRoot });
+    const pending = await pendingMigrations({ connectionString, migrationsRoot: options.migrationsRoot, pgboss: jobDriverOf(config) === 'pgboss' });
     options.out(await renderDryRun(pending, options.migrationsRoot));
     return 0;
   }
@@ -212,6 +232,7 @@ export async function runMigrate(
     connectionString,
     migrationsRoot: options.migrationsRoot,
     log: (line) => options.out(`migrate: ${line}\n`),
+    pgboss: jobDriverOf(config) === 'pgboss',
     packs: { dir: config.profile.packs.dir, installerUrl: () => config.databaseUrl('pack_installer') },
   });
   const failed = report.tenants.filter((t) => t.error !== undefined);

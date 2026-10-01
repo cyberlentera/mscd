@@ -3,7 +3,7 @@ import { DiscoveryModule } from '@nestjs/core';
 import { MscdConfig } from '../config/mscd-config';
 import { Clock } from './clock';
 import { FileResponder } from './file-response';
-import { InMemoryJobQueue } from './jobs/in-memory-job-queue';
+import { createJobQueue, jobDriverOf } from '../modules/jobs/job-queue-factory';
 import { JobHandlerRegistry } from './jobs/job-handler';
 import { JOB_QUEUE, type JobQueue } from './jobs/job-queue';
 import { TenantNotificationWriter } from './notifications/notification-writer';
@@ -20,10 +20,8 @@ class JobQueueLifecycle implements OnApplicationBootstrap, OnApplicationShutdown
   ) {}
 
   onApplicationBootstrap(): void {
-    if (this.queue instanceof InMemoryJobQueue && this.config.profile.test === undefined) {
-      this.logger.warn(
-        `jobs.driver ${this.config.profile.jobs.driver} is not available in this build yet (WP-22); jobs are kept in memory in this process`,
-      );
+    if (jobDriverOf(this.config) === 'memory' && this.config.runMode !== 'cli') {
+      this.logger.debug('Jobs are kept in memory in this process (test profile)');
     }
   }
 
@@ -34,7 +32,8 @@ class JobQueueLifecycle implements OnApplicationBootstrap, OnApplicationShutdown
 
 /**
  * Services every api and worker module may inject (B.4 `src/common`): the clock, file responses, the job queue
- * (in-memory driver until WP-22 adds pg-boss and BullMQ), job handler discovery and the notification writer.
+ * (the pg-boss or BullMQ driver of `src/modules/jobs`, in memory with the test profile), job handler discovery and
+ * the notification writer.
  * Global; imported once by `TenancyModule`, which every api and worker application loads.
  */
 @Global()
@@ -44,7 +43,8 @@ class JobQueueLifecycle implements OnApplicationBootstrap, OnApplicationShutdown
     Clock,
     FileResponder,
     JobHandlerRegistry,
-    { provide: JOB_QUEUE, useFactory: () => new InMemoryJobQueue() },
+    // The driver of `jobs.driver` (WP-22, `src/modules/jobs`); in memory with the test profile.
+    { provide: JOB_QUEUE, inject: [MscdConfig], useFactory: (config: MscdConfig) => createJobQueue(config) },
     JobQueueLifecycle,
     { provide: NOTIFICATION_WRITER, useClass: TenantNotificationWriter },
   ],
