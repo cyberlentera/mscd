@@ -29,7 +29,7 @@ import { ruleMessageKey, ruleMessages, RuleEngine } from '../rules';
 import { TenantScope, tenantContextOf } from '../tenancy/tenant-scope';
 import { RISK_NEEDS_TREATMENT } from './registers.service';
 import type { Br04Input } from './rules';
-import { bump, commandResult, duplicateCode, editionOf, linksOf, orgOf, pickTransition, refOf, targetOf, todayOf } from './support';
+import { bump, commandResult, duplicateCode, editionOf, grantedInFull, linksOf, orgOf, pickTransition, refOf, targetOf, todayOf } from './support';
 
 const ENTITY = 'risk_treatment';
 const MACHINE = 'risk_treatment.status' as const;
@@ -94,10 +94,12 @@ export class TreatmentsService {
   // POST /ms/{ms}/risks/{id}/treatments
   // -------------------------------------------------------------------------------------------------------------
 
-  async create(principal: Principal, ms: string, riskId: string, body: TreatmentCreate): Promise<CommandResult> {
+  async create(principal: Principal, authz: AuthzState | null, ms: string, riskId: string, body: TreatmentCreate): Promise<CommandResult> {
     const actor = principal.user.id;
     return this.tenancy.withTenant(tenantContextOf(principal), async (trx) => {
       const record = await this.records.resolve(trx, ms, 'risk', riskId, { forUpdate: true });
+      // F.6: the Risk Owner holds risk.manage only for the assessment fields of own risks, which a treatment is not.
+      if (!grantedInFull(authz, 'risk.manage')) throw new ForbiddenError('Adding a treatment needs risk.manage');
       const risk = record.row as unknown as RiskRow;
       if (body.riskCode !== risk.code) {
         throw new ValidationError([{ path: 'body.riskCode', message: `The path names risk ${risk.code}` }], 'riskCode does not match the risk of the path');
@@ -171,10 +173,12 @@ export class TreatmentsService {
   // PATCH /ms/{ms}/treatments/{id}
   // -------------------------------------------------------------------------------------------------------------
 
-  async update(principal: Principal, ms: string, id: string, patch: TreatmentPatch, ifMatch: string | undefined): Promise<CommandResult> {
+  async update(principal: Principal, authz: AuthzState | null, ms: string, id: string, patch: TreatmentPatch, ifMatch: string | undefined): Promise<CommandResult> {
     const actor = principal.user.id;
     return this.tenancy.withTenant(tenantContextOf(principal), async (trx) => {
       const record = await this.records.resolve(trx, ms, ENTITY, id, { forUpdate: true });
+      // F.6: the Risk Owner holds risk.manage only for the assessment fields of own risks, which a treatment is not.
+      if (!grantedInFull(authz, 'risk.manage')) throw new ForbiddenError('Changing a treatment needs risk.manage');
       const row = record.row as unknown as TreatmentRow;
       assertIfMatch(ifMatch, row.updated_at, refOf('audit', ENTITY, row.id, row.code, row.updated_at));
       const set: Record<string, unknown> = {};

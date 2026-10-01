@@ -108,20 +108,22 @@ export class RiskRegistersController {
   @ApiRoute(treatmentsCreateRoute)
   createTreatment(
     @CurrentPrincipal() principal: Principal,
+    @CurrentAuthz() authz: AuthzState | null,
     @RouteInputParam('params') params: MsRecordParams,
     @RouteInputParam('body') body: TreatmentCreate,
   ): Promise<CommandResult> {
-    return this.treatments.create(principal, params.ms, params.id, body);
+    return this.treatments.create(principal, authz, params.ms, params.id, body);
   }
 
   @ApiRoute(treatmentsUpdateRoute)
   updateTreatment(
     @CurrentPrincipal() principal: Principal,
+    @CurrentAuthz() authz: AuthzState | null,
     @RouteInputParam('params') params: MsRecordParams,
     @RouteInputParam('body') body: TreatmentPatch,
     @IfMatchHeader() ifMatch: string | undefined,
   ): Promise<CommandResult> {
-    return this.treatments.update(principal, params.ms, params.id, body, ifMatch);
+    return this.treatments.update(principal, authz, params.ms, params.id, body, ifMatch);
   }
 
   @ApiRoute(treatmentsTransitionRoute)

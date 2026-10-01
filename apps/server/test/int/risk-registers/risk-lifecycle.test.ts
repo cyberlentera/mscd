@@ -102,6 +102,13 @@ describe('risk lifecycle', () => {
     expect((await bagus.post(`/api/v1/ms/isms/risks/${risk.id}/treatments`, {
       riskCode: 'R-900', code: 'T-903', title: 'x', ownerHandle: 'bagus', targetType: 'catalogue_item', targetCode: 'A.8.7', targetDate: '2027-01-31',
     })).status).toBe(403);
+    // The Risk Owner holds risk.manage only for the assessment fields of own risks (F.6): no treatments, even on an own risk.
+    expect((await hendra.post(`/api/v1/ms/isms/risks/${risk.id}/treatments`, {
+      riskCode: 'R-900', code: 'T-903', title: 'x', ownerHandle: 'hendra', targetType: 'catalogue_item', targetCode: 'A.8.7', targetDate: '2027-01-31',
+    })).status).toBe(403);
+    expect((await hendra.patch(treatmentUrl(t1.body.ref!.id), { title: 'Hijacked', ownerHandle: 'hendra' })).status).toBe(403);
+    expect((await hendra.patch(treatmentUrl(t2.body.ref!.id), { title: 'Own treatment' })).status).toBe(403);
+    expect((await rowOf(db, 'tst', 'risk_treatment', 'T-901')).owner).toBe('bagus');
 
     const id1 = t1.body.ref!.id;
     const id2 = t2.body.ref!.id;
