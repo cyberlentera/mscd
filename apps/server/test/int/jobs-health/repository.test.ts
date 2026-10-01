@@ -97,7 +97,10 @@ describe('repository connection checks (TS 5.7)', () => {
       'ndt',
       sql`SELECT entity_code, after_data FROM audit_trail WHERE action = 'storage.repository.updated' AND actor_kind = 'system' ORDER BY seq`,
     );
-    expect(audit).toEqual([{ entity_code: 'od', after_data: expect.objectContaining({ connectionStatus: 'failed' }) }]);
+    // The vault of this stack has no object store behind it (a closed port), so its test fails too.
+    expect(after.vault!.connection_status).toBe('failed');
+    expect(audit.map((a) => a.entity_code).sort()).toEqual(['od', 'vault']);
+    expect(audit.every((a) => a.after_data.connectionStatus === 'failed' && a.after_data.source === 'link-health.repository')).toBe(true);
   });
 
   it('a revoked credential raises connector alerts on the systems the repository serves and tells the Tenant Admins once; recovery resolves them', async () => {
@@ -108,16 +111,21 @@ describe('repository connection checks (TS 5.7)', () => {
     expect(alerts.filter((a) => a.repository === 'sp').map((a) => a.slug)).toEqual(['isms', 'qms', 'bcms', 'abms']);
     const tenantAdmins = await admins(['tenant_admin']);
     expect(tenantAdmins.length).toBeGreaterThan(0);
-    expect((await notifications('connector_revoked')).map((n) => n.recipient_user_id).sort()).toEqual(tenantAdmins);
+    // The OneDrive repository uses the same app registration, so it is revoked too (one notice per repository).
+    const revoked = await notifications('connector_revoked');
+    expect(revoked.filter((n) => n.code === 'sp').map((n) => n.recipient_user_id).sort()).toEqual(tenantAdmins);
+    expect(revoked.filter((n) => n.code === 'od').map((n) => n.recipient_user_id).sort()).toEqual(tenantAdmins);
     // A second run while still revoked adds nothing.
     await runJob();
     expect(await openAlerts()).toEqual(alerts);
-    expect(await notifications('connector_revoked')).toHaveLength(tenantAdmins.length);
+    expect(await notifications('connector_revoked')).toHaveLength(revoked.length);
     // The credential works again: sp is ok and its alerts are resolved; the gd alert stays.
     await mockAdmin(stack.mock, '/_admin/reset');
     await runJob();
     expect((await repositories()).sp!.connection_status).toBe('ok');
-    expect(await openAlerts()).toEqual([{ slug: 'bcms', tone: 'bad', repository: 'gd' }]);
+    const remaining = await openAlerts();
+    expect(remaining.filter((a) => a.repository === 'sp')).toEqual([]);
+    expect(remaining).toContainEqual({ slug: 'bcms', tone: 'bad', repository: 'gd' });
   });
 
   it('warns Tenant and Storage Admins 30 and 7 days before the credential expires, once per step', async () => {

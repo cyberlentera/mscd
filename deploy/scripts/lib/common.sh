@@ -2,7 +2,9 @@
 # MSCD on-premise: helpers shared by install.sh, upgrade.sh and uninstall.sh.
 # This file is sourced, not executed.
 
-readonly MSCD_PROJECT=mscd         # Compose project name (the "name:" of docker-compose.yml)
+# Compose project name: the "name:" of docker-compose.yml, unless
+# COMPOSE_PROJECT_NAME names another one (Compose itself reads that variable too).
+readonly MSCD_PROJECT=${COMPOSE_PROJECT_NAME:-mscd}
 readonly MSCD_WEB_SERVICE=web
 # Name of the web container of installations made before the full platform
 # (one container, mscd-web); still recognised so they can be upgraded.
@@ -1119,14 +1121,14 @@ issue_cert() {
     local dir=$1 name=$2 cn=$3 ext=$4 work
     work=$(mktemp -d "$dir/.cert.XXXXXX")
     printf '%s\n' "$ext" >"$work/ext.cnf"
-    openssl req -new -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes \
-        -subj "/CN=$cn/O=MSCD installation" -keyout "$work/$name.key" -out "$work/$name.csr" >/dev/null 2>&1 &&
-        openssl x509 -req -in "$work/$name.csr" -CA "$dir/ca.crt" -CAkey "$dir/ca.key" \
+    if ! openssl req -new -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes \
+        -subj "/CN=$cn/O=MSCD installation" -keyout "$work/$name.key" -out "$work/$name.csr" >/dev/null 2>&1 ||
+        ! openssl x509 -req -in "$work/$name.csr" -CA "$dir/ca.crt" -CAkey "$dir/ca.key" \
             -set_serial "0x$(random_hex 16)" -days 825 -extfile "$work/ext.cnf" \
-            -out "$work/$name.crt" >/dev/null 2>&1 || {
+            -out "$work/$name.crt" >/dev/null 2>&1; then
         rm -rf -- "$work"
         return 1
-    }
+    fi
     chmod 0600 "$work/$name.key"
     chmod 0444 "$work/$name.crt"
     mv -f "$work/$name.key" "$dir/$name.key"
@@ -1231,6 +1233,7 @@ fix_secret_owners() {
 # ensure_secrets DIR SERVER_IMAGE: every secret of the installation, generated
 # when missing, then owners and modes set. Sets CERTS_CHANGED=true when a
 # certificate was issued (services must be recreated to read it).
+# shellcheck disable=SC2034  # CERTS_CHANGED is read by install.sh and upgrade.sh
 ensure_secrets() {
     local dir=$1 image=$2
     CERTS_CHANGED=false
