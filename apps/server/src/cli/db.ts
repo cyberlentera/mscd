@@ -5,8 +5,9 @@ import { BOOTSTRAP_ROLES, passwordFromRoleUrl, runBootstrap } from '../db/bootst
 
 /** `db bootstrap [--with-report-role]` (C.2). */
 export function register(program: Command): void {
-  const db = program.command('db').description('Database administration');
-  db.command('bootstrap')
+  const dbCommand = program.command('db').description('Database administration');
+  dbCommand
+    .command('bootstrap')
     .description(
       'Create the database roles, schema ext and extension pg_trgm (C.2) with an administrator URL ' +
         '(MSCD_DATABASE_ADMIN_URL or database.admin_url_file); the role passwords come from the role URLs',

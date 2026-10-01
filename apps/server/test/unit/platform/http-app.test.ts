@@ -168,7 +168,7 @@ describe('HTTP plugins and proxy trust', () => {
 
   it('maps http.trust_proxy to Fastify trustProxy and never to true', () => {
     expect(trustProxyOption({ hops: 0 })).toBe(false);
-    expect(trustProxyOption({ hops: 1 })).toBe(1);
+    expect(trustProxyOption({ cidrs: ['10.0.0.0/8'] })).toEqual(['10.0.0.0/8']);
     expect(trustProxyOption({ cidrs: ['172.31.250.10/32'] })).toEqual(['172.31.250.10/32']);
   });
 });

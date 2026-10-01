@@ -16,9 +16,9 @@ export const JSON_BODY_LIMIT = 1024 * 1024;
 /** F.12: JSON never needs more than this policy; file responses tighten it further (F.13). */
 export const API_CONTENT_SECURITY_POLICY = "default-src 'none'; frame-ancestors 'none'; sandbox";
 
-/** `http.trust_proxy` to Fastify `trustProxy`: hop count or address ranges, never `true` (F.12). */
-export function trustProxyOption(trustProxy: Profile['http']['trust_proxy']): false | number | string[] {
-  if ('hops' in trustProxy) return trustProxy.hops === 0 ? false : trustProxy.hops;
+/** `http.trust_proxy` to Fastify `trustProxy`: no proxy or the proxy address ranges, never `true` or a hop count (F.12). */
+export function trustProxyOption(trustProxy: Profile['http']['trust_proxy']): false | string[] {
+  if ('hops' in trustProxy) return false;
   return [...trustProxy.cidrs];
 }
 

@@ -49,7 +49,7 @@ describe('shipped profiles', () => {
     expect(saas.license.validation).toBe('online');
     expect(saas.packs.channel).toBe('managed');
     expect(onprem.http.trust_proxy).toEqual({ cidrs: ['172.31.250.10/32'] });
-    expect(saas.http.trust_proxy).toEqual({ hops: 1 });
+    expect(saas.http.trust_proxy).toEqual({ cidrs: ["10.0.0.0/8"] });
     expect(test.jobs.schedules_enabled).toBe(false);
     expect(test.observability.log_level).toBe('warn');
     expect(test.http.trust_proxy).toEqual({ hops: 0 });
@@ -93,7 +93,7 @@ describe('validation', () => {
       expect.arrayContaining([
         { path: 'tenancy.isolation', message: 'is required' },
         { path: 'http.porrt', message: 'unknown key' },
-        { path: 'http.trust_proxy', message: 'must be {hops: <n>} or {cidrs: [<range>, ...]}; true is not allowed (F.12)' },
+        { path: 'http.trust_proxy', message: 'must be {hops: 0} or {cidrs: [<range>, ...]}; hop counts above 0 and true are not allowed (F.12)' },
       ]),
     );
   });

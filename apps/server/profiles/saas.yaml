@@ -21,7 +21,7 @@ storage:
              tls: { mode: mtls, ca_file: /run/secrets/ca.crt, cert_file: /run/secrets/client.crt, key_file: /run/secrets/client.key } }
 network:   { egress_allowlist: [] }
 jobs:      { driver: pgboss, schedules_enabled: true, bullmq: { url: null } }
-http:      { port: 3000, public_url: "https://mscd.example.internal", trust_proxy: { hops: 1 } }
+http:      { port: 3000, public_url: "https://mscd.example.internal", trust_proxy: { cidrs: ["10.0.0.0/8"] } }
 security:  { cookie_secure: true }
 database:  { url_file: /run/secrets/db-app.url, migrator_url_file: /run/secrets/db-migrator.url,
              pack_installer_url_file: /run/secrets/db-pack.url, admin_url_file: null, pool_max: 10 }

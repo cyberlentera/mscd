@@ -26,7 +26,7 @@
   "dependencies": {
     "@mscd/shared": "*",
     "commander": "14.0.3",
-    "csv-parse": "6.2.1",
+    "csv-parse": "7.0.3",
     "tar": "7.5.22",
     "zod": "4.6.5"
   },

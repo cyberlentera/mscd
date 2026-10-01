@@ -37,9 +37,11 @@ const tlsSchema = z.strictObject({
 
 const cidr = z.union([z.cidrv4(), z.cidrv6()], { error: 'must be an IPv4 or IPv6 CIDR range, for example 172.31.250.10/32' });
 
+// Fastify 5.12 removed hop-count trust (GHSA-3m5p-2c4r-xxw2: X-Forwarded-* spoofing under hop counting),
+// so proxies are trusted by address only; {hops: 0} means no proxy is trusted.
 const trustProxy = z.union(
-  [z.strictObject({ hops: z.int().min(0).max(10) }), z.strictObject({ cidrs: z.array(cidr).min(1) })],
-  { error: 'must be {hops: <n>} or {cidrs: [<range>, ...]}; true is not allowed (F.12)' },
+  [z.strictObject({ hops: z.literal(0) }), z.strictObject({ cidrs: z.array(cidr).min(1) })],
+  { error: 'must be {hops: 0} or {cidrs: [<range>, ...]}; hop counts above 0 and true are not allowed (F.12)' },
 );
 
 export const STORAGE_ADAPTERS = ['managed_vault', 'm365', 'google_drive'] as const;
