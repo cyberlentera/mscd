@@ -43,7 +43,7 @@ import {
   warning,
   type Warning,
 } from './files-support';
-import { insertProviderObject, type NewObject } from './storage-objects';
+import { insertProviderObject, providerObjectRef, type NewObject } from './storage-objects';
 
 /** E.2: producers debounce `freshness.recompute` by 5 seconds; one waiting job per organisation and system. */
 const FRESHNESS_DELAY_SECONDS = 5;
@@ -115,6 +115,8 @@ export class FileCommandsService {
       return { ms, source };
     });
     const metadata = prepared.source.kind === 'link' ? await this.link(prepared.source) : null;
+    // Pinned before the transaction, so no record lock is held across the gateway call.
+    if (prepared.source.kind === 'link' && prepared.source.repository.adapter === 'google_drive') await this.pin(prepared.source, metadata!);
 
     const now = this.common.clock.now();
     return this.tenancy.withTenant(tenantContextOf(principal), async (trx) => {
@@ -135,7 +137,6 @@ export class FileCommandsService {
         await trx.updateTable('storage_object').set({ version_label: `v${sequence}`, updated_at: now }).where('id', '=', object.id).execute();
         object.versionLabel = `v${sequence}`;
       }
-      if (source.kind === 'link' && source.repository.adapter === 'google_drive') await this.pin(trx, source, object.id);
       const stored = await trx
         .selectFrom('storage_object')
         .select(['link_status', 'hash_algorithm', 'hash_source', 'link_status_since', 'link_status_reason'])
@@ -259,6 +260,8 @@ export class FileCommandsService {
       return { ms, source };
     });
     const metadata = prepared.source.kind === 'link' ? await this.link(prepared.source) : null;
+    // Pinned before the transaction, so no record lock is held across the gateway call.
+    if (prepared.source.kind === 'link' && prepared.source.repository.adapter === 'google_drive') await this.pin(prepared.source, metadata!);
 
     const now = this.common.clock.now();
     return this.tenancy.withTenant(tenantContextOf(principal), async (trx) => {
@@ -279,10 +282,7 @@ export class FileCommandsService {
         throw new ConflictError(`Version ${label} of this document is already recorded`, { messageKey: 'files.version_exists' });
       }
       label ??= nextDocumentVersion(existing);
-      if (source.repository.adapter === 'managed_vault') {
-        await trx.updateTable('storage_object').set({ version_label: `v${label}`, updated_at: now }).where('id', '=', object.id).execute();
-      }
-      if (source.kind === 'link' && source.repository.adapter === 'google_drive') await this.pin(trx, source, object.id);
+      // The vault object keeps its `v<file_sequence>` label; the major version is the document version's label only.
       const version = await trx
         .insertInto('document_version')
         .values({
@@ -378,10 +378,9 @@ export class FileCommandsService {
   }
 
   /** Google Drive keeps the pinned revision (`keepForever`, TS 5.3). */
-  private async pin(trx: Trx, source: LinkSource, objectId: string): Promise<void> {
-    const object = await this.common.object(trx, objectId);
+  private async pin(source: LinkSource, metadata: ObjectMetadata): Promise<void> {
     await viaGateway(source.repository, () =>
-      this.gateway.post<PinVersionResult>('/v1/pin-version', { tenant: source.tenant, repository: source.descriptor, object: this.common.objectRef(object) }),
+      this.gateway.post<PinVersionResult>('/v1/pin-version', { tenant: source.tenant, repository: source.descriptor, object: providerObjectRef(metadata) }),
     );
   }
 

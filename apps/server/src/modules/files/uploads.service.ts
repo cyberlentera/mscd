@@ -1,13 +1,15 @@
 // Repository browse and uploads (build plan D.3 file routes, D.5, F.13, TS 4.5, TS 5.3): the picker listing below
 // the system's root folder, upload intents (repository and mode from the routing rules, stored name per metadata
 // minimisation, size limit, correlation code), the streamed content of stored and pass-through uploads, and the
-// registration of zero-transit uploads. Gateway calls run outside the database transactions.
+// registration of zero-transit uploads. Gateway calls run outside the database transactions; a Google Drive version
+// is pinned before the object is recorded, so no row lock is held across a gateway call.
 import { randomBytes } from 'node:crypto';
 import { Readable } from 'node:stream';
 import { Inject, Injectable } from '@nestjs/common';
 import {
   uiHashAlg,
   type BrowseQuery,
+  type GatewayObjectRef,
   type GatewayRepository,
   type GatewayTenant,
   type ListResponse,
@@ -41,7 +43,7 @@ import {
   viaGateway,
 } from './files-support';
 import { GatewayUpload } from './gateway-upload';
-import { insertProviderObject, insertUploadedObject } from './storage-objects';
+import { insertProviderObject, insertUploadedObject, providerObjectRef, uploadedObjectRef } from './storage-objects';
 
 /** Upload intents stay open this long (cleanup.expired marks them expired afterwards, E.2). */
 export const INTENT_TTL_MS = 60 * 60 * 1000;
@@ -259,7 +261,7 @@ export class UploadsService {
       metadataMinimization: repository.metadata_minimization,
     };
     const result = await viaGateway(repository, () => this.upload.put(header, body, length));
-    const object = await this.finishUpload(principal, call, async (trx, now) => {
+    const object = await this.finishUpload(principal, call, uploadedObjectRef(result), async (trx, now) => {
       const sequence = await this.labelSequence(trx, intent);
       const label = repository.adapter === 'managed_vault' ? `v${sequence}` : result.versionLabel;
       return insertUploadedObject(trx, { repository, result, displayName: intent.stored_name, versionLabel: label, userId: principal.user.id, now });
@@ -298,7 +300,7 @@ export class UploadsService {
         }),
       { notFound: 'business-rule', forbidden: 'business-rule' },
     );
-    const object = await this.finishUpload(principal, call, (trx, now) => insertProviderObject(trx, { repository, metadata, userId: principal.user.id, now }));
+    const object = await this.finishUpload(principal, call, providerObjectRef(metadata), (trx, now) => insertProviderObject(trx, { repository, metadata, userId: principal.user.id, now }));
     return {
       storageObjectId: object.id,
       hashAlgorithm: object.hashAlgorithm as UploadResult['hashAlgorithm'],
@@ -359,7 +361,7 @@ export class UploadsService {
     return row;
   }
 
-  /** The sequence a vault upload is labelled with (`v<file_sequence>`; re-labelled when the file is attached). */
+  /** The sequence a vault upload is labelled with (`v<file_sequence>`; an evidence relink re-labels it with the kept sequence). */
   private async labelSequence(trx: Trx, intent: IntentRow): Promise<number> {
     if (intent.object_kind === 'evidence') {
       const row = await trx.selectFrom('evidence').select('file_sequence').where('id', '=', intent.target_id).executeTakeFirst();
@@ -370,10 +372,17 @@ export class UploadsService {
   }
 
   /**
-   * After the gateway stored or registered the file: pins the version on Google Drive (keepForever), then records
-   * the object and marks the intent `uploaded` when it is still open (409 when another request finished it first).
+   * After the gateway stored or registered the file: pins the version on Google Drive (keepForever) before any
+   * transaction opens, then records the object and marks the intent `uploaded` when it is still open (409 when
+   * another request finished it first). A pin whose recording then fails leaves only a kept provider revision.
    */
-  private async finishUpload<T extends { id: string }>(principal: Principal, call: IntentCall, insert: (trx: Trx, now: Date) => Promise<T>): Promise<T> {
+  private async finishUpload<T extends { id: string }>(
+    principal: Principal,
+    call: IntentCall,
+    ref: GatewayObjectRef,
+    insert: (trx: Trx, now: Date) => Promise<T>,
+  ): Promise<T> {
+    if (call.repository.adapter === 'google_drive') await this.pin(call, ref);
     const now = this.common.clock.now();
     return this.tenancy.withTenant(tenantContextOf(principal), async (trx) => {
       const intent = await this.intent(trx, call.intent.id, principal.user.id, true);
@@ -384,16 +393,14 @@ export class UploadsService {
         .set({ status: 'uploaded', storage_object_id: object.id, updated_at: now, updated_by: principal.user.id })
         .where('id', '=', intent.id)
         .execute();
-      if (call.repository.adapter === 'google_drive') await this.pin(trx, call, object.id);
       return object;
     });
   }
 
   /** Google Drive keeps the pinned revision (`keepForever`); other adapters answer `unsupported`, which is fine. */
-  async pin(trx: Trx, call: Pick<IntentCall, 'repository' | 'tenant' | 'descriptor'>, objectId: string): Promise<void> {
-    const object = await this.common.object(trx, objectId);
+  private async pin(call: Pick<IntentCall, 'repository' | 'tenant' | 'descriptor'>, ref: GatewayObjectRef): Promise<void> {
     await viaGateway(call.repository, () =>
-      this.gateway.post<PinVersionResult>('/v1/pin-version', { tenant: call.tenant, repository: call.descriptor, object: this.common.objectRef(object) }),
+      this.gateway.post<PinVersionResult>('/v1/pin-version', { tenant: call.tenant, repository: call.descriptor, object: ref }),
     );
   }
 }

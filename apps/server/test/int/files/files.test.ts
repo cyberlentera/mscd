@@ -648,11 +648,17 @@ describe('file commands (D.3, D.5, F.13)', () => {
       const sampleDoc = after.bundles.qms.docs.find((d) => d.id === document.doc_code)!;
       expect(sampleDoc.st).toBe('approved');
 
-      const { intent } = await uploadToVault(sari, 'qms', document.id, 'manual.pdf', PDF, 'document');
+      const { intent, result } = await uploadToVault(sari, 'qms', document.id, 'manual.pdf', PDF, 'document');
+      expect(result.versionLabel).toMatch(/^v\d+$/);
       const created = await sari.post<CommandResult>(`/api/v1/ms/qms/documents/${document.id}/versions`, { source: 'upload', uploadIntentId: intent.intentId });
       expect(created.status, JSON.stringify(created.body)).toBe(200);
       const versionLabel = (created.body.data as { versionLabel: string }).versionLabel;
       expect(versionLabel).toBe(sampleDoc.ver);
+      // The vault object keeps the `v<file_sequence>` label of its upload; the major version labels the document version.
+      const object = await inOrg(db, 'ndt', async (trx) =>
+        (await sql<{ version_label: string }>`select o.version_label from upload_intent i join storage_object o on o.id = i.storage_object_id where i.id = ${intent.intentId}`.execute(trx)).rows[0]!,
+      );
+      expect(object.version_label).toBe(result.versionLabel);
       const snapshot = (await sari.get<UiMsSnapshot>('/api/v1/ui/ms/qms')).body;
       expect(snapshot.bundle.docs.find((d) => d.id === document.doc_code)!.st).toBe('review');
     });
