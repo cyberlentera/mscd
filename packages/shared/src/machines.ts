@@ -1,8 +1,11 @@
-// State machines of build plan C.13 as transition tables. A command looks up the rows for its `(from, to)` pair;
-// a pair without a row answers 409 `transition-not-allowed`. Several rows for one pair are alternatives: the actor
-// needs the permission of one of them (for example `activity.transition` on an own record, or `activity.verify`).
-// A row with `permission: null` is performed by the system only (jobs). The RBAC suite and the contract tests read
-// the same tables (J.5).
+// State machines of build plan C.13 as transition tables. A command looks up the rows its route performs for the
+// `(from, to)` pair (`transitionsVia`); a pair without a row answers 409 `transition-not-allowed`, or 422 with the rule
+// of a `rejections` entry of the same route (`rejectionFor`; D.3 answers 422 BR-04 when a treatment is closed without
+// residual acceptance, or when residual acceptance meets a treatment that is not `implemented`). Several rows for one
+// pair are alternatives: the actor needs the permission of one of them (for example `activity.transition` on an own
+// record, or `activity.verify`). A row or rejection with `via` belongs to that dedicated route only; the machine's
+// transition route performs the rows without `via`. A row with `permission: null` is performed by the system only
+// (jobs). The RBAC suite and the contract tests read the same tables (J.5).
 import {
   ACTIVITY_STATUSES, APPROVAL_STATUSES, CORRECTIVE_ACTION_STATUSES, DOCUMENT_STATUSES, FINDING_STATUSES,
   IMPLEMENTATION_STATUSES, MANAGEMENT_REVIEW_STATUSES, MS_STATUSES, SELF_ASSESSMENT_STATUSES, TASK_PROGRESS_STATUSES,
@@ -34,6 +37,8 @@ export interface Transition {
   to: string;
   /** Permission the actor needs (F.6); null when only the system performs the transition. */
   permission: Permission | null;
+  /** Permissions the actor needs besides `permission` (D.3 "A and B"); the `via` route lists the same in `allOf`. */
+  allOf?: readonly Permission[];
   /** An own-scoped grant of the permission is enough when the actor owns or holds the record (D.3 "(own)"). */
   own?: boolean;
   /** Rules evaluated on the transition. */
@@ -47,16 +52,33 @@ export interface Transition {
   note?: string;
 }
 
-/** A machine: its states, its owner work package and its rows. */
+/**
+ * A pair that has no transition row on a route and that the route's command rejects with a business rule (422
+ * `business-rule`) instead of 409 `transition-not-allowed`, because D.3 names the rule for it. Not a transition: no
+ * role may perform it.
+ */
+export interface Rejection {
+  entity: MachineEntity;
+  from: string;
+  to: string;
+  rule: RuleId;
+  /** Route id when the rejection belongs to a dedicated route; absent for the machine's transition route. */
+  via?: string;
+  note: string;
+}
+
+/** A machine: its states, its owner work package, its rows and the pairs rejected with a rule. */
 export interface Machine {
   entity: MachineEntity;
   owner: `WP-${string}`;
   states: readonly string[];
   transitions: readonly Transition[];
+  rejections: readonly Rejection[];
 }
 
 interface RowOptions {
   own?: boolean;
+  allOf?: readonly Permission[];
   rules?: readonly RuleId[];
   sets?: readonly string[];
   requires?: readonly string[];
@@ -78,6 +100,7 @@ function rows<S extends string>(
     from: source,
     to,
     permission,
+    ...(options.allOf ? { allOf: options.allOf } : {}),
     ...(options.own ? { own: true } : {}),
     rules: options.rules ?? [],
     sets: options.sets ?? [],
@@ -85,6 +108,11 @@ function rows<S extends string>(
     ...(options.via ? { via: options.via } : {}),
     ...(options.note ? { note: options.note } : {}),
   }));
+}
+
+/** Builds rejections from one or more source states to one target state, on the transition route or `via` a dedicated one. */
+function rejections<S extends string>(entity: MachineEntity, from: readonly S[], to: S, rule: RuleId, note: string, via?: string): Rejection[] {
+  return from.map((source) => ({ entity, from: source, to, rule, ...(via ? { via } : {}), note }));
 }
 
 type ImplementationState = (typeof IMPLEMENTATION_STATUSES)[number];
@@ -115,6 +143,7 @@ const applicability: Machine = {
       rules: ['BR-11', 'BR-31'], note: 'Automatic downgrade by freshness.recompute when no valid evidence keeps the entry implemented (E.3, TS 6.1)',
     }),
   ],
+  rejections: [],
 };
 
 type ActivityState = (typeof ACTIVITY_STATUSES)[number];
@@ -126,8 +155,8 @@ const activity: Machine = {
   transitions: [
     ...rows<ActivityState>(ACTIVITY, 'not_started', 'in_progress', 'activity.transition', { own: true, rules: ['BR-12'] }),
     ...rows<ActivityState>(ACTIVITY, 'not_started', 'complete', 'activity.transition', {
-      own: true, rules: ['BR-40'], sets: ['completed_by_user_id', 'completed_at'],
-      note: 'Writes two audit entries: not_started to in_progress, then in_progress to complete (A.4 5.12)',
+      own: true, rules: ['BR-12', 'BR-40'], sets: ['completed_by_user_id', 'completed_at'],
+      note: 'Two steps in one command (A.4 5.12): not_started to in_progress (BR-12, the gate lock) then in_progress to complete (BR-40); two audit entries',
     }),
     ...rows<ActivityState>(ACTIVITY, 'in_progress', 'complete', 'activity.transition', {
       own: true, rules: ['BR-40'], sets: ['completed_by_user_id', 'completed_at'],
@@ -145,6 +174,7 @@ const activity: Machine = {
     }),
     ...rows<ActivityState>(ACTIVITY, 'blocked', 'in_progress', 'activity.transition', { own: true }),
   ],
+  rejections: [],
 };
 
 type DocumentState = (typeof DOCUMENT_STATUSES)[number];
@@ -158,7 +188,12 @@ const document: Machine = {
     ...rows<DocumentState>(DOCUMENT, 'in_review', 'approved', 'document.approve', { rules: ['BR-16'] }),
     ...rows<DocumentState>(DOCUMENT, 'in_review', 'draft', 'document.approve', { requires: ['note'], note: 'Rejection of the version in review' }),
     ...rows<DocumentState>(DOCUMENT, 'approved', 'expired', null, { rules: ['BR-10'], note: 'tasks.overdue when next_review_at is past' }),
+    ...rows<DocumentState>(DOCUMENT, ['draft', 'approved', 'expired'], 'in_review', 'document.version.create', {
+      own: true, via: 'documents.versions',
+      note: 'A new version puts the document in review (D.3; digest 5.10 "Upload new version (approved)"); a version already in review answers 409',
+    }),
   ],
+  rejections: [],
 };
 
 type TreatmentState = (typeof TREATMENT_STATUSES)[number];
@@ -180,10 +215,14 @@ const treatment: Machine = {
       own: true, rules: ['BR-04'], via: 'risks.residual-acceptance',
       note: "Only through POST .../residual-acceptance by the risk's owner, never the implementer",
     }),
-    ...rows<TreatmentState>(TREATMENT, 'residual_accepted', 'closed', 'risk.manage', {
-      rules: ['BR-04'], sets: ['closed_at'], note: 'Closing without residual acceptance is rejected with BR-04',
-    }),
+    ...rows<TreatmentState>(TREATMENT, 'residual_accepted', 'closed', 'risk.manage', { sets: ['closed_at'] }),
     ...rows<TreatmentState>(TREATMENT, ['approved', 'in_progress', 'delayed'], 'proposed', 'risk.manage', { note: 'Rework of an open treatment' }),
+  ],
+  rejections: [
+    ...rejections<TreatmentState>(TREATMENT, ['proposed', 'approved', 'in_progress', 'delayed', 'implemented'], 'closed', 'BR-04',
+      'Closing without residual acceptance (D.3 answers 422 BR-04); the risk owner accepts the residual risk first'),
+    ...rejections<TreatmentState>(TREATMENT, ['proposed', 'approved', 'in_progress', 'delayed', 'residual_accepted', 'closed'], 'residual_accepted', 'BR-04',
+      'Residual acceptance of a treatment that is not implemented (D.3 answers 422 BR-04)', 'risks.residual-acceptance'),
   ],
 };
 
@@ -201,6 +240,7 @@ const finding: Machine = {
     }),
     ...rows<FindingState>(FINDING, 'closed', 'in_progress', 'finding.manage', { requires: ['note'], note: 'Reopen' }),
   ],
+  rejections: [],
 };
 
 type CorrectiveActionState = (typeof CORRECTIVE_ACTION_STATUSES)[number];
@@ -231,6 +271,7 @@ const correctiveAction: Machine = {
       requires: ['note'],
     }),
   ],
+  rejections: [],
 };
 
 type ManagementReviewState = (typeof MANAGEMENT_REVIEW_STATUSES)[number];
@@ -245,6 +286,7 @@ const managementReview: Machine = {
       rules: ['BR-13', 'BR-14'], sets: ['closed_at', 'closed_by_user_id', 'decisions_recorded', 'decisions_text'],
     }),
   ],
+  rejections: [],
 };
 
 type SelfAssessmentState = (typeof SELF_ASSESSMENT_STATUSES)[number];
@@ -262,6 +304,7 @@ const selfAssessment: Machine = {
       to === 'gap' ? { requires: ['ownerHandle', 'targetFixAt'], sets: ['assessed_at'] } : { sets: ['assessed_at'] },
     ),
   ),
+  rejections: [],
 };
 
 type ProgressState = (typeof TASK_PROGRESS_STATUSES)[number];
@@ -279,6 +322,7 @@ function progressMachine(entity: MachineEntity, permission: Permission): Machine
       ...rows<ProgressState>(entity, 'overdue', 'done', permission, { own: true, note: 'A-23' }),
       ...rows<ProgressState>(entity, ['not_started', 'in_progress'], 'overdue', null, { note: 'tasks.overdue when due_at is past (TS 6.7, 6.8)' }),
     ],
+    rejections: [],
   };
 }
 
@@ -296,6 +340,7 @@ const roleApproval: Machine = {
       rules: ['SOD-SELF-GRANT'], sets: ['approved_by'], note: 'The actor differs from requested_by and from the grantee',
     }),
   ],
+  rejections: [],
 };
 
 type MsState = (typeof MS_STATUSES)[number];
@@ -305,9 +350,15 @@ const managementSystem: Machine = {
   owner: 'WP-12',
   states: MS_STATUSES,
   transitions: [
-    ...rows<MsState>(MANAGEMENT_SYSTEM, null, 'setup', 'ms.admin', { rules: ['BR-21', 'LIC-MS'], note: 'Also needs pack.activate (D.3)' }),
-    ...rows<MsState>(MANAGEMENT_SYSTEM, 'setup', 'implementing', 'ms.admin'),
-    ...rows<MsState>(MANAGEMENT_SYSTEM, ['setup', 'implementing', 'certified', 'transitioning'], 'archived', 'ms.admin'),
+    ...rows<MsState>(MANAGEMENT_SYSTEM, null, 'setup', 'ms.admin', {
+      allOf: ['pack.activate'], rules: ['BR-21', 'LIC-MS'], via: 'admin.ms.create', note: 'Creation needs ms.admin and pack.activate (D.3)',
+    }),
+    ...rows<MsState>(MANAGEMENT_SYSTEM, 'setup', 'implementing', 'ms.admin', {
+      via: 'admin.ms.update', note: 'PATCH /admin/management-systems/{id} with status implementing',
+    }),
+    ...rows<MsState>(MANAGEMENT_SYSTEM, ['setup', 'implementing', 'certified', 'transitioning'], 'archived', 'ms.admin', {
+      via: 'admin.ms.update', note: 'PATCH /admin/management-systems/{id} with status archived',
+    }),
     ...rows<MsState>(MANAGEMENT_SYSTEM, 'certified', 'transitioning', 'ms.transition', {
       rules: ['LIC-FEATURE'], requires: ['targetEdition'], sets: ['transition_target_version_id'], note: 'Feature edition_transition',
     }),
@@ -316,6 +367,7 @@ const managementSystem: Machine = {
     }),
     ...rows<MsState>(MANAGEMENT_SYSTEM, 'implementing', 'certified', null, { note: 'When the certification cycle is certified' }),
   ],
+  rejections: [],
 };
 
 /** Every machine of C.13, keyed by entity. */
@@ -337,14 +389,37 @@ export const MACHINES: Readonly<Record<MachineEntity, Machine>> = {
 /** Every transition row of every machine. */
 export const TRANSITIONS: readonly Transition[] = MACHINE_ENTITIES.flatMap((entity) => MACHINES[entity].transitions);
 
-/** The rows for one `(from, to)` pair; an empty list means 409 `transition-not-allowed`. */
+/** Every rejection of every machine. */
+export const REJECTIONS: readonly Rejection[] = MACHINE_ENTITIES.flatMap((entity) => MACHINES[entity].rejections);
+
+/** Every row for one `(from, to)` pair, whatever route performs it. Commands use `transitionsVia` instead. */
 export function transitionsFor(entity: MachineEntity, from: string | null, to: string): Transition[] {
   return MACHINES[entity].transitions.filter((t) => t.from === from && t.to === to);
 }
 
-/** Permissions that perform at least one transition of a machine (what a transition route's guard accepts). */
-export function machinePermissions(entity: MachineEntity): Permission[] {
+/**
+ * The rows of a pair that one route performs: `via` null for the machine's transition route (the rows without
+ * `via`), or the id of a dedicated route (the rows whose `via` is that id). Commands look up their rows with this; an
+ * empty list means 409 `transition-not-allowed`, unless `rejectionFor` with the same `via` names a rule (422).
+ */
+export function transitionsVia(entity: MachineEntity, from: string | null, to: string, via: string | null): Transition[] {
+  return transitionsFor(entity, from, to).filter((t) => (t.via ?? null) === via);
+}
+
+/**
+ * The rejection of a pair that has no rows on one route (`via` as for `transitionsVia`): the command answers 422 with
+ * its rule instead of 409.
+ */
+export function rejectionFor(entity: MachineEntity, from: string | null, to: string, via: string | null): Rejection | undefined {
+  return MACHINES[entity].rejections.find((r) => r.from === from && r.to === to && (r.via ?? null) === via);
+}
+
+/**
+ * Permissions of the rows one route performs (`via` as for `transitionsVia`; the default null is the machine's
+ * transition route): what that route's guard accepts. Rows of dedicated routes do not count for the transition route.
+ */
+export function machinePermissions(entity: MachineEntity, via: string | null = null): Permission[] {
   const out = new Set<Permission>();
-  for (const t of MACHINES[entity].transitions) if (t.permission) out.add(t.permission);
+  for (const t of MACHINES[entity].transitions) if (t.permission && (t.via ?? null) === via) out.add(t.permission);
   return [...out];
 }

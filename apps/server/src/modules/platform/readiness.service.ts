@@ -7,6 +7,11 @@ export interface ReadinessCheck {
   check(): Promise<string | void>;
   /** Default 3000 ms. */
   timeoutMs?: number;
+  /**
+   * Name of a check that must pass first (for example `database`). While it fails, this check is not run and not
+   * listed: the report names the cause, not its consequences.
+   */
+  after?: string;
 }
 
 export interface ReadinessCheckResult {
@@ -23,8 +28,8 @@ export interface ReadinessReport {
 
 /**
  * Readiness of this process (`GET /readyz`, D.3 "Health and metrics"). Modules register their checks at start
- * (the database module registers `SELECT 1`; WP-08 adds migrations and schema privileges, C.3); the process is
- * ready when every check passes.
+ * (the database module registers `SELECT 1`; the tenancy module adds migrations and schema privileges, C.3); the
+ * process is ready when every check passes. Checks with `after` run once their prerequisite passed.
  */
 @Injectable()
 export class ReadinessService {
@@ -40,8 +45,16 @@ export class ReadinessService {
   }
 
   async evaluate(): Promise<ReadinessReport> {
-    const results = await Promise.all([...this.checks.values()].map((check) => runCheck(check)));
-    return { status: results.every((r) => r.status === 'ok') ? 'ready' : 'not_ready', checks: results };
+    const all = [...this.checks.values()];
+    const first = await Promise.all(all.filter((check) => !check.after).map((check) => runCheck(check)));
+    const passed = new Set(first.filter((r) => r.status === 'ok').map((r) => r.name));
+    const second = await Promise.all(
+      all.filter((check) => check.after !== undefined && passed.has(check.after)).map((check) => runCheck(check)),
+    );
+    const byName = new Map([...first, ...second].map((r) => [r.name, r]));
+    const results = all.map((check) => byName.get(check.name)).filter((r): r is ReadinessCheckResult => r !== undefined);
+    const skipped = all.some((check) => !byName.has(check.name));
+    return { status: !skipped && results.every((r) => r.status === 'ok') ? 'ready' : 'not_ready', checks: results };
   }
 }
 

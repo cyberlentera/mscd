@@ -3,10 +3,11 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import {
-  API_ROUTES, GATEWAY_ROUTES, MACHINES, PERMISSION_MATRIX, RECORD_ENTITY_TYPES, ROUTE_AREAS, WORK_PACKAGE_IDS, NoBody,
-  machinePermissions, pathParamNames, routeArea, routeById, routes,
+  API_ROUTES, EXPORT_KINDS, ExportRequest, GATEWAY_ROUTES, MACHINES, PERMISSION_MATRIX, RECORD_ENTITY_TYPES, REGISTER_KINDS,
+  ROUTE_AREAS, WORK_PACKAGE_IDS, NoBody, evaluatePermission, evaluatePermissionInAnySystem, machinePermissions, pathParamNames,
+  permissionCase, routeArea, routeById, routes, transitionsFor,
 } from '../src/index.js';
-import type { MachineEntity, Permission, RouteDef } from '../src/index.js';
+import type { MachineEntity, Permission, PermissionCheckScope, RouteDef } from '../src/index.js';
 import { fastifyPath, planApiEndpoints, planGatewayEndpoints, planWorkPackages } from './helpers.js';
 
 const key = (r: { method: string; path: string }) => `${r.method} ${r.path}`;
@@ -15,6 +16,15 @@ function objectKeys(schema: z.ZodType | undefined): string[] {
   if (!schema) return [];
   if (!(schema instanceof z.ZodObject)) throw new Error('not an object schema');
   return Object.keys(schema.shape).sort();
+}
+
+/** Schema of one member of an object schema (through pipes; the first option of a union). */
+function memberSchema(schema: z.ZodType | undefined, member: string): z.ZodType | undefined {
+  if (!schema) return undefined;
+  if (schema instanceof z.ZodObject) return schema.shape[member] as z.ZodType | undefined;
+  if (schema instanceof z.ZodDiscriminatedUnion || schema instanceof z.ZodUnion) return memberSchema((schema.options as z.ZodType[])[0], member);
+  if (schema instanceof z.ZodPipe) return memberSchema(schema.in as z.ZodType, member);
+  return undefined;
 }
 
 function hasMember(schema: z.ZodType | undefined, member: string): boolean {
@@ -123,6 +133,24 @@ describe('route table structure', () => {
   it('exempts only the SAML assertion consumer from CSRF', () => {
     expect(routes.filter((r) => r.csrfExempt).map((r) => r.id)).toEqual(['auth.saml.acs']);
   });
+
+  it('lists 403 on public non-GET routes, which check Origin (F.2)', () => {
+    const checked = routes.filter((r) => r.auth === 'public' && r.method !== 'GET' && !r.csrfExempt);
+    expect(checked.length).toBeGreaterThanOrEqual(8);
+    for (const r of checked) expect(r.errors, r.id).toContain(403);
+  });
+
+  it('lists 429 on every route with route-specific rate limits', () => {
+    for (const r of routes.filter((x) => x.rateLimits)) {
+      expect(r.errors, r.id).toContain(429);
+      expect(r.rateLimits?.length, r.id).toBeGreaterThan(0);
+    }
+  });
+
+  it('limits exports, evidence packs and link health runs to 10 per user and hour (F.3)', () => {
+    const limited = ['exports.create', 'exports.soa', 'exports.documents', 'audit-trail.export', 'evidence-packs.build', 'link-health.run'];
+    for (const id of limited) expect(routeById(id).rateLimits, id).toContainEqual({ key: 'user', max: 10, windowSeconds: 3600 });
+  });
 });
 
 describe('path parameters', () => {
@@ -167,21 +195,151 @@ describe('authorisation metadata', () => {
     return r.scope === g.scope || (g.tenancy !== undefined && (r.scope === 'org' || r.scope === 'platform'));
   };
 
+  const checkScopeOk = (p: Permission, scope: PermissionCheckScope) => {
+    const g = PERMISSION_MATRIX[p];
+    if (scope === 'any_ms') return g.scope === 'ms';
+    return scope === g.scope || (g.tenancy !== undefined && (scope === 'org' || scope === 'platform'));
+  };
+
   it('uses permissions of the F.6 matrix with their scope', () => {
     for (const r of routes) {
       if (r.permission) {
         expect(PERMISSION_MATRIX[r.permission], `${r.id} ${r.permission}`).toBeDefined();
         expect(grantScopeOk(r, r.permission), `${r.id} scope ${r.scope}`).toBe(true);
       }
-      for (const p of r.anyOf ?? []) expect(PERMISSION_MATRIX[p], `${r.id} anyOf ${p}`).toBeDefined();
-      if (r.anyOf) expect(r.anyOf.length, r.id).toBeGreaterThanOrEqual(2);
-      if (r.permission || r.anyOf || r.machine) expect(r.scope, `${r.id} needs a scope`).toBeDefined();
+      for (const p of r.allOf ?? []) {
+        expect(PERMISSION_MATRIX[p], `${r.id} allOf ${p}`).toBeDefined();
+        expect(grantScopeOk(r, p), `${r.id} allOf ${p} scope ${r.scope}`).toBe(true);
+      }
+      if (r.allOf) expect(r.permission, `${r.id} allOf adds to permission`).toBeDefined();
+      if (r.permission || r.machine) expect(r.scope, `${r.id} needs a scope`).toBeDefined();
     }
+  });
+
+  it('checks each anyOf alternative at a scope the matrix allows', () => {
+    const anyOfRoutes = routes.filter((r) => r.anyOf);
+    expect(anyOfRoutes.map((r) => r.id).sort()).toEqual([
+      'admin.users.reset-mfa', 'audit-trail.anchors', 'audit-trail.list', 'audit-trail.verify', 'storage.browse', 'storage.upload-intents.create',
+    ]);
+    for (const r of anyOfRoutes) {
+      const checks = r.anyOf as NonNullable<RouteDef['anyOf']>;
+      expect(checks.length, r.id).toBeGreaterThanOrEqual(2);
+      expect(r.permission ?? r.scope ?? r.permissionBy ?? r.machine, `${r.id} keeps its checks in the alternatives`).toBeUndefined();
+      const keys = checks.map((c) => `${c.permission}@${c.scope}`);
+      expect(new Set(keys).size, `${r.id} distinct alternatives`).toBe(keys.length);
+      for (const c of checks) {
+        expect(PERMISSION_MATRIX[c.permission], `${r.id} anyOf ${c.permission}`).toBeDefined();
+        expect(checkScopeOk(c.permission, c.scope), `${r.id} anyOf ${c.permission} at ${c.scope}`).toBe(true);
+      }
+      const msChecks = checks.some((c) => c.scope === 'ms');
+      expect(Boolean(r.msSource), `${r.id} msSource exactly when an alternative is ms-scoped`).toBe(msChecks);
+    }
+  });
+
+  it('lets the D.3 holders through the audit trail routes: audit_trail.read in a system, audit_trail.metadata.read in the organisation', () => {
+    expect(routeById('audit-trail.list').anyOf).toEqual([
+      { permission: 'audit_trail.read', scope: 'ms' },
+      { permission: 'audit_trail.metadata.read', scope: 'org' },
+    ]);
+    expect(routeById('audit-trail.list').msSource).toBe('query');
+    for (const id of ['audit-trail.verify', 'audit-trail.anchors']) {
+      expect(routeById(id).anyOf, id).toEqual([
+        { permission: 'audit_trail.read', scope: 'any_ms' },
+        { permission: 'audit_trail.metadata.read', scope: 'org' },
+      ]);
+      expect(routeById(id).msSource, id).toBeUndefined();
+    }
+    const base = { tenancy: 'single', msRoles: [], anyMsRoles: [], orgRoles: [], platformRoles: [] } as const;
+    // An org-scope check sees no business roles (RoleContext), so a system role passes only an ms or any_ms check.
+    const passes = (id: string, ctx: Parameters<typeof evaluatePermission>[1], inMs: Parameters<typeof evaluatePermission>[1]) =>
+      (routeById(id).anyOf ?? []).some((c) => {
+        if (c.scope === 'any_ms') return evaluatePermissionInAnySystem(c.permission, ctx) !== null;
+        if (c.scope === 'ms') return evaluatePermission(c.permission, inMs) !== null;
+        return evaluatePermission(c.permission, ctx) !== null;
+      });
+    const manager = { ...base, anyMsRoles: ['ms_manager'] } as const;
+    const externalAuditor = { ...base, anyMsRoles: ['external_auditor'] } as const;
+    const tenantAdmin = { ...base, orgRoles: ['tenant_admin'] } as const;
+    const domainOwner = { ...base, anyMsRoles: ['domain_owner'] } as const;
+    for (const id of ['audit-trail.verify', 'audit-trail.anchors']) {
+      expect(passes(id, manager, base), `${id} MS Manager`).toBe(true);
+      expect(passes(id, externalAuditor, base), `${id} external auditor`).toBe(true);
+      expect(passes(id, tenantAdmin, base), `${id} Tenant Admin`).toBe(true);
+      expect(passes(id, domainOwner, base), `${id} Domain Owner`).toBe(false);
+    }
+    expect(passes('audit-trail.list', manager, { ...manager, msRoles: ['ms_manager'] }), 'MS Manager of the query system').toBe(true);
+    expect(passes('audit-trail.list', manager, manager), 'MS Manager of another system').toBe(false);
+    expect(passes('audit-trail.list', tenantAdmin, tenantAdmin), 'Tenant Admin').toBe(true);
+  });
+
+  it('resets the second factor with user.manage in the organisation or ops.users.manage on the platform (D.3)', () => {
+    expect(routeById('admin.users.reset-mfa').anyOf).toEqual([
+      { permission: 'user.manage', scope: 'org' },
+      { permission: 'ops.users.manage', scope: 'platform' },
+    ]);
+  });
+
+  it('names a permission per member value on permissionBy routes', () => {
+    const byRoutes = routes.filter((r) => r.permissionBy);
+    expect(byRoutes.map((r) => r.id).sort()).toEqual(['exports.create', 'registers.create', 'registers.update']);
+    for (const r of byRoutes) {
+      const by = r.permissionBy as NonNullable<RouteDef['permissionBy']>;
+      expect(r.permission ?? r.anyOf ?? r.allOf ?? r.machine ?? r.scope, `${r.id} keeps its checks in the cases`).toBeUndefined();
+      const member = by.source === 'path' ? memberSchema(r.params, by.member) : memberSchema(by.source === 'body' ? r.body : r.query, by.member);
+      expect(member, `${r.id} ${by.source}.${by.member}`).toBeDefined();
+      if (by.source === 'path') expect(pathParamNames(r.path), r.id).toContain(by.member);
+      expect(by.cases['*'], `${r.id} default case`).toBeDefined();
+      for (const [value, check] of Object.entries(by.cases)) {
+        expect(PERMISSION_MATRIX[check.permission], `${r.id} ${value}`).toBeDefined();
+        expect(checkScopeOk(check.permission, check.scope), `${r.id} ${value} ${check.permission} at ${check.scope}`).toBe(true);
+        if (value !== '*') expect(member?.safeParse(value).success, `${r.id} case ${value} is a valid ${by.member}`).toBe(true);
+      }
+      const msCases = Object.values(by.cases).some((c) => c.scope === 'ms');
+      expect(Boolean(r.msSource), `${r.id} msSource exactly when a case is ms-scoped`).toBe(msCases);
+    }
+  });
+
+  it('checks risk.manage on risks and register.manage on the other registers (D.3)', () => {
+    for (const id of ['registers.create', 'registers.update']) {
+      const by = routeById(id).permissionBy as NonNullable<RouteDef['permissionBy']>;
+      for (const kind of REGISTER_KINDS) {
+        expect(permissionCase(by, kind), `${id} ${kind}`).toEqual({ permission: kind === 'risks' ? 'risk.manage' : 'register.manage', scope: 'ms' });
+      }
+    }
+    // A Domain Owner holds register.manage (own) and no risk.manage (F.6), so the risks case denies them.
+    const domainOwner = { tenancy: 'single', msRoles: ['domain_owner'], anyMsRoles: ['domain_owner'], orgRoles: [], platformRoles: [] } as const;
+    const by = routeById('registers.create').permissionBy as NonNullable<RouteDef['permissionBy']>;
+    expect(evaluatePermission(permissionCase(by, 'risks').permission, domainOwner)).toBeNull();
+    expect(evaluatePermission(permissionCase(by, 'assets').permission, domainOwner)).toBe('own');
+  });
+
+  it('checks exports per type: the portfolio board in any system, the audit trail and the rest in the body system (D.3)', () => {
+    const by = routeById('exports.create').permissionBy as NonNullable<RouteDef['permissionBy']>;
+    expect(by).toMatchObject({ source: 'body', member: 'type' });
+    for (const kind of EXPORT_KINDS) {
+      const check = permissionCase(by, kind);
+      if (kind === 'portfolio_board') expect(check).toEqual({ permission: 'export.run', scope: 'any_ms' });
+      else if (kind === 'audit_trail') expect(check).toEqual({ permission: 'audit_trail.read', scope: 'ms' });
+      else expect(check, kind).toEqual({ permission: 'export.run', scope: 'ms' });
+      // The body names a system exactly for the ms-scoped cases.
+      const format = kind === 'audit_trail' ? 'csv' : kind === 'soa' || kind === 'document_register' ? 'xlsx' : 'pdf';
+      expect(ExportRequest.safeParse({ type: kind, ms: 'isms', format }).success, `${kind} with ms`).toBe(check.scope === 'ms');
+      expect(ExportRequest.safeParse({ type: kind, format }).success, `${kind} without ms`).toBe(check.scope === 'any_ms');
+    }
+    expect(permissionCase(by, 'unknown')).toBe(by.cases['*']);
+    expect(permissionCase(by, '*')).toBe(by.cases['*']);
+    expect(permissionCase(by, 'toString')).toBe(by.cases['*']);
+  });
+
+  it('needs ms.admin and pack.activate to create a management system (D.3)', () => {
+    const r = routeById('admin.ms.create');
+    expect([r.permission, ...(r.allOf ?? [])]).toEqual(['ms.admin', 'pack.activate']);
+    expect(r.scope).toBe('org');
   });
 
   it('keeps public, gateway and guest routes free of permissions', () => {
     for (const r of routes.filter((x) => ['public', 'gateway', 'guest_otp', 'mfa_pending', 'enrolment'].includes(x.auth))) {
-      expect(r.permission ?? r.anyOf ?? r.machine, r.id).toBeUndefined();
+      expect(r.permission ?? r.anyOf ?? r.allOf ?? r.permissionBy ?? r.machine, r.id).toBeUndefined();
     }
   });
 
@@ -191,9 +349,29 @@ describe('authorisation metadata', () => {
     for (const r of machineRoutes) {
       const machine = r.machine as MachineEntity;
       expect(MACHINES[machine], r.id).toBeDefined();
-      if (r.permission) expect(machinePermissions(machine), r.id).toContain(r.permission);
+      // What the guard accepts: the route permission, or else every permission of the rows this route performs.
+      const accepted = r.permission ? [r.permission] : machinePermissions(machine);
+      const performed = MACHINES[machine].transitions.filter((t) => !t.via && t.permission).map((t) => t.permission as Permission);
+      expect(new Set(accepted), `${r.id} accepts exactly the permissions of its rows`).toEqual(new Set(performed));
       expect(r.method, r.id).not.toBe('GET');
     }
+  });
+
+  it('performs the ms.admin rows of a management system through PATCH /admin/management-systems/{id} (D.3)', () => {
+    const e = 'management_system.status';
+    const viaPatch = MACHINES[e].transitions.filter((t) => t.via === 'admin.ms.update');
+    expect(viaPatch.map((t) => `${t.from}>${t.to}`).sort()).toEqual([
+      'certified>archived', 'implementing>archived', 'setup>archived', 'setup>implementing', 'transitioning>archived',
+    ]);
+    for (const t of viaPatch) expect(t.permission).toBe('ms.admin');
+    // The PATCH body offers exactly the targets of these rows.
+    const status = memberSchema(routeById('admin.ms.update').body, 'status');
+    for (const to of new Set(viaPatch.map((t) => t.to))) expect(status?.safeParse(to).success, to).toBe(true);
+    for (const t of MACHINES[e].transitions.filter((x) => !viaPatch.includes(x) && x.from !== null)) {
+      expect(status?.safeParse(t.to).success, `${t.from} to ${t.to} is not a PATCH target`).toBe(false);
+    }
+    expect(machinePermissions(e)).toEqual(['ms.transition']);
+    expect(transitionsFor(e, 'setup', 'implementing').every((t) => t.via === 'admin.ms.update')).toBe(true);
   });
 
   it('routes every transition reachable only through a dedicated route to an existing route', () => {
@@ -201,6 +379,7 @@ describe('authorisation metadata', () => {
       for (const t of machine.transitions.filter((x) => x.via)) {
         const r = routeById(t.via as string);
         expect(r.permission, `${t.via}`).toBe(t.permission);
+        expect(r.allOf ?? [], `${t.via} allOf`).toEqual(t.allOf ?? []);
       }
     }
   });
@@ -208,13 +387,15 @@ describe('authorisation metadata', () => {
   it('reads the system of ms-scoped routes from one place (F.7)', () => {
     for (const r of routes) {
       const hasMsParam = pathParamNames(r.path).includes('ms');
-      if (r.msSource === 'path' || (hasMsParam && r.scope === 'ms')) {
+      const msChecked = r.scope === 'ms' || Boolean(r.anyOf?.some((c) => c.scope === 'ms'));
+      if (r.msSource === 'path' || (hasMsParam && msChecked)) {
         expect(hasMsParam, r.id).toBe(true);
         expect(r.msSource, r.id).toBe('path');
       }
       if (r.msSource === 'body') expect(hasMember(r.body, 'ms'), `${r.id} body.ms`).toBe(true);
       if (r.msSource === 'query') expect(hasMember(r.query, 'ms'), `${r.id} query.ms`).toBe(true);
-      if (r.scope === 'ms' && !r.anyOf) expect(r.msSource, `${r.id} ms scope without msSource`).toBeDefined();
+      if (msChecked) expect(r.msSource, `${r.id} ms scope without msSource`).toBeDefined();
+      if (r.msSource && !r.permissionBy) expect(msChecked, `${r.id} msSource without an ms check`).toBe(true);
       // EvidenceTargetRequest.ms names the target system of the mapping, not the system of the check (D.2).
       if (hasMsParam && r.msSource && r.id !== 'evidence.targets.create') {
         expect(hasMember(r.body, 'ms') || hasMember(r.query, 'ms'), `${r.id} has ms twice`).toBe(false);

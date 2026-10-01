@@ -63,13 +63,20 @@ export const exportsCreateRoute = defineRoute({
   path: '/api/v1/exports',
   summary: 'Queue an export (portfolio board, readiness, SoA, document register, audit trail); answers 202 with taskId',
   auth: 'session',
-  anyOf: ['export.run', 'audit_trail.read'],
-  scope: 'ms',
+  permissionBy: {
+    source: 'body',
+    member: 'type',
+    cases: {
+      'portfolio_board': { permission: 'export.run', scope: 'any_ms' },
+      'audit_trail': { permission: 'audit_trail.read', scope: 'ms' },
+      '*': { permission: 'export.run', scope: 'ms' },
+    },
+  },
   msSource: 'body',
   body: ExportRequest,
   response: CommandResult,
   status: 202,
-  errors: [404, 422],
+  errors: [404, 422, 429],
   idempotent: true,
   readOnlyAllowed: true,
   rateLimits: [{ key: 'user', max: 10, windowSeconds: 3600 }],
@@ -116,7 +123,8 @@ export const exportsSoaRoute = defineRoute({
   response: BinaryBody,
   responseType: 'application/octet-stream',
   file: true,
-  errors: [404],
+  errors: [404, 429],
+  rateLimits: [{ key: 'user', max: 10, windowSeconds: 3600 }],
 });
 
 export const exportsDocumentsRoute = defineRoute({
@@ -134,7 +142,8 @@ export const exportsDocumentsRoute = defineRoute({
   response: BinaryBody,
   responseType: 'application/octet-stream',
   file: true,
-  errors: [404],
+  errors: [404, 429],
+  rateLimits: [{ key: 'user', max: 10, windowSeconds: 3600 }],
 });
 
 export const calendarFeedCreateRoute = defineRoute({

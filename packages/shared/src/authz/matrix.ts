@@ -153,6 +153,14 @@ export function evaluatePermission(permission: Permission, ctx: RoleContext): 'f
   return null;
 }
 
+/**
+ * Grant decision for an ms-scoped permission held in at least one system of the organisation (a `permissionBy`
+ * check with scope `any_ms`, D.3 "in at least one system"): the business roles the user holds in any system count.
+ */
+export function evaluatePermissionInAnySystem(permission: Permission, ctx: RoleContext): 'full' | 'own' | null {
+  return evaluatePermission(permission, { ...ctx, msRoles: ctx.anyMsRoles });
+}
+
 /** Permissions of one scope that the context grants (full or own), in matrix order. */
 export function permissionsFor(scope: PermissionScope, ctx: RoleContext): Permission[] {
   return PERMISSIONS.filter((p) => effectiveGrant(p, ctx.tenancy).scope === scope && evaluatePermission(p, ctx) !== null);

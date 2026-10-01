@@ -7,7 +7,7 @@ import {
   Code, CommandResult, FreqId, Instant, IsoDate, MsId, MsParams, MsRecordParams, PersonId, ReasonBody, RecordRef, Uuid,
   defineRoute, named, pageOf, pageQueryShape,
 } from './common.js';
-import type { RouteDef } from './common.js';
+import type { PermissionByMember, RouteDef } from './common.js';
 
 export const REGISTER_KINDS = ['context-issues', 'interested-parties', 'assets', 'risks', 'metrics'] as const;
 export const RegisterKind = z.enum(REGISTER_KINDS).meta({ id: 'RegisterKind', description: 'Path value of {register} (D.2)' });
@@ -215,6 +215,17 @@ export type EntityLinkRequest = z.infer<typeof EntityLinkRequest>;
 
 const ms = { auth: 'session' as const, scope: 'ms' as const, msSource: 'path' as const, owner: 'WP-36' as const };
 
+/** D.3: risks need `risk.manage`; the other register kinds need `register.manage` (own). */
+const registerPermission = {
+  source: 'path',
+  member: 'register',
+  cases: {
+    'risks': { permission: 'risk.manage', scope: 'ms' },
+    '*': { permission: 'register.manage', scope: 'ms' },
+  },
+} as const satisfies PermissionByMember;
+const registerRoute = { auth: 'session' as const, msSource: 'path' as const, owner: 'WP-36' as const, permissionBy: registerPermission };
+
 export const registersListRoute = defineRoute({
   ...ms, id: 'registers.list', method: 'GET', path: '/api/v1/ms/:ms/registers/:register',
   summary: 'Rows of a register (context issues, interested parties, assets, risks, metrics), filtered by ScopePolicy',
@@ -222,16 +233,16 @@ export const registersListRoute = defineRoute({
 });
 
 export const registersCreateRoute = defineRoute({
-  ...ms, id: 'registers.create', method: 'POST', path: '/api/v1/ms/:ms/registers/:register',
+  ...registerRoute, id: 'registers.create', method: 'POST', path: '/api/v1/ms/:ms/registers/:register',
   summary: 'Add a register row: risks need risk.manage and an owner (BR-17); the other kinds need register.manage (own)',
-  anyOf: ['risk.manage', 'register.manage'], params: RegisterParams, body: RegisterCreate, response: CommandResult, status: 201,
+  params: RegisterParams, body: RegisterCreate, response: CommandResult, status: 201,
   errors: [409, 422], idempotent: true,
 });
 
 export const registersUpdateRoute = defineRoute({
-  ...ms, id: 'registers.update', method: 'PATCH', path: '/api/v1/ms/:ms/registers/:register/:id',
+  ...registerRoute, id: 'registers.update', method: 'PATCH', path: '/api/v1/ms/:ms/registers/:register/:id',
   summary: "Change a register row: risks need risk.manage (the Risk Owner only for the assessment fields of own risks); others register.manage (own)",
-  anyOf: ['risk.manage', 'register.manage'], params: RegisterItemParams, body: RegisterPatch, response: CommandResult,
+  params: RegisterItemParams, body: RegisterPatch, response: CommandResult,
   errors: [404, 409, 412, 422], ifMatch: true,
 });
 

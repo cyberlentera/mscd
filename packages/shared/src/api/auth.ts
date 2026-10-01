@@ -57,7 +57,7 @@ export const LoginRequest = named(
   z.strictObject({ email: Email, password: z.string().min(1).max(256), remember: z.boolean() }),
   'POST /auth/login body (D.2)',
   {
-    valid: [{ email: 'rina.kusuma@nusantaradigital.co.id', password: 'Mscd-Demo-2026!', remember: false }],
+    valid: [{ email: 'rina.kusuma@nusantaradigital.co.id', password: 'correct horse battery staple', remember: false }],
     invalid: [{ email: 'rina', password: 'x', remember: false }, { email: 'rina.kusuma@nusantaradigital.co.id', password: 'x'.repeat(257), remember: true }, { email: 'a@b.co', password: 'x' }],
   },
 );
@@ -91,7 +91,7 @@ export const MfaEnrolStartRequest = named(
   'MfaEnrolStartRequest',
   z.union([z.strictObject({}), z.strictObject({ currentCode: TotpCode }), z.strictObject({ password: z.string().min(1).max(256) })]),
   'POST /auth/mfa/enrol/start body: empty in state mfa_enrolment; from an active session exactly one proof unless one was given in the last 5 minutes (F.5)',
-  { valid: [{}, { currentCode: '654321' }, { password: 'Mscd-Demo-2026!' }], invalid: [{ currentCode: '654321', password: 'x' }, { currentCode: 'abc' }] },
+  { valid: [{}, { currentCode: '654321' }, { password: 'correct horse battery staple' }], invalid: [{ currentCode: '654321', password: 'x' }, { currentCode: 'abc' }] },
 );
 export type MfaEnrolStartRequest = z.infer<typeof MfaEnrolStartRequest>;
 
@@ -135,7 +135,7 @@ export const PasswordResetConfirm = named('PasswordResetConfirm', z.strictObject
 export type PasswordResetConfirm = z.infer<typeof PasswordResetConfirm>;
 
 export const PasswordChangeRequest = named('PasswordChangeRequest', z.strictObject({ currentPassword: z.string().min(1).max(256), newPassword: NewPassword }), 'POST /auth/password/change body', {
-  valid: [{ currentPassword: 'Mscd-Demo-2026!', newPassword: 'a much longer passphrase' }],
+  valid: [{ currentPassword: 'correct horse battery staple', newPassword: 'a much longer passphrase' }],
   invalid: [{ currentPassword: '', newPassword: 'a much longer passphrase' }, { currentPassword: 'x', newPassword: 'short' }],
 });
 export type PasswordChangeRequest = z.infer<typeof PasswordChangeRequest>;
@@ -168,7 +168,7 @@ export const OidcCallbackQuery = named(
     iss: z.string().max(2048).optional(),
   }),
   'Authorisation response of the identity provider (F.8 step 2); other members are kept for the OIDC library',
-  { valid: [{ state: 'c3RhdGU', code: 'abc', iss: 'http://keycloak:18088/realms/mscd', session_state: 'x' }, { state: 's', error: 'access_denied' }], invalid: [{ code: 'abc' }, { state: '' }] },
+  { valid: [{ state: 'c3RhdGU', code: 'abc', iss: 'https://sso.example.co.id/realms/mscd', session_state: 'x' }, { state: 's', error: 'access_denied' }], invalid: [{ code: 'abc' }, { state: '' }] },
 );
 export type OidcCallbackQuery = z.infer<typeof OidcCallbackQuery>;
 
@@ -212,7 +212,7 @@ export const GuestStartResponse = named(
 export type GuestStartResponse = z.infer<typeof GuestStartResponse>;
 
 export const IdentityLinkStart = named('IdentityLinkStart', z.object({ redirectUrl: z.string().min(1) }), 'Start of identity linking: the authorisation URL to follow (D.2, F.8)', {
-  valid: [{ redirectUrl: 'http://keycloak:18088/realms/mscd/protocol/openid-connect/auth?client_id=mscd' }],
+  valid: [{ redirectUrl: 'https://sso.example.co.id/realms/mscd/protocol/openid-connect/auth?client_id=mscd' }],
   invalid: [{}, { redirectUrl: '' }],
 });
 export type IdentityLinkStart = z.infer<typeof IdentityLinkStart>;
@@ -242,7 +242,7 @@ export const authLoginRoute = defineRoute({
   auth: 'public',
   body: LoginRequest,
   response: LoginResponse,
-  errors: [401, 429],
+  errors: [401, 403, 429],
   readOnlyAllowed: true,
   rateLimits: [{ key: 'ip', max: 30, windowSeconds: 900 }, { key: 'email', max: 10, windowSeconds: 900 }],
 });
@@ -310,7 +310,7 @@ export const authPasswordResetRequestRoute = defineRoute({
   body: PasswordResetRequest,
   response: NoBody,
   status: 202,
-  errors: [429],
+  errors: [403, 429],
   readOnlyAllowed: true,
   rateLimits: [{ key: 'email', max: 5, windowSeconds: 3600 }, { key: 'ip', max: 5, windowSeconds: 3600 }],
 });
@@ -325,7 +325,7 @@ export const authPasswordResetRoute = defineRoute({
   body: PasswordResetConfirm,
   response: NoBody,
   status: 204,
-  errors: [],
+  errors: [403],
   readOnlyAllowed: true,
 });
 
@@ -352,7 +352,7 @@ export const authInvitationAcceptRoute = defineRoute({
   auth: 'public',
   body: InvitationAcceptRequest,
   response: LoginResponse,
-  errors: [],
+  errors: [403],
   readOnlyAllowed: true,
 });
 
@@ -437,7 +437,7 @@ export const authGuestStartRoute = defineRoute({
   auth: 'public',
   body: GuestStartRequest,
   response: GuestStartResponse,
-  errors: [401, 429],
+  errors: [401, 403, 429],
   readOnlyAllowed: true,
   rateLimits: [{ key: 'ip', max: 10, windowSeconds: 3600 }, { key: 'grant', max: 5, windowSeconds: 3600 }],
 });
@@ -451,7 +451,7 @@ export const authGuestLoginRoute = defineRoute({
   auth: 'public',
   body: GuestLoginRequest,
   response: GuestStartResponse,
-  errors: [429],
+  errors: [403, 429],
   readOnlyAllowed: true,
   rateLimits: [{ key: 'ip', max: 10, windowSeconds: 3600 }, { key: 'grant', max: 5, windowSeconds: 3600 }],
 });

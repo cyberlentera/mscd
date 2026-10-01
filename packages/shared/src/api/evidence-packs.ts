@@ -71,7 +71,7 @@ export const evidencePacksBuildRoute = defineRoute({
   body: EvidencePackRequest,
   response: CommandResult,
   status: 202,
-  errors: [404, 422],
+  errors: [404, 422, 429],
   idempotent: true,
   rateLimits: [{ key: 'user', max: 10, windowSeconds: 3600 }],
 });

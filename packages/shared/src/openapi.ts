@@ -155,7 +155,12 @@ export function buildOpenApiDocument(options: OpenApiOptions = {}): JsonObject {
       'x-auth': route.auth,
     };
     if (route.permission) operation['x-permission'] = route.permission;
-    if (route.anyOf) operation['x-any-of'] = [...route.anyOf];
+    if (route.anyOf) operation['x-any-of'] = route.anyOf.map((check) => ({ ...check }));
+    if (route.allOf) operation['x-all-of'] = [...route.allOf];
+    if (route.permissionBy) {
+      const { source, member, cases } = route.permissionBy;
+      operation['x-permission-by'] = { source, member, cases: Object.fromEntries(Object.entries(cases).map(([value, check]) => [value, { ...check }])) };
+    }
     if (route.machine) operation['x-machine'] = route.machine;
     if (route.scope) operation['x-scope'] = route.scope;
     if (route.msSource) operation['x-ms-source'] = route.msSource;

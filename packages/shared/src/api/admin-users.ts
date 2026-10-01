@@ -186,8 +186,10 @@ export const adminUsersResetMfaRoute = defineRoute({
   path: '/api/v1/admin/users/:id/reset-mfa',
   summary: 'Reset the second factor: Tenant Admin when the user has no other active membership, else the platform operator',
   auth: 'session',
-  anyOf: ['user.manage', 'ops.users.manage'],
-  scope: 'org',
+  anyOf: [
+    { permission: 'user.manage', scope: 'org' },
+    { permission: 'ops.users.manage', scope: 'platform' },
+  ],
   params: IdParams,
   response: NoBody,
   status: 204,

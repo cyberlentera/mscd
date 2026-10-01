@@ -149,6 +149,12 @@ export type ObjectContentQuery = z.infer<typeof ObjectContentQuery>;
 // Routes
 // ---------------------------------------------------------------------------------------------------------------
 
+/** D.3: `evidence.file.submit` or `document.version.create` (own), both in the system of the request. */
+const submitFileChecks = [
+  { permission: 'evidence.file.submit', scope: 'ms' },
+  { permission: 'document.version.create', scope: 'ms' },
+] as const;
+
 export const storageBrowseRoute = defineRoute({
   id: 'storage.browse',
   owner: 'WP-21',
@@ -156,8 +162,7 @@ export const storageBrowseRoute = defineRoute({
   path: '/api/v1/storage/repositories/:slug/browse',
   summary: "Files below the system's root folder of a repository, for the record the user may submit to (BR-29)",
   auth: 'session',
-  anyOf: ['evidence.file.submit', 'document.version.create'],
-  scope: 'ms',
+  anyOf: submitFileChecks,
   msSource: 'query',
   params: RepositoryParams,
   query: BrowseQuery,
@@ -172,13 +177,12 @@ export const uploadIntentsCreateRoute = defineRoute({
   path: '/api/v1/storage/upload-intents',
   summary: 'Prepare an upload: repository and mode from the routing rules, stored name, size limit, correlation code',
   auth: 'session',
-  anyOf: ['evidence.file.submit', 'document.version.create'],
-  scope: 'ms',
+  anyOf: submitFileChecks,
   msSource: 'body',
   body: UploadIntentRequest,
   response: UploadIntent,
   status: 201,
-  errors: [413, 422],
+  errors: [413, 422, 429],
   idempotent: true,
   rateLimits: [{ key: 'user', max: 60, windowSeconds: 3600 }],
 });

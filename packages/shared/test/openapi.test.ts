@@ -43,6 +43,22 @@ describe('buildOpenApiDocument', () => {
     expect(count).toBe(documented.length);
   });
 
+  it('carries the authorisation and rate limit metadata of every route', () => {
+    for (const r of routes.filter((x) => !x.testOnly)) {
+      const op = operation(r.method, r.path) as Obj;
+      expect(op['x-any-of'], r.id).toEqual(r.anyOf ? r.anyOf.map((c) => ({ ...c })) : undefined);
+      expect(op['x-all-of'], r.id).toEqual(r.allOf ? [...r.allOf] : undefined);
+      expect(op['x-permission-by'], r.id).toEqual(r.permissionBy ? JSON.parse(JSON.stringify(r.permissionBy)) : undefined);
+      expect(op['x-rate-limits'], r.id).toEqual(r.rateLimits ? r.rateLimits.map((l) => ({ ...l })) : undefined);
+    }
+    expect(operation('POST', '/api/v1/admin/management-systems')?.['x-all-of']).toEqual(['pack.activate']);
+    expect((operation('POST', '/api/v1/exports')?.['x-permission-by'] as Obj).member).toBe('type');
+    expect(operation('GET', '/api/v1/admin/audit-trail/verify')?.['x-any-of']).toEqual([
+      { permission: 'audit_trail.read', scope: 'any_ms' },
+      { permission: 'audit_trail.metadata.read', scope: 'org' },
+    ]);
+  });
+
   it('has unique operation ids', () => {
     const ids: string[] = [];
     for (const item of Object.values(paths)) for (const m of METHODS) if (item[m]) ids.push((item[m] as Obj).operationId as string);

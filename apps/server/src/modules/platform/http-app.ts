@@ -8,6 +8,8 @@ import type { FastifyInstance } from 'fastify';
 import { Logger } from 'nestjs-pino';
 import type { MscdConfig } from '../../config/mscd-config';
 import type { Profile } from '../../config/profile.schema';
+import { runWithRequestContext } from '../../common/request-context';
+import { registerRateLimitPlugin } from './rate-limit';
 import { requestIdFrom } from './request-id';
 
 /** F.12 body limit for JSON. Upload content streams are limited by their intent; pack imports set a route limit. */
@@ -38,8 +40,9 @@ export function fastifyAdapterOptions(config: MscdConfig) {
 /**
  * Registers the HTTP plugins and hooks every MSCD Fastify application uses: cookies, security headers (F.12),
  * multipart uploads limited by `storage.max_upload_bytes`, a raw `application/octet-stream` parser that hands
- * the request stream to the handler without buffering (upload content routes), the request id response header
- * and `Cache-Control: no-store`.
+ * the request stream to the handler without buffering (upload content routes), the request id response header,
+ * `Cache-Control: no-store` and the request context (AsyncLocalStorage, D.1). Run mode `api` also gets the rate
+ * limit plugin with its PostgreSQL store (F.3).
  */
 export async function configureHttpApplication(app: NestFastifyApplication, config: MscdConfig): Promise<void> {
   await app.register(fastifyCookie);
@@ -59,12 +62,19 @@ export async function configureHttpApplication(app: NestFastifyApplication, conf
   fastify.addContentTypeParser('application/octet-stream', (_request, payload, done) => {
     done(null, payload);
   });
+  // The authorisation guard fills this for every contract route (src/common/route-state.ts).
+  if (!fastify.hasRequestDecorator('mscd')) fastify.decorateRequest('mscd', null);
   fastify.addHook('onRequest', (request, reply, done) => {
     reply.header('x-request-id', request.id);
     reply.header('cache-control', 'no-store');
     reply.header('content-security-policy', API_CONTENT_SECURITY_POLICY);
-    done();
+    const userAgent = request.headers['user-agent'];
+    // Every later hook, guard and handler of this request runs inside the context (D.1 request id, F.12 client address).
+    runWithRequestContext({ requestId: String(request.id), ip: request.ip ?? null, userAgent: typeof userAgent === 'string' ? userAgent : null }, () =>
+      done(),
+    );
   });
+  if (config.runMode === 'api') await registerRateLimitPlugin(app, config);
 }
 
 /** Creates the Nest application of an HTTP run mode on Fastify, with pino logging and the plugins above. */

@@ -16,7 +16,7 @@ export const linkHealthRunRoute = defineRoute({
   params: MsParams,
   response: CommandResult,
   status: 202,
-  errors: [404, 422],
+  errors: [404, 422, 429],
   rateLimits: [{ key: 'user', max: 10, windowSeconds: 3600 }],
 });
 

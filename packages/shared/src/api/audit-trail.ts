@@ -87,23 +87,35 @@ export const NdjsonText = named('NdjsonText', z.string(), 'Newline-delimited JSO
 
 const trail = { owner: 'WP-08' as const, auth: 'session' as const, method: 'GET' as const };
 
+/** D.3: `audit_trail.read` in the system of the request, or `audit_trail.metadata.read` in the organisation. */
+const readInMsOrMetadata = [
+  { permission: 'audit_trail.read', scope: 'ms' },
+  { permission: 'audit_trail.metadata.read', scope: 'org' },
+] as const;
+/** D.3: `audit_trail.read` in at least one system (MS Manager, time-boxed external auditor), or `audit_trail.metadata.read`. */
+const readInAnyMsOrMetadata = [
+  { permission: 'audit_trail.read', scope: 'any_ms' },
+  { permission: 'audit_trail.metadata.read', scope: 'org' },
+] as const;
+
 export const auditTrailListRoute = defineRoute({
   ...trail, id: 'audit-trail.list', path: '/api/v1/admin/audit-trail',
-  summary: 'Audit entries: full entries of a system with audit_trail.read in ms, else metadata with audit_trail.metadata.read',
-  anyOf: ['audit_trail.read', 'audit_trail.metadata.read'], scope: 'org', msSource: 'query',
+  summary: 'Audit entries: full entries of the query system with audit_trail.read there, else metadata with audit_trail.metadata.read',
+  anyOf: readInMsOrMetadata, msSource: 'query',
   query: AuditTrailQuery, response: z.union([pageOf(AuditEntry), pageOf(AuditEntryMeta)]), errors: [404],
 });
 export const auditTrailExportRoute = defineRoute({
   ...trail, id: 'audit-trail.export', path: '/api/v1/admin/audit-trail/export', summary: 'Audit entries of a system as CSV, formula-neutralised (F.15)',
-  permission: 'audit_trail.read', scope: 'ms', msSource: 'query', query: AuditTrailExportQuery, response: BinaryBody, responseType: 'text/csv', file: true, errors: [404],
+  permission: 'audit_trail.read', scope: 'ms', msSource: 'query', query: AuditTrailExportQuery, response: BinaryBody, responseType: 'text/csv', file: true, errors: [404, 429],
+  rateLimits: [{ key: 'user', max: 10, windowSeconds: 3600 }],
 });
 export const auditTrailVerifyRoute = defineRoute({
   ...trail, id: 'audit-trail.verify', path: '/api/v1/admin/audit-trail/verify', summary: 'Verify the tenant and platform chains and their newest anchors',
-  anyOf: ['audit_trail.read', 'audit_trail.metadata.read'], scope: 'org', response: z.array(AuditChainVerifyResult), errors: [],
+  anyOf: readInAnyMsOrMetadata, response: z.array(AuditChainVerifyResult), errors: [],
 });
 export const auditTrailAnchorsRoute = defineRoute({
   ...trail, id: 'audit-trail.anchors', path: '/api/v1/admin/audit-trail/anchors', summary: 'Signed anchors as NDJSON, verifiable offline with the anchor public key',
-  anyOf: ['audit_trail.read', 'audit_trail.metadata.read'], scope: 'org', query: AuditAnchorsQuery, response: NdjsonText, responseType: 'application/x-ndjson', errors: [],
+  anyOf: readInAnyMsOrMetadata, query: AuditAnchorsQuery, response: NdjsonText, responseType: 'application/x-ndjson', errors: [],
 });
 
 export const routes: RouteDef[] = [auditTrailListRoute, auditTrailExportRoute, auditTrailVerifyRoute, auditTrailAnchorsRoute];

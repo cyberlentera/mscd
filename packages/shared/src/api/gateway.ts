@@ -218,11 +218,28 @@ export const RehashResult = named('RehashResult', z.object({ hashValue: z.string
   valid: [{ hashValue: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', matches: true }],
   invalid: [{ hashValue: 'x', matches: true }],
 });
+/** `audit-anchors/<segment>/.../<name>.json`; no segment is empty or starts with a dot, so `.` and `..` are rejected. */
+const ANCHOR_KEY_RE = /^audit-anchors\/(?:[A-Za-z0-9_-][A-Za-z0-9_.-]*\/)*[A-Za-z0-9_-][A-Za-z0-9_.-]*\.json$/;
 export const AnchorWriteRequest = named(
   'AnchorWriteRequest',
-  z.strictObject({ tenant: z.null(), objectKey: z.string().regex(/^audit-anchors\/[A-Za-z0-9._/-]+\.json$/), body: z.record(z.string(), z.unknown()) }),
+  z.strictObject({
+    tenant: z.null(),
+    objectKey: z.string().max(512).regex(ANCHOR_KEY_RE, 'audit-anchors/ followed by path segments that do not start with a dot, ending in .json'),
+    body: z.record(z.string(), z.unknown()),
+  }),
   'POST /v1/anchors body (worker only): write a signed audit anchor under audit-anchors/ (D-33, F.11)',
-  { valid: [{ tenant: null, objectKey: 'audit-anchors/platform/2026-09-29.json', body: { chain: 'platform', seq: 120 } }], invalid: [{ tenant: null, objectKey: '../x.json', body: {} }, { tenant: {}, objectKey: 'audit-anchors/x.json', body: {} }] },
+  {
+    valid: [{ tenant: null, objectKey: 'audit-anchors/platform/2026-09-29.json', body: { chain: 'platform', seq: 120 } }, { tenant: null, objectKey: 'audit-anchors/2026-09-29.json', body: {} }],
+    invalid: [
+      { tenant: null, objectKey: '../x.json', body: {} },
+      { tenant: {}, objectKey: 'audit-anchors/x.json', body: {} },
+      { tenant: null, objectKey: 'audit-anchors/../tenants/00000000-0000-4000-8000-00000000a001/x.json', body: {} },
+      { tenant: null, objectKey: 'audit-anchors/./x.json', body: {} },
+      { tenant: null, objectKey: 'audit-anchors//x.json', body: {} },
+      { tenant: null, objectKey: 'audit-anchors/platform/.json', body: {} },
+      { tenant: null, objectKey: 'audit-anchors/x.json/', body: {} },
+    ],
+  },
 );
 export const AnchorWriteResult = named('AnchorWriteResult', z.object({ location: z.string().min(1) }), 'Where the anchor file was written', {
   valid: [{ location: 's3://mscd-vault/audit-anchors/platform/2026-09-29.json' }],

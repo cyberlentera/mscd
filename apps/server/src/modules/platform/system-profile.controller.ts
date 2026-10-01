@@ -1,13 +1,15 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
+import { systemProfileRoute, type SystemProfile } from '@mscd/shared';
+import { ApiRoute } from '../../common/api-route';
 import { MscdConfig } from '../../config/mscd-config';
-import { buildSystemProfile, type SystemProfile } from './system-profile';
+import { buildSystemProfile } from './system-profile';
 
-/** `GET /api/v1/system/profile` (public). Mounted only in run mode `api` (D.1: `/api/v1` is served by api only). */
-@Controller('api/v1/system')
+/** `GET /api/v1/system/profile` (public), mounted from the shared route definition in run mode `api` only (D.1). */
+@Controller()
 export class SystemProfileController {
   constructor(private readonly config: MscdConfig) {}
 
-  @Get('profile')
+  @ApiRoute(systemProfileRoute)
   profile(): SystemProfile {
     return buildSystemProfile(this.config);
   }

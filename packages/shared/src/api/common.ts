@@ -304,7 +304,10 @@ export function commandResultWith<T extends ZodType>(data: T) {
   return z.object({ ...commandResultShape, data });
 }
 
-/** `Page<T>` (D.2): one page of a list. */
+/** `Page<T>` (D.2): one page of a list, as `pageOf(item)` parses it. */
+export type Page<T> = { items: T[]; page: number; pageSize: number; total: number };
+
+/** Schema of `Page<T>` (D.2) for an item schema: one page of a list. */
 export function pageOf<T extends ZodType>(item: T) {
   return z.object({
     items: z.array(item),
@@ -442,6 +445,40 @@ export const DEFAULT_RATE_LIMITS: readonly RateLimitDef[] = [
 export type SuccessStatus = 200 | 201 | 202 | 204 | 302;
 
 /**
+ * Where one check of `RouteDef.anyOf` or `RouteDef.permissionBy` is made: `ms` in the system of the request (read from
+ * `msSource`), `org` or `platform` as the matrix row says, or `any_ms`: the user holds the ms-scoped permission in at
+ * least one system of the organisation (D.3 "in at least one system of the organisation"; no system is read from the
+ * request).
+ */
+export const PERMISSION_CHECK_SCOPES = ['ms', 'org', 'platform', 'any_ms'] as const;
+export type PermissionCheckScope = (typeof PERMISSION_CHECK_SCOPES)[number];
+
+/** One permission check: the F.6 permission and where it is checked. */
+export interface PermissionCheck {
+  permission: Permission;
+  scope: PermissionCheckScope;
+}
+
+/**
+ * Permission chosen by the value of one request member (D.3 rows such as "risks: `risk.manage`; others:
+ * `register.manage` (own)"). The guard reads the member after validating it with the route's schema, takes the case
+ * of its value (or the `*` case) and checks that permission at that scope; own-scoped grants go to `ScopePolicy` as
+ * for `permission`.
+ */
+export interface PermissionByMember {
+  /** Where the member is read: a path parameter, or a member of the body or the query. */
+  source: 'path' | 'body' | 'query';
+  member: string;
+  /** Check per member value; `*` covers every value not listed. */
+  cases: Readonly<Record<string, PermissionCheck>> & { readonly '*': PermissionCheck };
+}
+
+/** The check of a `permissionBy` route for one member value (the `*` case when the value has no case of its own). */
+export function permissionCase(by: PermissionByMember, value: unknown): PermissionCheck {
+  return (typeof value === 'string' && value !== '*' && Object.hasOwn(by.cases, value) ? by.cases[value] : undefined) ?? by.cases['*'];
+}
+
+/**
  * One route of the contract (D.1). The server's `@ApiRoute(def)` mounts method and path, validates params, query,
  * headers and body with the schemas, checks `auth` and the permission, and validates responses in the development
  * and test profiles (WP-08). Fields after `file` are additions of WP-05 (handoff note).
@@ -465,7 +502,8 @@ export interface RouteDef {
   response: ZodType;
   /**
    * Status codes the route may answer besides 400 (every route) and 401 and 403 (implied for every route that is not
-   * public; listed where D.3 names a specific case, such as a wrong second-factor code).
+   * public; listed where D.3 names a specific case, such as a wrong second-factor code). Public non-GET routes list
+   * 403 for the `Origin` check (F.2) unless they are `csrfExempt`; routes with `rateLimits` list 429.
    */
   errors: readonly number[];
   /** Accepts `Idempotency-Key` (D.1). */
@@ -478,8 +516,26 @@ export interface RouteDef {
   file?: boolean;
   /** One-line description for the OpenAPI document. */
   summary: string;
-  /** Alternative permissions: the guard passes when the user holds any; the service applies the rule of `summary`. */
-  anyOf?: readonly Permission[];
+  /**
+   * Alternative checks (D.3 "A or B"): the guard passes when one of them passes, and the service applies the rule of
+   * `summary` to what the user holds. Each alternative carries its own permission and scope, because the alternatives
+   * of one route can have different matrix scopes (for example `audit_trail.read` in a system or
+   * `audit_trail.metadata.read` in the organisation). An `ms` alternative is checked in the system named by
+   * `msSource` and fails when the request names no system. Replaces `permission` and `scope`; `msSource` is set
+   * exactly when an alternative is ms-scoped.
+   */
+  anyOf?: readonly PermissionCheck[];
+  /**
+   * Permissions the user needs besides `permission`, each checked at the route's `scope` (D.3 "A and B", for example
+   * `ms.admin` and `pack.activate` to create a management system).
+   */
+  allOf?: readonly Permission[];
+  /**
+   * Permission that depends on a request member (D.3 rows that name a permission per kind or type). Replaces
+   * `permission`, `anyOf` and `scope`: each case carries its permission and scope; `msSource` says where the system of
+   * the `ms` cases comes from.
+   */
+  permissionBy?: PermissionByMember;
   /** C.13 machine whose transition rows decide the permission of each request (transition routes). */
   machine?: MachineEntity;
   /** Where an ms-scoped route reads the system: the `:ms` path parameter, or the `ms` member of body or query (F.7). */

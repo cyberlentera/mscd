@@ -25,7 +25,7 @@ export const testResetRoute = defineRoute({
   summary: 'Recreate the database from the template, reset the mock providers and clear in-memory caches',
   auth: 'public',
   response: TestResetResponse,
-  errors: [],
+  errors: [403],
   testOnly: true,
   readOnlyAllowed: true,
 });
@@ -39,7 +39,7 @@ export const testSessionRoute = defineRoute({
   auth: 'public',
   body: TestSessionRequest,
   response: Me,
-  errors: [404],
+  errors: [403, 404],
   testOnly: true,
   readOnlyAllowed: true,
 });

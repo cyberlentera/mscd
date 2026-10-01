@@ -60,7 +60,7 @@ function providerIssues(p: ProviderInput, ctx: z.RefinementCtx, complete: boolea
 
 const EXAMPLE_OIDC_REQUEST = {
   slug: 'keycloak', kind: 'oidc', displayName: 'Sign in with Keycloak', icon: 'generic',
-  oidc: { issuer: 'http://keycloak:18088/realms/mscd', clientId: 'mscd', clientSecret: 'mscd-dev-oidc-secret', scopes: 'openid email profile', subjectMode: 'sub' },
+  oidc: { issuer: 'https://sso.example.co.id/realms/mscd', clientId: 'mscd', clientSecret: 'example-client-secret', scopes: 'openid email profile', subjectMode: 'sub' },
   requireMfaClaim: true, mfaFallback: 'local_totp', jitProvisioning: false, allowedEmailDomains: [],
 } as const;
 
@@ -118,7 +118,7 @@ export type IdentityProviderPatch = z.infer<typeof IdentityProviderPatch>;
 
 const EXAMPLE_PROVIDER_VIEW = {
   id: '4e5f6a7b-8c9d-4e0f-9a1b-2c3d4e5f6a7b', slug: 'keycloak', kind: 'oidc', displayName: 'Sign in with Keycloak', icon: 'generic', enabled: true,
-  oidc: { issuer: 'http://keycloak:18088/realms/mscd', clientId: 'mscd', scopes: 'openid email profile', subjectMode: 'sub', clientSecretSet: true },
+  oidc: { issuer: 'https://sso.example.co.id/realms/mscd', clientId: 'mscd', scopes: 'openid email profile', subjectMode: 'sub', clientSecretSet: true },
   requireMfaClaim: true, acceptedAmr: ['pwd', 'otp', 'hwk', 'swk', 'fpt', 'face', 'pin', 'sms', 'mca'], mfaFallback: 'local_totp',
   jitProvisioning: false, allowedEmailDomains: [], createdAt: '2026-09-01T03:00:00Z', updatedAt: '2026-09-01T03:00:00Z',
 } as const;
@@ -152,7 +152,7 @@ export const IdentityProviderTestResult = named(
   z.object({ ok: z.boolean(), issuer: z.string(), endpoints: z.record(z.string(), z.string()) }),
   'Result of a discovery test of a provider',
   {
-    valid: [{ ok: true, issuer: 'http://keycloak:18088/realms/mscd', endpoints: { authorization: 'http://keycloak:18088/realms/mscd/protocol/openid-connect/auth' } }],
+    valid: [{ ok: true, issuer: 'https://sso.example.co.id/realms/mscd', endpoints: { authorization: 'https://sso.example.co.id/realms/mscd/protocol/openid-connect/auth' } }],
     invalid: [{ ok: true, issuer: 'x' }],
   },
 );
