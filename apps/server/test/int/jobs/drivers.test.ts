@@ -11,7 +11,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { JobQueue, JobRun } from '../../../src/common/jobs/job-queue';
 import { runMigrate } from '../../../src/cli/migrate';
 import type { DB } from '../../../src/db/types';
-import { BullMqJobQueue } from '../../../src/modules/jobs/bullmq-job-queue';
+import { BullMqJobQueue, OUTBOX_BATCH } from '../../../src/modules/jobs/bullmq-job-queue';
 import { createJobQueue, jobDriverOf } from '../../../src/modules/jobs/job-queue-factory';
 import { PgBossJobQueue } from '../../../src/modules/jobs/pgboss-job-queue';
 import { ensurePgBossSchema, PGBOSS_GRANTS } from '../../../src/modules/jobs/pgboss-schema';
@@ -136,6 +136,24 @@ function driverSuite(label: string, make: () => Promise<Harness>, appDb: () => K
         expect(schedulers.map((s) => [s.key ?? s.id, s.pattern, s.tz])).toEqual([['cron:cleanup.expired', '20 * * * *', 'UTC']]);
       }
     });
+
+    it('stores the E.2 retry limit of each cron job', async () => {
+      const limits: [JobName, number][] = [
+        ['cleanup.expired', 3],
+        ['audit.verify-chain', 2],
+        ['notifications.dispatch', 5],
+      ];
+      for (const [name] of limits) await h.queue.schedule(name, '0 4 * * *', { orgId: null, payload: {} }, 'UTC');
+      for (const [name, limit] of limits) {
+        if (h.queue instanceof PgBossJobQueue) {
+          const [schedule] = await h.queue.instance.getSchedules(name);
+          expect(schedule?.options?.retryLimit).toBe(limit);
+        } else if (h.queue instanceof BullMqJobQueue) {
+          const scheduler = await h.queue.queue(name).getJobScheduler(`cron:${name}`);
+          expect(scheduler?.template?.opts?.attempts).toBe(limit + 1);
+        }
+      }
+    });
   });
 }
 
@@ -252,6 +270,28 @@ describe('job queue drivers (E.1)', () => {
       expect(dispatched.dispatched_at).not.toBeNull();
       expect(dispatched.attempts).toBe(2);
     } finally {
+      await queue.stop();
+    }
+  });
+
+  it('BullMQ relays newer outbox rows while a full batch of older rows keeps failing', async () => {
+    const queue = new BullMqJobQueue({ url: valkey!.url, prefix: `t${randomBytes(4).toString('hex')}` });
+    try {
+      const payload = { env: { orgId: null, payload: {} }, retryLimit: 0, priority: 0 };
+      await db.app
+        .insertInto('platform.job_outbox')
+        .values(Array.from({ length: OUTBOX_BATCH }, () => ({ queue: 'from.newer.build', payload: JSON.stringify(payload) })))
+        .execute();
+      await db.app.transaction().execute((trx) => queue.relayOutbox(trx));
+      await db.app.transaction().execute((trx) => queue.send('tasks.overdue', { orgId: null, payload: {} }, {}, trx));
+      expect(await db.app.transaction().execute((trx) => queue.relayOutbox(trx))).toBe(1);
+      const counts = await queue.queue('tasks.overdue').getJobCounts('waiting', 'delayed');
+      expect((counts.waiting ?? 0) + (counts.delayed ?? 0)).toBe(1);
+      const stuck = await db.app.selectFrom('platform.job_outbox').select(['attempts', 'last_error']).where('queue', '=', 'from.newer.build').execute();
+      expect(stuck).toHaveLength(OUTBOX_BATCH);
+      expect(stuck.every((r) => r.attempts >= 1 && /Unknown job/.test(r.last_error ?? ''))).toBe(true);
+    } finally {
+      await db.app.updateTable('platform.job_outbox').set({ dispatched_at: sql<Date>`now()` }).where('queue', '=', 'from.newer.build').execute();
       await queue.stop();
     }
   });

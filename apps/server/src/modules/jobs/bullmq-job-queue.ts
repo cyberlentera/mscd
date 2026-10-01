@@ -11,6 +11,7 @@ import { JOB_NAMES, type JobName } from '@mscd/shared';
 import { Queue, Worker, type ConnectionOptions, type JobsOptions } from 'bullmq';
 import { sql, type Transaction } from 'kysely';
 import type { DB } from '../../db/types';
+import { cronRetryLimit } from './schedules';
 import { acceptsAfterCommit, afterCommit } from '../../common/transaction-hooks';
 import type { JobEnvelope, JobHandlerFn, JobPayloads, JobQueue, QueueStats, SendOptions } from '../../common/jobs/job-queue';
 
@@ -103,7 +104,7 @@ export class BullMqJobQueue implements JobQueue {
     await this.queue(name).upsertJobScheduler(
       `cron:${name}`,
       { pattern: cron, ...(tz ? { tz } : {}) },
-      { name, data: env, opts: { attempts: 4, backoff: { type: 'exponential', delay: 1000 }, removeOnComplete: { age: 86_400, count: 1000 }, removeOnFail: { age: 7 * 86_400 } } },
+      { name, data: env, opts: { attempts: cronRetryLimit(name) + 1, backoff: { type: 'exponential', delay: 1000 }, removeOnComplete: { age: 86_400, count: 1000 }, removeOnFail: { age: 7 * 86_400 } } },
     );
   }
 
@@ -155,16 +156,17 @@ export class BullMqJobQueue implements JobQueue {
   /**
    * One relay pass (E.1): moves up to `OUTBOX_BATCH` committed outbox rows to BullMQ inside `trx` (a platform-scope
    * transaction of the caller), locking them with `FOR UPDATE SKIP LOCKED` so relays in other processes take other
-   * rows. Returns the number of rows dispatched.
+   * rows. Rows are taken by fewest attempts first, so rows that keep failing (for example a job name this build does
+   * not know) sink behind newer rows and never block the batch. Returns the number of rows dispatched.
    */
   async relayOutbox(trx: Transaction<DB>): Promise<number> {
     if (this.stopped) return 0;
-    const { rows } = await sql<{ id: string; queue: string; payload: OutboxPayload; singleton_key: string | null; delay_ms: string }>`
-      SELECT id, queue, payload, singleton_key,
+    const { rows } = await sql<{ id: string; attempts: number; queue: string; payload: OutboxPayload; singleton_key: string | null; delay_ms: string }>`
+      SELECT id, attempts, queue, payload, singleton_key,
              greatest(0, ceil(extract(epoch FROM (run_at - now())) * 1000))::bigint AS delay_ms
         FROM platform.job_outbox
        WHERE dispatched_at IS NULL
-       ORDER BY id
+       ORDER BY attempts, id
        LIMIT ${OUTBOX_BATCH}
          FOR UPDATE SKIP LOCKED`.execute(trx);
     let dispatched = 0;
@@ -181,7 +183,7 @@ export class BullMqJobQueue implements JobQueue {
         dispatched += 1;
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        this.logger.warn(`Outbox row ${row.id} (${row.queue}) not relayed: ${message}`);
+        this.logger.warn(`Outbox row ${row.id} (${row.queue}) not relayed after ${Number(row.attempts) + 1} attempt(s): ${message}`);
         await trx.updateTable('platform.job_outbox').set({ attempts: sql<number>`attempts + 1`, last_error: message.slice(0, 2000) }).where('id', '=', row.id).execute();
       }
     }

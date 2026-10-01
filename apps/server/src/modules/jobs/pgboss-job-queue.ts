@@ -11,6 +11,7 @@ import { JOB_NAMES, type JobName } from '@mscd/shared';
 import { PgBoss, fromKysely, type Job } from 'pg-boss';
 import type { Transaction } from 'kysely';
 import type { DB } from '../../db/types';
+import { cronRetryLimit } from './schedules';
 import type { JobEnvelope, JobHandlerFn, JobPayloads, JobQueue, QueueStats, SendOptions } from '../../common/jobs/job-queue';
 
 /** Schema of the pg-boss tables (C.3 step 3). */
@@ -93,7 +94,7 @@ export class PgBossJobQueue implements JobQueue {
     await this.boss.schedule(name, cron, env as unknown as object, {
       ...(tz ? { tz } : {}),
       singletonKey: `cron:${name}`,
-      retryLimit: 3,
+      retryLimit: cronRetryLimit(name),
       retryBackoff: true,
       retryDelay: 1,
     });

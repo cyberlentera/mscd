@@ -15,6 +15,9 @@ import { PacksModule } from '../../../src/modules/packs/packs.module';
 import { parseQueues, WorkerRuntime } from '../../../src/worker/worker-runtime';
 import { WorkerRuntimeModule } from '../../../src/worker/worker-runtime.module';
 import { CORE_MODULES } from '../platform/helpers';
+import { SYSTEM_USER_ID } from '../../../src/common/tokens';
+import { TenantScope } from '../../../src/modules/tenancy/tenant-scope';
+import { createTenant } from '../../setup/global-db';
 import { useTestDatabase } from '../../setup/test-db';
 import { adminClient, createJobsApp, JOB_TEST_ENV, waitFor, type AdminClient, type JobsApp } from './helpers';
 
@@ -61,6 +64,21 @@ describe('worker runtime on pg-boss (D.4)', () => {
     const result = await moduleRef.get(SchedulerTickJob).tick();
     expect(result.enqueued).toEqual([]); // no organisation in this database
     expect(await states('scheduler.tick')).toEqual([]);
+  });
+
+  it('sends inside a tenant transaction (withTenant search path) and only on commit', async () => {
+    const tenant = await createTenant(db, 'pgboss_t');
+    const scope = moduleRef.get(TenantScope);
+    const ctx = { orgId: tenant.id, schema: tenant.schemaName, userId: SYSTEM_USER_ID };
+    await scope.withTenant(ctx, (trx) => queue.send('drift.evaluate', { orgId: tenant.id, payload: {} }, { singletonKey: 'de:commit' }, trx));
+    await scope
+      .withTenant(ctx, async (trx) => {
+        await queue.send('drift.evaluate', { orgId: tenant.id, payload: {} }, { singletonKey: 'de:rollback' }, trx);
+        throw new Error('rollback');
+      })
+      .catch(() => undefined);
+    const keys = (await sql<{ singleton_key: string }>`SELECT singleton_key FROM pgboss.job WHERE name = 'drift.evaluate'`.execute(db.migrator)).rows;
+    expect(keys.map((k) => k.singleton_key)).toEqual(['de:commit']);
   });
 
   it('refuses unknown queue names', () => {

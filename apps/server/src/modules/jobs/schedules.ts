@@ -13,6 +13,11 @@ export const CRON_SCHEDULES: readonly { name: JobName; cron: string; retryLimit:
   { name: 'notifications.dispatch', cron: '*/5 * * * *', retryLimit: 5 },
 ];
 
+/** Retry limit of a cron job (E.2); 3 for a name without an entry in `CRON_SCHEDULES`. */
+export function cronRetryLimit(name: JobName): number {
+  return CRON_SCHEDULES.find((s) => s.name === name)?.retryLimit ?? 3;
+}
+
 export interface DailyJob {
   name: JobName;
   /** Local time `HH:MM`. */
