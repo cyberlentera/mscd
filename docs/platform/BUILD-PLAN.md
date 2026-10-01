@@ -3660,10 +3660,12 @@ With `tenancy.mode = multi`, `POST /admin/packs/import` and `packs install` are 
 | Revocation | Logout; password change (every other session of the user); password reset (every session); user disabled (every session); MFA reset (every session); MFA re-enrolment (every other session); removal from an organisation or membership disabled (sessions whose `organization_id` or `auth_org_id` is that organisation); auditor grant revoked or expired (sessions with that `auth_grant_id`); identity provider disabled (sessions with that `identity_provider_id`) |
 | Storage | PostgreSQL in both job drivers (D-19) |
 
+- Orchestrator decision after WP-11: a local sign-in pins the session to the user's default organisation among the active organisations whose `local_login` allows the user; when the default organisation is suspended or offboarding, the next active one (by position, then name) is used, so a session is never pinned to an organisation that answers 403 on every business route.
+
 ### F.2 CSRF
 
 - Synchronizer token: 32 random bytes per session, hash stored in `csrf_token_hash`, value returned in `Me.csrfToken` and in `LoginResponse`. Every non-GET request with a session must send `X-CSRF-Token`; compared in constant time. Failure: 403 `csrf`.
-- Public POST routes (login, password reset, invitation accept, guest start and login, test endpoints) check that `Origin` (or `Referer` when `Origin` is missing) matches `http.public_url`. The SAML ACS is exempt from the header and protected by the SAML binding cookie, `InResponseTo`, the assertion id cache and the signature (F.9). The OIDC and repository OAuth callbacks are GET routes protected by the hashed `state`, the browser binding cookie and the transaction's user (F.8); they change nothing unless all three match.
+- Public POST routes (login, password reset, invitation accept, guest start and login, test endpoints) check that `Origin` (or `Referer` when `Origin` is missing) matches `http.public_url`. Orchestrator decision after WP-11: a request with neither header is refused when a page of another site could send it without a CORS preflight (form, `text/plain`, multipart, no content type); a JSON body without either header is accepted, because only a program can send it cross-site and no CORS is granted. The SAML ACS is exempt from the header and protected by the SAML binding cookie, `InResponseTo`, the assertion id cache and the signature (F.9). The OIDC and repository OAuth callbacks are GET routes protected by the hashed `state`, the browser binding cookie and the transaction's user (F.8); they change nothing unless all three match.
 - `SameSite=Lax` cookies and no CORS (`Access-Control-Allow-Origin` never sent) add depth.
 
 ### F.3 Rate limits

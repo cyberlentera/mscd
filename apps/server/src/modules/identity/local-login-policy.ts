@@ -1,6 +1,8 @@
 // Local sign-in policy (build plan F.4, D-26). Each organisation sets `local_login`: `allowed`, `admins_only` (only
 // members holding a Tenant or Storage Admin role) or `disabled`. A local sign-in succeeds only when at least one
-// active membership allows it; the session is pinned to the user's default organisation among those. Otherwise the
+// active membership allows it; the session is pinned to the user's default organisation among those, except that an
+// active organisation comes before a suspended or offboarding default (deviation 18 of the WP-11 handoff: a session
+// pinned to a suspended organisation would get 403 `organisation-inactive` on every business route). Otherwise the
 // sign-in is refused with `auth.sso_required` and the providers of the user's organisations. A platform operator
 // without any membership signs in without an organisation.
 import type { LocalLoginPolicy, ReauthMethods } from '@mscd/shared';
@@ -34,7 +36,8 @@ interface MembershipRow {
 /**
  * Decides where a local sign-in of `userId` lands (F.4, F.1 organisation pin). Runs with platform scope (the
  * caller's sign-in transaction). Active organisations come before suspended or offboarding ones, then the default
- * membership, then the organisation order.
+ * membership, then the organisation order; so the default organisation wins unless it is inactive and another
+ * allowing organisation is active (deviation 18).
  */
 export async function decideLocalLogin(trx: Trx, userId: string): Promise<LocalLoginDecision> {
   const { rows } = await sql<MembershipRow>`

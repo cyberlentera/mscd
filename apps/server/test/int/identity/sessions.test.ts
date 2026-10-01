@@ -232,6 +232,28 @@ describe('WP-11 local sign-in and sessions', () => {
     expect(pinned).toMatchObject({ organization_id: ndt.id, auth_org_id: ndt.id });
   });
 
+  it('pins a local sign-in to the default organisation, or to an active one when the default is suspended or offboarding (F.1, deviation 18)', async () => {
+    // Both organisations allow the user; `adm` comes first by name, `ndt` is the default membership.
+    const user = await addUser(db, ctx.moduleRef, { handle: 'pinny', memberships: [{ org: adm, adminRoles: ['tenant_admin'], isDefault: false }, { org: ndt, isDefault: true }], factor: true });
+    const pinnedOrg = async () => {
+      const browser = new Browser(ctx.app);
+      expect((await browser.login(user.email)).json().status).toBe('mfa_required');
+      const row = await sessionRow(db, browser.session!);
+      expect(row.auth_org_id).toBe(row.organization_id);
+      return row.organization_id;
+    };
+    expect(await pinnedOrg()).toBe(ndt.id);
+    try {
+      for (const status of ['suspended', 'offboarding'] as const) {
+        await setOrgStatus(db, ctx.moduleRef, ndt.id, status);
+        expect(await pinnedOrg(), status).toBe(adm.id);
+      }
+    } finally {
+      await setOrgStatus(db, ctx.moduleRef, ndt.id, 'active');
+    }
+    expect(await pinnedOrg()).toBe(ndt.id);
+  });
+
   it('signs in a platform operator without memberships without an organisation, and starts enrolment for users without a factor', async () => {
     const op = await new Browser(ctx.app).login(users.operator!.email);
     expect(op.json().status).toBe('mfa_enrolment_required');
