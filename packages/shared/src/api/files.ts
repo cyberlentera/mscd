@@ -17,6 +17,14 @@ export type ExternalItemId = z.infer<typeof ExternalItemId>;
 /** File name of an upload: no path separators, no control characters. */
 const FileName = z.string().min(1).max(255).regex(/^[^/\\]+$/).refine((n) => n !== '.' && n !== '..' && !hasControlCharacter(n), { message: 'Not a file name' });
 
+/** A folder below the system root: `/`-separated names, never `.`, `..`, a backslash or a control character. */
+const FolderPath = z
+  .string()
+  .max(1024)
+  .refine((p) => !p.includes('\\') && !hasControlCharacter(p) && p.split('/').every((segment) => segment.trim() !== '.' && segment.trim() !== '..'), {
+    message: 'Not a folder below the system root',
+  });
+
 export const RepositoryParams = named('RepositoryParams', z.strictObject({ slug: RepositorySlug }), 'Path parameter {slug} of a storage repository', {
   valid: [{ slug: 'sp' }],
   invalid: [{ slug: 'SP' }],
@@ -25,9 +33,9 @@ export type RepositoryParams = z.infer<typeof RepositoryParams>;
 
 export const BrowseQuery = named(
   'BrowseQuery',
-  z.strictObject({ ms: MsId, kind: ObjectKind, recordId: Uuid, path: z.string().max(1024).optional() }),
+  z.strictObject({ ms: MsId, kind: ObjectKind, recordId: Uuid, path: FolderPath.optional() }),
   'GET /storage/repositories/{slug}/browse query: the system, the kind and id of the record the file is for, and a folder below the system root',
-  { valid: [{ ms: 'isms', kind: 'evidence', recordId: '8a1f2d3c-4b5e-4f60-9a7b-1c2d3e4f5a6b' }, { ms: 'isms', kind: 'document', recordId: '8a1f2d3c-4b5e-4f60-9a7b-1c2d3e4f5a6b', path: 'Evidence/2026/Q3' }], invalid: [{ kind: 'evidence', recordId: '8a1f2d3c-4b5e-4f60-9a7b-1c2d3e4f5a6b' }, { ms: 'isms', kind: 'policy', recordId: '8a1f2d3c-4b5e-4f60-9a7b-1c2d3e4f5a6b' }] },
+  { valid: [{ ms: 'isms', kind: 'evidence', recordId: '8a1f2d3c-4b5e-4f60-9a7b-1c2d3e4f5a6b' }, { ms: 'isms', kind: 'document', recordId: '8a1f2d3c-4b5e-4f60-9a7b-1c2d3e4f5a6b', path: 'Evidence/2026/Q3' }], invalid: [{ kind: 'evidence', recordId: '8a1f2d3c-4b5e-4f60-9a7b-1c2d3e4f5a6b' }, { ms: 'isms', kind: 'policy', recordId: '8a1f2d3c-4b5e-4f60-9a7b-1c2d3e4f5a6b' }, { ms: 'isms', kind: 'evidence', recordId: '8a1f2d3c-4b5e-4f60-9a7b-1c2d3e4f5a6b', path: '../QMS' }] },
 );
 export type BrowseQuery = z.infer<typeof BrowseQuery>;
 

@@ -1,0 +1,14 @@
+{
+  "identities": [
+    {
+      "name": "mscd",
+      "credentials": [
+        {
+          "accessKey": "mscd-dev",
+          "secretKey": "mscd-dev-secret-0123456789"
+        }
+      ],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    }
+  ]
+}

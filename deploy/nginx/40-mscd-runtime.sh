@@ -21,9 +21,14 @@
 #                                       reached without restarting this container
 #   MSCD_API_RESOLVER       list        DNS servers used for those lookups, separated by
 #                                       commas or spaces (default: the nameserver lines
-#                                       of /etc/resolv.conf). Each entry is a plain IPv4
-#                                       or IPv6 address (1.1.1.1, fd00::53) without a
-#                                       port or brackets; port 53 is used
+#                                       of /etc/resolv.conf). Accepted forms of an entry:
+#                                         IPv4 address           1.1.1.1
+#                                         IPv4 address and port  1.1.1.1:5353
+#                                         IPv6 address           fd00::53 or [fd00::53]
+#                                         IPv6 address and port  [fd00::53]:5353
+#                                       Without a port, port 53 is used. Host names,
+#                                       zones (fe80::1%eth0) and anything else stop the
+#                                       start with an error
 #   MSCD_TRUSTED_PROXY_CIDRS  list      Addresses or CIDR ranges of trusted proxies in front of
 #                                       this server (for example the ingress controller),
 #                                       separated by commas or spaces. Their X-Forwarded-For
@@ -229,24 +234,59 @@ if [ -n "$api_resolver" ]; then
 else
     resolver_list=$(awk '$1 == "nameserver" { print $2 }' /etc/resolv.conf 2>/dev/null || true)
 fi
+# resolver_entry ENTRY: prints ENTRY in the form of the NGINX "resolver"
+# directive (address, address:port, [IPv6] or [IPv6]:port), or fails.
+resolver_entry() {
+    entry=$1
+    case "$entry" in
+        \[*\]:*)
+            inner=${entry#\[}
+            inner=${inner%%\]*}
+            rport=${entry##*\]:}
+            is_ipv6 "$inner" && is_port "$rport" || return 1
+            echo "[$inner]:$rport"
+            ;;
+        \[*\])
+            inner=${entry#\[}
+            inner=${inner%\]}
+            is_ipv6 "$inner" || return 1
+            echo "[$inner]"
+            ;;
+        *:*:*)
+            is_ipv6 "$entry" || return 1
+            echo "[$entry]"
+            ;;
+        *:*)
+            # Exactly one colon: an IPv4 address and a port (no IPv6 address has
+            # a single colon).
+            is_ipv4 "${entry%:*}" && is_port "${entry##*:}" || return 1
+            echo "$entry"
+            ;;
+        *)
+            is_ipv4 "$entry" || return 1
+            echo "$entry"
+            ;;
+    esac
+}
+
 set -f
 for ns in $resolver_list; do
     case "$ns" in
         *%*)
             [ -z "$api_resolver" ] && continue
-            log "ERROR: MSCD_API_RESOLVER must list IP addresses, got '$ns'"
+            log "ERROR: MSCD_API_RESOLVER entries cannot carry a zone (link-local addresses such as fe80::1%eth0 are not usable by NGINX), got '$ns'"
             exit 1
             ;;
     esac
-    if is_ipv4 "$ns"; then
-        :
-    elif is_ipv6 "$ns"; then
-        ns="[$ns]"
-    else
-        log "ERROR: MSCD_API_RESOLVER and the nameserver lines of /etc/resolv.conf must be plain IPv4 or IPv6 addresses without a port or brackets (DNS port 53 is used), got '$ns'"
+    if ! entry=$(resolver_entry "$ns"); then
+        if [ -n "$api_resolver" ]; then
+            log "ERROR: MSCD_API_RESOLVER entries must be an IPv4 address (1.1.1.1), an IPv4 address and port (1.1.1.1:5353), an IPv6 address (fd00::53 or [fd00::53]) or an IPv6 address and port ([fd00::53]:5353), got '$ns'"
+        else
+            log "ERROR: the nameserver line '$ns' of /etc/resolv.conf is not an IP address; set MSCD_API_RESOLVER to the DNS servers to use"
+        fi
         exit 1
     fi
-    resolvers="${resolvers:+$resolvers }$ns"
+    resolvers="${resolvers:+$resolvers }$entry"
 done
 set +f
 

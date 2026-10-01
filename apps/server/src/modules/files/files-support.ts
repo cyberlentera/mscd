@@ -2,7 +2,7 @@
 // BR-35, BR-36): the rule messages, the repository checks before a gateway call, the mapping of gateway refusals to
 // the D.3 answers, the scope root of a system, stored file names and version labels.
 import type { BusinessRuleId, CommandResult, Messages, ObjectKind, ScopeRoot, StorageAdapter } from '@mscd/shared';
-import { BusinessRuleError, ForbiddenError, NotFoundError, ProblemError } from '../../common/problems';
+import { DependencyUnavailableError, ForbiddenError, NotFoundError, ProblemError } from '../../common/problems';
 import type { RepositoryRow } from '../storage';
 import { GatewayProblemError, GatewayUnavailableError } from '../storage';
 
@@ -44,10 +44,13 @@ export function warning(rule: BusinessRuleId, name = ''): Warning {
 }
 
 /** 422 BR-29: the repository cannot take or give files now (no silent fallback, TS 8.3). */
-export function br29(repository: Pick<RepositoryRow, 'name'>, detail?: string): BusinessRuleError {
-  const error = new BusinessRuleError('BR-29', ruleMessages('BR-29', repository.name), undefined, { messageKey: 'files.repository_unavailable' });
-  if (detail) (error.extras as { detail?: string }).detail = detail;
-  return error;
+export function br29(repository: Pick<RepositoryRow, 'name'>, detail?: string): ProblemError {
+  return new ProblemError('business-rule', {
+    rule: 'BR-29',
+    messages: ruleMessages('BR-29', repository.name),
+    messageKey: 'files.repository_unavailable',
+    ...(detail ? { detail } : {}),
+  });
 }
 
 /** A 422 `business-rule` without a rule id, with a message key and both texts. */
@@ -60,6 +63,14 @@ export function outsideRootError(): ProblemError {
   return refusal('files.outside_root', {
     en: "The file is not in this management system's folder of the repository.",
     id: 'Berkas tidak berada di folder sistem manajemen ini pada repositori.',
+  });
+}
+
+/** 422: the provider item does not satisfy the upload intent (zero-transit checks of D.5). */
+function itemRefused(): ProblemError {
+  return refusal('files.item_refused', {
+    en: 'The file in the repository does not match this upload: check the folder, the account and the file name.',
+    id: 'Berkas di repositori tidak cocok dengan unggahan ini: periksa folder, akun, dan nama berkas.',
   });
 }
 
@@ -99,23 +110,15 @@ export function mapGatewayError(error: unknown, repository: Pick<RepositoryRow, 
         ? refusal('files.item_not_found', { en: 'The file was not found in the repository.', id: 'Berkas tidak ditemukan di repositori.' })
         : new NotFoundError('The file was not found in the repository');
     case 'forbidden':
+      // The api's own token or certificate was refused: an installation fault, not the user's.
+      if (error.reason === 'caller' || error.reason === 'token') return new DependencyUnavailableError('The storage gateway refused the api', { cause: error });
       // A credential that does not open for this repository (binding, kind, missing) cannot serve any file.
-      if (error.reason && error.reason !== 'caller' && error.reason !== 'token') return br29(repository, error.gatewayDetail);
-      if (options.forbidden === 'business-rule') {
-        return refusal('files.item_refused', {
-          en: 'The repository refused this file for this upload.',
-          id: 'Repositori menolak berkas ini untuk unggahan ini.',
-        });
-      }
-      return error.reason ? error : br29(repository, error.gatewayDetail);
+      if (error.reason) return br29(repository, error.gatewayDetail);
+      // The provider refused the item: for a zero-transit registration the item fails the intent checks.
+      if (options.forbidden === 'business-rule') return itemRefused();
+      return br29(repository, error.gatewayDetail);
     case 'bad-request':
-      if (options.forbidden === 'business-rule') {
-        return refusal('files.item_refused', {
-          en: 'The repository refused this file for this upload.',
-          id: 'Repositori menolak berkas ini untuk unggahan ini.',
-        });
-      }
-      return error;
+      return options.forbidden === 'business-rule' ? itemRefused() : error;
     default:
       return error;
   }

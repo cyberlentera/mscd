@@ -68,8 +68,6 @@ interface IntentSource {
   repository: RepositoryRow;
 }
 
-type FileSource = LinkSource | IntentSource;
-
 /** `upload_intent` facts of an attach. */
 interface AttachIntent {
   id: string;

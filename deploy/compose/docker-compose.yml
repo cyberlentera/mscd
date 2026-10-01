@@ -1,22 +1,309 @@
-# MSCD on-premise: Docker Compose deployment (small installations, pilots, labs).
+# MSCD on-premise: Docker Compose deployment of the full platform (build plan I.3).
 #
-# Settings come from .env next to this file. install.sh writes it for you;
-# .env.example documents every setting. After editing .env, apply with:
-#   docker compose up -d
+# Services: web (NGINX, the only published service), api, worker,
+# storage-gateway, the one-shot migrate, and the bundled PostgreSQL,
+# SeaweedFS (S3) and Valkey. "cli" runs operator commands such as
+# "docker compose run --rm cli tenant create ..." and never starts on its own.
+#
+# Settings come from .env next to this file (install.sh writes it; .env.example
+# documents every setting). Secret files live in ./secrets (install.sh creates
+# them, mode 0400, owned by the user of the service that reads them). Each
+# service mounts only its own secrets, so storage.key exists only inside
+# storage-gateway and platform.key never inside it.
+#
+# After editing .env, apply with: docker compose up -d
 name: mscd
 
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+# Hardening of the MSCD application containers.
+x-app: &app
+  image: ${MSCD_SERVER_IMAGE:-cyberlentera/mscd-server}:${MSCD_VERSION:-MSCD_VERSION-not-set}
+  # Images come from the offline bundle (docker load), never from a registry.
+  pull_policy: never
+  user: "10001:0"
+  read_only: true
+  tmpfs:
+    - /tmp:size=64m,mode=1777
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+  init: true
+  stop_grace_period: 30s
+  logging: *logging
+  networks:
+    - mscd
+
+# Profile overrides shared by every run mode (I.1). Secret paths point at
+# /run/secrets whatever profile file is used; the other values come from .env.
+x-app-env: &app-env
+  MSCD_PROFILE_FILE: ${MSCD_PROFILE_FILE:-/app/apps/server/profiles/onprem.yaml}
+  MSCD__KMS__FILE__PATH: /run/secrets/platform.key
+  MSCD__STORAGE__GATEWAY__TOKEN_FILE: /run/secrets/gateway.token
+  MSCD__DATABASE__URL_FILE: /run/secrets/db-app.url
+  MSCD__DATABASE__MIGRATOR_URL_FILE: /run/secrets/db-migrator.url
+  MSCD__DATABASE__PACK_INSTALLER_URL_FILE: /run/secrets/db-pack.url
+  MSCD__DATABASE__ADMIN_URL_FILE: ""
+  MSCD__AUDIT__ANCHOR_KEY_FILE: /run/secrets/audit-anchor.key
+  MSCD__GATEWAY__TOKEN_FILES: "[/run/secrets/gateway.token, /run/secrets/gateway.token.previous]"
+  MSCD__GATEWAY__KMS__FILE__PATH: /run/secrets/storage.key
+  MSCD__GATEWAY__VAULT__ACCESS_KEY_FILE: /run/secrets/s3.access
+  MSCD__GATEWAY__VAULT__SECRET_KEY_FILE: /run/secrets/s3.secret
+  MSCD__GATEWAY__VAULT__ENDPOINT: ${MSCD_S3_ENDPOINT:-http://objectstore:8333}
+  MSCD__GATEWAY__VAULT__BUCKET: ${MSCD_S3_BUCKET:-mscd-vault}
+  MSCD__GATEWAY__VAULT__REGION: ${MSCD_S3_REGION:-us-east-1}
+  MSCD__HTTP__PUBLIC_URL: ${MSCD_PUBLIC_URL:-https://mscd.example.internal}
+  # Only the web container (fixed address on the mscd network) may set X-Forwarded-For (F.12).
+  MSCD__HTTP__TRUST_PROXY: '{cidrs: ["${MSCD_WEB_ADDRESS:-172.31.250.10}/32"]}'
+  MSCD__MAIL__FROM: ${MSCD_MAIL_FROM:-MSCD <mscd@example.internal>}
+  MSCD__MAIL__SMTP__HOST: ${MSCD_SMTP_HOST:-smtp}
+  MSCD__MAIL__SMTP__PORT: ${MSCD_SMTP_PORT:-25}
+  MSCD__MAIL__SMTP__SECURE: ${MSCD_SMTP_SECURE:-false}
+  MSCD__MAIL__SMTP__USER: ${MSCD_SMTP_USER:-}
+  MSCD__MAIL__SMTP__PASSWORD_FILE: ${MSCD_SMTP_PASSWORD_FILE:-}
+  MSCD__JOBS__DRIVER: ${MSCD_JOBS_DRIVER:-pgboss}
+  MSCD__JOBS__BULLMQ__URL: ${MSCD_BULLMQ_URL:-}
+  MSCD__OBSERVABILITY__LOG_LEVEL: ${MSCD_LOG_LEVEL:-info}
+
+# Bundled third-party services: no published ports, no outbound network.
+x-infra: &infra
+  pull_policy: missing
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+  logging: *logging
+  networks:
+    - mscd
+
 services:
+  postgres:
+    <<: *infra
+    image: postgres:16.15-alpine
+    profiles: [bundled-db]
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: mscd
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres-admin.password
+    secrets:
+      - postgres-admin.password
+      - postgres-roles.env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Runs once, when the data volume is empty: roles, schema ext, pg_trgm (C.2).
+      - ./config/postgres:/docker-entrypoint-initdb.d:ro,z
+    shm_size: 256m
+    healthcheck:
+      # TCP check: the entrypoint runs the init scripts on a socket-only server,
+      # so the service is healthy only after the roles exist.
+      test: ["CMD", "pg_isready", "-q", "-h", "127.0.0.1", "-U", "postgres", "-d", "mscd"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 120s
+      start_interval: 2s
+    deploy:
+      resources:
+        limits:
+          cpus: "${MSCD_POSTGRES_CPUS:-2.0}"
+          memory: ${MSCD_POSTGRES_MEMORY:-2G}
+
+  objectstore:
+    <<: *infra
+    image: chrislusf/seaweedfs:4.48
+    profiles: [bundled-s3]
+    # The image entrypoint runs "weed <command>" as its unprivileged user (uid 1000).
+    command:
+      - mini
+      - -dir=/data
+      - -s3.config=/run/secrets/s3.json
+      - -bucket=mscd-vault
+    secrets:
+      - s3.json
+    volumes:
+      - s3data:/data
+    healthcheck:
+      # Master status, then the S3 endpoint, then the mscd-vault bucket folder in the filer.
+      test:
+        - CMD-SHELL
+        - >-
+          wget -q -O /dev/null http://127.0.0.1:9333/cluster/status &&
+          wget -q -O /dev/null http://127.0.0.1:8333/healthz &&
+          wget -q -O /dev/null http://127.0.0.1:8888/buckets/mscd-vault/
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 120s
+      start_interval: 2s
+    deploy:
+      resources:
+        limits:
+          cpus: "${MSCD_OBJECTSTORE_CPUS:-2.0}"
+          memory: ${MSCD_OBJECTSTORE_MEMORY:-2G}
+
+  valkey:
+    <<: *infra
+    image: valkey/valkey:8.1-alpine
+    profiles: [bullmq]
+    # Append-only persistence so queued jobs survive a restart.
+    command: ["valkey-server", "--appendonly", "yes", "--save", ""]
+    volumes:
+      - valkey-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+      start_interval: 2s
+    deploy:
+      resources:
+        limits:
+          cpus: "${MSCD_VALKEY_CPUS:-1.0}"
+          memory: ${MSCD_VALKEY_MEMORY:-512M}
+
+  migrate:
+    <<: *app
+    command: ["migrate"]
+    # Applies the platform, ref and tenant migrations, the job queue schema and
+    # the packs of /app/packs, then exits. "docker compose up" waits for it.
+    restart: "no"
+    environment:
+      <<: *app-env
+    secrets:
+      - db-migrator.url
+      - db-pack.url
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false
+
+  storage-gateway:
+    <<: *app
+    command: ["storage-gateway"]
+    restart: unless-stopped
+    environment:
+      <<: *app-env
+    secrets:
+      - storage.key
+      - s3.access
+      - s3.secret
+      - gateway.token
+      - gateway.token.previous
+      - ca.crt
+      - gateway.crt
+      - gateway.key
+    # The only MSCD service that reaches cloud repositories (SharePoint, Google Drive).
+    networks:
+      - mscd
+      - egress
+    depends_on:
+      objectstore:
+        condition: service_healthy
+        required: false
+    healthcheck:
+      # Port 8443 needs a client certificate; health and readiness are also served on 9464.
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9464/readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
+      start_interval: 2s
+    deploy:
+      resources:
+        limits:
+          cpus: "${MSCD_GATEWAY_CPUS:-2.0}"
+          memory: ${MSCD_GATEWAY_MEMORY:-1G}
+
+  api:
+    <<: *app
+    command: ["api"]
+    restart: unless-stopped
+    environment:
+      <<: *app-env
+    secrets:
+      - db-app.url
+      - platform.key
+      - gateway.token
+      - ca.crt
+      - source: api.crt
+        target: client.crt
+      - source: api.key
+        target: client.key
+    # The mscd network carries web, database and gateway traffic; egress reaches
+    # the identity providers (OIDC, SAML metadata) of the organisation.
+    networks:
+      - mscd
+      - egress
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      storage-gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
+      start_interval: 2s
+    deploy:
+      resources:
+        limits:
+          cpus: "${MSCD_API_CPUS:-2.0}"
+          memory: ${MSCD_API_MEMORY:-1G}
+
+  worker:
+    <<: *app
+    command: ["worker"]
+    restart: unless-stopped
+    environment:
+      <<: *app-env
+    secrets:
+      - db-app.url
+      - db-pack.url
+      - platform.key
+      - gateway.token
+      - audit-anchor.key
+      - smtp.password
+      - ca.crt
+      - source: worker.crt
+        target: client.crt
+      - source: worker.key
+        target: client.key
+    # egress reaches the SMTP relay.
+    networks:
+      - mscd
+      - egress
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      storage-gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9464/readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
+      start_interval: 2s
+    deploy:
+      resources:
+        limits:
+          cpus: "${MSCD_WORKER_CPUS:-2.0}"
+          memory: ${MSCD_WORKER_MEMORY:-1G}
+
   web:
-    image: ${MSCD_IMAGE:-cyberlentera/mscd-web}:${MSCD_VERSION:?MSCD_VERSION must be set in .env}
-    container_name: mscd-web
-    # Images come from the offline bundle (docker load), never from a registry.
+    image: ${MSCD_IMAGE:-cyberlentera/mscd-web}:${MSCD_VERSION:-MSCD_VERSION-not-set}
     pull_policy: never
     restart: unless-stopped
     # install.sh sets these: the dedicated "mscd" system account when run with
     # sudo, otherwise the user who ran it.
     user: "${MSCD_RUN_UID:-101}:${MSCD_RUN_GID:-101}"
-
-    # Hardening: read-only root filesystem, no Linux capabilities, no privilege escalation.
     read_only: true
     tmpfs:
       - /tmp:size=64m,mode=1777
@@ -24,23 +311,31 @@ services:
       - ALL
     security_opt:
       - no-new-privileges:true
-
+    init: true
     environment:
       MSCD_HTTP_REDIRECT: ${MSCD_HTTP_REDIRECT:-true}
       MSCD_HTTPS_PUBLIC_PORT: ${MSCD_HTTPS_PORT:-443}
       MSCD_DOMAIN: ${MSCD_DOMAIN:-}
       MSCD_HSTS: ${MSCD_HSTS:-false}
       MSCD_EXTERNAL_FONTS: ${MSCD_EXTERNAL_FONTS:-false}
-
+      MSCD_API_UPSTREAM: api:3000
+      MSCD_TRUSTED_PROXY_CIDRS: ${MSCD_TRUSTED_PROXY_CIDRS:-}
     ports:
       - "${MSCD_BIND_ADDRESS:-0.0.0.0}:${MSCD_HTTP_PORT:-80}:8080"
       - "${MSCD_BIND_ADDRESS:-0.0.0.0}:${MSCD_HTTPS_PORT:-443}:8443"
-
     # tls.crt and tls.key. The ",z" label lets SELinux hosts share the files
     # with the container; it has no effect elsewhere.
     volumes:
       - ./tls:/etc/nginx/tls:ro,z
-
+    networks:
+      mscd:
+        # The api trusts X-Forwarded-For from this address only (F.12).
+        ipv4_address: ${MSCD_WEB_ADDRESS:-172.31.250.10}
+      edge: {}
+    depends_on:
+      api:
+        condition: service_healthy
+    stop_grace_period: 15s
     deploy:
       resources:
         limits:
@@ -49,14 +344,91 @@ services:
           pids: 128
         reservations:
           memory: 64M
-
-    stop_grace_period: 15s
-
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-
+    logging: *logging
     labels:
       com.cyberlentera.mscd.component: web
+
+  # Operator commands (profile "cli", never started by "up"):
+  #   docker compose run --rm cli tenant create --slug acme --name "PT Acme"
+  #   docker compose run --rm cli admin create-user --email admin@acme.co.id --tenant-admin
+  cli:
+    <<: *app
+    profiles: [cli]
+    command: ["--help"]
+    restart: "no"
+    environment:
+      <<: *app-env
+    secrets:
+      - db-migrator.url
+      - db-app.url
+      - platform.key
+      - gateway.token
+      - ca.crt
+      - source: api.crt
+        target: client.crt
+      - source: api.key
+        target: client.key
+
+networks:
+  # Internal: no route out of the host. Every service is on it.
+  mscd:
+    internal: true
+    ipam:
+      config:
+        - subnet: ${MSCD_SUBNET:-172.31.250.0/24}
+  # Published ports of web.
+  edge: {}
+  # Outbound connections of api, worker and storage-gateway.
+  egress: {}
+
+volumes:
+  pgdata:
+  s3data:
+  valkey-data:
+
+# Secret files written by install.sh. Each file is mode 0400 and owned by the
+# user of the service that reads it (10001 for MSCD, 70 for PostgreSQL, 1000
+# for SeaweedFS); ca.crt and the certificates are 0444.
+secrets:
+  postgres-admin.password:
+    file: ${MSCD_SECRETS_DIR:-./secrets}/postgres-admin.password
+  postgres-roles.env:
+    file: ${MSCD_SECRETS_DIR:-./secrets}/postgres-roles.env
+  s3.json:
+    file: ${MSCD_SECRETS_DIR:-./secrets}/s3.json
+  db-migrator.url:
+    file: ${MSCD_SECRETS_DIR:-./secrets}/db-migrator.url
+  db-app.url:
+    file: ${MSCD_SECRETS_DIR:-./secrets}/db-app.url
+  db-pack.url:
+    file: ${MSCD_SECRETS_DIR:-./secrets}/db-pack.url
+  platform.key:
+    file: ${MSCD_SECRETS_DIR:-./secrets}/platform.key
+  storage.key:
+    file: ${MSCD_SECRETS_DIR:-./secrets}/storage.key
+  gateway.token:
+    file: ${MSCD_SECRETS_DIR:-./secrets}/gateway.token
+  gateway.token.previous:
+    file: ${MSCD_SECRETS_DIR:-./secrets}/gateway.token.previous
+  s3.access:
+    file: ${MSCD_SECRETS_DIR:-./secrets}/s3.access
+  s3.secret:
+    file: ${MSCD_SECRETS_DIR:-./secrets}/s3.secret
+  audit-anchor.key:
+    file: ${MSCD_SECRETS_DIR:-./secrets}/audit-anchor.key
+  smtp.password:
+    file: ${MSCD_SECRETS_DIR:-./secrets}/smtp.password
+  ca.crt:
+    file: ${MSCD_SECRETS_DIR:-./secrets}/ca.crt
+  gateway.crt:
+    file: ${MSCD_SECRETS_DIR:-./secrets}/gateway.crt
+  gateway.key:
+    file: ${MSCD_SECRETS_DIR:-./secrets}/gateway.key
+  api.crt:
+    file: ${MSCD_SECRETS_DIR:-./secrets}/api.crt
+  api.key:
+    file: ${MSCD_SECRETS_DIR:-./secrets}/api.key
+  worker.crt:
+    file: ${MSCD_SECRETS_DIR:-./secrets}/worker.crt
+  worker.key:
+    file: ${MSCD_SECRETS_DIR:-./secrets}/worker.key

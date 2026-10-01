@@ -1,0 +1,270 @@
+# MSCD demo overlay (build plan I.3). Development and test use only.
+#
+#   MSCD_VERSION=<tag> docker compose -p mscd-demo \
+#     -f deploy/compose/docker-compose.yml -f deploy/compose/docker-compose.demo.yml up -d --wait
+#
+# On top of the on-premise file it:
+#   - runs migrate, storage-gateway, api, worker and cli from the
+#     cyberlentera/mscd-server-demo image (development build) with the demo
+#     profile (demo mode, fixed date 2026-09-29, personas, gateway TLS off);
+#   - uses the public development secrets of config/demo-secrets (R-11)
+#     instead of ./secrets, and turns the bundled PostgreSQL and SeaweedFS on
+#     without a .env file;
+#   - adds the one-shot "seed" service (mscd-server seed demo) after migrate,
+#     the provider mocks (mock-providers), Mailpit and Keycloak;
+#   - publishes the web container on 127.0.0.1:18080 (HTTP) and 18443 (HTTPS,
+#     self-signed for localhost), Keycloak on 18088 and the Mailpit API on 18025.
+#
+# Keycloak has one URL for the browser and the containers,
+# http://keycloak:18088: it listens on 18088 in the container and is published
+# on the same port, so a browser that maps the name keycloak to 127.0.0.1
+# (Chromium: --host-resolver-rules="MAP keycloak 127.0.0.1") signs in through
+# the same issuer the api uses. Sign-in users and passwords: G.3 of the build
+# plan and deploy/compose/dev/README.md.
+#
+# Every setting has a default, so no .env file is needed. Override with
+# environment variables: MSCD_VERSION (required: the tag of the three images),
+# MSCD_BIND_ADDRESS (127.0.0.1), MSCD_HTTP_PORT (18080), MSCD_HTTPS_PORT (18443),
+# MSCD_KEYCLOAK_PORT (18088), MSCD_MAILPIT_PORT (18025).
+
+x-demo-image: &demo-image
+  image: ${MSCD_SERVER_DEMO_IMAGE:-cyberlentera/mscd-server-demo}:${MSCD_VERSION:-MSCD_VERSION-not-set}
+
+# Demo profile of the image; secret paths and the rest of the overrides come
+# from the on-premise file. These replace the values that differ.
+x-demo-env: &demo-env
+  MSCD_PROFILE_FILE: /app/apps/server/profiles/demo.yaml
+  MSCD__HTTP__PUBLIC_URL: http://localhost:${MSCD_HTTP_PORT:-18080}
+  MSCD__MAIL__FROM: MSCD Demo <mscd@demo.invalid>
+  MSCD__MAIL__SMTP__HOST: mailpit
+  MSCD__MAIL__SMTP__PORT: "1025"
+  MSCD__MAIL__SMTP__SECURE: "false"
+  MSCD__MAIL__SMTP__USER: ""
+  MSCD__MAIL__SMTP__PASSWORD_FILE: ""
+
+services:
+  postgres:
+    profiles: !reset []
+
+  objectstore:
+    profiles: !reset []
+
+  migrate:
+    <<: *demo-image
+    environment:
+      <<: *demo-env
+
+  storage-gateway:
+    <<: *demo-image
+    environment:
+      <<: *demo-env
+    depends_on:
+      mock-providers:
+        condition: service_healthy
+
+  # Loads the demo organisations, users, licences, packs and records (G.1) once;
+  # a later run reports "already seeded" and exits 0.
+  seed:
+    # Same container settings and profile overrides as migrate.
+    extends:
+      file: docker-compose.yml
+      service: migrate
+    <<: *demo-image
+    command: ["seed", "demo", "--keys", "gateway"]
+    environment:
+      <<: *demo-env
+    secrets:
+      - db-app.url
+      - platform.key
+      - gateway.token
+      - keycloak-client.secret
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      storage-gateway:
+        condition: service_healthy
+
+  api:
+    <<: *demo-image
+    environment:
+      <<: *demo-env
+    secrets:
+      - keycloak-client.secret
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+      keycloak:
+        condition: service_healthy
+      mailpit:
+        condition: service_healthy
+
+  worker:
+    <<: *demo-image
+    environment:
+      <<: *demo-env
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+      mailpit:
+        condition: service_healthy
+
+  cli:
+    <<: *demo-image
+    environment:
+      <<: *demo-env
+    secrets:
+      - db-pack.url
+      - keycloak-client.secret
+
+  web:
+    environment:
+      MSCD_HTTP_REDIRECT: "false"
+      MSCD_HTTPS_PUBLIC_PORT: ${MSCD_HTTPS_PORT:-18443}
+      MSCD_DOMAIN: ""
+    ports: !override
+      - "${MSCD_BIND_ADDRESS:-127.0.0.1}:${MSCD_HTTP_PORT:-18080}:8080"
+      - "${MSCD_BIND_ADDRESS:-127.0.0.1}:${MSCD_HTTPS_PORT:-18443}:8443"
+    volumes: !override
+      - ./config/demo-secrets/tls:/etc/nginx/tls:ro,z
+
+  mock-providers:
+    image: ${MSCD_MOCK_IMAGE:-cyberlentera/mscd-mock-providers}:${MSCD_VERSION:-MSCD_VERSION-not-set}
+    pull_policy: never
+    restart: unless-stopped
+    user: "10001:0"
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    init: true
+    networks:
+      - mscd
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:4310/_admin/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+      start_interval: 1s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  mailpit:
+    image: axllent/mailpit:v1.31.3
+    pull_policy: missing
+    restart: unless-stopped
+    environment:
+      # Accept any SMTP login (or none) over plain SMTP, as an internal relay would.
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+      MP_MAX_MESSAGES: "5000"
+    ports:
+      - "${MSCD_BIND_ADDRESS:-127.0.0.1}:${MSCD_MAILPIT_PORT:-18025}:8025"
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - mscd
+      - edge
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8025/livez"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+      start_interval: 1s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  keycloak:
+    image: keycloak/keycloak:26.7.5
+    pull_policy: missing
+    restart: unless-stopped
+    # No volume: the development realm is imported whenever the container is created.
+    command: ["start-dev", "--import-realm", "--health-enabled=true"]
+    environment:
+      KC_HTTP_PORT: "18088"
+      KC_HOSTNAME: http://keycloak:18088
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin-dev
+    ports:
+      - "${MSCD_BIND_ADDRESS:-127.0.0.1}:${MSCD_KEYCLOAK_PORT:-18088}:18088"
+    volumes:
+      - ./dev/keycloak/realm-mscd.json:/opt/keycloak/data/import/realm-mscd.json:ro,z
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - mscd
+      - edge
+    healthcheck:
+      # The image has no curl or wget; bash talks HTTP to the management port.
+      test:
+        - CMD
+        - bash
+        - -c
+        - 'exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e "GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3 && grep -q UP <&3'
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 180s
+      start_interval: 2s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# Public development values (R-11) in place of ./secrets.
+secrets:
+  postgres-admin.password:
+    file: ./config/demo-secrets/postgres-admin.password
+  postgres-roles.env:
+    file: ./config/demo-secrets/postgres-roles.env
+  s3.json:
+    file: ./config/demo-secrets/s3.json
+  db-migrator.url:
+    file: ./config/demo-secrets/db-migrator.url
+  db-app.url:
+    file: ./config/demo-secrets/db-app.url
+  db-pack.url:
+    file: ./config/demo-secrets/db-pack.url
+  platform.key:
+    file: ./config/demo-secrets/platform.key
+  storage.key:
+    file: ./config/demo-secrets/storage.key
+  gateway.token:
+    file: ./config/demo-secrets/gateway.token
+  gateway.token.previous:
+    file: ./config/demo-secrets/gateway.token.previous
+  s3.access:
+    file: ./config/demo-secrets/s3.access
+  s3.secret:
+    file: ./config/demo-secrets/s3.secret
+  audit-anchor.key:
+    file: ./config/demo-secrets/audit-anchor.key
+  smtp.password:
+    file: ./config/demo-secrets/smtp.password
+  ca.crt:
+    file: ./config/demo-secrets/ca.crt
+  gateway.crt:
+    file: ./config/demo-secrets/gateway.crt
+  gateway.key:
+    file: ./config/demo-secrets/gateway.key
+  api.crt:
+    file: ./config/demo-secrets/api.crt
+  api.key:
+    file: ./config/demo-secrets/api.key
+  worker.crt:
+    file: ./config/demo-secrets/worker.crt
+  worker.key:
+    file: ./config/demo-secrets/worker.key
+  keycloak-client.secret:
+    file: ./config/demo-secrets/keycloak-client.secret

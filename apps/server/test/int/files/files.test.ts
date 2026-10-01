@@ -56,7 +56,7 @@ describe('file commands (D.3, D.5, F.13)', () => {
           left join platform.app_user u on u.id = e.owner_user_id
          where e.deleted_at is null
            ${filter.repo ? sql`and r.slug = ${filter.repo}` : sql``}
-           ${filter.owner ? sql`and u.handle = ${filter.owner}` : sql``}
+           ${filter.owner?.startsWith('!') ? sql`and u.handle <> ${filter.owner.slice(1)}` : filter.owner ? sql`and u.handle = ${filter.owner}` : sql``}
            ${filter.status ? sql`and o.link_status = ${filter.status}` : sql``}
          order by e.evidence_code`.execute(trx);
       return rows;
@@ -332,7 +332,7 @@ describe('file commands (D.3, D.5, F.13)', () => {
       expect(listing.body.path).toBe('Compliance / ISMS');
       expect(listing.body.refs.map((r) => r.externalItemId)).not.toContain('demo-sp-qms-manual');
       const traverse = await owner.get(`/api/v1/storage/repositories/sp/browse?ms=isms&kind=evidence&recordId=${evidenceId}&path=..%2FQMS`);
-      expect([400, 422]).toContain(traverse.status);
+      expect(traverse.status).toBe(400);
       const link = await owner.post(`/api/v1/ms/isms/evidence/${evidenceId}/files`, { source: 'link', repository: 'sp', externalItemId: 'demo-sp-qms-manual', mode: 'submit' });
       expect(link.status).toBe(422);
       expect(link.body).toMatchObject({ messageKey: 'files.outside_root' });
@@ -350,10 +350,54 @@ describe('file commands (D.3, D.5, F.13)', () => {
           source: 'link', repository: 'sp', externalItemId: 'demo-sp-pick-4', producedAt: '2026-09-22', mode: 'submit',
         });
         expect(linked.status, JSON.stringify(linked.body)).toBe(200);
-        expect(linked.body.warnings?.map((w) => w.rule)).toEqual(['BR-30']);
+        expect(linked.body.warnings?.map((w) => w.rule)).toContain('BR-30');
       } finally {
         await inOrg(db, 'ndt', (trx) => trx.updateTable('storage_repository').set({ ownership_type: 'organizational' }).where('slug', '=', 'sp').execute());
       }
+    });
+    it('warns with BR-23 when the evidence also serves another system through a non-reusable mapping', async () => {
+      const evidence = await evidenceOf('ndt', 'isms', { repo: 'sp', owner: 'rina' });
+      await inOrg(db, 'ndt', async (trx) => {
+        // A clause requirement entry of each system (Annex A controls carry no requirement to map).
+        const entryFor = async (slug: string) => {
+          const system = await trx.selectFrom('management_system').select(['id', 'framework_version_id']).where('slug', '=', slug).executeTakeFirstOrThrow();
+          const existing = await trx
+            .selectFrom('applicability_entry')
+            .select(['id', 'management_system_id', 'requirement_id'])
+            .where('management_system_id', '=', system.id)
+            .where('target_type', '=', 'requirement')
+            .where('deleted_at', 'is', null)
+            .executeTakeFirst();
+          if (existing) return existing;
+          const requirement = await trx.selectFrom('ref.requirement').select('id').where('framework_version_id', '=', system.framework_version_id).orderBy('requirement_code').executeTakeFirstOrThrow();
+          return trx
+            .insertInto('applicability_entry')
+            .values({ management_system_id: system.id, target_type: 'requirement', requirement_id: requirement.id, is_applicable: true, implementation_status: 'not_started' })
+            .returning(['id', 'management_system_id', 'requirement_id'])
+            .executeTakeFirstOrThrow();
+        };
+        const isms = await entryFor('isms');
+        const qms = await entryFor('qms');
+        await trx
+          .insertInto('evidence_target')
+          .values({ evidence_id: evidence.id, management_system_id: isms.management_system_id, applicability_entry_id: isms.id, target_type: 'requirement', requirement_id: isms.requirement_id })
+          .onConflict((oc) => oc.doNothing())
+          .execute();
+        await trx
+          .insertInto('evidence_target')
+          .values({ evidence_id: evidence.id, management_system_id: qms.management_system_id, applicability_entry_id: qms.id, target_type: 'requirement', requirement_id: qms.requirement_id })
+          .execute();
+        await db.packInstaller
+          .insertInto('ref.requirement_mapping')
+          .values({ source_requirement_id: isms.requirement_id!, target_requirement_id: qms.requirement_id!, mapping_type: 'partial', evidence_reusable: false })
+          .execute();
+      });
+      const linked = await rina.post<CommandResult>(`/api/v1/ms/isms/evidence/${evidence.id}/files`, {
+        source: 'link', repository: 'sp', externalItemId: 'demo-sp-pick-3', mode: 'submit',
+      });
+      expect(linked.status, JSON.stringify(linked.body)).toBe(200);
+      expect(linked.body.warnings?.map((w) => w.rule)).toContain('BR-23');
+      expect(linked.body.changed).toEqual(expect.arrayContaining(['isms', 'qms']));
     });
   });
 
@@ -392,6 +436,19 @@ describe('file commands (D.3, D.5, F.13)', () => {
       const second = await rina.post(`/api/v1/ms/isms/documents/${document.id}/versions`, { source: 'link', repository: 'sp', externalItemId: 'demo-sp-PRC-08' });
       expect(second.status).toBe(409);
       expect(second.body).toMatchObject({ messageKey: 'files.version_in_review' });
+    });
+
+    it('sends Content-Length with a pass-through upload above 4 MiB (Microsoft 365 upload session)', async () => {
+      const document = await inOrg(db, 'ndt', (trx) =>
+        trx.selectFrom('document').select(['id']).where('doc_code', '=', 'PRC-12').executeTakeFirstOrThrow(),
+      );
+      const content = Buffer.concat([PDF, Buffer.alloc(5 * 1024 * 1024 + 123, 0x41)]);
+      const intent = await rina.post<UploadIntent>('/api/v1/storage/upload-intents', { ms: 'isms', kind: 'document', recordId: document.id, fileName: 'PRC-12.pdf', size: content.length });
+      expect(intent.status, JSON.stringify(intent.body)).toBe(201);
+      expect(intent.body.mode).toBe('pass_through');
+      const put = await rina.put<UploadResult>(intent.body.contentUrl!, content);
+      expect(put.status, JSON.stringify(put.body)).toBe(200);
+      expect(put.body).toMatchObject({ hashValue: sha256(content), sizeBytes: content.length });
     });
 
     it('registers a zero-transit upload only for the creator, the folder and the correlation code', async () => {
@@ -507,9 +564,10 @@ describe('file commands (D.3, D.5, F.13)', () => {
       }
       // Every auditor read is logged with the record behind the file (F.7, BR-20).
       const reads = await inOrg(db, 'tst', (trx) =>
-        trx.selectFrom('audit_trail').select(['action', 'after_data']).where('action', '=', 'auditor.read').orderBy('seq', 'desc').limit(1).execute(),
+        trx.selectFrom('audit_trail').select(['action', 'after_data']).where('action', '=', 'auditor.read').orderBy('seq', 'desc').execute(),
       );
-      expect(JSON.stringify(reads[0]?.after_data)).toContain(evidence.code);
+      const contentRead = reads.find((r) => (r.after_data as { routeId?: string; outcome?: string }).routeId === 'storage.objects.content' && (r.after_data as { outcome?: string }).outcome !== 'error');
+      expect(JSON.stringify(contentRead?.after_data)).toContain(evidence.code);
       // Writes stay closed to auditors.
       expect((await auditor.post('/api/v1/storage/upload-intents', { ms: 'isms', kind: 'evidence', recordId: evidence.id, fileName: 'x.pdf', size: 1 })).status).toBe(403);
     });
@@ -556,7 +614,7 @@ describe('file commands (D.3, D.5, F.13)', () => {
 
     it('uploadFile to the Managed Vault: the next version with SHA-256 matches the sample (documented difference: none)', async () => {
       const sari = await signIn(ctx, db, 'sari', 'ndt');
-      const evidence = await evidenceOf('ndt', 'qms', { repo: 'vault', owner: 'lina' });
+      const evidence = await evidenceOf('ndt', 'qms', { repo: 'vault', owner: '!sari' });
       const sample = await sampleSource();
       const before = await sample.load('ndt');
       expect((await sample.uploadFile(`qms:ev:${evidence.code}`, null)).ok).toBe(true);

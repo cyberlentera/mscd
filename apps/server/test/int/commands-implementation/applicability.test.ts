@@ -233,17 +233,18 @@ describe('applicability commands', () => {
       const queued = ctx.queue.waitingJobs('freshness.recompute').length;
       const response = await rina.patch(ENTRY_URL('isms', entry!.id), {
         ownerHandle: 'bagus', statusNote: 'Reviewed in October', holdsGate: true, gateReason: 'Awaiting board decision',
-        frequencyCode: 'quarterly', riskCodes: ['R-014'], documentCodes: ['POL-01'],
+        frequencyCode: 'quarterly', riskCodes: ['R-014'], documentCodes: ['IMS-01', 'POL-01'],
       });
       expect(response.status).toBe(200);
       expect(response.body.changed).toEqual(['isms']);
       const snapshot = await rina.snapshot('isms');
       const req = snapshot.body.bundle.reqs.find((r) => r.id === entry!.code)!;
-      expect(req).toMatchObject({ owner: 'bagus', note: 'Reviewed in October', gate: true, freq: 'quarterly', risks: ['R-014'], doc: 'POL-01', st: 'blocked' });
+      expect(req).toMatchObject({ owner: 'bagus', note: 'Reviewed in October', gate: true, freq: 'quarterly', risks: ['R-014'], doc: 'IMS-01', st: 'implemented' });
+      // C.11: the gate flag shows as blocked only while the entry is not implemented or not applicable.
       const audit = await auditOf(db, 'tst', entry!.id);
       expect(audit.at(-1)).toMatchObject({
         action: 'applicability.updated',
-        after: expect.objectContaining({ status_note: 'Reviewed in October', holds_gate: true, frequency_code: 'quarterly', risk_codes: ['R-014'], document_codes: ['POL-01'] }),
+        after: expect.objectContaining({ status_note: 'Reviewed in October', holds_gate: true, frequency_code: 'quarterly', risk_codes: ['R-014'], document_codes: ['IMS-01', 'POL-01'] }),
       });
       expect(ctx.queue.waitingJobs('freshness.recompute').length).toBeGreaterThanOrEqual(Math.min(queued, 1));
       const clear = await rina.patch(ENTRY_URL('isms', entry!.id), { holdsGate: false, ownerHandle: 'none' });

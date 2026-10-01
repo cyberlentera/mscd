@@ -23,6 +23,33 @@ export const BULLMQ_PREFIX = 'mscd';
 /** Rows the relay moves per pass (E.1). */
 export const OUTBOX_BATCH = 100;
 
+/**
+ * Relay attempts per outbox row. A row that failed this often is parked: the relay no longer takes it, it is
+ * logged once at error level and counted by `countStuckOutboxRows` (metric `mscd_job_outbox_stuck_rows`, WP-34).
+ * Parked rows stay for diagnosis (cleanup removes relayed rows only); an operator who fixed the cause sets
+ * `attempts = 0` to relay them again.
+ */
+export const OUTBOX_MAX_ATTEMPTS = 12;
+
+/** Longest wait between two relay attempts of a failing row. */
+export const OUTBOX_MAX_BACKOFF_SECONDS = 600;
+
+/** Seconds before the next relay attempt of a row that has failed `attempts` times: 2, 4, 8, ... up to 600. */
+export function outboxBackoffSeconds(attempts: number): number {
+  return Math.min(OUTBOX_MAX_BACKOFF_SECONDS, 2 ** Math.max(1, Math.min(attempts, 20)));
+}
+
+/** Outbox rows that reached `OUTBOX_MAX_ATTEMPTS` and are not relayed any more (any driver; zero unless BullMQ). */
+export async function countStuckOutboxRows(trx: Transaction<DB>): Promise<{ rows: number; oldestCreatedAt: Date | null }> {
+  const row = await trx
+    .selectFrom('platform.job_outbox')
+    .select((eb) => [eb.fn.countAll<string>().as('rows'), eb.fn.min('created_at').as('oldest')])
+    .where('dispatched_at', 'is', null)
+    .where('attempts', '>=', OUTBOX_MAX_ATTEMPTS)
+    .executeTakeFirst();
+  return { rows: Number(row?.rows ?? 0), oldestCreatedAt: (row?.oldest as Date | null | undefined) ?? null };
+}
+
 /** What an outbox row's `payload` holds. */
 export interface OutboxPayload {
   env: JobEnvelope<unknown>;
@@ -156,8 +183,10 @@ export class BullMqJobQueue implements JobQueue {
   /**
    * One relay pass (E.1): moves up to `OUTBOX_BATCH` committed outbox rows to BullMQ inside `trx` (a platform-scope
    * transaction of the caller), locking them with `FOR UPDATE SKIP LOCKED` so relays in other processes take other
-   * rows. Rows are taken by fewest attempts first, so rows that keep failing (for example a job name this build does
-   * not know) sink behind newer rows and never block the batch. Returns the number of rows dispatched.
+   * rows. Rows that keep failing (for example a job name this build does not know, after a rollback) never block
+   * newer jobs: rows are taken by fewest attempts first; a failed row waits `outboxBackoffSeconds(attempts)` before
+   * its next attempt (its `run_at` moves forward, never back, so a delayed job never runs early); after
+   * `OUTBOX_MAX_ATTEMPTS` failures it is parked and logged at error level. Returns the number of rows dispatched.
    */
   async relayOutbox(trx: Transaction<DB>): Promise<number> {
     if (this.stopped) return 0;
@@ -166,6 +195,8 @@ export class BullMqJobQueue implements JobQueue {
              greatest(0, ceil(extract(epoch FROM (run_at - now())) * 1000))::bigint AS delay_ms
         FROM platform.job_outbox
        WHERE dispatched_at IS NULL
+         AND attempts < ${OUTBOX_MAX_ATTEMPTS}
+         AND (attempts = 0 OR run_at <= now())
        ORDER BY attempts, id
        LIMIT ${OUTBOX_BATCH}
          FOR UPDATE SKIP LOCKED`.execute(trx);
@@ -183,8 +214,25 @@ export class BullMqJobQueue implements JobQueue {
         dispatched += 1;
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        this.logger.warn(`Outbox row ${row.id} (${row.queue}) not relayed after ${Number(row.attempts) + 1} attempt(s): ${message}`);
-        await trx.updateTable('platform.job_outbox').set({ attempts: sql<number>`attempts + 1`, last_error: message.slice(0, 2000) }).where('id', '=', row.id).execute();
+        const attempts = Number(row.attempts) + 1;
+        const backoff = outboxBackoffSeconds(attempts);
+        if (attempts >= OUTBOX_MAX_ATTEMPTS) {
+          this.logger.error(
+            { event: 'job_outbox.stuck', outboxId: row.id, queue: row.queue, attempts, lastError: message.slice(0, 500) },
+            `Outbox row ${row.id} (${row.queue}) parked after ${attempts} failed relay attempts; it is no longer relayed (set attempts = 0 to retry): ${message}`,
+          );
+        } else {
+          this.logger.warn(`Outbox row ${row.id} (${row.queue}) not relayed after ${attempts} attempt(s), next attempt in ${backoff} s: ${message}`);
+        }
+        await trx
+          .updateTable('platform.job_outbox')
+          .set({
+            attempts: sql<number>`attempts + 1`,
+            last_error: message.slice(0, 2000),
+            run_at: sql<Date>`greatest(run_at, now() + ${backoff} * interval '1 second')`,
+          })
+          .where('id', '=', row.id)
+          .execute();
       }
     }
     return dispatched;
