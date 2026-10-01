@@ -58,7 +58,7 @@ function isPlainText(head: Buffer): boolean {
     break;
   }
   const decoded = new TextDecoder('utf-8', { fatal: false }).decode(text.subarray(0, end));
-  if (decoded.includes('�')) return false;
+  if (decoded.includes('\uFFFD')) return false;
   for (const char of decoded) {
     const code = char.codePointAt(0)!;
     if (code < 0x20 && code !== 0x09 && code !== 0x0a && code !== 0x0d && code !== 0x0c) return false;
@@ -69,7 +69,7 @@ function isPlainText(head: Buffer): boolean {
 
 /** Markup that browsers would render as active content even when sent as text. */
 function looksLikeMarkup(head: Buffer): boolean {
-  const start = head.subarray(0, 512).toString('utf8').replace(/^﻿/, '').trimStart().toLowerCase();
+  const start = head.subarray(0, 512).toString('utf8').replace(/^\uFEFF/, '').trimStart().toLowerCase();
   return /^<(?:!doctype|html|head|body|script|svg|\?xml|iframe|object|embed|div|a\s|img|style|meta|link|xml|xsl|!--)/.test(start);
 }
 

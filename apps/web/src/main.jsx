@@ -1,6 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import MscdApp from './MscdApp.jsx';
+import { createDataSource } from './data/createDataSource.js';
 import '@fontsource/ibm-plex-sans/400.css';
 import '@fontsource/ibm-plex-sans/500.css';
 import '@fontsource/ibm-plex-sans/600.css';
@@ -23,8 +24,17 @@ const settings = {
   deploy: pick('deploy', ['saas', 'onprem'], 'saas'),
 };
 
-createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <MscdApp {...settings} />
-  </React.StrictMode>,
-);
+const container = document.getElementById('root');
+
+// BUILD-PLAN H.7. The API build (VITE_DATA_SOURCE=api) boots through src/auth/boot.tsx: system profile, session,
+// then the sign-in pages or the app with the API data source. The sample build renders the app at once, as before;
+// the auth pages are a separate chunk it never loads.
+if (import.meta.env.VITE_DATA_SOURCE === 'api') {
+  import('./auth/boot.tsx').then(({ boot }) => boot({ container, settings, App: MscdApp, createDataSource }));
+} else {
+  createRoot(container).render(
+    <React.StrictMode>
+      <MscdApp {...settings} />
+    </React.StrictMode>,
+  );
+}

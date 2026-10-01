@@ -4,7 +4,7 @@
 //
 // Steps 1 to 3 are `verifyPackForServer` (archive rules, signature with the compiled pack keys, checksums, datasets,
 // engine version, chain entity types). Step 4 refuses a lower `pack_version` than the installed one of the same pack
-// and treats the same version as a no-op. Step 5 writes everything in one transaction: the framework, the framework
+// (or, for C.3 step 5, skips it without an audit entry) and treats the same version as a no-op. Step 5 writes everything in one transaction: the framework, the framework
 // version (a newer version of an installed edition updates titles, labels, lookups and templates in place and adds
 // rows; it never deletes a row, and tenant activity copies are never touched, D-30), the child rows, the superseded
 // edition moved to `transition`, `platform.pack_install` and `pack.installed` in the platform audit log. A failure in
@@ -13,7 +13,7 @@ import { randomUUID } from 'node:crypto';
 import { compareSemver, type ActorKind } from '@mscd/shared';
 import type { VerifiedPack } from '@mscd/pack-tools';
 import { sql, type Kysely, type RawBuilder } from 'kysely';
-import type { AuditWriter, Trx } from '../../common/tokens';
+import type { AuditEntryInput, AuditWriter, Trx } from '../../common/tokens';
 import { SYSTEM_USER_ID } from '../../common/tokens';
 import type { DB } from '../../db/types';
 import type { TrustAnchors } from '../license/trust-anchors';
@@ -36,6 +36,12 @@ export interface PackInstallRequest {
   installId?: string;
   /** Request id for the transaction settings and the audit entries. */
   requestId?: string;
+  /**
+   * What a lower `pack_version` than the installed one gets (E.8 step 4): `reject` (default) refuses it with
+   * `pack.rejected`; `skip` reports it as `skipped` and writes nothing, for C.3 step 5, where `packs.dir` may still
+   * ship an older version after a newer one was imported.
+   */
+  whenOlder?: 'reject' | 'skip';
 }
 
 /** Rows written or updated per dataset by one installation. */
@@ -57,7 +63,9 @@ export type PackInstallOutcome =
       skippedMappings: number;
       archiveSha256: string;
     }
-  | { status: 'unchanged'; installId: string | null; packId: string; version: string; archiveSha256: string };
+  | { status: 'unchanged'; installId: string | null; packId: string; version: string; archiveSha256: string }
+  /** A lower version than the installed one with `whenOlder: 'skip'`: nothing written, nothing audited. */
+  | { status: 'skipped'; installId: null; packId: string; version: string; installedVersion: string; archiveSha256: string };
 
 /** Step 5 failed; everything was rolled back and a `failed` install recorded. */
 export class PackInstallFailedError extends Error {
@@ -74,13 +82,48 @@ export class PackInstallFailedError extends Error {
 
 export interface PackInstallerDeps {
   /** Kysely on a pool or connection of role `mscd_pack_installer`. */
-  db: Kysely<DB>;
+  installerDb: Kysely<DB>;
   /** Writes `pack.*` entries into `platform.audit_log` (platform actions). */
   audit: Pick<AuditWriter, 'record'>;
   trust: TrustAnchors;
   /** The server version that `engine_min_version` is compared with. */
   serverVersion: string;
   logger?: { warn(message: string): void };
+}
+
+/** The `pack.rejected` audit entry of a refused pack (F.11). */
+export function rejectionAuditEntry(
+  error: PackRejectedError,
+  request: Pick<PackInstallRequest, 'actor' | 'orgId' | 'installId' | 'requestId'>,
+): AuditEntryInput {
+  return {
+    action: 'pack.rejected',
+    actor: { userId: request.actor.userId, kind: request.actor.kind },
+    organizationId: request.orgId ?? null,
+    entityType: 'pack_install',
+    entityId: request.installId ?? null,
+    entityCode: error.pack ? `${error.pack.packId} ${error.pack.version}`.slice(0, 80) : null,
+    after: { reason: error.code, message: error.message.slice(0, 1000), issues: error.issues.slice(0, 20) },
+    ...(request.requestId ? { requestId: request.requestId } : {}),
+  };
+}
+
+/**
+ * A transaction on the pack installer connection with platform scope (`platform.audit_log` and its chain trigger
+ * need it, D-31) and the request settings, all transaction-local (F.10).
+ */
+export function withInstallerTransaction<T>(
+  installerDb: Kysely<DB>,
+  settings: { orgId?: string | null; userId?: string | null; requestId?: string },
+  fn: (trx: Trx) => Promise<T>,
+): Promise<T> {
+  return installerDb.transaction().execute(async (trx) => {
+    await sql`select set_config('app.platform_scope', 'on', true),
+                     set_config('app.org_id', ${settings.orgId ?? ''}, true),
+                     set_config('app.user_id', ${settings.userId ?? ''}, true),
+                     set_config('app.request_id', ${settings.requestId ?? randomUUID()}, true)`.execute(trx);
+    return fn(trx);
+  });
 }
 
 /** `excluded.<column>` for every column of an `ON CONFLICT DO UPDATE`. */
@@ -141,6 +184,9 @@ export class PackInstaller {
         if (previous !== null) {
           const order = compareSemver(manifest.pack_version, previous);
           if (order < 0) {
+            if (request.whenOlder === 'skip') {
+              return { status: 'skipped', installId: null, packId: manifest.pack_id, version: manifest.pack_version, installedVersion: previous, archiveSha256: verified.sha256 } as const;
+            }
             throw new PackRejectedError(
               'downgrade',
               `pack ${manifest.pack_id} ${manifest.pack_version} is older than the installed version ${previous}`,
@@ -691,31 +737,14 @@ export class PackInstaller {
   }
 
   /** A transaction of the installer role with platform scope (D-31: `platform.audit_log`) and the request settings. */
-  private async inTransaction<T>(request: PackInstallRequest, fn: (trx: Trx) => Promise<T>): Promise<T> {
-    return this.deps.db.transaction().execute(async (trx) => {
-      await sql`select set_config('app.platform_scope', 'on', true),
-                       set_config('app.org_id', ${request.orgId ?? ''}, true),
-                       set_config('app.user_id', ${request.actor.userId ?? ''}, true),
-                       set_config('app.request_id', ${request.requestId ?? randomUUID()}, true)`.execute(trx);
-      return fn(trx);
-    });
+  private inTransaction<T>(request: PackInstallRequest, fn: (trx: Trx) => Promise<T>): Promise<T> {
+    return withInstallerTransaction(this.deps.installerDb, { orgId: request.orgId ?? null, userId: request.actor.userId, requestId: request.requestId }, fn);
   }
 
   /** `pack.rejected` in the platform audit log (no other row is written for a rejected pack). */
   async recordRejection(error: PackRejectedError, request: PackInstallRequest): Promise<void> {
     try {
-      await this.inTransaction(request, (trx) =>
-        this.deps.audit.record(trx, {
-          action: 'pack.rejected',
-          actor: { userId: request.actor.userId, kind: request.actor.kind },
-          organizationId: request.orgId ?? null,
-          entityType: 'pack_install',
-          entityId: request.installId ?? null,
-          entityCode: error.pack ? `${error.pack.packId} ${error.pack.version}`.slice(0, 80) : null,
-          after: { reason: error.code, message: error.message.slice(0, 1000), issues: error.issues.slice(0, 20) },
-          requestId: request.requestId,
-        }),
-      );
+      await this.inTransaction(request, (trx) => this.deps.audit.record(trx, rejectionAuditEntry(error, request)));
     } catch (auditError) {
       this.deps.logger?.warn(`Could not audit a rejected pack: ${(auditError as Error).message}`);
     }

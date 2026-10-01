@@ -18,7 +18,7 @@ import {
 import { LicenceError, verifyLicence } from '@mscd/pack-tools';
 import { sql } from 'kysely';
 import { Clock, DEFAULT_TIME_ZONE } from '../../common/clock';
-import { fmtDay, localDate } from '../../common/dates';
+import { fmtDay } from '../../common/dates';
 import { JOB_QUEUE, type JobQueue } from '../../common/jobs/job-queue';
 import { BusinessRuleError, NotFoundError, ValidationError } from '../../common/problems';
 import {
@@ -141,11 +141,6 @@ export class LicenceService implements OnModuleInit {
       throw new Error('LicenseModule needs TenancyModule and DatabaseModule: the licence cannot be evaluated without them (D-15)');
     }
     this.logger.warn('LicenseModule runs without a database (test profile): no licence can be read in this application');
-  }
-
-  /** True when this application can read licences (always in the api and worker). */
-  get hasDatabase(): boolean {
-    return this.scope !== undefined && this.tenants !== undefined;
   }
 
   // -------------------------------------------------------------------------------------------------------------
@@ -551,7 +546,7 @@ export class LicenceService implements OnModuleInit {
               .where('recipient_user_id', '=', userId)
               .where('kind', '=', 'licence_expiring')
               .where('title_en', '=', title.en)
-              .where('body_en', 'like', `%${evaluated.record.licenseId}%`)
+              .where(sql<boolean>`position(${evaluated.record.licenseId} in body_en) > 0`)
               .executeTakeFirst();
             if (already) continue;
             await this.notifications?.create(trx, {
@@ -728,16 +723,6 @@ export class LicenceService implements OnModuleInit {
   /** Today in the organisation's time zone (or `demo.fixed_today`). */
   async today(orgId: string): Promise<string> {
     return this.clock.todayIn(await this.timeZoneOf(orgId));
-  }
-
-  /** The current instant of the licence clock. */
-  now(): Date {
-    return this.clock.now();
-  }
-
-  /** The local date of the clock in an organisation's time zone. */
-  localToday(timeZone: string): string {
-    return localDate(this.clock.now(), timeZone);
   }
 
   private requireScope(): TenantScope {

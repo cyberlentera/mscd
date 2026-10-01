@@ -1,3 +1,3 @@
 # storage module
-Storage gateway client, repositories, routing rules, credentials and repository OAuth consent (D.5, D-08, F.8).
-Owner: WP-13; skeleton by WP-03 (build plan B.4).
+Api and worker side of storage (D.5, D-08, F.8, A-37, BR-30, BR-38): `GATEWAY_CLIENT` (`gateway-client.ts`, undici with the mTLS agent and the token read per call), `StorageGatewayContext` (tenant and repository descriptors of gateway calls), `HttpDataKeyIssuer` for `TenantProvisioner`, the repository administration routes (`repositories.service.ts`: config validation, credentials sealed by the gateway, connection test, OAuth consent with the `repo_oauth` transaction, move requests, object metadata), routing rules with BR-38 and four-eyes approval and `RoutingService.resolve` (`routing.service.ts`), and the `REPOS` field helpers for the read model (`repository-view.ts`). Other modules import from `index.ts`.
+Owner: WP-13.

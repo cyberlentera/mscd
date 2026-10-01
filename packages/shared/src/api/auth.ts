@@ -14,6 +14,23 @@ export const LOGIN_ERROR_CODES = ['no_account', 'mfa_required_by_policy', 'idp_e
 export const LoginErrorCode = z.enum(LOGIN_ERROR_CODES).meta({ id: 'LoginErrorCode', description: 'Error code of /login?error= (F.8, H.6)' });
 export type LoginErrorCode = z.infer<typeof LoginErrorCode>;
 
+/**
+ * `messageKey` values of the sign-in problems (F.3 to F.5), for the web's messages. `auth.invalid_credentials` is the
+ * one answer of every failed local sign-in; `auth.sso_required` comes only after a correct password and carries the
+ * accepted `methods`.
+ */
+export const AUTH_MESSAGE_KEYS = [
+  'auth.invalid_credentials',
+  'auth.sso_required',
+  'auth.mfa_invalid',
+  'auth.proof_required',
+  'auth.proof_invalid',
+  'auth.password_invalid',
+  'auth.reset_invalid',
+  'auth.invitation_invalid',
+] as const;
+export type AuthMessageKey = (typeof AUTH_MESSAGE_KEYS)[number];
+
 const Email = z.email().max(254);
 const TotpCode = z.string().regex(/^\d{6}$/);
 /** Recovery code `xxxx-xxxx-xx`, lowercase base32 (F.5). */
@@ -140,10 +157,15 @@ export const PasswordChangeRequest = named('PasswordChangeRequest', z.strictObje
 });
 export type PasswordChangeRequest = z.infer<typeof PasswordChangeRequest>;
 
-export const InvitationAcceptRequest = named('InvitationAcceptRequest', z.strictObject({ token: LinkToken, password: NewPassword.optional() }), 'POST /auth/invitations/accept body: the invitation token and, to sign in locally, a new password (F.4)', {
-  valid: [{ token: 'SW52aXRhdGlvbi1Ub2tlbi1WYWx1ZS0wMTIzNDU2Nzg5YWI', password: 'a much longer passphrase' }, { token: 'SW52aXRhdGlvbi1Ub2tlbi1WYWx1ZS0wMTIzNDU2Nzg5YWI' }],
-  invalid: [{ password: 'a much longer passphrase' }, { token: 'x' }],
-});
+export const InvitationAcceptRequest = named(
+  'InvitationAcceptRequest',
+  z.strictObject({ token: LinkToken, password: z.string().min(1).max(256).optional() }),
+  'POST /auth/invitations/accept body: the invitation token and the password: a new one (policy checked by the server) for an account without a password, or the current password of an account that has one, which is never replaced (F.4, F.6)',
+  {
+    valid: [{ token: 'SW52aXRhdGlvbi1Ub2tlbi1WYWx1ZS0wMTIzNDU2Nzg5YWI', password: 'a much longer passphrase' }, { token: 'SW52aXRhdGlvbi1Ub2tlbi1WYWx1ZS0wMTIzNDU2Nzg5YWI' }],
+    invalid: [{ password: 'a much longer passphrase' }, { token: 'x' }, { token: 'SW52aXRhdGlvbi1Ub2tlbi1WYWx1ZS0wMTIzNDU2Nzg5YWI', password: '' }],
+  },
+);
 export type InvitationAcceptRequest = z.infer<typeof InvitationAcceptRequest>;
 
 export const ProviderParams = named('ProviderParams', z.strictObject({ slug: ProviderSlug }), 'Path parameter {slug} of an identity provider', {
@@ -270,7 +292,7 @@ export const authMfaEnrolStartRoute = defineRoute({
   auth: 'enrolment',
   body: MfaEnrolStartRequest,
   response: MfaEnrolStartResponse,
-  errors: [401],
+  errors: [401, 429],
   readOnlyAllowed: true,
 });
 
@@ -348,11 +370,11 @@ export const authInvitationAcceptRoute = defineRoute({
   owner: 'WP-11',
   method: 'POST',
   path: '/api/v1/auth/invitations/accept',
-  summary: 'Redeem an invitation by setting a password, then continue to MFA enrolment',
+  summary: 'Redeem an invitation with a new password (or the current one of an existing account), then continue to the second factor',
   auth: 'public',
   body: InvitationAcceptRequest,
   response: LoginResponse,
-  errors: [403],
+  errors: [401, 403],
   readOnlyAllowed: true,
 });
 

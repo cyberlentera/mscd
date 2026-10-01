@@ -6,6 +6,7 @@
 import { Injectable } from '@nestjs/common';
 import type { LoginResponse, MfaEnrolConfirmResponse, MfaEnrolStartRequest, MfaEnrolStartResponse, MfaVerifyRequest } from '@mscd/shared';
 import type { FastifyReply } from 'fastify';
+import { sql } from 'kysely';
 import { RateLimitedError, UnauthenticatedError } from '../../common/problems';
 import type { Trx } from '../../common/tokens';
 import { AccountMailer } from './account-mailer';
@@ -51,6 +52,31 @@ export function decayedLockLevel(level: number, lastLockedUntil: Date | null, no
   return Math.max(0, level - Math.floor(since / MFA_LEVEL_DECAY_MS));
 }
 
+/** Key of a session's second-factor failure count in `platform.rate_limit_bucket` (F.3). */
+export function sessionFailureKey(idHash: Buffer): string {
+  return `mfa-fail:${idHash.toString('hex').slice(0, 40)}`;
+}
+
+/**
+ * Adds one second-factor failure of a session to its fixed-window count in `platform.rate_limit_bucket` and returns
+ * the failures so far. It runs in the caller's transaction on purpose: the caller holds the user's row lock, and
+ * asking the pool for a second connection while holding it lets `database.pool_max` concurrent failures take every
+ * connection and stall the api (each waits for a connection or for the row lock held by another).
+ */
+export async function countSessionFailureIn(trx: Trx, key: string, windowMs: number): Promise<number> {
+  const window = Math.max(1, Math.trunc(windowMs));
+  const { rows } = await sql<{ hits: number }>`
+    insert into platform.rate_limit_bucket as b (key, window_start, hits, expires_at)
+    values (${key}, clock_timestamp(), 1, clock_timestamp() + ${window} * interval '1 millisecond')
+    on conflict (key) do update set
+      window_start = case when b.expires_at <= clock_timestamp() then clock_timestamp() else b.window_start end,
+      hits = case when b.expires_at <= clock_timestamp() then 1 else b.hits + 1 end,
+      expires_at = case when b.expires_at <= clock_timestamp()
+                        then clock_timestamp() + ${window} * interval '1 millisecond' else b.expires_at end
+    returning hits`.execute(trx);
+  return Number(rows[0]!.hits);
+}
+
 export type SecondFactorProof = { code: string } | { recoveryCode: string };
 
 export type SecondFactorOutcome =
@@ -66,6 +92,11 @@ export interface SecondFactorContext {
 }
 
 const USER_COLUMNS = ['id', 'handle', 'email', 'display_name', 'job_title', 'kind'] as const;
+
+/** The audit actor of a user acting on their own sign-in. */
+function actorOf(userId: string, kind: string): { userId: string; kind: 'user' | 'guest' } {
+  return { userId, kind: kind === 'guest' ? 'guest' : 'user' };
+}
 
 function lockedError(until: Date, now: Date): RateLimitedError {
   return new RateLimitedError(Math.max(1, Math.ceil((until.getTime() - now.getTime()) / 1000)), 'Two-step sign-in is locked after too many wrong codes; try again later');
@@ -105,7 +136,7 @@ export class MfaService {
     const now = this.infra.clock.now();
     const user = await trx
       .selectFrom('platform.app_user')
-      .select(['id', 'email', 'mfa_failed_count', 'mfa_lock_level', 'mfa_locked_until'])
+      .select(['id', 'email', 'kind', 'mfa_failed_count', 'mfa_lock_level', 'mfa_locked_until'])
       .where('id', '=', userId)
       .forUpdate()
       .executeTakeFirstOrThrow();
@@ -114,7 +145,7 @@ export class MfaService {
     const method = 'code' in proof ? 'totp' : 'recovery_code';
     const recovery = 'code' in proof ? null : await this.useRecoveryCode(trx, userId, proof.recoveryCode, now);
     const ok = 'code' in proof ? await this.useTotp(trx, userId, proof.code, now) : recovery !== null;
-    const actor = { userId, kind: 'user' as const };
+    const actor = actorOf(userId, user.kind);
     if (ok) {
       if (user.mfa_failed_count !== 0) await trx.updateTable('platform.app_user').set({ mfa_failed_count: 0 }).where('id', '=', userId).execute();
       if (recovery !== null) {
@@ -251,7 +282,8 @@ export class MfaService {
 
     const outcome = await this.infra.scope.withPlatform(
       async (trx) => {
-        await trx.selectFrom('platform.app_user').select('id').where('id', '=', userId).forUpdate().executeTakeFirstOrThrow();
+        const owner = await trx.selectFrom('platform.app_user').select(['id', 'kind']).where('id', '=', userId).forUpdate().executeTakeFirstOrThrow();
+        const actor = actorOf(userId, owner.kind);
         const factor = await this.pendingFactor(trx, userId);
         const step = factor ? await this.matchPending(factor, userId, code, now) : null;
         if (!factor || step === null) return null;
@@ -281,7 +313,7 @@ export class MfaService {
           if (revoked > 0) {
             await this.infra.audit.record(trx, {
               action: 'auth.session_revoked',
-              actor: { userId, kind: 'user' },
+              actor,
               organizationId: row.auth_org_id,
               entityType: 'user',
               entityId: userId,
@@ -291,7 +323,7 @@ export class MfaService {
         }
         await this.infra.audit.record(trx, {
           action: 'auth.mfa_enrolled',
-          actor: { userId, kind: 'user' },
+          actor,
           organizationId: row.auth_org_id,
           entityType: 'user',
           entityId: userId,
@@ -398,15 +430,15 @@ export class MfaService {
     return new UnauthenticatedError({ messageKey: 'auth.proof_required', detail: 'Enter your current code or your password to replace the authenticator' });
   }
 
-  /** Counts a second-factor failure of one session; the 10th revokes it (F.3). */
+  /** Counts a second-factor failure of one session in the caller's transaction; the 10th revokes it (F.3). */
   private async countSessionFailure(trx: Trx, row: SessionRow, now: Date): Promise<void> {
     const window = Math.max(60_000, row.absolute_expires_at.getTime() - now.getTime());
-    const hit = await this.infra.rateBuckets.hit(`mfa-fail:${row.id_hash.toString('hex').slice(0, 40)}`, window);
-    if (hit.current < SESSION_MFA_FAILURE_LIMIT) return;
+    const failures = await countSessionFailureIn(trx, sessionFailureKey(row.id_hash), window);
+    if (failures < SESSION_MFA_FAILURE_LIMIT) return;
     if (await this.sessions.revoke(trx, row.id_hash, 'mfa_failures')) {
       await this.infra.audit.record(trx, {
         action: 'auth.session_revoked',
-        actor: { userId: row.user_id, kind: 'user' },
+        actor: { userId: row.user_id, kind: row.auth_method === 'guest' ? 'guest' : 'user' },
         organizationId: row.auth_org_id,
         entityType: 'user',
         entityId: row.user_id,

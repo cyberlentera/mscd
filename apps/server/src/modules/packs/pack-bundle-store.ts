@@ -1,15 +1,22 @@
 // Where an imported pack bundle waits for the worker's `pack.install` job (D.3 `POST /admin/packs/import`). With a
 // storage gateway client and an organisation, the bundle is stored in that organisation's Managed Vault through the
-// gateway (encrypted, SHA-256 checked when read back). Without a gateway client (tests, a single process) or without
-// an organisation (a platform operator who has none), it is a local temporary file readable only by this process's
-// user. The object key names the store: `vault:<base64url JSON>` or `local:<install id>.pack`.
+// gateway (encrypted, SHA-256 checked when read back). Without a gateway client or without an organisation (a
+// platform operator who has none), it is a local temporary file readable only by this process's user, which only a
+// job running in this process can read: the in-memory job queue of tests. With a queue whose jobs run in another
+// process (the worker of D.4), such an import is refused before anything is read (`assertJobCanRead`, 503) instead
+// of being accepted and then rejected by the worker. The object key names the store: `vault:<base64url JSON>` or
+// `local:<install id>.pack`.
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { Readable } from 'node:stream';
-import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { MAX_PACK_IMPORT_BYTES, type GatewayRepository, type PutHeader, type PutResult } from '@mscd/shared';
+import { InMemoryJobQueue } from '../../common/jobs/in-memory-job-queue';
+import type { JobQueue } from '../../common/jobs/job-queue';
+import { ProblemError } from '../../common/problems';
 import { GATEWAY_CLIENT, SYSTEM_USER_ID, type GatewayClient, type TenantInfo, type Trx } from '../../common/tokens';
 import { TenantResolver } from '../tenancy/tenant-resolver';
 import { TenantScope, systemContextOf } from '../tenancy/tenant-scope';
@@ -42,13 +49,50 @@ export class PackBundleStore {
   constructor(
     private readonly scope: TenantScope,
     private readonly tenants: TenantResolver,
-    @Optional() @Inject(GATEWAY_CLIENT) private readonly gateway?: GatewayClient,
+    private readonly moduleRef: ModuleRef,
   ) {}
+
+  /**
+   * The storage gateway client of the application, when the storage module is loaded (api and worker). Looked up
+   * across modules at call time, so the pack module needs no import of the storage module.
+   */
+  private gateway(): GatewayClient | undefined {
+    try {
+      return this.moduleRef.get<GatewayClient>(GATEWAY_CLIENT, { strict: false }) ?? undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /** Where `put` keeps the bundle of an importer: the organisation's Managed Vault, or a local file of this process. */
+  placement(org: TenantInfo | null): 'vault' | 'local' {
+    return org && this.gateway() ? 'vault' : 'local';
+  }
+
+  /**
+   * Refuses (503) an import whose bundle the `pack.install` job could not read: a local temporary file is readable only
+   * when the job runs in this process, which only the in-memory job queue does. With the queue of a separate worker
+   * (pg-boss or BullMQ, D.4) an importer without a Managed Vault (a platform operator without an organisation with
+   * `tenancy.mode = multi`, or a process without a storage gateway client) is told to install from disk instead.
+   */
+  assertJobCanRead(org: TenantInfo | null, jobs: JobQueue): void {
+    if (this.placement(org) === 'vault' || jobs instanceof InMemoryJobQueue) return;
+    const why = org ? 'this process has no storage gateway client' : 'an import without an organisation has no Managed Vault';
+    throw new ProblemError('dependency-unavailable', {
+      detail: `The pack bundle cannot be kept for the worker: ${why}, and the worker runs in another process`,
+      messageKey: 'packs.import_unavailable',
+      messages: {
+        en: 'This installation cannot keep an imported pack bundle for the worker. Install the pack with mscd-server packs install <file>, or put it in packs.dir and run migrate.',
+        id: 'Instalasi ini tidak dapat menyimpan bundel paket yang diimpor untuk worker. Pasang paket dengan mscd-server packs install <file>, atau letakkan di packs.dir lalu jalankan migrate.',
+      },
+    });
+  }
 
   /** Stores a bundle and returns its object key. */
   async put(bytes: Buffer, context: BundlePutContext): Promise<string> {
-    if (this.gateway && context.org) return this.putVault(this.gateway, bytes, context.org, context.installId);
-    if (this.gateway) this.logger.warn('Pack import without an organisation: the bundle is kept in a local temporary file of this process');
+    const gateway = this.gateway();
+    if (gateway && context.org) return this.putVault(gateway, bytes, context.org, context.installId);
+    if (gateway) this.logger.warn('Pack import without an organisation: the bundle is kept in a local temporary file of this process');
     return this.putLocal(bytes, context.installId);
   }
 
@@ -114,7 +158,8 @@ export class PackBundleStore {
   }
 
   private async getVault(objectKey: string): Promise<Buffer> {
-    if (!this.gateway) throw new Error('The pack bundle is in the Managed Vault but this process has no storage gateway client');
+    const gateway = this.gateway();
+    if (!gateway) throw new Error('The pack bundle is in the Managed Vault but this process has no storage gateway client');
     let ref: VaultRef;
     try {
       ref = JSON.parse(Buffer.from(objectKey.slice(VAULT_PREFIX.length), 'base64url').toString('utf8')) as VaultRef;
@@ -124,7 +169,7 @@ export class PackBundleStore {
     const org = await this.tenants.resolveById(ref.o);
     if (!org) throw new Error('The organisation of the pack bundle does not exist');
     const vault = await this.scope.withTenant({ ...systemContextOf(org), userId: SYSTEM_USER_ID }, (trx) => this.vaultOf(trx, org.id, ref.r));
-    const { stream } = await this.gateway.stream({
+    const { stream } = await gateway.stream({
       tenant: { orgId: org.id, wrappedDek: vault.wrappedDek },
       repository: vault.repository,
       object: { externalItemId: ref.i, externalVersionId: ref.v, hashAlgorithm: 'sha256', hashValue: ref.h, hashSource: 'computed', folderPath: ref.f },

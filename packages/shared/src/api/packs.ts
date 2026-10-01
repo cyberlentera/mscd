@@ -69,8 +69,10 @@ export const packsImportRoute = defineRoute({
   requestType: 'multipart/form-data',
   response: CommandResult,
   status: 202,
-  errors: [413, 422],
+  errors: [409, 413, 422, 429, 503],
   idempotent: true,
+  // Each import is verified on the api (decompression, archive rules, signature): 20 per user and hour.
+  rateLimits: [{ key: 'user', max: 20, windowSeconds: 3600 }],
 });
 
 export const packsCheckUpdatesRoute = defineRoute({

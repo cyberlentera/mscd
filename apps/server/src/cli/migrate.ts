@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { Command } from 'commander';
 import { sql, type Kysely } from 'kysely';
@@ -8,11 +8,14 @@ import { exitOnConfigError, loadConfigOrExit } from '../config/run-context';
 import { migrateFolder, migrationsDir, MIGRATIONS_ROOT, openDedicatedDatabase, type MigrationFolder } from '../db/migrator';
 import { SqlFileMigrationProvider } from '../db/sql-migration-provider';
 import type { DB } from '../db/types';
+import { databaseIdentity, installPacksFromDir, type PackFolderReport } from '../modules/packs/install-from-dir';
+import { installerAuditWriter } from './packs';
 
-// Run mode `migrate` (build plan C.3). This file implements steps 1 (platform), 2 (ref) and 4 (every tenant
-// schema); WP-22 adds step 3 (pg-boss schema) and WP-12 step 5 (packs) at the marked places. Every step runs as
-// mscd_migrator on a dedicated connection of its own (never a pool shared with other work) with
-// `app.platform_scope = 'on'` for that session, and the connection is closed when the step is done.
+// Run mode `migrate` (build plan C.3). This file implements steps 1 (platform), 2 (ref), 4 (every tenant schema)
+// and 5 (the packs of `packs.dir` that are not installed yet, WP-12); WP-22 adds step 3 (pg-boss schema) at the
+// marked place. Steps 1, 2 and 4 run as mscd_migrator, step 5 as mscd_pack_installer (D-17), each on a dedicated
+// connection of its own (never a pool shared with other work) with `app.platform_scope = 'on'` for that session,
+// and the connection is closed when the step is done.
 
 /** Registers `mscd-server migrate [--dry-run]`. */
 export function register(program: Command): void {
@@ -36,6 +39,15 @@ export interface MigrateReport {
   platform: string[];
   ref: string[];
   tenants: TenantMigrationResult[];
+  /** Step 5, present when `MigrateOptions.packs` was given. */
+  packs?: PackFolderReport;
+}
+
+/** C.3 step 5: the folder of pack files (`packs.dir`) and the URL of role mscd_pack_installer. */
+export interface MigratePacksOptions {
+  dir: string;
+  /** Read only when the folder holds pack files; must name the same database as the migrator URL. */
+  installerUrl: () => string;
 }
 
 export interface MigrateOptions {
@@ -45,6 +57,8 @@ export interface MigrateOptions {
   migrationsRoot?: string;
   /** Progress lines (default: none). */
   log?: (line: string) => void;
+  /** Step 5 (WP-12): install the pack files of a folder. Omitted: no pack step. */
+  packs?: MigratePacksOptions;
 }
 
 /**
@@ -84,9 +98,37 @@ export async function migrateAll(options: MigrateOptions): Promise<MigrateReport
     report.tenants.push(result);
   }
 
-  // Step 5 (WP-12): install the packs of packs.dir that are not installed yet, as mscd_pack_installer.
+  // Step 5 (WP-12): install the packs of packs.dir that are not installed yet, as mscd_pack_installer (D-17).
+  if (options.packs) report.packs = await installPacks(options.connectionString, options.packs, log);
 
   return report;
+}
+
+/**
+ * C.3 step 5. A missing or empty folder is nothing to do (no output, no installer connection). The installer URL
+ * must name the database the migrator just migrated.
+ */
+async function installPacks(migratorUrl: string, packs: MigratePacksOptions, log: (line: string) => void): Promise<PackFolderReport> {
+  const files = await listPackFiles(packs.dir);
+  if (files === null || files.length === 0) return { dir: path.resolve(packs.dir), found: files !== null, results: [] };
+  const installerUrl = packs.installerUrl();
+  if (databaseIdentity(installerUrl) !== databaseIdentity(migratorUrl)) {
+    throw new Error(
+      `The pack installer URL names database ${databaseIdentity(installerUrl)}, but the migrator URL names ${databaseIdentity(migratorUrl)}: ` +
+        'both roles must connect to the same database (database.pack_installer_url_file or MSCD_DATABASE_PACK_URL)',
+    );
+  }
+  return installPacksFromDir(packs.dir, { installerUrl, audit: installerAuditWriter, actor: { userId: null, kind: 'operator' }, log });
+}
+
+/** The `*.pack` files of a folder in name order; null when the folder does not exist. */
+async function listPackFiles(dir: string): Promise<string[] | null> {
+  try {
+    return (await readdir(dir)).filter((name) => name.endsWith('.pack')).sort();
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    throw error;
+  }
 }
 
 export interface PendingMigration {
@@ -153,7 +195,8 @@ async function runMigrateCommand(options: { dryRun?: boolean }): Promise<void> {
 
 /**
  * The `migrate` run mode with a loaded configuration: applies (or with `dryRun` lists) the migrations and
- * returns the process exit code (1 when a tenant schema failed). Platform and ref errors are thrown.
+ * returns the process exit code (1 when a tenant schema failed or a pack of `packs.dir` was refused or failed to
+ * install; a pack older than the installed version is skipped and is not a failure). Platform and ref errors are thrown.
  */
 export async function runMigrate(
   config: MscdConfig,
@@ -169,6 +212,7 @@ export async function runMigrate(
     connectionString,
     migrationsRoot: options.migrationsRoot,
     log: (line) => options.out(`migrate: ${line}\n`),
+    packs: { dir: config.profile.packs.dir, installerUrl: () => config.databaseUrl('pack_installer') },
   });
   const failed = report.tenants.filter((t) => t.error !== undefined);
   const migrated = report.tenants.length - failed.length;
@@ -176,11 +220,22 @@ export async function runMigrate(
     `migrate: done (platform ${report.platform.length} applied, ref ${report.ref.length} applied, ` +
       `${migrated} of ${report.tenants.length} tenant schemas up to date)\n`,
   );
+  // A pack older than the installed version is `skipped` (C.3 step 5 installs what is not installed yet), not a problem.
+  const packProblems = (report.packs?.results ?? []).filter((r) => r.status === 'rejected' || r.status === 'failed');
+  if (report.packs && report.packs.results.length > 0) {
+    const count = (status: string) => report.packs!.results.filter((r) => r.status === status).length;
+    options.out(
+      `migrate: packs ${count('installed')} installed, ${count('unchanged')} already installed, ` +
+        `${count('skipped')} older than installed, ${count('rejected')} rejected, ${count('failed')} failed\n`,
+    );
+  }
   if (failed.length > 0) {
     options.out(`migrate: ${failed.length} tenant schema(s) failed: ${failed.map((t) => t.schema).join(', ')}\n`);
-    return 1;
   }
-  return 0;
+  if (packProblems.length > 0) {
+    options.out(`migrate: ${packProblems.length} pack(s) not installed: ${packProblems.map((r) => r.file).join(', ')}\n`);
+  }
+  return failed.length > 0 || packProblems.length > 0 ? 1 : 0;
 }
 
 interface OrganizationRow {

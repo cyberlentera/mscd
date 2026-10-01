@@ -13,7 +13,6 @@ import {
   type MeAssembler,
 } from '../../common/tokens';
 import { SecretBox } from '../keys/secret-box';
-import { RateLimitBucketStore } from '../tenancy/rate-limit-store';
 import { TenantResolver } from '../tenancy/tenant-resolver';
 import { TenantScope } from '../tenancy/tenant-scope';
 
@@ -28,7 +27,6 @@ export class IdentityInfra {
     @Optional() private readonly tenantResolver?: TenantResolver,
     @Optional() private readonly clockService?: Clock,
     @Optional() private readonly secretBox?: SecretBox,
-    @Optional() private readonly buckets?: RateLimitBucketStore,
     @Optional() @Inject(AUDIT_WRITER) private readonly auditWriter?: AuditWriter,
     @Optional() @Inject(LICENCE_GATE) private readonly licenceGate?: LicenceGate,
     @Optional() @Inject(ME_ASSEMBLER) private readonly meAssembler?: MeAssembler,
@@ -57,11 +55,6 @@ export class IdentityInfra {
   get secrets(): SecretBox {
     if (!this.secretBox) throw missing('SecretBox', 'KeysModule');
     return this.secretBox;
-  }
-
-  get rateBuckets(): RateLimitBucketStore {
-    if (!this.buckets) throw missing('RateLimitBucketStore', 'TenancyModule');
-    return this.buckets;
   }
 
   get audit(): AuditWriter {

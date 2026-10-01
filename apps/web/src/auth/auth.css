@@ -1,0 +1,147 @@
+/* Sign-in and account pages (BUILD-PLAN H.6): a port of project/MSCD Login.dc.html. Layout, spacing and the brand
+   panel animations follow the design; colours use the app's accessible accent (--acc of styles.css) so text and
+   controls meet WCAG AA in the light and the dark theme. No text is smaller than 12px. */
+
+.au-root{
+  --au-bg:#f4f2ee;--au-sur:#ffffff;--au-bd:#e6e1d7;--au-field:#8f877a;--au-tx:#1c1a17;--au-tx2:#4a453d;--au-tx3:#6b655a;
+  --au-acc:#ad4f0b;--au-acc-h:#8f3f07;--au-onacc:#ffffff;--au-ring:rgba(173,79,11,.2);--au-hover:#faf9f6;
+  --au-bad:#bf2f25;--au-badbg:#fbe3df;--au-badtx:#7e1c15;--au-ok:#1f7a48;--au-okbg:#e4f3ea;--au-oktx:#145332;
+  --au-info:#2a58b8;--au-infobg:#e3ebfb;--au-infotx:#1d3f86;
+  --au-ff:'IBM Plex Sans',system-ui,sans-serif;--au-ffm:'IBM Plex Mono',ui-monospace,monospace;
+  min-height:100vh;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);
+  font-family:var(--au-ff);color:var(--au-tx);background:var(--au-bg);-webkit-font-smoothing:antialiased
+}
+.au-root[data-theme="dark"]{
+  --au-bg:#131210;--au-sur:#1c1a17;--au-bd:#302d27;--au-field:#7a7366;--au-tx:#f2eee7;--au-tx2:#cfc7b8;--au-tx3:#a39b8c;
+  --au-acc:#e8731a;--au-acc-h:#f08a3a;--au-onacc:#131210;--au-ring:rgba(232,115,26,.28);--au-hover:#22201c;
+  --au-bad:#f5776c;--au-badbg:#3d1a16;--au-badtx:#fbd0cb;--au-ok:#5fcf90;--au-okbg:#17301f;--au-oktx:#c5f0d6;
+  --au-info:#93b3f5;--au-infobg:#172440;--au-infotx:#d3e0fb
+}
+body:has(.au-root[data-theme="dark"]),body:has(.au-boot[data-theme="dark"]){background:#131210}
+.au-root *,.au-root *::before,.au-root *::after{box-sizing:border-box}
+.au-root a{color:var(--au-acc);text-decoration:none}
+.au-root a:hover{color:var(--au-acc-h);text-decoration:underline}
+.au-root :focus-visible{outline:2px solid var(--au-acc);outline-offset:2px}
+
+@keyframes au-up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes au-meshA{0%{transform:translate(-10%,-10%) scale(1)}50%{transform:translate(12%,8%) scale(1.15)}100%{transform:translate(-10%,-10%) scale(1)}}
+@keyframes au-meshB{0%{transform:translate(10%,0) scale(1.1)}50%{transform:translate(-12%,-14%) scale(.95)}100%{transform:translate(10%,0) scale(1.1)}}
+@keyframes au-drawLoop{0%{stroke-dashoffset:400;opacity:0}6%{opacity:1}55%{stroke-dashoffset:0;opacity:1}85%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}
+@keyframes au-dotLoop{0%,10%{opacity:0;transform:scale(.4)}20%,85%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.4)}}
+@keyframes au-spin{to{transform:rotate(360deg)}}
+
+/* left: brand panel (dark in both themes, as the design) */
+.au-brand{position:relative;background:#0f0e0c;color:#f2eee7;padding:40px 48px;display:flex;flex-direction:column;justify-content:space-between;gap:32px;overflow:hidden}
+.au-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:56px 56px;-webkit-mask-image:radial-gradient(ellipse 80% 70% at 30% 40%,#000 20%,transparent 80%);mask-image:radial-gradient(ellipse 80% 70% at 30% 40%,#000 20%,transparent 80%)}
+.au-mesh{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.au-mesh>span{position:absolute;border-radius:50%}
+.au-mesh-a{left:-20%;bottom:-30%;width:90%;height:80%;background:radial-gradient(circle,rgba(232,115,26,.4),transparent 60%);filter:blur(40px);animation:au-meshA 18s ease-in-out infinite}
+.au-mesh-b{right:-30%;top:-20%;width:80%;height:70%;background:radial-gradient(circle,rgba(122,79,211,.28),transparent 60%);filter:blur(50px);animation:au-meshB 22s ease-in-out infinite}
+.au-logo{position:relative;display:inline-flex;align-items:center;gap:12px;color:#f2eee7}
+.au-logo img{height:28px;width:auto;display:block;filter:brightness(0) invert(1)}
+.au-logo span{font-weight:700;letter-spacing:.04em;font-size:14px}
+.au-hero{position:relative;max-width:520px;animation:au-up .8s ease .1s both}
+.au-chain{display:block;overflow:visible;margin-bottom:34px;width:100%;height:auto}
+.au-chain text{font-family:var(--au-ffm);font-size:12px;fill:#b9b2a6}
+.au-chain-draw{animation:au-drawLoop 7s cubic-bezier(.2,.7,.2,1) .4s infinite}
+.au-chain-dot{animation:au-dotLoop 7s ease infinite;transform-box:fill-box;transform-origin:center}
+.au-hero h1{margin:0;font-size:40px;line-height:1.1;letter-spacing:-.03em;font-weight:600;color:#f2eee7}
+.au-facts{margin-top:22px;display:flex;flex-direction:column;gap:12px;font-size:15px;color:#e6e0d4}
+.au-fact{display:flex;gap:12px;align-items:center}
+.au-fact-icon{width:30px;height:30px;border-radius:9px;background:rgba(232,115,26,.18);color:#e8731a;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.au-meta{position:relative;display:flex;flex-wrap:wrap;gap:8px 28px;font-size:12.5px;color:#a39b8c;font-family:var(--au-ffm)}
+
+/* right: the form */
+.au-main{display:flex;align-items:center;justify-content:center;padding:48px 32px;background:var(--au-bg)}
+.au-card{width:100%;max-width:400px;animation:au-up .7s ease .15s both}
+.au-eyebrow{font-size:12.5px;color:var(--au-tx3);font-family:var(--au-ffm);letter-spacing:.06em}
+.au-title{margin:8px 0 0;font-size:28px;line-height:1.2;letter-spacing:-.02em;font-weight:600;color:var(--au-tx)}
+.au-lead{margin:6px 0 0;color:var(--au-tx2);font-size:14.5px;line-height:1.5}
+.au-alert{margin-top:20px;padding:12px 14px;border-radius:10px;font-size:13.5px;line-height:1.45;display:flex;gap:10px;align-items:flex-start;border:1px solid}
+.au-alert svg{flex:none;margin-top:1px}
+.au-alert-error{background:var(--au-badbg);border-color:var(--au-bad);color:var(--au-badtx)}
+.au-alert-error svg{color:var(--au-badtx)}
+.au-alert-ok{background:var(--au-okbg);border-color:var(--au-ok);color:var(--au-oktx)}
+.au-alert-ok svg{color:var(--au-oktx)}
+.au-alert-info{background:var(--au-infobg);border-color:var(--au-info);color:var(--au-infotx)}
+.au-alert-info svg{color:var(--au-infotx)}
+.au-alert a{color:inherit;text-decoration:underline;font-weight:600}
+.au-sso{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:26px}
+.au-sso-one{grid-template-columns:1fr}
+.au-sso-btn{display:flex;align-items:center;justify-content:center;gap:10px;min-height:44px;padding:6px 12px;border-radius:10px;border:1px solid var(--au-field);background:var(--au-sur);color:var(--au-tx);font:inherit;font-size:14px;font-weight:500;line-height:1.25;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+.au-root .au-sso-btn,.au-root .au-sso-btn:hover{color:var(--au-tx);text-decoration:none}
+.au-sso-btn:hover{border-color:var(--au-tx);background:var(--au-hover)}
+.au-divider+.au-sso{margin-top:0}
+.au-sso-btn svg{flex:none}
+.au-divider{display:flex;align-items:center;gap:12px;margin:22px 0;color:var(--au-tx3);font-size:12.5px}
+.au-divider::before,.au-divider::after{content:"";flex:1;height:1px;background:var(--au-bd)}
+.au-form{display:flex;flex-direction:column;gap:14px;margin-top:22px}
+.au-sso+.au-form,.au-divider+.au-form{margin-top:0}
+.au-label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500;color:var(--au-tx2)}
+.au-label-row{display:flex;justify-content:space-between;gap:12px}
+.au-label-row a{font-weight:500}
+.au-input{width:100%;height:46px;padding:0 14px;border-radius:10px;border:1px solid var(--au-field);background:var(--au-sur);color:var(--au-tx);font:inherit;font-size:14.5px;outline:none;transition:border-color .15s,box-shadow .15s}
+.au-input::placeholder{color:var(--au-tx3);opacity:1}
+.au-input:focus,.au-input:focus-visible{border-color:var(--au-acc);box-shadow:0 0 0 4px var(--au-ring);outline:none}
+.au-input[aria-invalid="true"]{border-color:var(--au-bad)}
+.au-code{font-family:var(--au-ffm);font-size:22px;letter-spacing:.32em;text-align:center;height:54px}
+.au-code-recovery{font-size:18px;letter-spacing:.12em}
+.au-check{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--au-tx2);cursor:pointer}
+.au-check input{width:16px;height:16px;margin:0;accent-color:var(--au-acc);flex:none}
+.au-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:48px;border:0;border-radius:11px;background:var(--au-acc);color:var(--au-onacc);font:inherit;font-size:15px;font-weight:600;margin-top:4px;cursor:pointer;transition:background .15s}
+.au-btn:hover{background:var(--au-acc-h)}
+.au-btn:disabled{cursor:default;opacity:1;background:var(--au-acc)}
+.au-btn:disabled[aria-disabled="true"]{background:var(--au-bd);color:var(--au-tx2)}
+.au-btn-quiet{background:transparent;color:var(--au-acc);border:1px solid var(--au-field);height:44px;font-size:14px}
+.au-btn-quiet:hover{background:var(--au-hover);color:var(--au-acc-h)}
+.au-btn-quiet:disabled{background:transparent}
+.au-link-btn{background:none;border:0;padding:0;font:inherit;font-size:13.5px;color:var(--au-acc);cursor:pointer;text-align:left}
+.au-link-btn:hover{color:var(--au-acc-h);text-decoration:underline}
+.au-spinner{width:16px;height:16px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:au-spin .8s linear infinite}
+.au-note{margin-top:16px;padding:12px 14px;border-radius:10px;background:var(--au-sur);border:1px solid var(--au-bd);font-size:13px;line-height:1.45;color:var(--au-tx2);display:flex;gap:10px;align-items:flex-start}
+.au-note svg{flex:none;margin-top:1px;color:var(--au-ok)}
+.au-foot{margin-top:28px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;font-size:12.5px;color:var(--au-tx3)}
+.au-actions{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13.5px}
+
+/* enrolment */
+.au-qr{display:flex;gap:18px;align-items:center;margin-top:22px;padding:14px;border-radius:12px;background:var(--au-sur);border:1px solid var(--au-bd)}
+.au-qr-code{flex:none;width:148px;height:148px;padding:8px;border-radius:8px;background:#ffffff}
+.au-qr-code svg{display:block;width:100%;height:100%}
+.au-qr-facts{min-width:0;display:flex;flex-direction:column;gap:10px;font-size:13px;color:var(--au-tx2)}
+.au-secret{font-family:var(--au-ffm);font-size:14px;color:var(--au-tx);overflow-wrap:anywhere;line-height:1.5;user-select:all}
+.au-codes{margin:18px 0 0;padding:14px 16px;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:8px 18px;border-radius:12px;background:var(--au-sur);border:1px solid var(--au-bd);font-family:var(--au-ffm);font-size:15px;color:var(--au-tx);user-select:all}
+.au-codes li{white-space:nowrap}
+.au-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.au-row .au-btn-quiet{width:auto;padding:0 16px;margin-top:0}
+.au-muted{font-size:13px;color:var(--au-tx2)}
+
+/* full-page states of the boot (same background and font as the app) */
+.au-boot{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px;background:#f4f2ee;color:#4a453d;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px}
+.au-boot[data-theme="dark"]{background:#131210;color:#cfc7b8}
+.au-boot-box{max-width:440px;display:flex;flex-direction:column;gap:14px;align-items:flex-start}
+.au-boot-box h1{margin:0;font-size:20px;font-weight:600;color:#1c1a17}
+.au-boot[data-theme="dark"] .au-boot-box h1{color:#f2eee7}
+.au-boot-box p{margin:0;line-height:1.5}
+.au-boot-actions{display:flex;gap:10px;flex-wrap:wrap}
+.au-boot-actions button{height:40px;padding:0 16px;border-radius:10px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;border:1px solid #8f877a;background:#ffffff;color:#1c1a17}
+.au-boot-actions button.au-boot-primary{background:#ad4f0b;border-color:#ad4f0b;color:#ffffff}
+.au-boot[data-theme="dark"] .au-boot-actions button{background:#1c1a17;color:#f2eee7;border-color:#7a7366}
+.au-boot[data-theme="dark"] .au-boot-actions button.au-boot-primary{background:#e8731a;border-color:#e8731a;color:#131210}
+
+.au-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+@media (max-width:900px){
+  .au-root{grid-template-columns:1fr}
+  .au-brand{padding:20px 24px;gap:0}
+  .au-hero,.au-meta{display:none}
+  .au-main{padding:32px 20px 48px;align-items:flex-start}
+}
+@media (max-width:440px){
+  .au-sso{grid-template-columns:1fr}
+  .au-qr{flex-direction:column;align-items:flex-start}
+  .au-codes{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  .au-root *,.au-root *::before,.au-root *::after{animation:none!important;transition:none!important}
+  .au-chain-draw{stroke-dashoffset:0}
+}

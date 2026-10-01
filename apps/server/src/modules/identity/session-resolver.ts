@@ -2,9 +2,12 @@
 // the session cookie, then `platform.session` read with platform scope (not revoked, idle and absolute expiry),
 // then the user (status active), then the current organisation: membership `active` and organisation `active`, or
 // `offboarding` for reads and exports only, else 403 `organisation-inactive`. The sign-in steps under `/auth/`
-// (second factor, enrolment, logout) are not business routes and work whatever the organisation's status.
+// (second factor, enrolment, logout) and the routes of the user's own session (`GET /me`, `PUT /me/org`, membership
+// acceptance, preferences) are not business routes: they work whatever the organisation's status, so a member of a
+// suspended organisation can still see who is signed in and switch to another organisation (D-26).
 // `verifyRequest` is the CSRF hook (F.2): non-GET requests with a session must send `X-CSRF-Token`; public non-GET
-// routes and the guest one-time code must come from the application's own origin.
+// routes and the guest one-time code must come from the application's own origin (`Origin`, else `Referer`); without
+// either header only a request that a page of another site cannot send is accepted (see `crossSiteSendable`).
 import { Injectable, Logger } from '@nestjs/common';
 import { routes as contractRoutes, type RouteAuth, type RouteDef } from '@mscd/shared';
 import type { FastifyRequest } from 'fastify';
@@ -22,6 +25,9 @@ export const CSRF_HEADER = 'x-csrf-token';
 /** Paths of the sign-in steps, which an inactive organisation does not block (D.1 Organisation status). */
 const AUTH_PATH_PREFIX = '/api/v1/auth/';
 
+/** Routes of the user's own session that an inactive organisation does not block either. */
+const SESSION_ROUTE_IDS: ReadonlySet<string> = new Set(['me.get', 'me.switch-org', 'me.membership.accept', 'me.preferences']);
+
 interface LoadedSession {
   row: SessionRow;
   user: { id: string; handle: string; email: string; display_name: string; job_title: string | null; kind: 'person' | 'system' | 'guest'; status: string; deleted_at: Date | null };
@@ -31,6 +37,11 @@ interface LoadedSession {
 
 /** `method path` of every contract route, to find the route id from Fastify's route pattern. */
 const ROUTE_BY_PATTERN = new Map<string, RouteDef>(contractRoutes.map((r) => [`${r.method} ${r.path}`, r]));
+
+/** True for routes that are not business routes: sign-in steps and the user's own session (D.1 Organisation status). */
+export function exemptFromOrganisationStatus(pattern: string, route: RouteDef | undefined): boolean {
+  return pattern.startsWith(AUTH_PATH_PREFIX) || (route !== undefined && SESSION_ROUTE_IDS.has(route.id));
+}
 
 /** True for routes an `offboarding` organisation still serves: reads and exports (D.1 Organisation status). */
 export function offboardingAllows(method: string, route: RouteDef | undefined): boolean {
@@ -47,6 +58,26 @@ function originOf(value: string | undefined): string | null {
   } catch {
     return null;
   }
+}
+
+/** Request content types a page of another site can send without a CORS preflight (Fetch standard). */
+const CORS_SAFELISTED_TYPES: ReadonlySet<string> = new Set(['application/x-www-form-urlencoded', 'multipart/form-data', 'text/plain']);
+
+/**
+ * True when a request without `Origin` and `Referer` could have been sent by a page of another site, which an older
+ * browser (or a page with `Referrer-Policy: no-referrer`) can do without either header: a body with a CORS-safelisted
+ * content type, or a body without a content type. Such a request is refused (F.2). A request with another content
+ * type (`application/json`) needs a CORS preflight, which this api never answers, so a page of another site cannot
+ * send it; without a body nothing can be submitted. Those requests come from programs (command-line clients, tests)
+ * and are accepted.
+ */
+export function crossSiteSendable(request: Pick<FastifyRequest, 'headers'>): boolean {
+  const header = request.headers['content-type'];
+  const type = (typeof header === 'string' ? header : '').split(';')[0]!.trim().toLowerCase();
+  if (type !== '') return CORS_SAFELISTED_TYPES.has(type);
+  const length = request.headers['content-length'];
+  const hasBody = request.headers['transfer-encoding'] !== undefined || (typeof length === 'string' && length.trim() !== '' && length.trim() !== '0');
+  return hasBody;
 }
 
 @Injectable()
@@ -85,9 +116,9 @@ export class IdentitySessionResolver implements SessionResolver {
     if (row.organization_id) {
       org = await this.infra.tenants.resolveById(row.organization_id);
       const pattern = request.routeOptions?.url ?? '';
-      if (!pattern.startsWith(AUTH_PATH_PREFIX)) {
+      const route = ROUTE_BY_PATTERN.get(`${request.method} ${pattern}`);
+      if (!exemptFromOrganisationStatus(pattern, route)) {
         const memberActive = loaded.membershipStatus === 'active' && !loaded.membershipDeleted;
-        const route = ROUTE_BY_PATTERN.get(`${request.method} ${pattern}`);
         const orgUsable = org !== null && (org.status === 'active' || (org.status === 'offboarding' && offboardingAllows(request.method, route)));
         if (!memberActive || !orgUsable) throw new OrganisationInactiveError();
       }
@@ -112,10 +143,18 @@ export class IdentitySessionResolver implements SessionResolver {
       return;
     }
     // Public POST routes and the guest one-time code: the request must come from the application's origin (F.2).
-    const origin = originOf(typeof request.headers.origin === 'string' ? request.headers.origin : undefined);
-    const referer = originOf(typeof request.headers.referer === 'string' ? request.headers.referer : undefined);
-    const from = typeof request.headers.origin === 'string' ? origin : referer;
-    if (from !== this.publicOrigin) throw new CsrfError('The request must come from the MSCD application (Origin check)');
+    // `Origin` decides when present (`null` never matches), else `Referer`.
+    const origin = request.headers.origin;
+    const referer = request.headers.referer;
+    if (typeof origin === 'string') {
+      if (originOf(origin) !== this.publicOrigin) throw new CsrfError('The request must come from the MSCD application (Origin check)');
+      return;
+    }
+    if (typeof referer === 'string') {
+      if (originOf(referer) !== this.publicOrigin) throw new CsrfError('The request must come from the MSCD application (Referer check)');
+      return;
+    }
+    if (crossSiteSendable(request)) throw new CsrfError('The request must come from the MSCD application (no Origin or Referer)');
   }
 
   /**

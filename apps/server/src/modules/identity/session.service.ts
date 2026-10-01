@@ -13,6 +13,7 @@ import type { AuthMethod, SessionState } from '@mscd/shared';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { Selectable } from 'kysely';
 import { MscdConfig } from '../../config/mscd-config';
+import { UnauthenticatedError } from '../../common/problems';
 import { currentRequestContext } from '../../common/request-context';
 import type { Principal, PrincipalSession, Trx } from '../../common/tokens';
 import type { SessionTable } from '../../db/types/platform';
@@ -159,12 +160,15 @@ export class SessionService {
 
   /**
    * Replaces a session by a new id (F.1 rotation): the new row copies the old one with `changes` applied, keeps
-   * its absolute expiry and persistence, and the old row is revoked with reason `rotated`.
+   * its absolute expiry and persistence, and the old row is revoked with reason `rotated`. The old row is revoked
+   * first: a session that another request already rotated or revoked cannot be rotated again (401), so one session
+   * never turns into two.
    */
   async rotate(trx: Trx, old: SessionRow, changes: SessionChanges = {}): Promise<IssuedSession> {
     const now = this.infra.clock.now();
+    if (!(await this.revoke(trx, old.id_hash, 'rotated'))) throw new UnauthenticatedError();
     const has = (key: keyof SessionChanges) => Object.hasOwn(changes, key);
-    const issued = await this.insert(trx, now, {
+    return this.insert(trx, now, {
       user_id: old.user_id,
       organization_id: has('organizationId') ? (changes.organizationId ?? null) : old.organization_id,
       auth_org_id: has('authOrgId') ? (changes.authOrgId ?? null) : old.auth_org_id,
@@ -178,8 +182,6 @@ export class SessionService {
       persistent: old.persistent,
       absolute_expires_at: old.absolute_expires_at,
     });
-    await this.revoke(trx, old.id_hash, 'rotated');
-    return issued;
   }
 
   /** Records a fresh password or second-factor proof on a session (F.5 recent proof). */

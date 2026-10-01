@@ -1,10 +1,10 @@
 // Caller authentication of the storage gateway (build plan D.5, D.4, I.3): every `/v1` request carries
 // `Authorization: Bearer <gateway token>`, and in `tls.mode: mtls` a client certificate of the installation CA with
 // `CN=mscd-api` or `CN=mscd-worker`. The gateway accepts the token in `gateway.token_files[0]` and, during a
-// rotation, the one in `gateway.token_files[1]`. The files are read again whenever they change on disk, so
+// rotation, the one in `gateway.token_files[1]`. The files are read on every call (they are a few bytes), so
 // `mscd-server keys rotate-gateway-token` takes effect without a restart.
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { readFileSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import type { TLSSocket } from 'node:tls';
 import { GATEWAY_CALLER_NAMES, type GatewayCallerName } from '@mscd/shared';
 import type { FastifyRequest } from 'fastify';
@@ -12,11 +12,6 @@ import { forbidden } from './problems';
 
 /** Tokens shorter than this are refused when read (they would be guessable). */
 export const MIN_TOKEN_LENGTH = 32;
-
-interface CachedToken {
-  signature: string;
-  digest: Buffer | null;
-}
 
 function digestOf(token: string): Buffer {
   return createHash('sha256').update(token, 'utf8').digest();
@@ -29,8 +24,6 @@ export function readTokenFile(file: string): string {
 
 /** The accepted gateway tokens: current and, during a rotation, previous. */
 export class GatewayTokens {
-  private readonly cache = new Map<string, CachedToken>();
-
   constructor(private readonly files: readonly string[]) {
     if (files.length === 0 || files.length > 2) throw new Error('gateway.token_files names one or two files');
   }
@@ -53,26 +46,14 @@ export class GatewayTokens {
     return result;
   }
 
+  /** SHA-256 of the token in a file; null when the file is absent (normal for the previous token) or too short. */
   private digest(file: string): Buffer | null {
-    let signature: string;
-    try {
-      const stat = statSync(file);
-      signature = `${stat.ino}:${stat.size}:${stat.mtimeMs}`;
-    } catch {
-      this.cache.delete(file);
-      return null; // An absent previous token file is normal outside a rotation.
-    }
-    const cached = this.cache.get(file);
-    if (cached && cached.signature === signature) return cached.digest;
-    let digest: Buffer | null = null;
     try {
       const token = readTokenFile(file);
-      if (token.trim().length >= MIN_TOKEN_LENGTH) digest = digestOf(token);
+      return token.trim().length >= MIN_TOKEN_LENGTH ? digestOf(token) : null;
     } catch {
-      digest = null;
+      return null;
     }
-    this.cache.set(file, { signature, digest });
-    return digest;
   }
 }
 

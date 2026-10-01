@@ -158,6 +158,8 @@ export function gatewayRoutes(deps: GatewayRouteDeps) {
     fastify.setErrorHandler(async (error: FastifyError | GatewayError, request, reply) => {
       const problem = toGatewayError(error);
       callOf(request).outcome = problem.slug;
+      // A refused upload is not read to its end: close the connection after the answer.
+      if (!request.raw.complete) reply.header('connection', 'close');
       if (problem.slug === 'internal') request.log.error({ err: error }, 'Storage gateway call failed');
       if (problem.slug === 'rate-limited' && problem.extras.retryAfter !== undefined) {
         reply.header('retry-after', String(Math.max(0, Math.ceil(problem.extras.retryAfter))));

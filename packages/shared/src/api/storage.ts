@@ -244,11 +244,11 @@ export const repositoriesCreateRoute = defineRoute({
 });
 export const repositoriesUpdateRoute = defineRoute({
   ...admin, id: 'admin.storage.repositories.update', method: 'PATCH', path: '/api/v1/admin/storage/repositories/:id', summary: 'Change a repository; a config change marks the credential for re-sealing',
-  permission: 'storage.repository.manage', params: IdParams, body: RepositoryPatch, response: RepositoryView, errors: [404, 422],
+  permission: 'storage.repository.manage', params: IdParams, body: RepositoryPatch, response: RepositoryView, errors: [404, 409],
 });
 export const repositoriesCredentialsRoute = defineRoute({
   ...admin, id: 'admin.storage.repositories.credentials', method: 'PUT', path: '/api/v1/admin/storage/repositories/:id/credentials', summary: 'Set the credential of a repository (sealed by the gateway, D-08)',
-  permission: 'storage.repository.manage', params: IdParams, body: RepositoryCredential, response: NoBody, status: 204, errors: [404, 422, 503],
+  permission: 'storage.repository.manage', params: IdParams, body: RepositoryCredential, response: NoBody, status: 204, errors: [404, 409, 422, 503],
 });
 export const repositoriesTestRoute = defineRoute({
   ...admin, id: 'admin.storage.repositories.test', method: 'POST', path: '/api/v1/admin/storage/repositories/:id/test', summary: 'Test the connection of a repository',

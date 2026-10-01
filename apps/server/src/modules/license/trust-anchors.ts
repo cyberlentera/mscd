@@ -3,7 +3,7 @@
 // for them. A release-flavour build additionally refuses every key id listed in
 // `packages/pack-tools/dev-keys/dev-key-ids.json` (`DEV_KEY_IDS`), even if such a key were compiled in.
 import { DEV_KEY_IDS } from '@mscd/pack-tools';
-import { BUILD_FLAVOR, TRUSTED_KEYS, type BuildFlavor, type TrustedKey, type TrustedKeyKind } from '../../generated/build-info';
+import { BUILD_FLAVOR, TRUSTED_KEYS, type BuildFlavor, type TrustedKey } from '../../generated/build-info';
 
 export interface TrustAnchors {
   readonly flavor: BuildFlavor;
@@ -40,9 +40,4 @@ export function trustAnchorsOf(info: BuildInfoTrust, devKeyIds: readonly string[
 /** The anchors compiled into this build. */
 export function compiledTrustAnchors(): TrustAnchors {
   return trustAnchorsOf({ BUILD_FLAVOR, TRUSTED_KEYS });
-}
-
-/** The keys of one kind (for messages and checks). */
-export function keysOfKind(anchors: TrustAnchors, kind: TrustedKeyKind): TrustedKey[] {
-  return anchors.keys.filter((key) => key.kind === kind);
 }

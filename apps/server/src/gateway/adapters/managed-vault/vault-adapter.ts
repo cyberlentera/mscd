@@ -67,11 +67,19 @@ export function joinFolder(...parts: (string | null | undefined)[]): string {
     for (const raw of part.split('/')) {
       const segment = raw.trim();
       if (segment === '') continue;
-      if (segment === '.' || segment === '..' || /[\u0000-\u001f\u007f]/.test(segment)) throw badRequest('The folder path is not valid');
+      if (segment === '.' || segment === '..' || hasControlCharacter(segment)) throw badRequest('The folder path is not valid');
       segments.push(segment);
     }
   }
   return segments.join('/');
+}
+
+function hasControlCharacter(value: string): boolean {
+  for (let i = 0; i < value.length; i += 1) {
+    const code = value.charCodeAt(i);
+    if (code < 0x20 || code === 0x7f) return true;
+  }
+  return false;
 }
 
 function encodeMeta(value: string): string {
@@ -185,10 +193,19 @@ export class ManagedVaultAdapter implements StorageAdapter {
       const upload = this.store.upload(key, sealed, metadata, abort.signal).then(() => {
         uploaded = true;
       });
-      const feed = pipeline(input.body, meter, encryptor, sealed).catch((error: unknown) => {
+      // The request body is piped by hand: when the meter refuses it (size limit), the request is left unread and
+      // the answer closes the connection, instead of destroying the socket before the problem is sent.
+      const source = input.body;
+      const onSourceError = (error: Error) => meter.destroy(error);
+      source.once('error', onSourceError);
+      const feed = pipeline(meter, encryptor, sealed).catch((error: unknown) => {
+        source.unpipe(meter);
+        source.pause();
         abort.abort();
         throw error;
       });
+      source.pipe(meter);
+      void feed.finally(() => source.off('error', onSourceError)).catch(() => undefined);
       // The feed's error (size limit, cancelled request) explains a failed upload better than the upload's own.
       const [fed, stored] = await Promise.allSettled([feed, upload]);
       if (fed.status === 'rejected') throw fed.reason;

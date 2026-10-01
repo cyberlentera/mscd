@@ -602,5 +602,7 @@ export function principalMayUse(drive: DriveState, principal: Principal): boolea
   if (drive.tenantId && principal.tenantId && drive.tenantId.toLowerCase() !== principal.tenantId.toLowerCase()) return false;
   if (!drive.allowedPrincipals) return true;
   const ids = [principal.id, principal.email].filter((v): v is string => Boolean(v)).map((v) => v.toLowerCase());
+  // On a My Drive the list names the accounts besides the owner (README "Fixture format"): the owner always may.
+  if (drive.driveType === 'my_drive' && drive.owner?.email && ids.includes(drive.owner.email.toLowerCase())) return true;
   return drive.allowedPrincipals.some((allowed) => ids.includes(allowed.toLowerCase()));
 }
