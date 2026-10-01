@@ -9,6 +9,7 @@ export {
 } from './http-app';
 export { LOG_REDACT_PATHS, loggerParams, REDACTED, REDACTED_QUERY_PARAMETERS, redactSealedFields, redactUrl, serializeRequest } from './logging';
 export { MetricsServer, MetricsService } from './metrics';
+export { RateLimitService, registerRateLimitPlugin } from './rate-limit';
 export { PlatformModule } from './platform.module';
 export { ReadinessService } from './readiness.service';
 export type { ReadinessCheck, ReadinessCheckResult, ReadinessReport } from './readiness.service';

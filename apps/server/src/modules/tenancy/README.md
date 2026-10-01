@@ -1,3 +1,3 @@
 # tenancy module
-Organisation resolution (TenantResolver), withTenant and withPlatform (F.10), and the readiness checks of C.3.
-Owner: WP-08; skeleton by WP-03 (build plan B.4).
+`TenantScope` (`withTenant`, `withPlatform`, after-commit hooks, F.10), `TenantResolver` (60 second cache, `invalidate`), the C.3 readiness checks (migrations, schema privileges) and the PostgreSQL stores of rate limits (F.3) and idempotency keys (D.1). Imports `CommonModule` (clock, job queue, notification writer, file responder).
+Owner: WP-08.

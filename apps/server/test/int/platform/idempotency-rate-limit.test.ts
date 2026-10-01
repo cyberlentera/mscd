@@ -68,7 +68,6 @@ describe('idempotency keys (D.1)', () => {
   let ctx: IntApp;
   let ndt: CreatedTenant;
   let bsd: CreatedTenant;
-  const userId = '7a1f2d3c-4b5e-4f60-9a7b-1c2d3e4f5a01';
 
   beforeAll(async () => {
     ndt = await createTenant(db, 'ndt');
@@ -79,7 +78,6 @@ describe('idempotency keys (D.1)', () => {
       'rina@bsd': { user: { id: rina, handle: 'rina' }, org: infoOf(bsd), rolesByMs: { isms: ['ms_manager'] } },
     };
     ctx = await createIntApp(db, { controllers: [ProbeController] }, { auth: { identities } });
-    void userId;
   });
   afterAll(async () => {
     await ctx?.close();

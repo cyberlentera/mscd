@@ -1,0 +1,3 @@
+# common
+Shared building blocks of the api and worker (B.4): injection tokens and their interfaces (`tokens.ts`), problem errors and the problem details filter (D.1), `@ApiRoute` with its interceptor and the route state (D.1), the request context (AsyncLocalStorage), `Clock` and date helpers (D-07, G.5), ETag and If-Match helpers, audit redaction (F.11), `FileResponder` (F.13), formula-safe CSV and XLSX helpers (F.15), the job queue interface, in-memory driver and `@JobHandler` discovery (E.1), the notification writer (E.6) and after-commit hooks. `CommonModule` provides the injectable ones.
+Owner: WP-08.

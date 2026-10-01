@@ -1,3 +1,3 @@
 # audit module
-Audit trail writer, readers and chain verification for platform.audit_log and every tenant audit_trail, and the signed anchors (F.11).
-Owner: WP-08; the anchor job is WP-22; skeleton by WP-03 (build plan B.4).
+`AUDIT_WRITER` for `platform.audit_log` and every tenant `audit_trail` (changed fields only, F.11 redaction, edition lookup), `AuditChainVerifier` with anchor comparison, the anchor signing and verification helpers (D-33), and the four `/admin/audit-trail` routes.
+Owner: WP-08; the anchor job is WP-22.

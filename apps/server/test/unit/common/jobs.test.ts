@@ -101,7 +101,8 @@ describe('in-memory job queue (E.1)', () => {
     });
     await queue.send('cleanup.expired', { orgId: null, payload: {} });
     await done;
-    await expect(queue.send('no.such.job' as never, { orgId: null, payload: {} })).rejects.toThrow(/Unknown job/);
+    const untyped = queue.send.bind(queue) as unknown as (name: string, env: unknown) => Promise<string | null>;
+    await expect(untyped('no.such.job', { orgId: null, payload: {} })).rejects.toThrow(/Unknown job/);
     await queue.schedule('cleanup.expired', '20 * * * *', { orgId: null, payload: {} }, 'UTC');
     expect(queue.schedules).toEqual([{ name: 'cleanup.expired', cron: '20 * * * *', env: { orgId: null, payload: {} }, tz: 'UTC' }]);
     await queue.stop();

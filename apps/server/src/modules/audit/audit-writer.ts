@@ -83,12 +83,22 @@ export class ChainedAuditWriter implements AuditWriter {
     };
 
     if (isPlatformAuditAction(entry.action)) {
-      const organizationId = entry.organizationId !== undefined ? entry.organizationId : (context?.orgId ?? null);
+      // Default: the request's organisation, else the organisation of the transaction (`app.org_id`, none with platform scope).
+      const organizationId =
+        entry.organizationId !== undefined
+          ? uuidOrNull(entry.organizationId)
+          : (uuidOrNull(context?.orgId) ?? sql<string | null>`nullif(current_setting('app.org_id', true), '')::uuid`);
+      // The chain trigger reads the newest row of the whole chain, which RLS hides unless platform scope is on
+      // (D-31): the insert runs with platform scope, which is switched off again for the rest of the transaction.
+      const scope = await sql<{ prev: string }>`select coalesce(current_setting('app.platform_scope', true), '') as prev`.execute(trx);
+      const previous = scope.rows[0]?.prev ?? '';
+      if (previous !== 'on') await sql`select set_config('app.platform_scope', 'on', true)`.execute(trx);
       const row = await trx
         .insertInto('platform.audit_log')
-        .values({ ...common, organization_id: uuidOrNull(organizationId), edition: cut(entry.edition ?? null, 40) })
+        .values({ ...common, organization_id: organizationId, edition: cut(entry.edition ?? null, 40) })
         .returning(['id', 'seq'])
         .executeTakeFirstOrThrow();
+      if (previous !== 'on') await sql`select set_config('app.platform_scope', ${previous}, true)`.execute(trx);
       return { chain: 'platform', id: row.id, seq: String(row.seq) };
     }
 

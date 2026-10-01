@@ -1,3 +1,3 @@
 # keys module
-KeyProvider (file driver) and SecretBox for the api and worker, sealed with platform.key (F.11).
-Owner: WP-08; skeleton by WP-03 (build plan B.4).
+`FileKeyProvider` (the `file` driver of F.11 with previous keys for rotation) loaded from `kms.file` at start, and `SecretBox` for secrets sealed with `platform.key` (`mfa:`, `idp:`, `pkce:` bindings) and per-purpose token MACs.
+Owner: WP-08.

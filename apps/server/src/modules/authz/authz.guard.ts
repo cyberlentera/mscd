@@ -137,7 +137,10 @@ export class AuthzGuard implements CanActivate {
       if (request.url.startsWith('/api/')) throw new NotFoundError();
       return true;
     }
-    if (def.testOnly && !this.testRoutesEnabled) throw new NotFoundError();
+    if (def.testOnly) {
+      if (!this.testRoutesEnabled) throw new NotFoundError();
+      this.logger.warn(`Test-only route ${def.id} called (D.3 Test support)`);
+    }
     updateRequestContext({ routeId: def.id });
 
     let principal: Principal | null = null;
