@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { HashAlgorithm, ObjectKind, StorageAdapter, UploadMode } from '../enums.js';
 import {
-  BinaryBody, CommandResult, IdParams, Instant, IsoDate, MsId, MsRecordParams, NoBody, QueryBoolean, RepositorySlug, Uuid, defineRoute, named,
+  BinaryBody, CommandResult, IdParams, Instant, IsoDate, MsId, MsRecordParams, NoBody, QueryBoolean, RepositorySlug, Uuid, defineRoute, hasControlCharacter, named,
 } from './common.js';
 import type { RouteDef } from './common.js';
 
@@ -15,7 +15,7 @@ export const ExternalItemId = named('ExternalItemId', z.string().regex(/^[A-Za-z
 export type ExternalItemId = z.infer<typeof ExternalItemId>;
 
 /** File name of an upload: no path separators, no control characters. */
-const FileName = z.string().min(1).max(255).regex(/^[^/\\\u0000-\u001f\u007f]+$/).refine((n) => n !== '.' && n !== '..', { message: 'Not a file name' });
+const FileName = z.string().min(1).max(255).regex(/^[^/\\]+$/).refine((n) => n !== '.' && n !== '..' && !hasControlCharacter(n), { message: 'Not a file name' });
 
 export const RepositoryParams = named('RepositoryParams', z.strictObject({ slug: RepositorySlug }), 'Path parameter {slug} of a storage repository', {
   valid: [{ slug: 'sp' }],

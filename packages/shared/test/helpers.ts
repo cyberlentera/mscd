@@ -88,3 +88,68 @@ export function planPermissionRows(): { permissions: string[]; scope: string; ce
   }
   return rows;
 }
+
+export interface PlanEndpoint {
+  method: string;
+  /** Path as written in the plan, without query string (`/ms/{ms}/documents`). */
+  path: string;
+}
+
+/** Method and path of a table cell such as `POST /a/{id}/approve`, `/reject` (a sibling) or `/{id}` (a child). */
+function endpointsOfCell(cell: string, defaultMethod: string | null): PlanEndpoint[] {
+  const out: PlanEndpoint[] = [];
+  for (const [, code] of cell.matchAll(/`([^`]+)`/g)) {
+    const text = (code as string).replace(/\?.*$/, '').trim();
+    const full = text.match(/^(GET|POST|PUT|PATCH|DELETE) (\/\S*)$/);
+    if (full) {
+      out.push({ method: full[1] as string, path: full[2] as string });
+      continue;
+    }
+    if (!text.startsWith('/')) continue;
+    const previous = out[out.length - 1];
+    if (previous) {
+      // `/{id}` after a collection is a child; `/reject` after `/approve` is a sibling.
+      const parent = text.startsWith('/{') ? previous.path : previous.path.replace(/\/[^/]+$/, '');
+      out.push({ method: previous.method, path: `${parent}${text}` });
+    } else if (defaultMethod) {
+      out.push({ method: defaultMethod, path: text });
+    }
+  }
+  return out;
+}
+
+/** Every endpoint of the D.3 tables (paths below `/api/v1`), health and metrics excluded. */
+export function planApiEndpoints(): PlanEndpoint[] {
+  const part = planSection('### D.3 Endpoints', '**Health and metrics**');
+  const out: PlanEndpoint[] = [];
+  let defaultMethod: string | null = null;
+  for (const line of part.split('\n')) {
+    if (line.startsWith('| Path |')) defaultMethod = 'GET';
+    else if (line.startsWith('| Method and path |')) defaultMethod = null;
+    if (!line.startsWith('| `')) continue;
+    const first = line.split('|')[1] ?? '';
+    out.push(...endpointsOfCell(first, defaultMethod));
+  }
+  return out;
+}
+
+/** Every endpoint of the D.5 gateway protocol table. */
+export function planGatewayEndpoints(): PlanEndpoint[] {
+  const part = planSection('### D.5 Storage gateway protocol', '## E. Worker jobs');
+  const out: PlanEndpoint[] = [];
+  for (const line of part.split('\n')) {
+    if (!line.startsWith('| `')) continue;
+    out.push(...endpointsOfCell(line.split('|')[1] ?? '', null).filter((e) => e.path.startsWith('/v1/')));
+  }
+  return out;
+}
+
+/** Route path in Fastify form (`/api/v1/ms/:ms`) of a plan path (`/ms/{ms}`). */
+export function fastifyPath(planPath: string, prefix: string): string {
+  return `${prefix}${planPath.replace(/\{([A-Za-z]+)\}/g, ':$1')}`;
+}
+
+/** The work package ids of section K.2 (`#### WP-nn`). */
+export function planWorkPackages(): string[] {
+  return [...readRepoFile('docs/platform/BUILD-PLAN.md').matchAll(/^#### (WP-\d\d)\b/gm)].map((m) => m[1] as string);
+}

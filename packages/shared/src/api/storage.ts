@@ -36,9 +36,9 @@ export const GoogleDriveRepositoryConfig = named(
 );
 export type GoogleDriveRepositoryConfig = z.infer<typeof GoogleDriveRepositoryConfig>;
 
-export const VaultRepositoryConfig = named('VaultRepositoryConfig', z.strictObject({ prefix: z.string().regex(/^[A-Za-z0-9/_.-]{1,200}\/$/) }), 'Managed Vault repository: object key prefix tenants/<org_id>/ (C.8 step 5)', {
+export const VaultRepositoryConfig = named('VaultRepositoryConfig', z.strictObject({ prefix: z.string().max(200).regex(/^(?:[A-Za-z0-9_-][A-Za-z0-9_.-]*\/)+$/, 'relative key prefix of path segments, each ending in /, no segment starting with a dot') }), 'Managed Vault repository: object key prefix tenants/<org_id>/ (C.8 step 5)', {
   valid: [{ prefix: 'tenants/00000000-0000-4000-8000-00000000a001/' }],
-  invalid: [{ prefix: 'tenants' }, { prefix: '../x/' }, {}],
+  invalid: [{ prefix: 'tenants' }, { prefix: '../x/' }, { prefix: '/tenants/x/' }, { prefix: 'tenants//x/' }, {}],
 });
 export type VaultRepositoryConfig = z.infer<typeof VaultRepositoryConfig>;
 

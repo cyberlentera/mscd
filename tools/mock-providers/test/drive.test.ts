@@ -2,7 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { applyFields, parseFields } from '../src/fields.js';
-import { DRIVE_SCOPE, SA_EMAIL, TONO, build, call, googleToken, googleTokenResponse, pathOf } from './helpers.js';
+import { BAGUS, DRIVE_SCOPE, SA_EMAIL, TONO, build, call, googleToken, googleTokenResponse, pathOf } from './helpers.js';
 
 let app: FastifyInstance;
 let token: string;
@@ -99,6 +99,47 @@ describe('Drive files', () => {
     expect((await get(`/drive/v3/files/drive-gd-bcms?${ALL}&fields=id,mimeType,driveId`)).json()).toEqual({ id: 'drive-gd-bcms', mimeType: 'application/vnd.google-apps.folder', driveId: 'drive-gd-bcms' });
   });
 
+  it('names the account that created a My Drive file in owners', async () => {
+    const delegated = await googleToken(app, { subject: TONO.email });
+    const created = await call(app, 'POST', '/_admin/items', {
+      json: { driveId: 'drive-my-tono', name: 'Uploaded by Bagus MSCD-ZT77.pdf', content: 'zero transit', createdBy: BAGUS, modifiedBy: BAGUS },
+    });
+    expect(created.statusCode).toBe(201);
+    const fields = 'fields=owners,lastModifyingUser(emailAddress)';
+    const upload = (await get(`/drive/v3/files/${created.json().id}?${fields}`, delegated)).json();
+    expect(upload.owners).toEqual([{ kind: 'drive#user', displayName: BAGUS.displayName, emailAddress: BAGUS.email, me: false, permissionId: expect.any(String) }]);
+    expect(upload.owners[0].emailAddress).toBe(BAGUS.email);
+    expect(upload.lastModifyingUser).toEqual({ emailAddress: BAGUS.email });
+    const own = (await get(`/drive/v3/files/file-my-note?${fields}`, delegated)).json();
+    expect(own.owners.map((o: { emailAddress: string }) => o.emailAddress)).toEqual([TONO.email]);
+    const anonymous = await call(app, 'POST', '/_admin/items', { json: { driveId: 'drive-my-tono', name: 'No-Creator.txt', content: 'x' } });
+    const fallback = (await get(`/drive/v3/files/${anonymous.json().id}?fields=owners(emailAddress)`, delegated)).json();
+    expect(fallback.owners).toEqual([{ emailAddress: TONO.email }]);
+    const uploaded = await call(app, 'POST', '/upload/drive/v3/files?uploadType=multipart&fields=owners(emailAddress,me)', { ...multipart({ name: 'Mine.txt' }, 'mine'), token: delegated });
+    expect(uploaded.json().owners).toEqual([{ emailAddress: TONO.email, me: true }]);
+  });
+
+  it('shows a My Drive only to its owner and the accounts in allowedPrincipals', async () => {
+    const notFound = (response: { statusCode: number; json(): { error: { errors: { reason: string }[] } } }) => {
+      expect(response.statusCode).toBe(404);
+      expect(response.json().error.errors[0].reason).toBe('notFound');
+    };
+    notFound(await get('/drive/v3/files/file-my-note?fields=id,name,owners'));
+    notFound(await get('/drive/v3/files/file-my-note?alt=media'));
+    notFound(await get('/drive/v3/files/file-my-note/revisions'));
+    notFound(await get('/drive/v3/files/mydrive-root-tono'));
+    notFound(await call(app, 'PATCH', '/drive/v3/files/file-my-note', { token, json: { name: 'taken.txt' } }));
+    notFound(await call(app, 'DELETE', '/drive/v3/files/file-my-note', { token }));
+    notFound(await call(app, 'POST', '/upload/drive/v3/files?uploadType=multipart', multipart({ name: 'x.txt', parents: ['mydrive-root-tono'] }, 'x')));
+    expect((await get('/drive/v3/files?fields=files(id)')).json()).toEqual({ files: [] });
+
+    const shared = await call(app, 'POST', '/_admin/fixtures', { json: { google: { drives: [{ id: 'drive-my-tono', allowedPrincipals: [SA_EMAIL] }] } } });
+    expect(shared.statusCode).toBe(200);
+    expect((await get('/drive/v3/files/file-my-note?fields=id,owners(emailAddress)')).json()).toEqual({ id: 'file-my-note', owners: [{ emailAddress: TONO.email }] });
+    expect((await get('/drive/v3/files/file-my-note?alt=media')).body).toBe('my note');
+    expect((await get('/drive/v3/files?fields=files(id)')).json()).toEqual({ files: [{ id: 'file-my-note' }] });
+  });
+
   it('lists a folder of a shared drive with q, paging and nextPageToken', async () => {
     for (let i = 0; i < 3; i += 1) {
       await call(app, 'POST', `/upload/drive/v3/files?uploadType=multipart&${ALL}`, multipart({ name: `extra-${i}.txt`, parents: ['folder-bcms-2026'] }, `extra ${i}`));
@@ -151,6 +192,18 @@ describe('Drive files', () => {
     }
     expect((await get(`/drive/v3/files/file-prioritised/revisions/a.b?${ALL}`)).statusCode).toBe(400);
     expect((await get('/drive/v3/drives/a.b')).statusCode).toBe(400);
+    const location = async (response: Promise<{ statusCode: number; json(): { error: { errors: { location: string }[] } } }>) => {
+      const answered = await response;
+      expect(answered.statusCode).toBe(400);
+      return answered.json().error.errors[0].location;
+    };
+    const patch = (query: string) => call(app, 'PATCH', `/drive/v3/files/file-prioritised?${ALL}&${query}`, { token, json: {} });
+    expect(await location(patch('addParents=drive-gd-bcms&removeParents=bad.id'))).toBe('removeParents');
+    expect(await location(patch('removeParents=bad.id'))).toBe('removeParents');
+    expect(await location(patch('addParents=a.b&removeParents=folder-bcms-2026'))).toBe('addParents');
+    expect(await location(call(app, 'PUT', '/upload/drive/v3/files/a.b?uploadType=resumable&upload_id=zzz', { body: 'x' }))).toBe('fileId');
+    expect(await location(call(app, 'DELETE', '/upload/drive/v3/files/a.b?uploadType=resumable&upload_id=zzz'))).toBe('fileId');
+    expect((await call(app, 'PUT', '/upload/drive/v3/files/file-prioritised?uploadType=resumable&upload_id=zzz', { body: 'x' })).statusCode).toBe(404);
   });
 
   it('creates folders and uploads with multipart, media and resumable uploads', async () => {

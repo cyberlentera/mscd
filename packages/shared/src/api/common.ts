@@ -108,9 +108,18 @@ export const ProviderSlug = named('ProviderSlug', z.string().regex(/^[a-z][a-z0-
 });
 export type ProviderSlug = z.infer<typeof ProviderSlug>;
 
+/** True when the text contains a C0 control character (U+0000 to U+001F) or DEL (U+007F). */
+export function hasControlCharacter(text: string): boolean {
+  for (let i = 0; i < text.length; i += 1) {
+    const c = text.charCodeAt(i);
+    if (c < 0x20 || c === 0x7f) return true;
+  }
+  return false;
+}
+
 export const Code = named(
   'Code',
-  z.string().min(1).max(30).regex(/^\S(?:[^\u0000-\u001f\u007f]*\S)?$/),
+  z.string().min(1).max(30).regex(/^\S(?:.*\S)?$/).refine((v) => !hasControlCharacter(v), { message: 'Control characters are not allowed' }),
   'Business id of a record (code, doc_code, evidence_code, catalogue item or requirement code): 1 to 30 printable characters without leading or trailing space',
   { valid: ['R-031', 'A.5.23', 'Cl. 8.7', 'EV-0313', '9.3.2 c)'], invalid: ['', ' R-031', 'R-031 ', 'a'.repeat(31), 'R\n31'] },
 );
@@ -454,7 +463,10 @@ export interface RouteDef {
   query?: ZodType;
   body?: ZodType;
   response: ZodType;
-  /** Status codes besides 400, 401 and 403 the route may answer. */
+  /**
+   * Status codes the route may answer besides 400 (every route) and 401 and 403 (implied for every route that is not
+   * public; listed where D.3 names a specific case, such as a wrong second-factor code).
+   */
   errors: readonly number[];
   /** Accepts `Idempotency-Key` (D.1). */
   idempotent?: boolean;

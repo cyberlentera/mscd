@@ -6,7 +6,8 @@ import * as shared from '../src/index.js';
 
 const INVALID = shared.INVALID_EXAMPLES_KEY;
 
-const schemas = Object.entries(shared).filter((entry): entry is [string, z.ZodType] => entry[1] instanceof z.ZodType);
+const schemas: [string, z.ZodType][] = [];
+for (const [name, value] of Object.entries(shared as Record<string, unknown>)) if (value instanceof z.ZodType) schemas.push([name, value]);
 
 function describeIssues(result: z.ZodSafeParseResult<unknown>): string {
   return result.success ? 'parsed' : result.error.issues.map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`).join('; ');

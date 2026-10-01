@@ -342,7 +342,12 @@ function clientCredentials(request: FastifyRequest, form: URLSearchParams): { cl
     const decoded = Buffer.from(authorization.replace(/^Basic\s+/i, ''), 'base64').toString('utf8');
     const colon = decoded.indexOf(':');
     if (colon > 0) {
-      return { clientId: decodeURIComponent(decoded.slice(0, colon)), clientSecret: decodeURIComponent(decoded.slice(colon + 1)) };
+      // RFC 6749 section 2.3.1: both parts are form-urlencoded before they are joined.
+      try {
+        return { clientId: decodeURIComponent(decoded.slice(0, colon)), clientSecret: decodeURIComponent(decoded.slice(colon + 1)) };
+      } catch {
+        throw googleOAuthError(401, 'invalid_client', 'The client credentials in the Authorization header are not valid percent-encoding.');
+      }
     }
   }
   return { clientId: form.get('client_id'), clientSecret: form.get('client_secret') };

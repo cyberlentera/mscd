@@ -15,7 +15,7 @@ import {
   type ItemState,
   type M365DriveType,
   type MockSettings,
-  type MockState,
+  MockState,
   type NewVersionInput,
   type Person,
   type Provider,
@@ -737,8 +737,10 @@ export interface ApplySummary {
 }
 
 /**
- * Merges a validated fixture document into the state. Every id is checked before anything changes, so a
- * conflicting document leaves the state as it was.
+ * Merges a validated fixture document into the state, all or nothing. Ids are checked first; then the drives,
+ * folders and files are applied to a copy of the drives and items, which finds the conflicts only the tree
+ * shows (a Graph name clash, a file standing where a folder path goes, a folder that exists with another id).
+ * The live state changes only when both steps pass, so a rejected document leaves it as it was.
  */
 export function applyFixtures(state: MockState, doc: FixtureDocument): ApplySummary {
   const drives = [
@@ -746,11 +748,27 @@ export function applyFixtures(state: MockState, doc: FixtureDocument): ApplySumm
     ...(doc.google?.drives ?? []).map((fixture) => ({ provider: 'google' as const, fixture })),
   ];
   checkIds(state, drives);
+  if (drives.length > 0) {
+    const scratch = scratchCopy(state);
+    const ignored: ApplySummary = { credentials: [], drives: 0, folders: 0, items: 0 };
+    for (const { provider, fixture } of drives) applyDrive(scratch, provider, fixture, ignored, true);
+  }
   if (doc.settings) Object.assign(state.settings, doc.settings);
   const credentials = (doc.credentials ?? []).map((credential) => registerCredential(state, credential));
   const summary: ApplySummary = { credentials, drives: 0, folders: 0, items: 0 };
-  for (const { provider, fixture } of drives) applyDrive(state, provider, fixture, summary);
+  for (const { provider, fixture } of drives) applyDrive(state, provider, fixture, summary, false);
   return summary;
+}
+
+/**
+ * A state holding copies of the drives and items of `state`, for a dry run. Applying fixtures changes only the
+ * drive and item records themselves (never versions or content), so shallow copies keep the original intact.
+ */
+function scratchCopy(state: MockState): MockState {
+  const scratch = new MockState();
+  for (const [id, drive] of state.drives) scratch.drives.set(id, { ...drive });
+  for (const [id, item] of state.items) scratch.items.set(id, { ...item });
+  return scratch;
 }
 
 function plannedFileId(provider: Provider, driveId: string, parent: string, file: FileFixture): string {
@@ -801,7 +819,7 @@ function checkIds(state: MockState, drives: { provider: Provider; fixture: M365D
   if (problems.length > 0) throw new FixtureError(problems);
 }
 
-function applyDrive(state: MockState, provider: Provider, fixture: M365DriveFixture | GoogleDriveFixture, summary: ApplySummary): void {
+function applyDrive(state: MockState, provider: Provider, fixture: M365DriveFixture | GoogleDriveFixture, summary: ApplySummary, dryRun: boolean): void {
   let drive = state.drives.get(fixture.id);
   if (!drive) {
     const name = defaultDriveName(fixture, provider);
@@ -865,7 +883,8 @@ function applyDrive(state: MockState, provider: Provider, fixture: M365DriveFixt
     if (provider === 'm365' && state.findChild(parentId, file.name, 'm365')) {
       throw new FixtureError([`file ${file.name} in drive ${target.id}: a file or folder with that name already exists in ${file.path ?? parentId}`]);
     }
-    const versions = (file.versions ?? [{ ...file, id: file.versionId }]).map(versionInput);
+    // A dry run skips the content: it cannot fail, and synthesizing large files twice would only cost time.
+    const versions = dryRun ? [{ content: Buffer.alloc(0) }] : (file.versions ?? [{ ...file, id: file.versionId }]).map(versionInput);
     const createdBy = toPerson(file.createdBy);
     const item = state.createFile(target, parentId, file.name, {
       id: plannedFileId(provider, target.id, parentKey, file),

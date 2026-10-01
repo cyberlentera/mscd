@@ -1,20 +1,22 @@
-// Writes dist/openapi.json (OpenAPI 3.1). Placeholder from WP-03: the document has no paths yet.
-// WP-05 replaces this script with the generator that reads the route table (`z.toJSONSchema`, testOnly
-// routes skipped).
+// Writes dist/openapi.json (OpenAPI 3.1) from the route table of the built package (`npm run openapi` builds
+// first). Routes marked testOnly are left out (D.1 "Contract source", J.3).
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const pkg = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
+const { buildOpenApiDocument } = await import(pathToFileURL(path.join(root, 'dist', 'index.js')).href);
 
-const document = {
-  openapi: '3.1.0',
-  info: { title: 'MSCD API', version: pkg.version },
-  servers: [{ url: '/' }],
-  paths: {},
-};
+const document = buildOpenApiDocument({ version: pkg.version });
+const target = path.join(root, 'dist', 'openapi.json');
+await mkdir(path.dirname(target), { recursive: true });
+await writeFile(target, `${JSON.stringify(document, null, 2)}\n`);
 
-await mkdir(path.join(root, 'dist'), { recursive: true });
-await writeFile(path.join(root, 'dist', 'openapi.json'), `${JSON.stringify(document, null, 2)}\n`);
-console.log(`openapi: wrote ${path.relative(process.cwd(), path.join(root, 'dist', 'openapi.json'))} (0 paths)`);
+const paths = Object.keys(document.paths).length;
+const operations = Object.values(document.paths).reduce(
+  (n, item) => n + Object.keys(item).filter((k) => ['get', 'put', 'post', 'patch', 'delete'].includes(k)).length,
+  0,
+);
+const schemas = Object.keys(document.components.schemas).length;
+console.log(`openapi: wrote ${path.relative(process.cwd(), target)} (${paths} paths, ${operations} operations, ${schemas} schemas)`);

@@ -175,6 +175,12 @@ describe('Google token endpoint', () => {
     const secret = await call(app, 'POST', '/token', form({ grant_type: 'refresh_token', refresh_token: '1//refresh-valid', client_id: OAUTH_CLIENT, client_secret: 'wrong' }));
     expect(secret.statusCode).toBe(401);
     expect(secret.json().error).toBe('invalid_client');
+    const malformed = await call(app, 'POST', '/token', {
+      headers: { 'content-type': 'application/x-www-form-urlencoded', authorization: `Basic ${Buffer.from('%E0%A4%A:x').toString('base64')}` },
+      body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: '1//refresh-valid' }).toString(),
+    });
+    expect(malformed.statusCode).toBe(401);
+    expect(malformed.json().error).toBe('invalid_client');
   });
 
   it('runs the consent flow: authorize redirect, code exchange with PKCE, single use', async () => {

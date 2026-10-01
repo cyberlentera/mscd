@@ -35,7 +35,9 @@ import {
 // Behaviour kept from the real API because adapters depend on it: responses carry only the default fields unless
 // `fields` asks for more; items of shared drives are invisible without supportsAllDrives=true; `size` and
 // `version` are strings (int64); md5Checksum, sha256Checksum and headRevisionId exist only for binary files;
-// `owners` only outside shared drives. File, drive and revision ids must match ^[A-Za-z0-9_-]+$ (D.5).
+// `owners` only outside shared drives, naming the account that created the file; a My Drive is visible only to its
+// owner and to the accounts in `allowedPrincipals` (404 for everyone else, as for a file nobody shared with the
+// caller). File, drive and revision ids must match ^[A-Za-z0-9_-]+$ (D.5).
 
 export interface DriveContext {
   state: MockState;
@@ -61,6 +63,20 @@ function fileNotFound(id: string) {
 function checkId(value: string, location: string): string {
   if (!isDriveId(value)) throw badRequest(`Invalid Value: ${location} must match [A-Za-z0-9_-]+.`, location);
   return value;
+}
+
+function isOwner(drive: DriveState, principal: Principal): boolean {
+  return Boolean(principal.email && drive.owner?.email?.toLowerCase() === principal.email.toLowerCase());
+}
+
+/**
+ * Whether a principal can see a drive at all (the forbid switch is separate): a My Drive belongs to its owner and
+ * to the accounts named in `allowedPrincipals` (null names nobody else); a shared drive admits every principal its
+ * allow-list admits (null admits all).
+ */
+function driveVisible(drive: DriveState, principal: Principal): boolean {
+  if (drive.driveType === 'my_drive') return isOwner(drive, principal) || (drive.allowedPrincipals !== null && principalMayUse(drive, principal));
+  return principalMayUse(drive, principal);
 }
 
 function mediaType(value: string | undefined | null): string | null {
@@ -319,7 +335,11 @@ export class DriveApi {
     if (item.description !== null) out.description = item.description;
     if (item.parentId !== null) out.parents = [item.parentId];
     if (drive.driveType === 'shared_drive') out.driveId = drive.id;
-    if (drive.driveType === 'my_drive' && drive.owner) out.owners = [this.user(drive.owner, principal)];
+    // A My Drive file is owned by the account that created or uploaded it (a folder or file made by the drive
+    // owner, a file uploaded by another account or a service account); fixture items without a creator email
+    // fall back to the drive owner.
+    const owner = item.createdBy.email ? item.createdBy : drive.owner;
+    if (drive.driveType === 'my_drive' && owner) out.owners = [this.user(owner, principal)];
     out.createdTime = item.createdAt;
     out.modifiedTime = current && !item.isFolder ? current.modifiedAt : item.modifiedAt;
     out.version = String(item.revision);
@@ -368,9 +388,7 @@ export class DriveApi {
 
   private myDriveOf(principal: Principal): DriveState | undefined {
     for (const drive of this.state.drives.values()) {
-      if (drive.provider === 'google' && drive.driveType === 'my_drive' && principal.email && drive.owner?.email?.toLowerCase() === principal.email.toLowerCase()) {
-        return drive;
-      }
+      if (drive.provider === 'google' && drive.driveType === 'my_drive' && isOwner(drive, principal)) return drive;
     }
     return undefined;
   }
@@ -390,6 +408,7 @@ export class DriveApi {
     if (drive.driveType === 'shared_drive' && !(truthy(query.get('supportsAllDrives')) || truthy(query.get('supportsTeamDrives')))) {
       throw fileNotFound(id);
     }
+    if (!drive.forbidden && !driveVisible(drive, principal)) throw fileNotFound(id);
     assertDriveAccess(drive, principal, id);
     return { item, drive };
   }
@@ -437,11 +456,8 @@ export class DriveApi {
       if (corpora === 'drive') throw badRequest('Invalid Value: corpora=drive requires driveId.', 'driveId');
       drives = [...state.drives.values()].filter((drive) => {
         if (drive.provider !== 'google' || drive.forbidden) return false;
-        if (drive.driveType === 'my_drive') {
-          const own = Boolean(principal.email && drive.owner?.email?.toLowerCase() === principal.email.toLowerCase());
-          return own || (drive.allowedPrincipals !== null && principalMayUse(drive, principal));
-        }
-        return allDrives && supportsAll && principalMayUse(drive, principal);
+        if (drive.driveType === 'shared_drive' && !(allDrives && supportsAll)) return false;
+        return driveVisible(drive, principal);
       });
     }
     const q = query.get('q');
@@ -503,26 +519,28 @@ export class DriveApi {
   private updateMetadata(request: FastifyRequest, reply: FastifyReply): FastifyReply {
     const principal = authenticate(this.state, request, 'google');
     const query = queryOf(request);
-    const { item, drive } = this.resolve(principal, (request.params as { fileId: string }).fileId, query);
+    const fileId = checkId((request.params as { fileId: string }).fileId, 'fileId');
+    const addParents = query.get('addParents');
+    const removeParents = query.get('removeParents');
+    const addIds = addParents ? addParents.split(',').map((id) => checkId(id.trim(), 'addParents')) : [];
+    const removeIds = removeParents ? removeParents.split(',').map((id) => checkId(id.trim(), 'removeParents')) : [];
+    const { item, drive } = this.resolve(principal, fileId, query);
     if (item.parentId === null) throw googleError(403, 'cannotModifyRoot', 'The root folder of a drive cannot be changed.');
     const body = jsonBody(request, 'drive') ?? {};
     const metadata = readMetadata({ ...body, parents: undefined });
     if (body.parents !== undefined) throw googleError(403, 'fieldNotWritable', 'The resource body includes fields which are not directly writable. Use addParents and removeParents.');
     if (body.trashed !== undefined && typeof body.trashed !== 'boolean') throw badRequest('Invalid Value: trashed must be true or false.', 'trashed');
-    const addParents = query.get('addParents');
-    const removeParents = query.get('removeParents');
     let newParent: ItemState | null = null;
-    if (addParents) {
-      const ids = addParents.split(',');
-      if (ids.length !== 1 || removeParents !== item.parentId) {
+    if (addIds.length > 0) {
+      if (addIds.length !== 1 || removeIds.length !== 1 || removeIds[0] !== item.parentId) {
         throw googleError(403, 'cannotAddParent', 'Increasing the number of parents is not allowed.');
       }
-      const target = this.resolve(principal, ids[0], query);
+      const target = this.resolve(principal, addIds[0], query);
       if (!target.item.isFolder) throw badRequest('Invalid Value: the parent is not a folder.', 'addParents');
       if (target.drive.id !== drive.id) throw badRequest('Moving files between drives is not supported by this mock.', 'addParents');
       if (this.state.isWithin(target.item.id, item.id)) throw badRequest('A folder cannot be moved into itself.', 'addParents');
       newParent = target.item;
-    } else if (removeParents) {
+    } else if (removeIds.length > 0) {
       throw googleError(403, 'cannotRemoveParent', 'A file must keep exactly one parent.');
     }
     if (metadata.name !== undefined) item.name = metadata.name;
@@ -760,6 +778,8 @@ export class DriveApi {
   }
 
   private session(request: FastifyRequest): UploadSession {
+    const fileId = (request.params as { fileId?: string }).fileId;
+    if (fileId !== undefined) checkId(fileId, 'fileId');
     const uploadId = queryOf(request).get('upload_id');
     if (!uploadId) throw badRequest('Invalid Value: upload_id is required.', 'upload_id');
     const session = this.state.uploadSessions.get(uploadId);

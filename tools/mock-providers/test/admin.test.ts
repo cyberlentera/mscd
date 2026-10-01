@@ -70,6 +70,58 @@ describe('admin API', () => {
     expect((await call(app, 'GET', '/_admin/state')).json().drives).toHaveLength(4);
   });
 
+  it('applies a merge all or nothing when the clash is in the folder tree', async () => {
+    const snapshot = async () => (await call(app, 'GET', '/_admin/state')).json().drives;
+    const before = await snapshot();
+    const clash = await call(app, 'POST', '/_admin/fixtures', {
+      json: {
+        m365: {
+          drives: [
+            { id: 'drive-new', items: [{ name: 'a.txt', path: 'A' }, { name: 'b.txt', path: 'B' }] },
+            {
+              id: 'drive-sp-compliance',
+              folders: [{ path: 'Compliance/New Folder' }, { id: 'FOLDER-ISMS', path: 'Compliance/ISMS', description: 'not kept' }],
+              items: [
+                { name: 'ok.txt', path: 'Compliance/B' },
+                { name: 'ACCESS-CONTROL-POLICY.PDF', path: 'Compliance/ISMS' },
+              ],
+            },
+          ],
+        },
+      },
+    });
+    expect(clash.statusCode).toBe(400);
+    expect(clash.json().error.details.join(' ')).toContain('a file or folder with that name already exists');
+    expect(await snapshot()).toEqual(before);
+    const isms = (await call(app, 'GET', '/_admin/items/FOLDER-ISMS')).json();
+    expect(isms.description).toBeNull();
+
+    const fileInPath = await call(app, 'POST', '/_admin/fixtures', {
+      json: {
+        google: {
+          drives: [
+            {
+              id: 'drive-gd-bcms',
+              folders: [{ id: 'folder-bcms-2026', path: 'Compliance BCMS/Evidence/2026', description: 'not kept' }],
+              items: [
+                { name: 'new.txt', path: 'Compliance BCMS/Fresh' },
+                { name: 'deep.txt', path: 'Compliance BCMS/Evidence/2026/Prioritised-Activities-v1.xlsx/Sub' },
+              ],
+            },
+          ],
+        },
+      },
+    });
+    expect(fileInPath.statusCode).toBe(400);
+    expect(fileInPath.json().error.details.join(' ')).toContain('is a file, not a folder');
+    expect(await snapshot()).toEqual(before);
+    expect((await call(app, 'GET', '/_admin/items/folder-bcms-2026')).json().description).toBeNull();
+
+    const item = await call(app, 'POST', '/_admin/items', { json: { driveId: 'drive-sp-compliance', path: 'Compliance/ISMS', name: 'access-control-policy.pdf' } });
+    expect(item.statusCode).toBe(400);
+    expect(await snapshot()).toEqual(before);
+  });
+
   it('creates items for zero-transit tests and shows their versions', async () => {
     const created = await call(app, 'POST', '/_admin/items', {
       json: { driveId: 'drive-sp-compliance', path: 'Compliance/ISMS', name: 'Uploaded by Bagus MSCD-ZT42.pdf', content: 'zero transit', createdBy: BAGUS, createdAt: '2026-09-29T08:00:00Z' },
@@ -109,11 +161,18 @@ describe('admin API', () => {
 
   it('records provider requests with the principal and clears the log', async () => {
     const token = await googleToken(app);
-    await call(app, 'GET', '/drive/v3/files/file-my-note', { token });
+    await call(app, 'GET', '/drive/v3/files/file-prioritised?supportsAllDrives=true', { token });
     await call(app, 'GET', '/_admin/state');
     const log = (await call(app, 'GET', '/_admin/requests?api=drive')).json().requests;
     expect(log).toHaveLength(1);
-    expect(log[0]).toMatchObject({ api: 'drive', method: 'GET', url: '/drive/v3/files/file-my-note', status: 200, authorization: true, principal: 'mscd-gateway@mscd-test.iam.gserviceaccount.com' });
+    expect(log[0]).toMatchObject({
+      api: 'drive',
+      method: 'GET',
+      url: '/drive/v3/files/file-prioritised?supportsAllDrives=true',
+      status: 200,
+      authorization: true,
+      principal: 'mscd-gateway@mscd-test.iam.gserviceaccount.com',
+    });
     const since = (await call(app, 'GET', `/_admin/requests?since=${log[0].seq}`)).json().requests;
     expect(since).toHaveLength(0);
     expect((await call(app, 'DELETE', '/_admin/requests')).statusCode).toBe(204);
