@@ -1,0 +1,62 @@
+# MSCD on-premise: Docker Compose deployment (small installations, pilots, labs).
+#
+# Settings come from .env next to this file. install.sh writes it for you;
+# .env.example documents every setting. After editing .env, apply with:
+#   docker compose up -d
+name: mscd
+
+services:
+  web:
+    image: ${MSCD_IMAGE:-cyberlentera/mscd-web}:${MSCD_VERSION:?MSCD_VERSION must be set in .env}
+    container_name: mscd-web
+    # Images come from the offline bundle (docker load), never from a registry.
+    pull_policy: never
+    restart: unless-stopped
+    # install.sh sets these: the dedicated "mscd" system account when run with
+    # sudo, otherwise the user who ran it.
+    user: "${MSCD_RUN_UID:-101}:${MSCD_RUN_GID:-101}"
+
+    # Hardening: read-only root filesystem, no Linux capabilities, no privilege escalation.
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+    environment:
+      MSCD_HTTP_REDIRECT: ${MSCD_HTTP_REDIRECT:-true}
+      MSCD_HTTPS_PUBLIC_PORT: ${MSCD_HTTPS_PORT:-443}
+      MSCD_DOMAIN: ${MSCD_DOMAIN:-}
+      MSCD_HSTS: ${MSCD_HSTS:-false}
+      MSCD_EXTERNAL_FONTS: ${MSCD_EXTERNAL_FONTS:-false}
+
+    ports:
+      - "${MSCD_BIND_ADDRESS:-0.0.0.0}:${MSCD_HTTP_PORT:-80}:8080"
+      - "${MSCD_BIND_ADDRESS:-0.0.0.0}:${MSCD_HTTPS_PORT:-443}:8443"
+
+    # tls.crt and tls.key. The ",z" label lets SELinux hosts share the files
+    # with the container; it has no effect elsewhere.
+    volumes:
+      - ./tls:/etc/nginx/tls:ro,z
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${MSCD_CPU_LIMIT:-1.0}"
+          memory: ${MSCD_MEMORY_LIMIT:-256M}
+          pids: 128
+        reservations:
+          memory: 64M
+
+    stop_grace_period: 15s
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    labels:
+      com.cyberlentera.mscd.component: web

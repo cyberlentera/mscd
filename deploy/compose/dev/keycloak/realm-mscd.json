@@ -1,0 +1,260 @@
+{
+  "realm": "mscd",
+  "displayName": "MSCD development",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "editUsernameAllowed": false,
+  "rememberMe": false,
+  "verifyEmail": false,
+  "bruteForceProtected": false,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "browserFlow": "mscd browser",
+  "directGrantFlow": "mscd direct grant",
+  "users": [
+    {
+      "id": "00000000-0000-4000-8000-0000000000c1",
+      "username": "rina",
+      "enabled": true,
+      "email": "rina.kusuma@nusantaradigital.co.id",
+      "emailVerified": true,
+      "firstName": "Rina",
+      "lastName": "Kusuma",
+      "credentials": [{ "type": "password", "value": "Mscd-Demo-2026!", "temporary": false }],
+      "attributes": { "saml.persistent.name.id.for.mscd-dev-sp": ["00000000-0000-4000-8000-0000000000c1"] },
+      "requiredActions": []
+    },
+    {
+      "id": "00000000-0000-4000-8000-0000000000c2",
+      "username": "bagus",
+      "enabled": true,
+      "email": "bagus.prasetyo@nusantaradigital.co.id",
+      "emailVerified": true,
+      "firstName": "Bagus",
+      "lastName": "Prasetyo",
+      "credentials": [{ "type": "password", "value": "Mscd-Demo-2026!", "temporary": false }],
+      "attributes": { "saml.persistent.name.id.for.mscd-dev-sp": ["00000000-0000-4000-8000-0000000000c2"] },
+      "requiredActions": []
+    },
+    {
+      "id": "00000000-0000-4000-8000-0000000000c3",
+      "username": "maya",
+      "enabled": true,
+      "email": "maya.putri@nusantaradigital.co.id",
+      "emailVerified": true,
+      "firstName": "Maya",
+      "lastName": "Putri",
+      "credentials": [{ "type": "password", "value": "Mscd-Demo-2026!", "temporary": false }],
+      "attributes": { "saml.persistent.name.id.for.mscd-dev-sp": ["00000000-0000-4000-8000-0000000000c3"] },
+      "requiredActions": []
+    },
+    {
+      "id": "00000000-0000-4000-8000-0000000000c4",
+      "username": "hendra",
+      "enabled": true,
+      "email": "hendra.wijaya@nusantaradigital.co.id",
+      "emailVerified": true,
+      "firstName": "Hendra",
+      "lastName": "Wijaya",
+      "credentials": [{ "type": "password", "value": "Mscd-Demo-2026!", "temporary": false }],
+      "attributes": { "saml.persistent.name.id.for.mscd-dev-sp": ["00000000-0000-4000-8000-0000000000c4"] },
+      "requiredActions": []
+    },
+    {
+      "id": "00000000-0000-4000-8000-0000000000d1",
+      "username": "sso.only",
+      "enabled": true,
+      "email": "sso.only@mscd.test",
+      "emailVerified": true,
+      "firstName": "SSO",
+      "lastName": "Only",
+      "credentials": [{ "type": "password", "value": "Mscd-Demo-2026!", "temporary": false }],
+      "attributes": { "saml.persistent.name.id.for.mscd-dev-sp": ["00000000-0000-4000-8000-0000000000d1"] },
+      "requiredActions": []
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "mscd",
+      "name": "MSCD (development)",
+      "description": "Confidential OIDC client for local development and tests. Redirect URIs are open because tests use random ports.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "bearerOnly": false,
+      "consentRequired": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "mscd-dev-oidc-secret",
+      "redirectUris": ["*"],
+      "webOrigins": [],
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "frontchannelLogout": false,
+      "fullScopeAllowed": true,
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "+",
+        "oauth2.device.authorization.grant.enabled": "false",
+        "oidc.ciba.grant.enabled": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "mscd email",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "email",
+            "claim.name": "email",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "mscd email verified",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "emailVerified",
+            "claim.name": "email_verified",
+            "jsonType.label": "boolean",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "mscd amr",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-amr-mapper",
+          "consentRequired": false,
+          "config": {
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "mscd-dev-sp",
+      "name": "MSCD SAML (development)",
+      "description": "SAML 2.0 service provider for local development and tests. The client id is the SP entity id.",
+      "enabled": true,
+      "protocol": "saml",
+      "redirectUris": ["*"],
+      "frontchannelLogout": true,
+      "fullScopeAllowed": true,
+      "attributes": {
+        "saml.assertion.signature": "true",
+        "saml.server.signature": "true",
+        "saml.server.signature.keyinfo.ext": "false",
+        "saml.signature.algorithm": "RSA_SHA256",
+        "saml_signature_canonicalization_method": "http://www.w3.org/2001/10/xml-exc-c14n#",
+        "saml.client.signature": "false",
+        "saml.encrypt": "false",
+        "saml.force.post.binding": "true",
+        "saml.authnstatement": "true",
+        "saml.onetimeuse.condition": "false",
+        "saml.artifact.binding": "false",
+        "saml.allow.ecp.flow": "false",
+        "saml_name_id_format": "persistent",
+        "saml_force_name_id_format": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "email",
+          "protocol": "saml",
+          "protocolMapper": "saml-user-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "email",
+            "attribute.name": "email",
+            "friendly.name": "email",
+            "attribute.nameformat": "Basic"
+          }
+        }
+      ]
+    }
+  ],
+  "authenticatorConfig": [
+    {
+      "alias": "mscd amr pwd",
+      "config": { "default.reference.value": "pwd", "default.reference.maxAge": "36000" }
+    },
+    {
+      "alias": "mscd amr otp",
+      "config": { "default.reference.value": "otp", "default.reference.maxAge": "36000" }
+    }
+  ],
+  "authenticationFlows": [
+    {
+      "alias": "mscd browser",
+      "description": "Browser sign-in whose steps add amr references (pwd, otp) to the tokens",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        { "authenticator": "auth-cookie", "authenticatorFlow": false, "requirement": "ALTERNATIVE", "priority": 10, "userSetupAllowed": false },
+        { "flowAlias": "mscd browser forms", "authenticatorFlow": true, "requirement": "ALTERNATIVE", "priority": 20, "userSetupAllowed": false }
+      ]
+    },
+    {
+      "alias": "mscd browser forms",
+      "description": "Username and password, then a one-time code when the user has one",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        { "authenticator": "auth-username-password-form", "authenticatorConfig": "mscd amr pwd", "authenticatorFlow": false, "requirement": "REQUIRED", "priority": 10, "userSetupAllowed": false },
+        { "flowAlias": "mscd browser otp", "authenticatorFlow": true, "requirement": "CONDITIONAL", "priority": 20, "userSetupAllowed": false }
+      ]
+    },
+    {
+      "alias": "mscd browser otp",
+      "description": "One-time code for users with an OTP credential",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        { "authenticator": "conditional-user-configured", "authenticatorFlow": false, "requirement": "REQUIRED", "priority": 10, "userSetupAllowed": false },
+        { "authenticator": "auth-otp-form", "authenticatorConfig": "mscd amr otp", "authenticatorFlow": false, "requirement": "REQUIRED", "priority": 20, "userSetupAllowed": false }
+      ]
+    },
+    {
+      "alias": "mscd direct grant",
+      "description": "Resource owner password grant (tests only) with the same amr references",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        { "authenticator": "direct-grant-validate-username", "authenticatorFlow": false, "requirement": "REQUIRED", "priority": 10, "userSetupAllowed": false },
+        { "authenticator": "direct-grant-validate-password", "authenticatorConfig": "mscd amr pwd", "authenticatorFlow": false, "requirement": "REQUIRED", "priority": 20, "userSetupAllowed": false },
+        { "flowAlias": "mscd direct grant otp", "authenticatorFlow": true, "requirement": "CONDITIONAL", "priority": 30, "userSetupAllowed": false }
+      ]
+    },
+    {
+      "alias": "mscd direct grant otp",
+      "description": "One-time code for users with an OTP credential",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        { "authenticator": "conditional-user-configured", "authenticatorFlow": false, "requirement": "REQUIRED", "priority": 10, "userSetupAllowed": false },
+        { "authenticator": "direct-grant-validate-otp", "authenticatorConfig": "mscd amr otp", "authenticatorFlow": false, "requirement": "REQUIRED", "priority": 20, "userSetupAllowed": false }
+      ]
+    }
+  ]
+}

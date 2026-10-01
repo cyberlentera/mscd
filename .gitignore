@@ -1,0 +1,10 @@
+# Dependencies and build output
+app/node_modules/
+app/dist/
+
+# Playwright output
+app/test-results/
+app/e2e-report/
+
+# On-premise bundles built by deploy/scripts/build-bundle.sh
+deploy/dist/

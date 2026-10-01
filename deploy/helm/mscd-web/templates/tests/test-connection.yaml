@@ -1,0 +1,42 @@
+{{- /* helm test: fetches /healthz and the app page through the Service.
+       Uses the MSCD image itself, so it works on air-gapped clusters. */}}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "mscd-web.fullname" . }}-test
+  # Not the Service selector labels, so the Service never routes to this pod.
+  labels:
+    helm.sh/chart: {{ include "mscd-web.chart" . }}
+    app.kubernetes.io/name: {{ include "mscd-web.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: test
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  {{- with .Values.imagePullSecrets }}
+  imagePullSecrets:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  securityContext:
+    {{- toYaml .Values.podSecurityContext | nindent 4 }}
+  containers:
+    - name: check
+      image: {{ include "mscd-web.image" . | quote }}
+      imagePullPolicy: {{ .Values.image.pullPolicy }}
+      command:
+        - sh
+        - -c
+        - >-
+          wget -q -T 5 -O - http://{{ include "mscd-web.fullname" . }}:{{ .Values.service.port }}/healthz &&
+          wget -q -T 5 -O - http://{{ include "mscd-web.fullname" . }}:{{ .Values.service.port }}/ | grep -q 'id="root"' &&
+          echo "MSCD web answers through the Service"
+      securityContext:
+        {{- toYaml .Values.securityContext | nindent 8 }}
+      resources:
+        limits:
+          cpu: 100m
+          memory: 32Mi

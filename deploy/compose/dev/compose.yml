@@ -1,0 +1,149 @@
+# MSCD developer infrastructure stack: PostgreSQL, an S3-compatible object
+# store, Valkey, Keycloak and Mailpit. No MSCD application containers run here;
+# the api, worker and storage-gateway run on the host against these services.
+#
+# Start from the repository root:
+#   docker compose -f deploy/compose/dev/compose.yml up -d --wait
+#   docker compose -f deploy/compose/dev/compose.yml --profile bullmq --profile sso up -d --wait
+#
+# Every setting has a development default. To change one, copy .env.example to
+# .env in this folder and edit it. README.md lists connection strings and logins.
+# Development only: fixed passwords, Keycloak in dev mode, no TLS.
+name: mscd-dev
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  postgres:
+    image: postgres:16.15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${MSCD_DEV_POSTGRES_PASSWORD:-postgres-dev}
+      POSTGRES_DB: mscd
+    ports:
+      - "${MSCD_DEV_BIND_ADDRESS:-127.0.0.1}:${MSCD_DEV_POSTGRES_PORT:-55432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Runs once, when the data volume is empty: roles, ext schema, pg_trgm (C.2).
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # TCP check: the entrypoint runs the init scripts on a socket-only server,
+      # so the stack reports healthy only after the roles exist.
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-p", "5432", "-U", "postgres", "-d", "mscd"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+      start_interval: 1s
+    logging: *logging
+
+  objectstore:
+    image: chrislusf/seaweedfs:4.48
+    restart: unless-stopped
+    # The image entrypoint runs "weed <command>" as the unprivileged seaweed user.
+    command:
+      - mini
+      - -dir=/data
+      - -s3.config=/etc/seaweedfs/s3.json
+      - -bucket=mscd-vault
+    ports:
+      - "${MSCD_DEV_BIND_ADDRESS:-127.0.0.1}:${MSCD_DEV_S3_PORT:-58333}:8333"
+    volumes:
+      - s3data:/data
+      - ./seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
+    healthcheck:
+      # Master status, then the S3 endpoint, then the mscd-vault bucket folder in the filer.
+      test:
+        - CMD-SHELL
+        - >-
+          wget -q -O /dev/null http://127.0.0.1:9333/cluster/status &&
+          wget -q -O /dev/null http://127.0.0.1:8333/healthz &&
+          wget -q -O /dev/null http://127.0.0.1:8888/buckets/mscd-vault/
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+      start_interval: 1s
+    logging: *logging
+
+  valkey:
+    image: valkey/valkey:8.1-alpine
+    profiles: [bullmq]
+    restart: unless-stopped
+    # Append-only persistence so queued jobs survive a restart of the stack.
+    command: ["valkey-server", "--appendonly", "yes", "--save", ""]
+    ports:
+      - "${MSCD_DEV_BIND_ADDRESS:-127.0.0.1}:${MSCD_DEV_VALKEY_PORT:-56379}:6379"
+    volumes:
+      - valkey-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli ping | grep -q PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+      start_interval: 1s
+    logging: *logging
+
+  keycloak:
+    image: keycloak/keycloak:26.7.5
+    profiles: [sso]
+    restart: unless-stopped
+    # No volume: the realm is imported from keycloak/realm-mscd.json whenever the
+    # container is created, so that file stays the single source of truth.
+    command: ["start-dev", "--import-realm", "--health-enabled=true"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${MSCD_DEV_KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${MSCD_DEV_KEYCLOAK_ADMIN_PASSWORD:-admin-dev}
+      KC_LOG_LEVEL: ${MSCD_DEV_KEYCLOAK_LOG_LEVEL:-info}
+    ports:
+      - "${MSCD_DEV_BIND_ADDRESS:-127.0.0.1}:${MSCD_DEV_KEYCLOAK_PORT:-58080}:8080"
+    volumes:
+      - ./keycloak/realm-mscd.json:/opt/keycloak/data/import/realm-mscd.json:ro
+    healthcheck:
+      # The image has no curl or wget; bash talks HTTP to the management port.
+      test:
+        - CMD
+        - bash
+        - -c
+        - 'exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e "GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3 && grep -q UP <&3'
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 180s
+      start_interval: 2s
+    logging: *logging
+
+  mailpit:
+    image: axllent/mailpit:v1.31.3
+    restart: unless-stopped
+    environment:
+      # Accept any SMTP login (or none) over plain SMTP, as an internal relay would.
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+      MP_DATABASE: /data/mailpit.db
+      MP_MAX_MESSAGES: "5000"
+    ports:
+      - "${MSCD_DEV_BIND_ADDRESS:-127.0.0.1}:${MSCD_DEV_SMTP_PORT:-51025}:1025"
+      - "${MSCD_DEV_BIND_ADDRESS:-127.0.0.1}:${MSCD_DEV_MAILPIT_PORT:-58025}:8025"
+    volumes:
+      - mailpit-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8025/livez"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+      start_interval: 1s
+    logging: *logging
+
+volumes:
+  pgdata:
+  s3data:
+  valkey-data:
+  mailpit-data:
