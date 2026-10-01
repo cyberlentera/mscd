@@ -283,6 +283,25 @@ describe('guest auditor access (F.14, D-27)', () => {
     expect(audit.map((a) => a.after_data.reason)).toEqual(['expired']);
   });
 
+  it('a guest session never outlives its grant, even when nobody reads the grants', async () => {
+    const email = 'late.auditor@certifier.co.id';
+    const result = await grant(email, 1);
+    const token = await linkFromMail(email);
+    // Sign in two hours before the grant ends: the 4 hour guest limit would run past it.
+    ctx.clock.advance(22 * 3_600_000);
+    const guest = new Browser(ctx.app);
+    expect((await guest.post('/api/v1/auth/guest/start', { token })).statusCode).toBe(200);
+    const code = await codeFromMail(email, 0);
+    expect((await guest.post('/api/v1/auth/guest/verify', { code })).statusCode).toBe(200);
+    const row = await tst((trx) => trx.selectFrom('auditor_access_grant').select('expires_at').where('id', '=', result.data!.grantId).executeTakeFirstOrThrow());
+    const session = await platform((trx) =>
+      trx.selectFrom('platform.session').select(['absolute_expires_at', 'idle_expires_at']).where('auth_grant_id', '=', result.data!.grantId).where('revoked_at', 'is', null).executeTakeFirstOrThrow(),
+    );
+    expect(session.absolute_expires_at.getTime()).toBe(row.expires_at.getTime());
+    expect(session.idle_expires_at.getTime()).toBeLessThanOrEqual(row.expires_at.getTime());
+    // The session resolver refuses a session past its absolute expiry, and cleanup.expired revokes it.
+  });
+
   it('an auditor who has an account in another organisation gets a separate guest account', async () => {
     const sari = await platform((trx) => trx.selectFrom('platform.app_user').select(['id', 'email']).where('handle', '=', 'sari').executeTakeFirstOrThrow());
     const result = await grant(sari.email);

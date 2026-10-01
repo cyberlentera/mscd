@@ -230,8 +230,11 @@ export class AuditorAccessService {
     return { sessions };
   }
 
-  /** Grants past `expires_at` whose guest membership is still active are ended as `expired` (F.14 step 5). */
-  private async closeExpired(trx: Trx, orgId: string, now: Date): Promise<void> {
+  /**
+   * Grants past `expires_at` whose guest membership is still active are ended as `expired` (F.14 step 5), in the
+   * caller's tenant transaction. Called by the grant and list routes; a scheduled sweep can call it too.
+   */
+  async closeExpired(trx: Trx, orgId: string, now: Date): Promise<void> {
     const { rows } = await sql<{ id: string; email: string; user_id: string | null; user_ms_role_id: string | null; management_system_id: string }>`
       select g.id, g.email, g.user_id, g.user_ms_role_id, g.management_system_id
       from auditor_access_grant g

@@ -362,7 +362,7 @@ export class GuestAccessService {
         const state = (await inPlatformScope(trx, () => this.mfa.hasConfirmedFactor(trx, user.id))) ? 'mfa_pending' : 'mfa_enrolment';
         const issued = await inPlatformScope(trx, async () => {
           if (presented) await this.sessions.revoke(trx, sha256(presented), 'signed_in_again');
-          return this.sessions.create(trx, {
+          const created = await this.sessions.create(trx, {
             userId: user.id,
             organizationId: org.id,
             authOrgId: org.id,
@@ -370,6 +370,7 @@ export class GuestAccessService {
             authMethod: 'guest',
             authGrantId: grant.id,
           });
+          return this.capAtGrantExpiry(trx, created, grant.expires_at);
         });
         await this.audit.record(trx, {
           action: 'auth.guest_login',
@@ -389,6 +390,23 @@ export class GuestAccessService {
     }
     this.clearBindingCookie(reply);
     return this.responder.respond(reply, outcome.issued, principalUser(outcome.user));
+  }
+
+  /**
+   * A guest session never outlives its grant (F.14 step 5): its absolute and idle expiry are cut to the grant's
+   * `expires_at`. The session resolver then refuses it once the grant expires, and `cleanup.expired` revokes it,
+   * without waiting for the grant list or grant route to close the grant. Rotations keep the absolute expiry.
+   */
+  private async capAtGrantExpiry(trx: Trx, issued: IssuedSession, grantExpiresAt: Date): Promise<IssuedSession> {
+    const { row } = issued;
+    if (grantExpiresAt.getTime() >= row.absolute_expires_at.getTime()) return issued;
+    const idle = new Date(Math.min(row.idle_expires_at.getTime(), grantExpiresAt.getTime()));
+    await trx
+      .updateTable('platform.session')
+      .set({ absolute_expires_at: grantExpiresAt, idle_expires_at: idle })
+      .where('id_hash', '=', row.id_hash)
+      .execute();
+    return { ...issued, row: { ...row, absolute_expires_at: grantExpiresAt, idle_expires_at: idle } };
   }
 
   private async dropTransaction(trx: Trx, id: string): Promise<void> {
