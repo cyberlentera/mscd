@@ -1,0 +1,30 @@
+{
+  "license_id": "LIC-DEMO-NDT",
+  "organization": "PT Nusantara Digital Teknologi",
+  "organization_id": "00000000-0000-4000-8000-00000000a001",
+  "valid_from": "2026-04-01",
+  "valid_until": "2027-03-31",
+  "grace_days": 30,
+  "frameworks": [
+    "ISO27001",
+    "ISO9001",
+    "ISO22301",
+    "ISO37001"
+  ],
+  "max_management_systems": 10,
+  "max_users": 150,
+  "storage_adapters": [
+    "managed_vault",
+    "m365",
+    "google_drive",
+    "smb"
+  ],
+  "features": [
+    "integrated_mode",
+    "edition_transition",
+    "link_health_monitor",
+    "auditor_guest_access"
+  ],
+  "key_id": "f83c3c5b683ceb05",
+  "signature": "ed25519:cxbiLI4opbS9CeRjr2mv7gv3fRJZ9ss//df8PmDhkbOiQwEj6XxXNDkQ6ftJSvk0JN9+/FmMTQNSFycRgDreAA=="
+}
