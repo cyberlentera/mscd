@@ -25,7 +25,8 @@
 # Every setting has a default, so no .env file is needed. Override with
 # environment variables: MSCD_VERSION (required: the tag of the three images),
 # MSCD_BIND_ADDRESS (127.0.0.1), MSCD_HTTP_PORT (18080), MSCD_HTTPS_PORT (18443),
-# MSCD_KEYCLOAK_PORT (18088), MSCD_MAILPIT_PORT (18025).
+# MSCD_KEYCLOAK_PORT (18088), MSCD_MAILPIT_PORT (18025), MSCD_DEMO_PUBLIC_URL
+# (http://localhost:<MSCD_HTTP_PORT>; the address people type in the browser).
 
 x-demo-image: &demo-image
   image: ${MSCD_SERVER_DEMO_IMAGE:-cyberlentera/mscd-server-demo}:${MSCD_VERSION:-MSCD_VERSION-not-set}
@@ -34,7 +35,7 @@ x-demo-image: &demo-image
 # from the on-premise file. These replace the values that differ.
 x-demo-env: &demo-env
   MSCD_PROFILE_FILE: /app/apps/server/profiles/demo.yaml
-  MSCD__HTTP__PUBLIC_URL: http://localhost:${MSCD_HTTP_PORT:-18080}
+  MSCD__HTTP__PUBLIC_URL: ${MSCD_DEMO_PUBLIC_URL:-http://localhost:${MSCD_HTTP_PORT:-18080}}
   MSCD__MAIL__FROM: MSCD Demo <mscd@demo.invalid>
   MSCD__MAIL__SMTP__HOST: mailpit
   MSCD__MAIL__SMTP__PORT: "1025"

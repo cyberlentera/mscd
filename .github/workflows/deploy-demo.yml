@@ -1,0 +1,69 @@
+# Deploys the demo stack to a test server over SSH. Started by hand:
+# Actions > Deploy demo > Run workflow, then pick the branch.
+#
+# Repository secrets (Settings > Secrets and variables > Actions):
+#   VPS_HOST     server address, for example 203.0.113.10
+#   VPS_USER     SSH user on the server, member of the docker group
+#   VPS_SSH_KEY  private key whose public key is in that user's ~/.ssh/authorized_keys
+# Optional repository variables: VPS_PORT (SSH port, 22), MSCD_DEMO_PUBLIC_URL.
+#
+# The server needs a clone of this repository in ~/mscd that can fetch from
+# GitHub (a read-only deploy key), and Docker with the Compose plugin.
+name: Deploy demo
+
+on:
+  workflow_dispatch:
+    inputs:
+      reset:
+        description: Delete the demo data and seed it again
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-demo
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Prepare SSH
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_PORT: ${{ vars.VPS_PORT || '22' }}
+        run: |
+          test -n "$VPS_HOST" || { echo "Secret VPS_HOST is not set"; exit 1; }
+          test -n "$VPS_SSH_KEY" || { echo "Secret VPS_SSH_KEY is not set"; exit 1; }
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ vars.VPS_PORT || '22' }}
+          BRANCH: ${{ github.ref_name }}
+          RESET: ${{ inputs.reset && '1' || '0' }}
+          PUBLIC_URL: ${{ vars.MSCD_DEMO_PUBLIC_URL }}
+        run: |
+          ssh -i ~/.ssh/id_deploy -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" \
+            "BRANCH='$BRANCH' RESET='$RESET' PUBLIC_URL='$PUBLIC_URL' bash -s" <<'REMOTE'
+          set -euo pipefail
+          cd ~/mscd
+          git fetch --prune origin "$BRANCH"
+          git checkout -B "$BRANCH" "origin/$BRANCH"
+          git reset --hard "origin/$BRANCH"
+          if [ -n "$PUBLIC_URL" ]; then export MSCD_DEMO_PUBLIC_URL="$PUBLIC_URL"; fi
+          MSCD_DEMO_RESET="$RESET" bash deploy/scripts/deploy-demo.sh
+          REMOTE
+
+      - name: Remove the key
+        if: always()
+        run: rm -f ~/.ssh/id_deploy
