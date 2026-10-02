@@ -25,7 +25,8 @@ export const testResetRoute = defineRoute({
   summary: 'Recreate the database from the template, reset the mock providers and clear in-memory caches',
   auth: 'public',
   response: TestResetResponse,
-  errors: [403],
+  // 404 when the profile does not enable test endpoints; 503 when the database server or the mock providers fail.
+  errors: [403, 404, 503],
   testOnly: true,
   readOnlyAllowed: true,
 });
@@ -39,6 +40,7 @@ export const testSessionRoute = defineRoute({
   auth: 'public',
   body: TestSessionRequest,
   response: Me,
+  // 404 for an unknown, inactive or guest user, an organisation the user is no active member of, or disabled endpoints.
   errors: [403, 404],
   testOnly: true,
   readOnlyAllowed: true,
