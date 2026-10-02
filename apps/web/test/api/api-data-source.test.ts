@@ -2,7 +2,7 @@
 // the H.4 table, problem to error mapping, 401 handling, the organisation switch with reauth-required, the persona
 // switch, and createDataSource in API mode.
 import { describe, expect, it, vi } from 'vitest';
-import { ApiLoadError, pickerFolder } from '../../src/data/api/ApiDataSource';
+import { ApiLoadError, fileNameOf, pickerFolder, previousPickerFolder } from '../../src/data/api/ApiDataSource';
 import { findRef, parseKey, rehydrateBundle } from '../../src/data/api/wire';
 import { LOC_VISUALS } from '../../src/data/static.js';
 import { problem } from '../auth/helpers';
@@ -254,6 +254,28 @@ describe('commands', () => {
     expect(got).toEqual(listing);
   });
 
+  it('listPickerFiles falls back to the previous quarter when the period folder is empty, else returns it empty', async () => {
+    const prev = { path: 'Compliance / ISMS / Evidence / 2026 / Q2', files: [['Backup.xlsx', '28 Jun 2026', 'v2.0', 'quickXorHash', 'Bagus Prasetyo']], refs: [{ repositoryId: 'sp', externalItemId: 'demo-sp-picker-2' }] };
+    const empty = { path: 'Compliance / ISMS / Evidence / 2026 / Q3', files: [], refs: [] };
+    const byPath = (answers: Record<string, unknown>) => (req: AnyRecord) => {
+      const p = new URL(req.url, 'http://x').searchParams.get('path') ?? '';
+      return p in answers ? json(answers[p]) : problem(404, 'not-found');
+    };
+    const { ds, calls, snap } = await loaded({ 'GET /api/v1/storage/repositories/sp/browse': byPath({ 'Evidence/2026/Q3': empty, 'Evidence/2026/Q2': prev }) });
+    const key = `isms:ev:${snap.bundles.isms.evs[0].code}`;
+    expect(await ds.listPickerFiles(key, 'sp')).toEqual(prev);
+    expect(calls.map((c) => new URL(c.url, 'http://x').searchParams.get('path'))).toEqual(['Evidence/2026/Q3', 'Evidence/2026/Q2']);
+    // Nothing anywhere: the period folder with no files (the picker shows its empty state).
+    const none = await loaded({ 'GET /api/v1/storage/repositories/sp/browse': byPath({ 'Evidence/2026/Q3': empty, '': { path: 'Compliance / ISMS', files: [], refs: [] } }) });
+    expect(await none.ds.listPickerFiles(key, 'sp')).toEqual(empty);
+    expect(none.calls).toHaveLength(3);
+    // No folder at all: the api's 404.
+    const gone = await loaded({ 'GET /api/v1/storage/repositories/sp/browse': problem(404, 'not-found') });
+    await expect(gone.ds.listPickerFiles(key, 'sp')).rejects.toMatchObject({ error: { status: 404 } });
+    expect(previousPickerFolder('2027-01-05')).toBe('Evidence/2026/Q4');
+    expect(previousPickerFolder(undefined)).toBeUndefined();
+  });
+
   it('listPickerFiles browses the default repository of the system for the record', async () => {
     const listing = { path: 'Compliance / ISMS / Evidence', files: [['Backup.xlsx', '28 Sep 2026', 'v3.0', 'quickXorHash', 'Bagus Prasetyo']], refs: [{ repositoryId: 'sp', externalItemId: 'demo-sp-picker-1', externalVersionId: '3.0' }] };
     const { ds, calls, snap } = await loaded({ 'GET /api/v1/storage/repositories/sp/browse': json(listing) });
@@ -359,9 +381,61 @@ describe('commands', () => {
     expect(navigated).toEqual([]);
   });
 
+  it('a refused xlsx export answers the problem and keeps the page; a 401 tells onUnauthenticated', async () => {
+    const { ds, calls, navigated, saved, routes } = await loaded({
+      'GET /api/v1/ms/isms/applicability/export': problem(403, 'feature-not-licensed', { detail: 'The licence does not include SoA exports.' }),
+      'GET /api/v1/ms/isms/documents/export': problem(401, 'unauthenticated'),
+    });
+    const r = await ds.pageAction('isms', 'exportSoa');
+    expect(r.ok).toBe(false);
+    expect(r.error?.status).toBe(403);
+    expect(navigated).toEqual([]);
+    expect(saved).toEqual([]);
+    const listener = vi.fn();
+    ds.onUnauthenticated(listener);
+    routes['GET /api/v1/me'] = problem(401, 'unauthenticated');
+    calls.length = 0;
+    expect((await ds.pageAction('isms', 'exportDocs')).ok).toBe(false);
+    await vi.waitFor(() => expect(listener).toHaveBeenCalledTimes(1));
+    expect(calls.map((c) => c.path)).toEqual(['/api/v1/ms/isms/documents/export', '/api/v1/me']);
+    expect(fileNameOf("attachment; filename*=UTF-8''SoA%20isms.xlsx")).toBe('SoA isms.xlsx');
+    expect(fileNameOf(null)).toBeUndefined();
+  });
+
+  it('a 401 of the raw upload PUT (XMLHttpRequest) tells onUnauthenticated', async () => {
+    const contentUrl = '/api/v1/storage/upload-intents/i-1/content';
+    class FakeXhr {
+      status = 0; responseText = ''; upload: AnyRecord = {}; withCredentials = true;
+      onload: (() => void) | null = null; onerror: (() => void) | null = null;
+      open() {} setRequestHeader() {} getResponseHeader() { return 'application/problem+json'; }
+      send() { this.status = 401; this.responseText = JSON.stringify({ type: 'about:blank', title: 'Unauthenticated', status: 401, code: 'unauthenticated' }); queueMicrotask(() => this.onload?.()); }
+    }
+    vi.stubGlobal('XMLHttpRequest', FakeXhr);
+    try {
+      const fx = await wireOf();
+      const env = sourceWith({
+        ...readRoutes(fx, meOf()),
+        'POST /api/v1/storage/upload-intents': json({ intentId: uuidOf('intent'), contentUrl, expiresAt: '2026-09-29T07:00:00Z' }, 201),
+      }, { useXhr: true });
+      const snap = (await env.ds.load()) as AnyRecord;
+      env.routes['GET /api/v1/me'] = problem(401, 'unauthenticated');
+      const listener = vi.fn();
+      env.ds.onUnauthenticated(listener);
+      const r = await env.ds.uploadFile(`isms:ev:${snap.bundles.isms.evs[0].code}`, new File(['x'], 'a.pdf'));
+      expect(r.ok).toBe(false);
+      expect(r.error?.status).toBe(401);
+      await vi.waitFor(() => expect(listener).toHaveBeenCalledTimes(1));
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('pageAction maps every action of H.4', async () => {
     const taskId = uuidOf('export');
-    const { ds, calls, navigated } = await loaded({
+    const xlsx = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    const { ds, calls, navigated, saved } = await loaded({
+      'GET /api/v1/ms/isms/applicability/export': { status: 200, body: 'PK', headers: { 'content-type': xlsx, 'content-disposition': 'attachment; filename="SoA-isms.xlsx"' } },
+      'GET /api/v1/ms/isms/documents/export': { status: 200, body: 'PK', headers: { 'content-type': xlsx } },
       'POST /api/v1/exports': json({ ok: true, changed: [], taskId }, 202),
       [`GET /api/v1/exports/${taskId}`]: [json({ id: taskId, kind: 'export', status: 'running', progress: 50 }), json({ id: taskId, kind: 'export', status: 'succeeded', progress: 100, downloadUrl: `/api/v1/exports/${taskId}/download` })],
       'POST /api/v1/ms/isms/evidence-packs': json({ ok: true, changed: ['isms'], message: ['Evidence pack is being compiled in SharePoint', 'Evidence pack sedang disusun di SharePoint'] }, 202),
@@ -382,10 +456,14 @@ describe('commands', () => {
     expect(calls[0].body).toEqual({ type: 'readiness', ms: 'isms', format: 'pdf' });
     calls.length = 0;
     navigated.length = 0;
-    await ds.pageAction('isms', 'exportSoa');
-    await ds.pageAction('isms', 'exportDocs');
-    expect(calls).toHaveLength(0);
-    expect(navigated).toEqual(['/api/v1/ms/isms/applicability/export?format=xlsx', '/api/v1/ms/isms/documents/export?format=xlsx']);
+    // The xlsx exports are fetched first and saved as files; the page never navigates to them.
+    const soa = await ds.pageAction('isms', 'exportSoa');
+    const docs = await ds.pageAction('isms', 'exportDocs');
+    expect(soa.ok && docs.ok).toBe(true);
+    expect(calls.map((c) => `${c.method} ${c.url}`)).toEqual(['GET /api/v1/ms/isms/applicability/export?format=xlsx', 'GET /api/v1/ms/isms/documents/export?format=xlsx']);
+    expect(navigated).toEqual([]);
+    expect(saved.map((f) => f.name)).toEqual(['SoA-isms.xlsx', 'isms-documents.xlsx']);
+    calls.length = 0;
     const pack = await ds.pageAction('isms', 'evidencePack');
     expect(pack.message).toEqual(['Evidence pack is being compiled in SharePoint', 'Evidence pack sedang disusun di SharePoint']);
     expect(only(calls).body).toEqual({});

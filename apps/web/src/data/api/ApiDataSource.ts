@@ -48,6 +48,10 @@ export interface ApiDataSourceOptions {
   exportPollMs?: number;
   /** Sends upload content with XMLHttpRequest to report progress (default: when the browser has it). */
   useXhr?: boolean;
+  /** The fetch of file downloads (`exportSoa`, `exportDocs`); default: the global `fetch`. */
+  fetch?: typeof fetch;
+  /** Hands a downloaded file to the browser (default: an object URL opened by a hidden anchor). */
+  saveFile?: (blob: Blob, fileName: string) => void;
 }
 
 type Listener<T> = (value: T) => void;
@@ -64,6 +68,7 @@ const NO_CONTENT_URL: Pair = [
 ];
 const NEED_EMAIL: Pair = ['Enter the auditor email address.', 'Masukkan alamat email auditor.'];
 const NEED_PHASE: Pair = ['Choose a phase first.', 'Pilih fase terlebih dahulu.'];
+const CONNECTION_LOST: Pair = ['Connection lost. Try again.', 'Koneksi terputus. Coba lagi.'];
 const SNAPSHOT_MISSING = new Error('ApiDataSource: load() has not completed');
 
 /** Integrity codes whose file can still be verified; any other code is relinked (H.4 `linkFile`). */
@@ -75,6 +80,47 @@ export function pickerFolder(kind: string, today: IsoDate | undefined): string {
   const [y, m] = String(today ?? '').split('-').map(Number);
   if (!y || !m) return 'Evidence';
   return `Evidence/${y}/Q${Math.floor((m - 1) / 3) + 1}`;
+}
+
+/** The file name of a `Content-Disposition` header (`filename*=UTF-8''...` or `filename="..."`). */
+export function fileNameOf(header: string | null): string | undefined {
+  if (!header) return undefined;
+  const star = /filename\*=(?:UTF-8'[^']*')?([^;]+)/i.exec(header);
+  if (star) {
+    try {
+      return decodeURIComponent(star[1].trim().replace(/^"|"$/g, ''));
+    } catch {
+      /* fall through to the plain name */
+    }
+  }
+  const plain = /filename="?([^";]+)"?/i.exec(header);
+  return plain ? plain[1].trim() : undefined;
+}
+
+/** Saves a blob through a hidden anchor with `download` (browser only; a no-op elsewhere). */
+function saveWithAnchor(blob: Blob, fileName: string): void {
+  if (typeof document === 'undefined' || typeof URL === 'undefined' || !URL.createObjectURL) return;
+  const href = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = href;
+  a.download = fileName;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(href), 10_000);
+}
+
+/** The evidence folder of the quarter before today's (`Evidence/<year>/Q<n>`), or undefined without a date. */
+export function previousPickerFolder(today: IsoDate | undefined): string | undefined {
+  const [y, m] = String(today ?? '').split('-').map(Number);
+  if (!y || !m) return undefined;
+  const q = Math.floor((m - 1) / 3) + 1;
+  return q === 1 ? `Evidence/${y - 1}/Q4` : `Evidence/${y}/Q${q - 1}`;
+}
+
+function copyListing(data: WirePickerListing): PickerListing {
+  return { path: data.path, files: data.files.map((f) => [...f] as PickerListing['files'][number]), refs: data.refs.map((r) => ({ ...r })) };
 }
 
 export function createApiDataSource(options: ApiDataSourceOptions): ApiDataSource {
@@ -91,6 +137,8 @@ export class ApiDataSource implements DataSource {
   private readonly exportPolls: number;
   private readonly exportPollMs: number;
   private readonly useXhr: boolean;
+  private readonly fetchImpl: typeof fetch | undefined;
+  private readonly saveFile: (blob: Blob, fileName: string) => void;
   private readonly progress = new Set<Listener<number | null>>();
 
   constructor(options: ApiDataSourceOptions) {
@@ -102,6 +150,8 @@ export class ApiDataSource implements DataSource {
     this.exportPolls = options.exportPolls ?? 20;
     this.exportPollMs = options.exportPollMs ?? 1500;
     this.useXhr = options.useXhr ?? typeof XMLHttpRequest !== 'undefined';
+    this.fetchImpl = options.fetch ?? (typeof fetch !== 'undefined' ? fetch.bind(globalThis) : undefined);
+    this.saveFile = options.saveFile ?? saveWithAnchor;
   }
 
   /** Interface language of every request (`Accept-Language`). */
@@ -278,21 +328,40 @@ export class ApiDataSource implements DataSource {
     });
   }
 
-  /** Files of the system's default repository below its root, for the record (`GET /storage/repositories/{slug}/browse`). */
+  /**
+   * Files of the system's default repository for the record (`GET /storage/repositories/{slug}/browse`). Opens the folder
+   * of the current period, where uploads also go (WP-21: `Evidence/<year>/Q<n>`, `Documents`). When that folder is
+   * missing or empty (the first days of a quarter), evidence falls back to the previous quarter's folder, then to the
+   * system's root folder. The first listing that holds files wins; when none does, the first folder that exists is
+   * returned with no files and the picker shows its empty state.
+   */
   async listPickerFiles(key: RecordKey): Promise<PickerListing> {
     const found = this.resolve(key, ['ev', 'doc']);
     if ('error' in found) throw new ApiLoadError({ status: found.error.error!.status, message: found.error.error!.message });
     const ms = this.current?.MS.find((m) => m.id === found.k.ms);
     if (!ms) throw new ApiLoadError({ status: 404, message: NOT_FOUND });
     const query = { ms: ms.id, kind: found.k.kind === 'ev' ? 'evidence' : 'document', recordId: found.ref.id };
-    // The folder of the current period, where uploads also go (WP-21: `Evidence/<year>/Q<n>`, `Documents`); when it
-    // does not exist yet, the system's root folder.
-    const folder = pickerFolder(found.k.kind, this.current?.today);
-    let res = await this.send<WirePickerListing>('browse', { params: { slug: ms.loc }, query: { ...query, path: folder } });
-    if (!res.ok && res.status === 404) res = await this.send<WirePickerListing>('browse', { params: { slug: ms.loc }, query });
-    if (!res.ok) throw new ApiLoadError(res.error);
-    const data = res.data;
-    return { path: data.path, files: data.files.map((f) => [...f] as PickerListing['files'][number]), refs: data.refs.map((r) => ({ ...r })) };
+    const today = this.current?.today;
+    const folders: (string | undefined)[] = [pickerFolder(found.k.kind, today)];
+    const previous = found.k.kind === 'ev' ? previousPickerFolder(today) : undefined;
+    if (previous) folders.push(previous);
+    folders.push(undefined); // the system root
+    let first: WirePickerListing | undefined;
+    let missing: ApiError = { status: 404, message: NOT_FOUND };
+    for (const path of folders) {
+      const res = await this.send<WirePickerListing>('browse', { params: { slug: ms.loc }, query: path === undefined ? query : { ...query, path } });
+      if (!res.ok) {
+        if (res.status === 404) {
+          missing = res.error;
+          continue;
+        }
+        throw new ApiLoadError(res.error);
+      }
+      first ??= res.data;
+      if (res.data.files.length > 0) return copyListing(res.data);
+    }
+    if (!first) throw new ApiLoadError(missing);
+    return copyListing(first);
   }
 
   /** Links a file of the picker listing: new evidence file (relink when the pinned one is unverifiable) or document version. */
@@ -363,7 +432,8 @@ export class ApiDataSource implements DataSource {
       case 'exportDocs': {
         const [, path] = API_ROUTES[action === 'exportSoa' ? 'exportSoa' : 'exportDocuments'];
         const url = path.replace(':ms', encodeURIComponent(msId)) + '?format=xlsx';
-        this.navigate(url);
+        const res = await this.download(url, `${msId}-${action === 'exportSoa' ? 'soa' : 'documents'}.xlsx`);
+        if (!res.ok) return toCommandResult(res);
         return { ok: true, changed: [], downloadUrl: url };
       }
       case 'evidencePack':
@@ -461,16 +531,60 @@ export class ApiDataSource implements DataSource {
       if (this.client.csrfToken) xhr.setRequestHeader('X-CSRF-Token', this.client.csrfToken);
       xhr.upload.onprogress = (e) => { if (e.lengthComputable) this.emitProgress(e.loaded / e.total); };
       const done = (result: ApiResult<unknown>) => { this.emitProgress(null); resolve(result); };
-      xhr.onerror = () => done({ ok: false, status: 0, error: { status: 0, message: ['Connection lost. Try again.', 'Koneksi terputus. Coba lagi.'] } });
+      xhr.onerror = () => done({ ok: false, status: 0, error: { status: 0, message: CONNECTION_LOST } });
       xhr.onload = () => {
         let body: unknown;
         try { body = xhr.responseText ? JSON.parse(xhr.responseText) : undefined; } catch { body = xhr.responseText; }
         if (xhr.status >= 200 && xhr.status < 300) done({ ok: true, status: xhr.status, data: body });
-        else done({ ok: false, status: xhr.status, error: toApiError(xhr.status, body, { get: (n) => xhr.getResponseHeader(n) }) });
+        else {
+          const error = toApiError(xhr.status, body, { get: (n) => xhr.getResponseHeader(n) });
+          if (xhr.status === 401) this.sessionEnded();
+          done({ ok: false, status: xhr.status, error });
+        }
       };
       this.emitProgress(0);
       xhr.send(file);
     });
+  }
+
+  /**
+   * A 401 outside `ApiClient.request` (the raw upload `PUT`, a download): asks `GET /me` through the client, whose 401
+   * then tells the `onUnauthenticated` listeners (H.4), so the boot router shows that the session has ended.
+   */
+  private sessionEnded(): void {
+    void this.send('me').catch(() => undefined);
+  }
+
+  /**
+   * Fetches a file export with the session cookie and hands it to the browser. A refusal (problem answer) or a lost
+   * connection becomes an error result, so the application stays on screen instead of navigating to the problem.
+   */
+  private async download(url: string, fallbackName: string): Promise<ApiResult<unknown>> {
+    if (!this.fetchImpl) return { ok: false, status: 0, error: { status: 0, message: CONNECTION_LOST } };
+    let response: Response;
+    try {
+      response = await this.fetchImpl(url, {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: { Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/problem+json', 'Accept-Language': this.client.language },
+      });
+    } catch {
+      return { ok: false, status: 0, error: { status: 0, message: CONNECTION_LOST } };
+    }
+    if (!response.ok) {
+      let body: unknown;
+      try {
+        const text = await response.text();
+        body = text ? JSON.parse(text) : undefined;
+      } catch {
+        body = undefined;
+      }
+      if (response.status === 401) this.sessionEnded();
+      return { ok: false, status: response.status, error: toApiError(response.status, body, response.headers) };
+    }
+    const blob = await response.blob();
+    this.saveFile(blob, fileNameOf(response.headers.get('content-disposition')) ?? fallbackName);
+    return { ok: true, status: response.status, data: undefined };
   }
 
   private emitProgress(value: number | null): void {

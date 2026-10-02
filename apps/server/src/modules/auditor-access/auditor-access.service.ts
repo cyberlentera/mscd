@@ -8,8 +8,8 @@
 //
 // Revocation (and expiry) ends the guest's sessions, open one-time code transactions and membership at once and
 // sets `valid_until = now()` on the role row; audited `auditor_access.revoked`. Expired grants are closed the same
-// way whenever grants of the organisation are read or created here (the role resolver already ignores roles past
-// `valid_until`, so an expired grant gives no access in between).
+// way by the hourly `cleanup.expired` sweep and whenever grants of the organisation are read or created here (the
+// role resolver already ignores roles past `valid_until`, so an expired grant gives no access in between).
 import { Inject, Injectable } from '@nestjs/common';
 import type { AuditorAccessGrantView, AuditorAccessRequest, AuditorAccessResult, CommandResult } from '@mscd/shared';
 import { sql } from 'kysely';
@@ -232,9 +232,11 @@ export class AuditorAccessService {
 
   /**
    * Grants past `expires_at` whose guest membership is still active are ended as `expired` (F.14 step 5), in the
-   * caller's tenant transaction. Called by the grant and list routes; a scheduled sweep can call it too.
+   * caller's tenant transaction; returns how many were ended. Called by the grant and list routes and, every hour,
+   * by the `cleanup.expired` sweep (registered as a tenant cleanup step by `AuditorAccessModule`), so an expired
+   * grant ends its sessions and membership on time.
    */
-  async closeExpired(trx: Trx, orgId: string, now: Date): Promise<void> {
+  async closeExpired(trx: Trx, orgId: string, now: Date): Promise<number> {
     const { rows } = await sql<{ id: string; email: string; user_id: string | null; user_ms_role_id: string | null; management_system_id: string }>`
       select g.id, g.email, g.user_id, g.user_ms_role_id, g.management_system_id
       from auditor_access_grant g
@@ -243,5 +245,6 @@ export class AuditorAccessService {
         and m.status = 'active' and m.deleted_at is null
       for update of g`.execute(trx);
     for (const grant of rows) await this.end(trx, orgId, grant.management_system_id, grant, now, { reason: 'expired', actor: SYSTEM_USER_ID });
+    return rows.length;
   }
 }

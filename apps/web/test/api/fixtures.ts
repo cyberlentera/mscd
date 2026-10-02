@@ -181,13 +181,14 @@ export function patternFetch(routes: Routes) {
   return { fetch: fetch as typeof globalThis.fetch, calls };
 }
 
-/** A source over a fake fetch; `navigate` and `sleep` are recorded fakes. */
+/** A source over a fake fetch; `navigate`, `sleep` and `saveFile` are recorded fakes. */
 export function sourceWith(routes: Routes, options: Partial<ApiDataSourceOptions> = {}) {
   const f = patternFetch(routes);
   const client = new ApiClient({ fetch: f.fetch });
   const navigated: string[] = [];
-  const ds = new ApiDataSource({ client, navigate: (u) => navigated.push(u), sleep: async () => {}, useXhr: false, ...options });
-  return { ...f, client, ds, navigated, routes };
+  const saved: { name: string; blob: Blob }[] = [];
+  const ds = new ApiDataSource({ client, navigate: (u) => navigated.push(u), sleep: async () => {}, useXhr: false, fetch: f.fetch, saveFile: (blob, name) => saved.push({ name, blob }), ...options });
+  return { ...f, client, ds, navigated, saved, routes };
 }
 
 export { json };

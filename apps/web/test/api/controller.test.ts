@@ -231,6 +231,27 @@ describe('controller in API mode', () => {
     expect(app.state.toast).toBe(app.t('toastUploaded'));
   });
 
+  it('an empty picker listing shows its empty state and keeps Link disabled', async () => {
+    const fx = await wireOf();
+    const listing = { path: 'Compliance / ISMS / Evidence / 2026 / Q4', files: [], refs: [] };
+    const routes = { ...readRoutes(fx, meOf()), 'GET /api/v1/storage/repositories/:slug/browse': json(listing) };
+    const { app, calls } = await start(routes);
+    const ms = app.MSL.find((m: AnyRecord) => app.D.LOC[m.loc][1] !== 'vault');
+    const ev = app.data(ms).evs[0];
+    app.openPicker(`${ms.id}:ev:${ev.code}`, ms, 'ev');
+    await vi.waitFor(() => expect(app.state.modal?.listing).toEqual(listing));
+    const vals = app.modalVals();
+    expect(vals.files).toEqual([]);
+    expect(vals.okOff).toBe(true);
+    expect(vals.sub).toMatch(/no files yet/);
+    calls.length = 0;
+    expect(() => app.modalOk()).not.toThrow();
+    await settle(app);
+    expect(calls).toHaveLength(0);
+    expect(app.state.modal?.type).toBe('picker');
+    expect(() => app.renderVals()).not.toThrow();
+  });
+
   it('demo personas: the menu lists them and Sign out; a persona switch takes the role from the new Me', async () => {
     const fx = await wireOf();
     const personas = fx.org.ROLES;

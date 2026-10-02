@@ -6,6 +6,7 @@ import { OutboxRelay } from './outbox-relay';
 import { RuleTaskService } from './rule-tasks';
 import { SchedulerTickJob } from './scheduler-tick.job';
 import { TasksOverdueJob } from './tasks-overdue.job';
+import { TenantCleanupRegistry } from './tenant-cleanup';
 import { TenantJobRunner } from './tenant-job';
 
 /**
@@ -14,19 +15,20 @@ import { TenantJobRunner } from './tenant-job';
  * `jobs.driver: bullmq`, in memory with the test profile. This module adds the BullMQ outbox relay (api and
  * worker), the installation jobs `scheduler.tick`, `cleanup.expired` and `audit.verify-chain`, the tenant jobs
  * `tasks.overdue` and `audit-prep.generate`, and the services other job modules use (`RuleTaskService`,
- * `TenantJobRunner`).
+ * `TenantJobRunner`, and `TenantCleanupRegistry` for tenant steps of `cleanup.expired`).
  */
 @Module({
   providers: [
     OutboxRelay,
     RuleTaskService,
     TenantJobRunner,
+    TenantCleanupRegistry,
     SchedulerTickJob,
     CleanupExpiredJob,
     AuditVerifyChainJob,
     TasksOverdueJob,
     AuditPrepGenerateJob,
   ],
-  exports: [OutboxRelay, RuleTaskService, TenantJobRunner],
+  exports: [OutboxRelay, RuleTaskService, TenantJobRunner, TenantCleanupRegistry],
 })
 export class JobsModule {}

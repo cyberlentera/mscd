@@ -549,7 +549,8 @@ export default class MscdApp extends React.Component {
   setLang(l){ this.setState({lang:l}); if(this.api&&this.ds.setLanguage) this.ds.setLanguage(l); }
   modalVals(){ const m=this.state.modal; if(!m) return null; const D=this.D, ms=this.msObj;
     if(m.type==='reassign') return {isReassign:true,title:this.t('reassignTitle'),sub:m.id,h:m.h,due:m.due,afterWarn:!!(m.due&&ms.audit&&m.due>ms.audit.date),ok:this.t('save'),okOff:!m.due};
-    if(m.type==='picker'){ const src=this.listing(m); return {isPicker:true,title:m.kind==='doc'?this.li(['Select document file from repository','Pilih berkas dokumen dari repositori']):this.t('pickTitle'),sub:this.t('pickSub'),path:src.path,files:src.files.map((f,i)=>({name:f[0],meta:f[1]+', '+f[2]+', '+f[4],hash:f[3]==='none'?this.t('noHash'):f[3],hcolor:f[3]==='none'?'var(--warn)':'var(--tx3)',bg:i===m.fileIdx?'var(--accbg)':'transparent',go:()=>this.setState(s=>({modal:{...s.modal,fileIdx:i}}))})),ok:this.t('linkFile')}; }
+    // An empty listing (a new period folder before the first upload) shows its empty state, and Link stays disabled.
+    if(m.type==='picker'){ const src=this.listing(m); const empty=!src.files.length; return {isPicker:true,title:m.kind==='doc'?this.li(['Select document file from repository','Pilih berkas dokumen dari repositori']):this.t('pickTitle'),sub:empty?this.li(['This folder has no files yet. Upload the file to the repository first, then link it here.','Folder ini belum berisi berkas. Unggah berkas ke repositori terlebih dahulu, lalu tautkan di sini.']):this.t('pickSub'),path:src.path,okOff:!src.files[m.fileIdx],files:src.files.map((f,i)=>({name:f[0],meta:f[1]+', '+f[2]+', '+f[4],hash:f[3]==='none'?this.t('noHash'):f[3],hcolor:f[3]==='none'?'var(--warn)':'var(--tx3)',bg:i===m.fileIdx?'var(--accbg)':'transparent',go:()=>this.setState(s=>({modal:{...s.modal,fileIdx:i}}))})),ok:this.t('linkFile')}; }
     if(m.type==='upload') return {isUpload:true,title:m.kind==='doc'?this.t('uploadNew'):this.t('submit'),sub:this.t('vaultSub'),ok:this.t('upload')};
     if(m.type==='verify') return {isVerify:true,title:this.t('verifyTitle'),sub:'',meta:m.meta,ok:this.t('confirm')}; return null; }
   // Files of the picker: the listing fetched for the modal (API mode), else the sample's picker files.
@@ -562,7 +563,7 @@ export default class MscdApp extends React.Component {
   modalOk(){ const m=this.state.modal; if(!m) return; const close=(text)=>()=>{ this.setState({modal:null}); this.toast(text); };
     // Every reassigned item keeps a due date: Save stays disabled while the date is empty.
     if(m.type==='reassign'){ if(!m.due) return; this.command(ds=>ds.assign(m.key,m.h,m.due),close(this.t('toastSaved'))); }
-    else if(m.type==='picker'){ const src=this.listing(m); const f=src.files[m.fileIdx]; const file={src:m.src,index:m.fileIdx,ref:src.refs?src.refs[m.fileIdx]:undefined};
+    else if(m.type==='picker'){ const src=this.listing(m); const f=src.files[m.fileIdx]; if(!f) return; const file={src:m.src,index:m.fileIdx,ref:src.refs?src.refs[m.fileIdx]:undefined};
       // New evidence restarts the cycle: the next due date follows the new production date (the source drops a due date set by Reassign).
       if(m.kind==='ev') this.command(ds=>ds.linkFile(m.key,file),close(this.t('toastLinked')+', '+f[0]+', '+f[2]));
       else if(this.api){ const doc=this.record(m.key); this.command(ds=>ds.linkFile(m.key,file),close(this.li([doc.id+': '+f[0]+' linked, new version in review',doc.id+': '+f[0]+' ditautkan, versi baru dalam review']))); }

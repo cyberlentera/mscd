@@ -1,7 +1,8 @@
 // `cleanup.expired` (E.2): hourly at minute 20 UTC, installation-wide. Deletes expired rate limit buckets,
 // idempotency keys, sign-in and link transactions and SAML assertion ids, and relayed outbox rows older than 7 days;
 // revokes expired sessions; marks expired upload intents (`expired`) and export files (soft-deleted) in every
-// organisation. Every statement is idempotent.
+// organisation, and runs the tenant cleanup steps other modules register (`TenantCleanupRegistry`, for example the
+// closing of expired guest auditor grants, F.14 step 5) in every active organisation. Every statement is idempotent.
 import { Injectable, Logger } from '@nestjs/common';
 import { sql } from 'kysely';
 import { Clock } from '../../common/clock';
@@ -10,6 +11,7 @@ import type { JobRun } from '../../common/jobs/job-queue';
 import { SYSTEM_USER_ID } from '../../common/tokens';
 import { RateLimitBucketStore } from '../tenancy/rate-limit-store';
 import { TENANT_SCHEMA, TenantScope } from '../tenancy/tenant-scope';
+import { TenantCleanupRegistry } from './tenant-cleanup';
 
 /** Relayed outbox rows are kept this long (E.2). */
 export const OUTBOX_RETENTION_DAYS = 7;
@@ -23,6 +25,8 @@ export interface CleanupResult {
   sessionsRevoked: number;
   uploadIntentsExpired: number;
   exportFilesExpired: number;
+  /** Records ended or changed by each registered tenant cleanup step, summed over the organisations. */
+  tenantSteps: Record<string, number>;
   /** Organisations whose tenant cleanup failed (the others are still cleaned). */
   failedOrganisations: string[];
 }
@@ -36,6 +40,7 @@ export class CleanupExpiredJob implements JobHandlerInstance<'cleanup.expired'> 
     private readonly scope: TenantScope,
     private readonly clock: Clock,
     private readonly rateLimits: RateLimitBucketStore,
+    private readonly tenantSteps: TenantCleanupRegistry,
   ) {}
 
   async handle(job: JobRun<'cleanup.expired'>): Promise<void> {
@@ -68,7 +73,7 @@ export class CleanupExpiredJob implements JobHandlerInstance<'cleanup.expired'> 
           .executeTakeFirst();
         const orgs = await trx
           .selectFrom('platform.organization')
-          .select(['id', 'schema_name', 'deleted_at'])
+          .select(['id', 'schema_name', 'deleted_at', 'status'])
           .where(sql<boolean>`to_regnamespace(schema_name) IS NOT NULL`)
           .orderBy('position')
           .orderBy('slug')
@@ -81,6 +86,8 @@ export class CleanupExpiredJob implements JobHandlerInstance<'cleanup.expired'> 
     let idempotencyKeys = 0;
     let uploadIntentsExpired = 0;
     let exportFilesExpired = 0;
+    const steps = this.tenantSteps.list();
+    const tenantSteps: Record<string, number> = Object.fromEntries(steps.map((step) => [step.name, 0]));
     const failedOrganisations: string[] = [];
     for (const org of platform.orgs) {
       try {
@@ -104,10 +111,16 @@ export class CleanupExpiredJob implements JobHandlerInstance<'cleanup.expired'> 
             .where('deleted_at', 'is', null)
             .where('expires_at', '<=', now)
             .executeTakeFirst();
-          return { intents: Number(intents.numUpdatedRows), exports: Number(exportsExpired.numUpdatedRows) };
+          // Registered steps run for active organisations only (a suspended one keeps its state until it returns).
+          const counts: Record<string, number> = {};
+          if (org.status === 'active') {
+            for (const step of steps) counts[step.name] = await step.run(trx, org.id, now);
+          }
+          return { intents: Number(intents.numUpdatedRows), exports: Number(exportsExpired.numUpdatedRows), counts };
         });
         uploadIntentsExpired += tenant.intents;
         exportFilesExpired += tenant.exports;
+        for (const [name, n] of Object.entries(tenant.counts)) tenantSteps[name] = (tenantSteps[name] ?? 0) + n;
       } catch (error) {
         failedOrganisations.push(org.id);
         this.logger.error({ orgId: org.id, error: (error as Error).message }, 'cleanup.expired failed for an organisation');
@@ -122,6 +135,7 @@ export class CleanupExpiredJob implements JobHandlerInstance<'cleanup.expired'> 
       sessionsRevoked: platform.sessionsRevoked,
       uploadIntentsExpired,
       exportFilesExpired,
+      tenantSteps,
       failedOrganisations,
     };
   }
