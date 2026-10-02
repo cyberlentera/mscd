@@ -1,0 +1,23 @@
+MSCD {{ .Values.image.server.tag | default .Chart.AppVersion }} is deployed as {{ include "mscd.fullname" . }} in namespace {{ .Release.Namespace }}.
+The migrate hook ran before the pods started (kubectl -n {{ .Release.Namespace }} logs job/{{ include "mscd.fullname" . }}-migrate while it is kept).
+
+Check the pods:
+  kubectl -n {{ .Release.Namespace }} get pods -l app.kubernetes.io/instance={{ .Release.Name }}
+  helm -n {{ .Release.Namespace }} test {{ .Release.Name }}
+{{- if .Values.ingress.enabled }}
+
+Open:
+{{- range .Values.ingress.hosts }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ . }}/
+{{- end }}
+{{- else }}
+
+No Ingress is enabled. For a quick look from your workstation:
+  kubectl -n {{ .Release.Namespace }} port-forward service/{{ include "mscd.webHost" . }} 8080:{{ .Values.web.service.port }}
+  then open http://localhost:8080/
+{{- end }}
+{{- if not .Values.secrets.create }}
+
+Secrets in use (created by you, one per component):
+  {{ include "mscd.secretName" (list . "api") }}, {{ include "mscd.secretName" (list . "worker") }}, {{ include "mscd.secretName" (list . "gateway") }}, {{ include "mscd.secretName" (list . "migrate") }}
+{{- end }}

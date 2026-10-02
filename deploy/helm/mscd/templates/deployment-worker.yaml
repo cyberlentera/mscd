@@ -1,0 +1,56 @@
+{{- /* worker: background jobs; health and metrics on 9464. Mounts
+       only the worker Secret and its client certificate. */}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ printf "%s-worker" (include "mscd.fullname" .) }}
+  labels:
+    {{- include "mscd.labels" (list . "worker") | nindent 4 }}
+spec:
+  replicas: {{ include "mscd.replicas" (list . "worker" .Values.worker) }}
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      {{- include "mscd.selectorLabels" (list . "worker") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mscd.labels" (list . "worker") | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        {{- include "mscd.podAnnotations" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "mscd.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- include "mscd.podPlacement" (list . "worker") | nindent 6 }}
+      containers:
+        - name: worker
+          image: {{ include "mscd.serverImage" . | quote }}
+          imagePullPolicy: {{ .Values.image.server.pullPolicy }}
+          args: ["worker"]
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          env:
+            {{- include "mscd.serverEnv" (list . .Values.worker.extraEnv) | nindent 12 }}
+          ports:
+            - name: metrics
+              containerPort: {{ include "mscd.metricsPort" . }}
+              protocol: TCP
+          {{- include "mscd.serverProbes" (list . "metrics") | nindent 10 }}
+          resources:
+            {{- toYaml .Values.worker.resources | nindent 12 }}
+          volumeMounts:
+            {{- include "mscd.serverVolumeMounts" . | nindent 12 }}
+      volumes:
+        {{- include "mscd.serverVolumes" (list . "worker" "client") | nindent 8 }}

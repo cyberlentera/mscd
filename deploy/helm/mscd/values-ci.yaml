@@ -1,0 +1,67 @@
+# Install test values (ci/k3s-test.sh, the nightly CI job) and static checks.
+# Never for production: the chart generates every key, the demo image and
+# demo mode are used, and PostgreSQL and SeaweedFS run with emptyDir storage.
+
+image:
+  server:
+    repository: cyberlentera/mscd-server-demo
+    tag: ci
+    # Images are imported into the cluster, never pulled.
+    pullPolicy: Never
+  web:
+    repository: cyberlentera/mscd-web
+    tag: ci
+    pullPolicy: Never
+
+profile:
+  http:
+    public_url: "http://mscd.ci.invalid"
+  security:
+    cookie_secure: false
+  observability:
+    log_level: info
+  demo:
+    enabled: true
+    acknowledge_insecure: true
+    fixed_today: "2026-09-29"
+    personas: true
+    keycloak: null
+
+secrets:
+  create: true
+
+testServices:
+  enabled: true
+
+web:
+  replicaCount: 1
+  resources:
+    requests: { cpu: 20m, memory: 32Mi }
+    limits: { cpu: 500m, memory: 128Mi }
+
+api:
+  replicaCount: 1
+  # Pod network of k3s.
+  trustedProxyCidrs:
+    - 10.42.0.0/16
+  resources:
+    requests: { cpu: 50m, memory: 256Mi }
+    limits: { cpu: "1", memory: 768Mi }
+
+worker:
+  replicaCount: 1
+  resources:
+    requests: { cpu: 50m, memory: 256Mi }
+    limits: { cpu: "1", memory: 768Mi }
+
+gateway:
+  replicaCount: 1
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { cpu: "1", memory: 512Mi }
+
+migrate:
+  activeDeadlineSeconds: 600
+
+probes:
+  startup: { periodSeconds: 2, timeoutSeconds: 3, failureThreshold: 120 }

@@ -1,0 +1,230 @@
+{{- /*
+Test services (values-ci.yaml only): single-replica PostgreSQL and SeaweedFS
+with emptyDir storage. PostgreSQL is a pre-install hook (weight -10), so it
+runs before the migrate hook; Helm does not delete hook resources on
+uninstall. Its bootstrap script creates the MSCD roles (C.2).
+*/}}
+{{- if .Values.testServices.enabled }}
+{{- if not .Values.secrets.create }}
+{{- fail "testServices.enabled needs secrets.create: true (the test database and object store credentials are generated)" }}
+{{- end }}
+{{- $fullname := include "mscd.fullname" . }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $fullname }}-postgres-init
+  labels:
+    {{- include "mscd.labels" (list . "postgres") | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-install
+    helm.sh/hook-weight: "-10"
+data:
+  10-mscd-bootstrap.sh: |
+    {{- .Files.Get "files/postgres-bootstrap.sh" | nindent 4 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "mscd.postgresHost" . }}
+  labels:
+    {{- include "mscd.labels" (list . "postgres") | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-install
+    helm.sh/hook-weight: "-10"
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "mscd.selectorLabels" (list . "postgres") | nindent 4 }}
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+      protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mscd.postgresHost" . }}
+  labels:
+    {{- include "mscd.labels" (list . "postgres") | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-install
+    helm.sh/hook-weight: "-10"
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "mscd.selectorLabels" (list . "postgres") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mscd.labels" (list . "postgres") | nindent 8 }}
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70
+        runAsGroup: 70
+        fsGroup: 70
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          image: {{ .Values.testServices.postgres.image | quote }}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          env:
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_DB
+              value: mscd
+            - name: POSTGRES_PASSWORD_FILE
+              value: /run/secrets/admin-password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+            - name: MSCD_ROLES_FILE
+              value: /run/secrets/postgres-roles.env
+          ports:
+            - name: postgres
+              containerPort: 5432
+              protocol: TCP
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-q", "-h", "127.0.0.1", "-U", "postgres", "-d", "mscd"]
+            periodSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: "1", memory: 1Gi }
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: run
+              mountPath: /var/run/postgresql
+            - name: tmp
+              mountPath: /tmp
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+            - name: secrets
+              mountPath: /run/secrets
+              readOnly: true
+      volumes:
+        - name: data
+          emptyDir:
+            sizeLimit: 2Gi
+        - name: run
+          emptyDir:
+            medium: Memory
+            sizeLimit: 16Mi
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
+        - name: init
+          configMap:
+            name: {{ $fullname }}-postgres-init
+            defaultMode: 0555
+        - name: secrets
+          secret:
+            secretName: {{ $fullname }}-postgres
+            defaultMode: 0440
+            items:
+              - key: admin-password
+                path: admin-password
+              - key: postgres-roles.env
+                path: postgres-roles.env
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "mscd.objectstoreHost" . }}
+  labels:
+    {{- include "mscd.labels" (list . "objectstore") | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "mscd.selectorLabels" (list . "objectstore") | nindent 4 }}
+  ports:
+    - name: s3
+      port: 8333
+      targetPort: s3
+      protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mscd.objectstoreHost" . }}
+  labels:
+    {{- include "mscd.labels" (list . "objectstore") | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "mscd.selectorLabels" (list . "objectstore") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mscd.labels" (list . "objectstore") | nindent 8 }}
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: seaweedfs
+          image: {{ .Values.testServices.seaweedfs.image | quote }}
+          imagePullPolicy: IfNotPresent
+          # weed mini: master, volume, filer and S3 in one process; creates the bucket at start.
+          args:
+            - mini
+            - -dir=/data
+            - -s3.config=/etc/seaweedfs/s3.json
+            - -bucket=mscd-vault
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: s3
+              containerPort: 8333
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: s3
+            periodSeconds: 5
+            failureThreshold: 6
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: "1", memory: 1Gi }
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+            - name: config
+              mountPath: /etc/seaweedfs
+              readOnly: true
+      volumes:
+        - name: data
+          emptyDir:
+            sizeLimit: 2Gi
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
+        - name: config
+          secret:
+            secretName: {{ $fullname }}-objectstore
+            defaultMode: 0440
+{{- end }}

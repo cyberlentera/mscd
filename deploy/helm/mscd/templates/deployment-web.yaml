@@ -1,0 +1,114 @@
+{{- if and .Values.web.tls.enabled (not .Values.web.tls.secretName) }}
+{{- fail "web.tls.enabled is true: set web.tls.secretName to a kubernetes.io/tls secret" }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mscd.webHost" . }}
+  labels:
+    {{- include "mscd.labels" (list . "web") | nindent 4 }}
+spec:
+  replicas: {{ include "mscd.replicas" (list . "web" .Values.web) }}
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      {{- include "mscd.selectorLabels" (list . "web") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mscd.labels" (list . "web") | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ include "mscd.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: {{ .Values.web.terminationGracePeriodSeconds }}
+      securityContext:
+        {{- toYaml .Values.web.podSecurityContext | nindent 8 }}
+      {{- include "mscd.podPlacement" (list . "web") | nindent 6 }}
+      containers:
+        - name: web
+          image: {{ include "mscd.webImage" . | quote }}
+          imagePullPolicy: {{ .Values.image.web.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          env:
+            - name: MSCD_HTTP_REDIRECT
+              value: {{ .Values.web.config.httpRedirect | quote }}
+            - name: MSCD_HTTPS_PUBLIC_PORT
+              value: {{ .Values.web.service.httpsPort | quote }}
+            - name: MSCD_DOMAIN
+              value: {{ include "mscd.domain" . | quote }}
+            - name: MSCD_HSTS
+              value: {{ .Values.web.config.hsts | quote }}
+            - name: MSCD_EXTERNAL_FONTS
+              value: {{ .Values.web.config.externalFonts | quote }}
+            # NGINX proxies /api to the api Service (F.12); a full name, so the
+            # pod's DNS search domains do not matter.
+            - name: MSCD_API_UPSTREAM
+              value: {{ printf "%s.%s.svc.%s:%s" (include "mscd.apiHost" .) .Release.Namespace .Values.clusterDomain (include "mscd.apiPort" .) | quote }}
+            # Only the ingress controller may set X-Forwarded-For for the web pods.
+            - name: MSCD_TRUSTED_PROXY_CIDRS
+              value: {{ join "," .Values.ingress.trustedCidrs | quote }}
+            {{- with .Values.web.config.apiResolver }}
+            - name: MSCD_API_RESOLVER
+              value: {{ . | quote }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            {{- if .Values.web.tls.enabled }}
+            - name: https
+              containerPort: 8443
+              protocol: TCP
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            {{- toYaml .Values.probes.readiness | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            {{- toYaml .Values.probes.liveness | nindent 12 }}
+          {{- if .Values.web.preStopSleepSeconds }}
+          # Keep serving while the ingress controller drops this pod from rotation.
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "{{ .Values.web.preStopSleepSeconds }}"]
+          {{- end }}
+          resources:
+            {{- toYaml .Values.web.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            {{- if .Values.web.tls.enabled }}
+            - name: tls
+              mountPath: /etc/nginx/tls
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
+        {{- if .Values.web.tls.enabled }}
+        - name: tls
+          secret:
+            secretName: {{ .Values.web.tls.secretName }}
+            defaultMode: 0440
+        {{- end }}

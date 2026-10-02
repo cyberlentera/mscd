@@ -351,3 +351,11 @@ checksum/profile: {{ include "mscd.profile" . | sha256sum }}
 {{ toYaml . }}
 {{- end }}
 {{- end }}
+
+{{/* A secret value: the given value, else the existing Secret key (base64), else the fallback. include "mscd.pickSecret" (list given existing fallback) */}}
+{{- define "mscd.pickSecret" -}}
+{{- $given := index . 0 -}}
+{{- $existing := index . 1 -}}
+{{- $fallback := index . 2 -}}
+{{- if $given }}{{ $given }}{{ else if $existing }}{{ b64dec $existing }}{{ else }}{{ $fallback }}{{ end -}}
+{{- end }}

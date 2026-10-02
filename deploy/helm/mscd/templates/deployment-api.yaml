@@ -1,0 +1,59 @@
+{{- /* api: HTTP API on 3000, reached only through the web pods (F.12). Mounts
+       only the api Secret and its client certificate. */}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mscd.apiHost" . }}
+  labels:
+    {{- include "mscd.labels" (list . "api") | nindent 4 }}
+spec:
+  replicas: {{ include "mscd.replicas" (list . "api" .Values.api) }}
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      {{- include "mscd.selectorLabels" (list . "api") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mscd.labels" (list . "api") | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        {{- include "mscd.podAnnotations" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "mscd.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- include "mscd.podPlacement" (list . "api") | nindent 6 }}
+      containers:
+        - name: api
+          image: {{ include "mscd.serverImage" . | quote }}
+          imagePullPolicy: {{ .Values.image.server.pullPolicy }}
+          args: ["api"]
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          env:
+            {{- include "mscd.serverEnv" (list . .Values.api.extraEnv) | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: {{ include "mscd.apiPort" . }}
+              protocol: TCP
+            - name: metrics
+              containerPort: {{ include "mscd.metricsPort" . }}
+              protocol: TCP
+          {{- include "mscd.serverProbes" (list . "http") | nindent 10 }}
+          resources:
+            {{- toYaml .Values.api.resources | nindent 12 }}
+          volumeMounts:
+            {{- include "mscd.serverVolumeMounts" . | nindent 12 }}
+      volumes:
+        {{- include "mscd.serverVolumes" (list . "api" "client") | nindent 8 }}

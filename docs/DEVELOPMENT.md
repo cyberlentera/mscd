@@ -182,7 +182,7 @@ To run it against a local api with the demo data:
    node tools/mock-providers/dist/server.js --port 4310 --fixtures demo
    ```
 
-3. Start the storage gateway and the api, each in its own terminal, with the demo profile. The demo profile names the services of the Compose demo overlay, so on your machine the addresses of the stack and of the processes above replace them (`MSCD__<SECTION>__<KEY>` overrides, see the next section):
+3. Start the storage gateway and the api, each in its own terminal, with the demo profile. The demo profile names the services of the Compose demo overlay, so on your machine the addresses of the stack and of the processes above replace them (`MSCD__<SECTION>__<KEY>` overrides, see the next section). When a port is taken, change it in the overrides (`MSCD__HTTP__PORT` for the api, `MSCD__GATEWAY__PORT` together with `MSCD__STORAGE__GATEWAY__URL` for the gateway, `--port` of the mock providers and the four provider addresses) and point `VITE_API_TARGET` of step 4 at the api:
 
    ```bash
    export MSCD_PROFILE_FILE=apps/server/profiles/demo.yaml
@@ -195,6 +195,8 @@ To run it against a local api with the demo data:
    export MSCD__MAIL__SMTP__HOST=localhost
    export MSCD__MAIL__SMTP__PORT=51025
    export MSCD__HTTP__PUBLIC_URL=http://localhost:5173
+   export MSCD__OBSERVABILITY__METRICS_PORT=null     # two processes on one machine cannot share port 9464
+   export MSCD__DEMO__KEYCLOAK=null                  # the demo Keycloak sign-in needs the sso profile of the stack
    node apps/server/dist/main.js storage-gateway     # terminal 1
    node apps/server/dist/main.js api                 # terminal 2
    ```

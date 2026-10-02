@@ -1,6 +1,6 @@
 apiVersion: v2
 name: mscd
-description: MSCD (Management System Compliance Dashboard) platform by CyberLentera: web, api, worker, storage gateway and the migrate hook
+description: "MSCD (Management System Compliance Dashboard) platform by CyberLentera: web, api, worker, storage gateway and the migrate hook"
 type: application
 # Chart and app versions follow the MSCD release. build-bundle.sh sets both when packaging.
 version: 1.0.0

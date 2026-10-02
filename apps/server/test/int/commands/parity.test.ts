@@ -259,8 +259,10 @@ describe('command parity with the sample source (J.4, WP-35 commands)', () => {
     expect((await apiSnapshot('isms')).refs[driftKey]).toBeUndefined();
   });
 
-  // Reassigning a document review to Unassigned (holder `none`) is not compared: the API stores a null pending
-  // holder, which the read model shows as the document owner, while the sample shows `none`. J.4 does not list this
-  // difference; it waits for a read model change (WP-17) or a plan decision.
-  it.todo('assign on a document review to Unassigned (holder none) matches the sample');
+  it('assign on a document review to Unassigned (holder none) matches the sample', async () => {
+    const { api } = await both('isms');
+    const doc = api.chain.items.find((i) => i.kind === 'doc' && i.h !== 'none')!;
+    const b = await assignBoth('isms', doc.key, 'document', 'doc', 'none', '2026-10-21');
+    expect(chainItem(b.api, doc.key)).toMatchObject({ h: 'none', due: '2026-10-21' });
+  });
 });

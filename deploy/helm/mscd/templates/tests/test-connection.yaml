@@ -1,0 +1,49 @@
+{{- /* helm test: GET /healthz on web and /api/v1/system/profile through web
+       (so NGINX, the api and the api's database are all reached). Uses the
+       web image, so it works on air-gapped clusters. */}}
+{{- $base := printf "http://%s:%v" (include "mscd.webHost" .) .Values.web.service.port }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "mscd.fullname" . }}-test
+  # Not the Service selector labels, so no Service routes to this pod.
+  labels:
+    {{- include "mscd.labels" (list . "test") | nindent 4 }}
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  enableServiceLinks: false
+  {{- with .Values.imagePullSecrets }}
+  imagePullSecrets:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  securityContext:
+    {{- toYaml .Values.web.podSecurityContext | nindent 4 }}
+  containers:
+    - name: check
+      image: {{ include "mscd.webImage" . | quote }}
+      imagePullPolicy: {{ .Values.image.web.pullPolicy }}
+      command:
+        - sh
+        - -c
+        - >-
+          wget -q -T 10 -O - {{ $base }}/healthz &&
+          wget -q -T 10 -O /tmp/profile.json {{ $base }}/api/v1/system/profile &&
+          grep -q '"deploy"' /tmp/profile.json &&
+          echo "MSCD answers through the web Service: /healthz and /api/v1/system/profile"
+      securityContext:
+        {{- toYaml .Values.securityContext | nindent 8 }}
+      resources:
+        requests: { cpu: 10m, memory: 16Mi }
+        limits: { cpu: 100m, memory: 32Mi }
+      volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+  volumes:
+    - name: tmp
+      emptyDir:
+        medium: Memory
+        sizeLimit: 1Mi

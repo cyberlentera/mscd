@@ -1,0 +1,18 @@
+{{- /* Disruption budgets for components that run more than one pod. */}}
+{{- range $component := list "web" "api" "worker" "gateway" }}
+{{- $values := index $.Values $component }}
+{{- if and $values.podDisruptionBudget.enabled (include "mscd.multiPod" $values) }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ printf "%s-%s" (include "mscd.fullname" $) $component }}
+  labels:
+    {{- include "mscd.labels" (list $ $component) | nindent 4 }}
+spec:
+  minAvailable: {{ $values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "mscd.selectorLabels" (list $ $component) | nindent 6 }}
+{{- end }}
+{{- end }}

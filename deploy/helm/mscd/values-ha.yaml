@@ -1,0 +1,89 @@
+# Reference values for a production cluster (Medium profile), on top of values.yaml.
+#   helm install mscd mscd-<version>.tgz --namespace mscd -f values-ha.yaml -f my-values.yaml
+# Replace the registry, host names, address ranges and secret names with your own.
+# Before installing: create the Secrets mscd-api, mscd-worker, mscd-gateway and
+# mscd-migrate (see values.yaml "secrets"); install cert-manager, or create the
+# certificate Secrets mscd-gateway-tls, mscd-api-tls and mscd-worker-tls
+# yourself and set certManager.enabled to false.
+# Autoscaling needs metrics-server.
+
+image:
+  server:
+    repository: registry.example.internal/cyberlentera/mscd-server
+  web:
+    repository: registry.example.internal/cyberlentera/mscd-web
+
+profile:
+  http:
+    public_url: "https://mscd.example.internal"
+  mail:
+    from: "MSCD <mscd@example.internal>"
+    smtp: { host: smtp.example.internal, port: 25, secure: false, user: null, password_file: null }
+  gateway:
+    vault:
+      endpoint: "https://s3.example.internal"
+
+certManager:
+  enabled: true
+
+web:
+  replicaCount: 3
+  autoscaling: { enabled: true, minReplicas: 3, maxReplicas: 6, targetCPUUtilizationPercentage: 70 }
+  podDisruptionBudget: { enabled: true, minAvailable: 2 }
+
+api:
+  replicaCount: 3
+  # Pod network of the cluster (the web pods' addresses).
+  trustedProxyCidrs:
+    - 10.244.0.0/16
+  autoscaling: { enabled: true, minReplicas: 3, maxReplicas: 8, targetCPUUtilizationPercentage: 70 }
+  podDisruptionBudget: { enabled: true, minAvailable: 2 }
+  resources:
+    requests: { cpu: 500m, memory: 512Mi }
+    limits: { cpu: "2", memory: 2Gi }
+
+worker:
+  replicaCount: 2
+  autoscaling: { enabled: true, minReplicas: 2, maxReplicas: 4, targetCPUUtilizationPercentage: 70 }
+  podDisruptionBudget: { enabled: true, minAvailable: 1 }
+  resources:
+    requests: { cpu: 500m, memory: 512Mi }
+    limits: { cpu: "2", memory: 2Gi }
+
+gateway:
+  replicaCount: 2
+  podDisruptionBudget: { enabled: true, minAvailable: 1 }
+
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - mscd.example.internal
+  tls:
+    - secretName: mscd-tls
+      hosts:
+        - mscd.example.internal
+  # Pod network of the ingress controller.
+  trustedCidrs:
+    - 10.244.0.0/16
+
+networkPolicy:
+  enabled: true
+  ingressFrom:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: ingress-nginx
+  database:
+    cidrs: [10.20.0.0/24]
+  objectStore:
+    cidrs: [10.20.1.0/24]
+  smtp:
+    cidrs: [10.20.2.25/32]
+  metricsFrom:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: monitoring
+
+topologySpread:
+  enabled: true
+  topologyKey: kubernetes.io/hostname

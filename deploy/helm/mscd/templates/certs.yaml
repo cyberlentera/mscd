@@ -1,0 +1,140 @@
+{{- /*
+Internal TLS between api and worker (clients) and storage-gateway (server),
+used when the profile asks for mTLS (I.4).
+- certManager.enabled: cert-manager Certificate resources.
+- certs.generate (default: secrets.create): an internal CA and three
+  certificates made with genCA and genSignedCert, kept across upgrades with
+  lookup. A certificate is made again when its Secret is missing or the CA was
+  made again.
+- otherwise: the operator creates the three kubernetes.io/tls Secrets.
+*/}}
+{{- if include "mscd.mtls" . }}
+{{- $ns := .Release.Namespace }}
+{{- $fullname := include "mscd.fullname" . }}
+{{- $gatewayHost := include "mscd.gatewayHost" . }}
+{{- $gatewayNames := list $gatewayHost (printf "%s.%s" $gatewayHost $ns) (printf "%s.%s.svc" $gatewayHost $ns) (printf "%s.%s.svc.%s" $gatewayHost $ns .Values.clusterDomain) }}
+{{- $leaves := list (list "gateway" "storage-gateway" $gatewayNames) (list "api" "mscd-api" (list)) (list "worker" "mscd-worker" (list)) }}
+{{- if .Values.certManager.enabled }}
+{{- $issuer := .Values.certManager.issuerRef }}
+{{- if not $issuer }}
+{{- $issuer = dict "name" (printf "%s-internal-ca" $fullname) "kind" "Issuer" }}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ $fullname }}-selfsigned
+  labels:
+    {{- include "mscd.labels" (list . "certs") | nindent 4 }}
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ $fullname }}-internal-ca
+  labels:
+    {{- include "mscd.labels" (list . "certs") | nindent 4 }}
+spec:
+  isCA: true
+  commonName: {{ printf "MSCD internal CA (%s)" $fullname | quote }}
+  secretName: {{ $fullname }}-internal-ca
+  duration: {{ printf "%dh" (mul (int .Values.certs.caValidityDays) 24) }}
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: {{ $fullname }}-selfsigned
+    kind: Issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ $fullname }}-internal-ca
+  labels:
+    {{- include "mscd.labels" (list . "certs") | nindent 4 }}
+spec:
+  ca:
+    secretName: {{ $fullname }}-internal-ca
+{{- end }}
+{{- range $leaves }}
+{{- $component := index . 0 }}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "mscd.tlsSecretName" (list $ $component) }}
+  labels:
+    {{- include "mscd.labels" (list $ $component) | nindent 4 }}
+spec:
+  secretName: {{ include "mscd.tlsSecretName" (list $ $component) }}
+  commonName: {{ index . 1 }}
+  {{- with index . 2 }}
+  dnsNames:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  usages:
+    - digital signature
+    - key encipherment
+    - {{ ternary "server auth" "client auth" (eq $component "gateway") }}
+  duration: {{ $.Values.certManager.duration }}
+  renewBefore: {{ $.Values.certManager.renewBefore }}
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  issuerRef:
+    {{- toYaml $issuer | nindent 4 }}
+{{- end }}
+{{- else if include "mscd.certsGenerate" . }}
+{{- $caName := printf "%s-internal-ca" $fullname }}
+{{- $caSecret := lookup "v1" "Secret" $ns $caName }}
+{{- $ca := dict }}
+{{- $caFresh := true }}
+{{- if and $caSecret (index ($caSecret.data | default dict) "tls.crt") (index ($caSecret.data | default dict) "tls.key") }}
+{{- $ca = buildCustomCert (index $caSecret.data "tls.crt") (index $caSecret.data "tls.key") }}
+{{- $caFresh = false }}
+{{- else }}
+{{- $ca = genCA (printf "MSCD internal CA (%s)" $fullname) (int .Values.certs.caValidityDays) }}
+{{- end }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $caName }}
+  labels:
+    {{- include "mscd.labels" (list . "certs") | nindent 4 }}
+  annotations:
+    # Signs the service certificates; mounted by no pod.
+    mscd.cyberlentera.com/purpose: internal-ca
+type: kubernetes.io/tls
+data:
+  tls.crt: {{ $ca.Cert | b64enc }}
+  tls.key: {{ $ca.Key | b64enc }}
+{{- range $leaves }}
+{{- $component := index . 0 }}
+{{- $name := include "mscd.tlsSecretName" (list $ $component) }}
+{{- $existing := lookup "v1" "Secret" $ns $name }}
+{{- $data := ($existing).data | default dict }}
+{{- $crt := "" }}
+{{- $key := "" }}
+{{- if and (not $caFresh) (index $data "tls.crt") (index $data "tls.key") (eq (index $data "ca.crt" | default "") (index $caSecret.data "tls.crt")) }}
+{{- $crt = index $data "tls.crt" | b64dec }}
+{{- $key = index $data "tls.key" | b64dec }}
+{{- else }}
+{{- $cert := genSignedCert (index . 1) nil (index . 2) (int $.Values.certs.validityDays) $ca }}
+{{- $crt = $cert.Cert }}
+{{- $key = $cert.Key }}
+{{- end }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "mscd.labels" (list $ $component) | nindent 4 }}
+type: kubernetes.io/tls
+data:
+  ca.crt: {{ $ca.Cert | b64enc }}
+  tls.crt: {{ $crt | b64enc }}
+  tls.key: {{ $key | b64enc }}
+{{- end }}
+{{- end }}
+{{- end }}

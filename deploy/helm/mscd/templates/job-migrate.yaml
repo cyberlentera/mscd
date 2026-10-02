@@ -1,0 +1,116 @@
+{{- /*
+migrate (I.4, I.6): pre-install and pre-upgrade hook. Applies the migrations
+and installs the packs of the image; pods roll only after it succeeds. It
+mounts only the migrate Secret. Hooks run before the release's own resources
+exist, so the profile is a hook ConfigMap of its own, and the Job uses the
+namespace's default service account (without a token).
+*/}}
+{{- $dbHost := .Values.migrate.waitForDatabase.host }}
+{{- $dbPort := .Values.migrate.waitForDatabase.port }}
+{{- if .Values.testServices.enabled }}
+{{- $dbHost = include "mscd.postgresHost" . }}
+{{- $dbPort = 5432 }}
+{{- end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "mscd.fullname" . }}-migrate-profile
+  labels:
+    {{- include "mscd.labels" (list . "migrate") | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-10"
+    helm.sh/hook-delete-policy: before-hook-creation
+data:
+  profile.yaml: |
+    {{- include "mscd.profile" . | nindent 4 }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "mscd.fullname" . }}-migrate
+  labels:
+    {{- include "mscd.labels" (list . "migrate") | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 3600
+  activeDeadlineSeconds: {{ .Values.migrate.activeDeadlineSeconds }}
+  template:
+    metadata:
+      labels:
+        {{- include "mscd.labels" (list . "migrate") | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- include "mscd.podPlacement" (list . "migrate") | nindent 6 }}
+      {{- if $dbHost }}
+      initContainers:
+        # Waits until the database accepts TCP connections (at most the Job deadline).
+        - name: wait-for-database
+          image: {{ include "mscd.serverImage" . | quote }}
+          imagePullPolicy: {{ .Values.image.server.pullPolicy }}
+          command:
+            - node
+            - -e
+            - |
+              const net = require('node:net');
+              const [host, port] = [process.env.DB_HOST, Number(process.env.DB_PORT)];
+              const attempt = () => {
+                const socket = net.connect({ host, port, timeout: 3000 });
+                socket.once('connect', () => { console.log(`database ${host}:${port} accepts connections`); socket.destroy(); process.exit(0); });
+                const retry = () => { socket.destroy(); setTimeout(attempt, 2000); };
+                socket.once('error', retry);
+                socket.once('timeout', retry);
+              };
+              console.log(`waiting for the database ${host}:${port}`);
+              attempt();
+          env:
+            - name: DB_HOST
+              value: {{ $dbHost | quote }}
+            - name: DB_PORT
+              value: {{ $dbPort | quote }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          resources:
+            requests: { cpu: 10m, memory: 32Mi }
+            limits: { cpu: 100m, memory: 96Mi }
+      {{- end }}
+      containers:
+        - name: migrate
+          image: {{ include "mscd.serverImage" . | quote }}
+          imagePullPolicy: {{ .Values.image.server.pullPolicy }}
+          args: ["migrate"]
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          env:
+            {{- include "mscd.serverEnv" (list . .Values.migrate.extraEnv) | nindent 12 }}
+          resources:
+            {{- toYaml .Values.migrate.resources | nindent 12 }}
+          volumeMounts:
+            {{- include "mscd.serverVolumeMounts" . | nindent 12 }}
+      volumes:
+        - name: profile
+          configMap:
+            name: {{ include "mscd.fullname" . }}-migrate-profile
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
+        - name: secrets
+          secret:
+            secretName: {{ include "mscd.secretName" (list . "migrate") }}
+            defaultMode: 0440

@@ -1,0 +1,59 @@
+{{- /* storage-gateway: the only component with storage.key (D-09). Port 8443
+       needs a client certificate in mTLS mode; health and metrics on 9464. */}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mscd.gatewayHost" . }}
+  labels:
+    {{- include "mscd.labels" (list . "gateway") | nindent 4 }}
+spec:
+  replicas: {{ .Values.gateway.replicaCount }}
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      {{- include "mscd.selectorLabels" (list . "gateway") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mscd.labels" (list . "gateway") | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        {{- include "mscd.podAnnotations" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "mscd.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- include "mscd.podPlacement" (list . "gateway") | nindent 6 }}
+      containers:
+        - name: gateway
+          image: {{ include "mscd.serverImage" . | quote }}
+          imagePullPolicy: {{ .Values.image.server.pullPolicy }}
+          args: ["storage-gateway"]
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          env:
+            {{- include "mscd.serverEnv" (list . .Values.gateway.extraEnv) | nindent 12 }}
+          ports:
+            - name: gateway
+              containerPort: {{ include "mscd.gatewayPort" . }}
+              protocol: TCP
+            - name: metrics
+              containerPort: {{ include "mscd.metricsPort" . }}
+              protocol: TCP
+          {{- include "mscd.serverProbes" (list . "metrics") | nindent 10 }}
+          resources:
+            {{- toYaml .Values.gateway.resources | nindent 12 }}
+          volumeMounts:
+            {{- include "mscd.serverVolumeMounts" . | nindent 12 }}
+      volumes:
+        {{- include "mscd.serverVolumes" (list . "gateway" "gateway") | nindent 8 }}

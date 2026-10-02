@@ -138,7 +138,7 @@ export function deriveChain(input: ChainInput): ChainResult {
         for (const doc of input.docs) {
           if (doc.st === 'approved') continue;
           const up = input.reqs.filter((c) => c.doc === doc.id).slice(0, 3).map((c) => c.id);
-          make(stage, 'doc', doc.id, same(`${doc.title}, v${doc.ver}`), DOCUMENT_ACTION[doc.st], doc.pendingHolder ?? doc.owner ?? NONE, doc.pendingDueAt ?? (doc.rev || null), {
+          make(stage, 'doc', doc.id, same(`${doc.title}, v${doc.ver}`), DOCUMENT_ACTION[doc.st], documentHolder(doc), doc.pendingDueAt ?? (doc.rev || null), {
             up,
             refKey: `${ms}:doc:${doc.id}`,
           });
@@ -164,4 +164,14 @@ export function deriveChain(input: ChainInput): ChainResult {
     }
   }
   return { items, recs };
+}
+
+/**
+ * Holder of a document's pending review: the assigned holder; `none` when a review assignment exists (a due date
+ * is set) but was made to Unassigned; otherwise the document owner.
+ */
+function documentHolder(doc: { pendingHolder?: string | null; pendingDueAt?: string | null; owner?: string | null }): string {
+  if (doc.pendingHolder) return doc.pendingHolder;
+  if (doc.pendingDueAt) return NONE;
+  return doc.owner ?? NONE;
 }

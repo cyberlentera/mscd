@@ -1,0 +1,345 @@
+{{- /*
+NetworkPolicies (I.4): default deny for every pod of the release, then only
+the flows MSCD needs:
+  ingress controller -> web; web -> api (the only ingress of the api);
+  api, worker -> PostgreSQL, Valkey (bullmq), storage-gateway, SMTP;
+  api -> identity providers (HTTPS); migrate -> PostgreSQL;
+  storage-gateway -> object store, and HTTPS to the cloud repositories;
+  every pod -> cluster DNS.
+*/}}
+{{- if .Values.networkPolicy.enabled }}
+{{- $np := .Values.networkPolicy }}
+{{- $fullname := include "mscd.fullname" . }}
+{{- $ns := .Release.Namespace }}
+{{- /* Peers and ports reused below. */}}
+{{- $databasePeers := list }}
+{{- $databasePort := $np.database.port }}
+{{- if .Values.testServices.enabled }}
+{{- $databasePeers = list (dict "podSelector" (dict "matchLabels" (fromYaml (include "mscd.selectorLabels" (list . "postgres"))))) }}
+{{- $databasePort = 5432 }}
+{{- else }}
+{{- range $np.database.cidrs }}{{ $databasePeers = append $databasePeers (dict "ipBlock" (dict "cidr" .)) }}{{ end }}
+{{- end }}
+{{- $objectPeers := list }}
+{{- $objectPort := include "mscd.urlPort" .Values.profile.gateway.vault.endpoint }}
+{{- if .Values.testServices.enabled }}
+{{- $objectPeers = list (dict "podSelector" (dict "matchLabels" (fromYaml (include "mscd.selectorLabels" (list . "objectstore"))))) }}
+{{- $objectPort = "8333" }}
+{{- else }}
+{{- range $np.objectStore.cidrs }}{{ $objectPeers = append $objectPeers (dict "ipBlock" (dict "cidr" .)) }}{{ end }}
+{{- end }}
+{{- $smtpPeers := list }}
+{{- range $np.smtp.cidrs }}{{ $smtpPeers = append $smtpPeers (dict "ipBlock" (dict "cidr" .)) }}{{ end }}
+{{- $valkeyPeers := list }}
+{{- range $np.valkey.cidrs }}{{ $valkeyPeers = append $valkeyPeers (dict "ipBlock" (dict "cidr" .)) }}{{ end }}
+{{- $bullmq := eq (toString .Values.profile.jobs.driver) "bullmq" }}
+{{- $gatewayPeer := dict "podSelector" (dict "matchLabels" (fromYaml (include "mscd.selectorLabels" (list . "gateway")))) }}
+{{- /* Egress rules of api and worker shared by both. */}}
+{{- $backendEgress := list }}
+{{- $databaseRule := dict "ports" (list (dict "port" (int $databasePort) "protocol" "TCP")) }}
+{{- if $databasePeers }}{{ $_ := set $databaseRule "to" $databasePeers }}{{ end }}
+{{- $backendEgress = append $backendEgress $databaseRule }}
+{{- $backendEgress = append $backendEgress (dict "to" (list $gatewayPeer) "ports" (list (dict "port" 8443 "protocol" "TCP"))) }}
+{{- $smtpRule := dict "ports" (list (dict "port" (int .Values.profile.mail.smtp.port) "protocol" "TCP")) }}
+{{- if $smtpPeers }}{{ $_ := set $smtpRule "to" $smtpPeers }}{{ end }}
+{{- $backendEgress = append $backendEgress $smtpRule }}
+{{- if $bullmq }}
+{{- $valkeyRule := dict "ports" (list (dict "port" (int $np.valkey.port) "protocol" "TCP")) }}
+{{- if $valkeyPeers }}{{ $_ := set $valkeyRule "to" $valkeyPeers }}{{ end }}
+{{- $backendEgress = append $backendEgress $valkeyRule }}
+{{- end }}
+{{- $metricsIngress := list }}
+{{- if $np.metricsFrom }}
+{{- $metricsIngress = list (dict "from" $np.metricsFrom "ports" (list (dict "port" 9464 "protocol" "TCP"))) }}
+{{- end }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullname }}-default-deny
+  labels:
+    {{- include "mscd.labels" (list . "network") | nindent 4 }}
+spec:
+  # Every pod of this release: nothing in, nothing out, unless a policy below allows it.
+  podSelector:
+    matchLabels:
+      {{- include "mscd.releaseSelector" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullname }}-dns
+  labels:
+    {{- include "mscd.labels" (list . "network") | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "mscd.releaseSelector" . | nindent 6 }}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        {{- toYaml $np.dns.to | nindent 8 }}
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullname }}-web
+  labels:
+    {{- include "mscd.labels" (list . "web") | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "mscd.selectorLabels" (list . "web") | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - ports:
+        - port: 8080
+          protocol: TCP
+        {{- if .Values.web.tls.enabled }}
+        - port: 8443
+          protocol: TCP
+        {{- end }}
+      {{- with $np.ingressFrom }}
+      from:
+        {{- toYaml . | nindent 8 }}
+        # The chart's own "helm test" pod.
+        - podSelector:
+            matchLabels:
+              {{- include "mscd.selectorLabels" (list $ "test") | nindent 14 }}
+      {{- end }}
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "mscd.selectorLabels" (list . "api") | nindent 14 }}
+      ports:
+        - port: 3000
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullname }}-api
+  labels:
+    {{- include "mscd.labels" (list . "api") | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "mscd.selectorLabels" (list . "api") | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # The web pods are the only clients of the api (F.12).
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "mscd.selectorLabels" (list . "web") | nindent 14 }}
+      ports:
+        - port: 3000
+          protocol: TCP
+    {{- with $metricsIngress }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  egress:
+    {{- toYaml $backendEgress | nindent 4 }}
+    # Identity providers: OIDC discovery and tokens, SAML metadata.
+    - to:
+        {{- range $np.identityProviders.cidrs }}
+        - ipBlock:
+            cidr: {{ . }}
+        {{- end }}
+      ports:
+        {{- range $np.identityProviders.ports }}
+        - port: {{ . }}
+          protocol: TCP
+        {{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullname }}-worker
+  labels:
+    {{- include "mscd.labels" (list . "worker") | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "mscd.selectorLabels" (list . "worker") | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  {{- with $metricsIngress }}
+  ingress:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  egress:
+    {{- toYaml $backendEgress | nindent 4 }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullname }}-gateway
+  labels:
+    {{- include "mscd.labels" (list . "gateway") | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "mscd.selectorLabels" (list . "gateway") | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "mscd.selectorLabels" (list . "api") | nindent 14 }}
+        - podSelector:
+            matchLabels:
+              {{- include "mscd.selectorLabels" (list . "worker") | nindent 14 }}
+      ports:
+        - port: 8443
+          protocol: TCP
+    {{- with $metricsIngress }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  egress:
+    # Object store of the Managed Vault.
+    - ports:
+        - port: {{ int $objectPort }}
+          protocol: TCP
+      {{- with $objectPeers }}
+      to:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- if .Values.gateway.egressAll }}
+    # Cloud repositories (SharePoint, Google Drive): HTTPS outside the cluster and private ranges.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            {{- with .Values.gateway.egressExcept }}
+            except:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
+      ports:
+        - port: 443
+          protocol: TCP
+    {{- end }}
+    {{- with .Values.gateway.egressCidrs }}
+    # Hosts of network.egress_allowlist and provider endpoints.
+    - to:
+        {{- range . }}
+        - ipBlock:
+            cidr: {{ . }}
+        {{- end }}
+      ports:
+        - port: 443
+          protocol: TCP
+    {{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullname }}-migrate
+  labels:
+    {{- include "mscd.labels" (list . "migrate") | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "mscd.selectorLabels" (list . "migrate") | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  egress:
+    - {{- toYaml $databaseRule | nindent 6 }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullname }}-test
+  labels:
+    {{- include "mscd.labels" (list . "test") | nindent 4 }}
+spec:
+  # The "helm test" pod reaches the web Service only.
+  podSelector:
+    matchLabels:
+      {{- include "mscd.selectorLabels" (list . "test") | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "mscd.selectorLabels" (list . "web") | nindent 14 }}
+      ports:
+        - port: 8080
+          protocol: TCP
+{{- if .Values.testServices.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullname }}-postgres
+  labels:
+    {{- include "mscd.labels" (list . "postgres") | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "mscd.selectorLabels" (list . "postgres") | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        {{- range list "api" "worker" "migrate" }}
+        - podSelector:
+            matchLabels:
+              {{- include "mscd.selectorLabels" (list $ .) | nindent 14 }}
+        {{- end }}
+      ports:
+        - port: 5432
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullname }}-objectstore
+  labels:
+    {{- include "mscd.labels" (list . "objectstore") | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "mscd.selectorLabels" (list . "objectstore") | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "mscd.selectorLabels" (list . "gateway") | nindent 14 }}
+      ports:
+        - port: 8333
+          protocol: TCP
+    # weed mini runs master, volume, filer and S3 in one pod; they may call each other on the pod address.
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "mscd.selectorLabels" (list . "objectstore") | nindent 14 }}
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "mscd.selectorLabels" (list . "objectstore") | nindent 14 }}
+{{- end }}
+{{- end }}
