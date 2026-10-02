@@ -11,3 +11,5 @@ Job queue drivers and core jobs (build plan E.1, E.2). Owner: WP-22; interface a
 - `schedules.ts`: the E.2 cron schedules and daily local-time jobs; `scheduler-tick.job.ts` dispatches them.
 - Jobs: `scheduler.tick`, `cleanup.expired`, `audit.verify-chain` (installation), `tasks.overdue`,
   `audit-prep.generate` (tenant). `rule-tasks.ts` opens and closes BR-10, BR-11, BR-15 and BR-31 tasks.
+- `tenant-cleanup.ts`: `TenantCleanupRegistry`; other modules register steps that `cleanup.expired` runs in each
+  active organisation (the auditor access module closes expired guest grants, F.14 step 5; added by WP-37).
