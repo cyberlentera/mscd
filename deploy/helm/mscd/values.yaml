@@ -332,8 +332,9 @@ networkPolicy:
   # -- Default deny for every pod of the release, plus the flows MSCD needs.
   # Needs a network plugin that enforces NetworkPolicy.
   enabled: true
-  # -- Who may reach the web ports. Empty allows any source. To allow only the
-  # ingress controller, use for example
+  # -- Who may reach the web ports. Empty allows any source, in or outside
+  # the cluster (the install notes then print a warning); set it in
+  # production. To allow only the ingress controller, use for example
   #   - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: ingress-nginx}}
   ingressFrom: []
   # -- Cluster DNS, reachable from every pod on port 53.
@@ -361,10 +362,19 @@ networkPolicy:
   smtp:
     cidrs: []
   # -- Identity providers the api reaches over HTTPS (OIDC discovery and
-  # tokens, SAML metadata). Narrow to your providers.
+  # tokens, SAML metadata). Narrow to your providers. The default reaches any
+  # public address; `except` is applied to a 0.0.0.0/0 entry and keeps the
+  # cluster and private ranges out (remove a range to reach an identity
+  # provider inside it, or list that provider's range in cidrs).
   identityProviders:
     cidrs:
       - 0.0.0.0/0
+    except:
+      - 10.0.0.0/8
+      - 172.16.0.0/12
+      - 192.168.0.0/16
+      - 100.64.0.0/10
+      - 169.254.0.0/16
     ports: [443]
   # -- Sources allowed to scrape metrics on 9464 (api, worker, gateway), for
   # example a Prometheus namespace. Empty allows none.

@@ -9,7 +9,7 @@
 #    (missing database URLs, test services without generated secrets, no
 #    trusted proxy ranges, mixed TLS modes);
 # 3. kubeconform 0.7.0 (-strict, Kubernetes 1.34.1; cert-manager resources
-#    from the CRDs catalog), schemas cached in ci/.schema-cache;
+#    from the CRDs catalog at a pinned commit), schemas cached in ci/.schema-cache;
 # 4. ci/assert-render.mjs on each render.
 #
 # helm and kubeconform run in alpine/k8s:1.34.1 with the host network, so
@@ -22,7 +22,9 @@ CHART_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 IMAGE=${MSCD_HELM_CHECK_IMAGE:-alpine/k8s:1.34.1}
 KUBE_VERSION=1.34.1
 CACHE_DIR="$CHART_DIR/ci/.schema-cache"
-CRD_SCHEMAS='https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
+# CRDs catalog pinned to a commit (main on 2 Oct 2026), so upstream changes cannot change the check.
+CRD_CATALOG_REF=d373c2da9702bc9509a004db83e57263fe3bdfc1
+CRD_SCHEMAS="https://raw.githubusercontent.com/datreeio/CRDs-catalog/$CRD_CATALOG_REF/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json"
 RELEASE=mscd
 NAMESPACE=mscd
 

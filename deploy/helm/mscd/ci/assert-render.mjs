@@ -10,7 +10,7 @@
 //   - every container (init containers included) runs with runAsNonRoot, a read-only root filesystem, no privilege
 //     escalation, capabilities drop [ALL] and the RuntimeDefault seccomp profile;
 //   - a default-deny NetworkPolicy covers every pod of the release, and the api accepts ingress only from web pods
-//     (port 3000), apart from an explicit metrics rule on 9464;
+//     (port 3000), apart from an explicit metrics rule on 9464; egress to 0.0.0.0/0 excludes the private ranges;
 //   - no Secret is rendered unless secrets.create is true; with it, one Secret per component, storage.key only in
 //     the gateway Secret and platform.key never there;
 //   - api and worker pods never mount the gateway Secret, the gateway pod never mounts the api (or worker) Secret,
@@ -165,6 +165,18 @@ for (const { policy, rule } of apiIngressRules) {
   if (onlyWeb) webRule = true;
 }
 check(webRule, 'no NetworkPolicy lets the web pods reach the api');
+// Egress to any address (0.0.0.0/0) must keep the cluster and private ranges out.
+for (const p of policies) {
+  for (const rule of p.spec?.egress ?? []) {
+    for (const peer of rule.to ?? []) {
+      if (peer.ipBlock?.cidr !== '0.0.0.0/0') continue;
+      const except = peer.ipBlock.except ?? [];
+      for (const range of ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16']) {
+        check(except.includes(range), `${nameOf(p)}: egress to 0.0.0.0/0 does not exclude ${range}`);
+      }
+    }
+  }
+}
 
 // 4. Secrets.
 const secrets = byKind('Secret');

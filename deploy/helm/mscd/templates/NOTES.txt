@@ -21,3 +21,9 @@ No Ingress is enabled. For a quick look from your workstation:
 Secrets in use (created by you, one per component):
   {{ include "mscd.secretName" (list . "api") }}, {{ include "mscd.secretName" (list . "worker") }}, {{ include "mscd.secretName" (list . "gateway") }}, {{ include "mscd.secretName" (list . "migrate") }}
 {{- end }}
+{{- if and .Values.networkPolicy.enabled (not .Values.networkPolicy.ingressFrom) }}
+
+Warning: networkPolicy.ingressFrom is empty, so any source in or outside the
+cluster can reach the web pods on their ports. Set it to the ingress controller,
+for example a namespaceSelector for the ingress-nginx namespace.
+{{- end }}

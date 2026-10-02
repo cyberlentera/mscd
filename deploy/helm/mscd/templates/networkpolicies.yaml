@@ -158,6 +158,10 @@ spec:
         {{- range $np.identityProviders.cidrs }}
         - ipBlock:
             cidr: {{ . }}
+            {{- if and (eq (toString .) "0.0.0.0/0") $np.identityProviders.except }}
+            except:
+              {{- toYaml $np.identityProviders.except | nindent 14 }}
+            {{- end }}
         {{- end }}
       ports:
         {{- range $np.identityProviders.ports }}
