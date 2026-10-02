@@ -213,15 +213,15 @@ describe('activity and phase commands', () => {
   });
 
   it('verifies a phase once (phase.verified), then answers that it is already verified; BR-12 when not all are verified', async () => {
-    const first = await rina.post('/api/v1/ms/isms/phases/3/verify');
-    expect(first.status).toBe(200);
-    expect(first.body).toMatchObject({ ok: true, changed: [], message: ['Phase 3 verified', 'Fase 3 terverifikasi'] });
-    const again = await rina.post('/api/v1/ms/isms/phases/3/verify');
-    expect(again.body.message).toEqual(['Phase 3 is already verified', 'Fase 3 sudah terverifikasi']);
-    const entries = await inOrg(db, 'tst', async (trx) =>
-      (await sql<{ n: number }>`select count(*)::int as n from audit_trail where action = 'phase.verified' and entity_code = '3'`.execute(trx)).rows[0]!.n,
-    );
-    expect(entries).toBe(1);
+    const phaseEntries = () =>
+      inOrg(db, 'tst', async (trx) =>
+        (await sql<{ n: number }>`select count(*)::int as n from audit_trail where action = 'phase.verified' and entity_code = '3'`.execute(trx)).rows[0]!.n,
+      );
+    // D.3: a phase seeded as verified has nothing to confirm (WP-30 fix of WP-27 follow-up 2).
+    const seeded = await rina.post('/api/v1/ms/isms/phases/3/verify');
+    expect(seeded.status).toBe(200);
+    expect(seeded.body).toMatchObject({ ok: true, changed: [], message: ['Phase 3 is already verified', 'Fase 3 sudah terverifikasi'] });
+    expect(await phaseEntries()).toBe(0);
     const open = await rina.post('/api/v1/ms/isms/phases/9/verify');
     expect(open.status).toBe(422);
     expect(open.body).toMatchObject({ rule: 'BR-12', messages: { en: 'Phase verification needs all activities Verified', id: 'Verifikasi fase memerlukan semua aktivitas Terverifikasi' } });
@@ -231,7 +231,11 @@ describe('activity and phase commands', () => {
     const act = await setActivity('3.1', { status: 'in_progress', owner: 'bagus', out: null, doc: null });
     expect((await bagus.post(ACTIVITY_URL('isms', act.id), { to: 'complete' })).status).toBe(200);
     expect((await hendra.post(ACTIVITY_URL('isms', act.id), { to: 'verified' })).status).toBe(200);
-    expect((await rina.post('/api/v1/ms/isms/phases/3/verify')).body.message).toEqual(['Phase 3 verified', 'Fase 3 terverifikasi']);
+    const first = await rina.post('/api/v1/ms/isms/phases/3/verify');
+    expect(first.body).toMatchObject({ ok: true, changed: [], message: ['Phase 3 verified', 'Fase 3 terverifikasi'] });
+    const again = await rina.post('/api/v1/ms/isms/phases/3/verify');
+    expect(again.body.message).toEqual(['Phase 3 is already verified', 'Fase 3 sudah terverifikasi']);
+    expect(await phaseEntries()).toBe(1);
   });
 
   it('BR-46: flags a gate phase whose blocked activities do not match the open gate items', async () => {

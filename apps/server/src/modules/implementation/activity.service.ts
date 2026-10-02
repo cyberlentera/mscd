@@ -172,30 +172,38 @@ export class ActivityService {
   // -------------------------------------------------------------------------------------------------------------
 
   /**
-   * Confirms that phase `n` is verified (BR-12: every activity `verified`). The first confirmation after the last
-   * change of the phase's activities writes `phase.verified`; a repeat changes nothing and answers "Phase n is
-   * already verified". Nothing in the bundles changes either way (the phase state is derived, D-13).
+   * Confirms that phase `n` is verified (BR-12: every activity `verified`). The first confirmation after a recorded
+   * change of the phase's activities writes `phase.verified`; otherwise there is nothing to do and the answer is
+   * "Phase n is already verified" (D.3): after an earlier confirmation, and for a phase whose activities were verified
+   * before the audit trail recorded any change of them (seeded or imported data, as the sample shows such a phase).
+   * Nothing in the bundles changes either way (the phase state is derived, D-13).
    */
   async verifyPhase(principal: Principal, ms: string, phaseNo: number): Promise<CommandResult> {
     return this.tenancy.withTenant(tenantContextOf(principal), async (trx) => {
       const system = await this.records.resolveMs(trx, ms);
       // One confirmation at a time per (system, phase), so a concurrent repeat sees the first `phase.verified`.
       await sql`select pg_advisory_xact_lock(hashtextextended(${`phase-verified:${system.id}:${phaseNo}`}, 0))`.execute(trx);
-      const { rows } = await sql<{ total: number; verified: number; last_change: Date | null; gate: boolean }>`
+      const { rows } = await sql<{ total: number; verified: number; gate: boolean }>`
         select count(*)::int as total, count(*) filter (where status = 'verified')::int as verified,
-               max(updated_at) as last_change, coalesce(bool_or(is_gate_phase), false) as gate
+               coalesce(bool_or(is_gate_phase), false) as gate
           from implementation_activity_progress
          where management_system_id = ${system.id} and phase_no = ${phaseNo} and deleted_at is null`.execute(trx);
       const counts = rows[0]!;
       if (counts.total === 0) throw new NotFoundError(`Phase ${phaseNo} has no activities`);
       await this.rules.enforce<Br12Input>(trx, 'BR-12', { kind: 'phase', phaseNo, total: counts.total, verified: counts.verified }, { msIds: [system.id] });
 
-      const earlier = await sql<{ id: string }>`
-        select id from audit_trail
-         where action = 'phase.verified' and management_system_id = ${system.id} and entity_type = 'phase'
-           and entity_code = ${String(phaseNo)} and occurred_at >= ${counts.last_change}
+      // The newest audit entry about the phase: a confirmation, or a change of one of its activities (ordered by the
+      // chain's sequence, so no clock is compared). Only a change newer than the last confirmation needs a new one.
+      const latest = await sql<{ action: string }>`
+        select a.action from audit_trail a
+         where a.management_system_id = ${system.id}
+           and ((a.action = 'phase.verified' and a.entity_type = 'phase' and a.entity_code = ${String(phaseNo)})
+                or (a.entity_type = ${ENTITY} and a.entity_id in (
+                      select p.id from implementation_activity_progress p
+                       where p.management_system_id = ${system.id} and p.phase_no = ${phaseNo} and p.deleted_at is null)))
+         order by a.seq desc
          limit 1`.execute(trx);
-      if (earlier.rows.length > 0) {
+      if (latest.rows.length === 0 || latest.rows[0]!.action === 'phase.verified') {
         return commandResult([], { message: [`Phase ${phaseNo} is already verified`, `Fase ${phaseNo} sudah terverifikasi`] as Pair });
       }
       await this.audit.record(trx, {

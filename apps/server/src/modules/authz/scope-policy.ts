@@ -99,6 +99,9 @@ export interface OrgSnapshotSources {
   exampleKeysByMs?: Readonly<Record<string, readonly string[]>>;
 }
 
+/** The handle of an unassigned holder (UI 1.3 `PEOPLE.none`). */
+const NONE_HANDLE = 'none';
+
 const MANAGER_ROLES: ReadonlySet<BusinessRole> = new Set(['ms_manager', 'programme_owner']);
 
 interface ClassifiedRow {
@@ -301,6 +304,29 @@ export class ScopePolicyService implements ScopePolicy {
     const PREP = snapshot.PREP.filter((row) => mine(row[1]));
     const CYCLE_ITEMS = snapshot.CYCLE_ITEMS.filter((row) => mine(row[2]));
     const DRIFT = snapshot.DRIFT.map((pattern) => (pattern.rows ? { ...pattern, rows: pattern.rows.filter((row) => mine(row[2])) } : { ...pattern }));
+
+    if (ctx.kind === 'top_management') {
+      // F.7, Q-8: Top Management gets pending data as aggregates only. Holders and due dates of pending work are kept
+      // only for records the caller holds; counts stay as computed on the full data (the rule of the TS 9.2
+      // endpoints, `holderShown` in read-model-api/screens.ts).
+      const shown = (holder: string | null | undefined) => !!holder && holder === ctx.handle;
+      const hide = <T extends { h: string; due: string | null }>(x: T): T => (shown(x.h) ? x : { ...x, h: NONE_HANDLE, due: null });
+      for (let i = 0; i < items.length; i += 1) items[i] = hide(items[i]!);
+      for (let i = 0; i < gates.length; i += 1) gates[i] = hide(gates[i]!);
+      for (const stage of Object.keys(X)) X[stage] = X[stage]!.map(hide);
+      for (let i = 0; i < PREP.length; i += 1) {
+        const row = PREP[i]!;
+        if (!shown(row[1])) PREP[i] = [row[0], NONE_HANDLE, row[2], row[3]];
+      }
+      for (let i = 0; i < CYCLE_ITEMS.length; i += 1) {
+        const row = CYCLE_ITEMS[i]!;
+        if (!shown(row[2])) CYCLE_ITEMS[i] = [row[0], row[1], NONE_HANDLE, row[3], row[4], row[5]];
+      }
+      for (let i = 0; i < DRIFT.length; i += 1) {
+        const pattern = DRIFT[i]!;
+        if (pattern.rows) DRIFT[i] = { ...pattern, rows: pattern.rows.map((row) => (shown(row[2]) ? row : [row[0], row[1], NONE_HANDLE, row[3]])) };
+      }
+    }
 
     const keep = new KeptKeys(ms);
     keep.reqs(reqs, true);

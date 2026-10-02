@@ -153,8 +153,10 @@ describe('command parity with the sample source (J.4)', () => {
     const sampleResult = await sample.pageAction('isms', 'verifyPhase');
     expect(verified.status).toBe(200);
     expect(sampleResult.ok).toBe(true);
-    // The sample changes nothing; the API changes no bundle either (the phase state is derived, D-13).
+    // The sample changes nothing; the API changes no bundle either (the phase state is derived, D-13), and both
+    // answer that the seeded phase is already verified.
     expect(verified.body.changed).toEqual([]);
+    expect(verified.body.message).toEqual(['Phase 1 is already verified', 'Fase 1 sudah terverifikasi']);
     const again = await rina.post('/api/v1/ms/isms/phases/1/verify');
     // The sample controller's toast for a fully verified phase.
     expect(again.body.message).toEqual(['Phase 1 is already verified', 'Fase 1 sudah terverifikasi']);

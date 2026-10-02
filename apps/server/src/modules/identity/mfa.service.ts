@@ -433,6 +433,20 @@ export class MfaService {
       .where('id', '=', row.user_id)
       .returning([...USER_COLUMNS])
       .executeTakeFirstOrThrow();
+    // F.8 step 5: an SSO sign-in that ends at the local TOTP step audits the provider and the subject too, as a
+    // sign-in with an IdP proof of MFA does. The session keeps no subject; the identity used is the one the callback
+    // stamped (`user_identity.last_login_at`) when it created this session.
+    const identity = row.identity_provider_id
+      ? await trx
+          .selectFrom('platform.user_identity as i')
+          .innerJoin('platform.identity_provider as p', 'p.id', 'i.identity_provider_id')
+          .select(['i.subject', 'p.slug'])
+          .where('i.identity_provider_id', '=', row.identity_provider_id)
+          .where('i.user_id', '=', row.user_id)
+          .orderBy(sql`i.last_login_at desc nulls last`)
+          .orderBy('i.linked_at', 'desc')
+          .executeTakeFirst()
+      : undefined;
     await this.infra.audit.record(trx, {
       action: 'auth.login',
       actor: { userId: row.user_id, kind: user.kind === 'guest' ? 'guest' : 'user' },
@@ -443,6 +457,8 @@ export class MfaService {
         method: row.auth_method,
         secondFactor,
         ...(row.identity_provider_id ? { identityProviderId: row.identity_provider_id } : {}),
+        ...(identity ? { provider: identity.slug, subject: identity.subject } : {}),
+        ...(row.amr.length > 0 ? { amr: row.amr } : {}),
         ...(row.organization_id ? { organizationId: row.organization_id } : {}),
       },
     });

@@ -71,10 +71,8 @@ test.describe('Phase board', () => {
     await expectToast(page, 'Phase verification needs all activities Verified');
   });
 
-  test('Verify phase on a phase that is already verified says so', async ({ page, dataSource }) => {
-    // Known defect, not a decision (WP-27 handoff follow-up 2): the demo seed holds no `phase.verified` audit entry, so
-    // the api's first confirmation of phase 1 answers "Phase 1 verified" instead of D.3's "Phase 1 is already verified".
-    test.fixme(dataSource === 'api', 'the demo seed has no phase.verified entry for the phases it seeds as verified');
+  test('Verify phase on a phase that is already verified says so', async ({ page }) => {
+    // Both sources: the api answers D.3's "Phase n is already verified" for a phase seeded as verified (WP-30 fix).
     await openPhases(page);
     await step(page, 'Initiation & mandate').click();
     await expect(current(page)).toContainText('1. Initiation & mandate');

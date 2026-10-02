@@ -1,0 +1,399 @@
+# MSCD continuous integration (build plan J.10).
+#
+# Every push and pull request: lint, typecheck and unit tests; integration tests
+# on PostgreSQL 15, 16 and 17; the web E2E suites (sample data and API); the
+# images (web, release server with rehearsal keys, demo server) with the release
+# artefact check (R-13) and a vulnerability scan; the full-stack smoke test; the
+# static Helm checks; the writing rules.
+# Nightly (and by hand): the Helm install test in k3s and an offline bundle
+# rehearsal (build, install, uninstall).
+#
+# Optional repository secret MSCD_BUILD_CA: the CA certificate of a
+# TLS-inspecting proxy between the runners and the npm registry or the Alpine
+# mirrors. Each job that builds images writes it to a file (an empty file when
+# the secret is not set) and exports MSCD_BUILD_CA (R-12).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '17 1 * * *'
+  workflow_dispatch:
+    inputs:
+      nightly:
+        description: Also run the nightly jobs (Helm install test in k3s, offline bundle rehearsal)
+        type: boolean
+        default: false
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '22'
+  PLAYWRIGHT_VERSION: 1.56.1
+  TESTCONTAINERS_RYUK_DISABLED: 'true'
+  NPM_CONFIG_UPDATE_NOTIFIER: 'false'
+
+jobs:
+  lint-typecheck-unit:
+    name: Lint, typecheck and unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
+      - name: Generated views are up to date
+        run: npm run gen:views:check -w @mscd/web
+      - name: Pack sources match the sample and validate
+        run: |
+          node packs/scripts/extract-from-sample.mjs --check
+          node packs/scripts/validate-sources.mjs
+      - name: Shell scripts
+        run: |
+          docker run --rm -v "$PWD/deploy/scripts:/s:ro" -w /s koalaman/shellcheck:stable -x \
+            install.sh upgrade.sh uninstall.sh build-bundle.sh check-release-artefacts.sh deploy-demo.sh lib/common.sh
+          docker run --rm -v "$PWD/deploy:/d:ro" -w /d koalaman/shellcheck:stable -s sh \
+            nginx/40-mscd-runtime.sh compose/config/postgres/10-mscd-bootstrap.sh
+      - name: Compose files
+        run: |
+          docker compose -f deploy/compose/docker-compose.yml config -q
+          docker compose -f deploy/compose/docker-compose.yml -f deploy/compose/docker-compose.demo.yml config -q
+          docker compose --env-file /dev/null -f deploy/compose/docker-compose.yml -f deploy/compose/docker-compose.demo.yml \
+            -f deploy/compose/docker-compose.vps.yml config -q
+
+  text-rules:
+    name: Writing rules
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: No em dash or centre dot in the documents
+        run: |
+          npm run check:text
+          node tools/scripts/check-text.mjs deploy/README.md deploy/scripts deploy/compose deploy/nginx deploy/docker deploy/helm .github
+
+  integration:
+    name: Integration tests (PostgreSQL ${{ matrix.postgres }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres: ['15', '16', '17']
+        include:
+          - postgres: '15'
+            image: postgres:15-alpine
+          - postgres: '16'
+            image: postgres:16.15-alpine
+          - postgres: '17'
+            image: postgres:17-alpine
+    env:
+      MSCD_TEST_PG_IMAGE: ${{ matrix.image }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: Integration tests
+        run: npm run test:int
+      - name: Remove test containers
+        if: always()
+        run: docker ps -aq --filter label=mscd.test=true | xargs -r docker rm -f
+
+  e2e-sample:
+    name: Web E2E (sample data)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: Playwright browsers cache
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ env.PLAYWRIGHT_VERSION }}
+      - name: Install Chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Install Chromium system packages
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+      - name: E2E suite
+        env:
+          CI: '1'
+        run: npm run test:e2e
+      - name: Upload the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-sample-report
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
+          retention-days: 7
+
+  e2e-api:
+    name: Web E2E (API)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: Playwright browsers cache
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ env.PLAYWRIGHT_VERSION }}
+      - name: Install Chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Install Chromium system packages
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+      - name: E2E suite against the API
+        env:
+          CI: '1'
+        run: npm run test:e2e:api
+      - name: Remove test containers
+        if: always()
+        run: docker ps -aq --filter label=mscd.test=true | xargs -r docker rm -f
+      - name: Upload the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-api-report
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
+          retention-days: 7
+
+  images:
+    name: Images and release artefact check
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: Build CA
+        env:
+          BUILD_CA: ${{ secrets.MSCD_BUILD_CA }}
+        run: |
+          printf '%s' "$BUILD_CA" > "$RUNNER_TEMP/build-ca.pem"
+          echo "MSCD_BUILD_CA=$RUNNER_TEMP/build-ca.pem" >> "$GITHUB_ENV"
+      - name: Rehearsal release keys (outside the repository)
+        run: |
+          npm run build -w @mscd/shared -w @mscd/pack-tools
+          keys="$RUNNER_TEMP/rehearsal-keys"
+          mkdir -p "$keys"
+          for n in pack licence anchor; do
+            node packages/pack-tools/dist/cli.js keygen --out "$keys" --name "$n-rehearsal"
+          done
+          mkdir -p "$RUNNER_TEMP/rehearsal-pub"
+          cp "$keys"/*.pub "$RUNNER_TEMP/rehearsal-pub/"
+          echo "REHEARSAL_KEYS=$keys" >> "$GITHUB_ENV"
+      - name: Web image (API mode)
+        run: |
+          docker buildx build --load -f deploy/docker/web.Dockerfile \
+            --build-context nginx-config=deploy/nginx \
+            --secret id=build_ca,src="$MSCD_BUILD_CA" \
+            --build-arg VITE_DATA_SOURCE=api --build-arg APK_UPGRADE=true \
+            -t cyberlentera/mscd-web:ci .
+      - name: Server image, release target
+        run: |
+          docker buildx build --load -f deploy/docker/server.Dockerfile --target release \
+            --secret id=build_ca,src="$MSCD_BUILD_CA" \
+            --secret id=pack_signing_key,src="$REHEARSAL_KEYS/pack-rehearsal.key" \
+            --build-context trusted-keys="$RUNNER_TEMP/rehearsal-pub" \
+            --build-arg APK_UPGRADE=true \
+            -t cyberlentera/mscd-server:ci .
+      - name: Server image, demo target
+        run: |
+          docker buildx build --load -f deploy/docker/server.Dockerfile --target demo \
+            --secret id=build_ca,src="$MSCD_BUILD_CA" \
+            -t cyberlentera/mscd-server-demo:ci .
+      - name: Release artefact check (R-13)
+        run: bash deploy/scripts/check-release-artefacts.sh cyberlentera/mscd-server:ci cyberlentera/mscd-web:ci
+      - name: The check finds development keys (self-test)
+        run: |
+          dir=$(mktemp -d)
+          cp packages/pack-tools/dev-keys/pack-signing.pub "$dir/"
+          if bash deploy/scripts/check-release-artefacts.sh "$dir"; then
+            echo "check-release-artefacts.sh accepted a development key" >&2
+            exit 1
+          fi
+      - name: Vulnerability scan (no HIGH or CRITICAL vulnerability with a fix)
+        run: |
+          for image in cyberlentera/mscd-server:ci cyberlentera/mscd-web:ci; do
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$HOME/.cache/trivy:/root/.cache/trivy" \
+              aquasec/trivy:0.74.0 image --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 "$image"
+          done
+
+  smoke:
+    name: Full-stack smoke test
+    needs: images
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: Build CA
+        env:
+          BUILD_CA: ${{ secrets.MSCD_BUILD_CA }}
+        run: |
+          printf '%s' "$BUILD_CA" > "$RUNNER_TEMP/build-ca.pem"
+          echo "MSCD_BUILD_CA=$RUNNER_TEMP/build-ca.pem" >> "$GITHUB_ENV"
+      - name: Playwright browsers cache
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ env.PLAYWRIGHT_VERSION }}
+      - name: Install Chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Install Chromium system packages
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+      - name: Smoke test
+        run: npm run test:smoke
+      - name: Upload the smoke results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-results
+          path: tools/smoke/test-results
+          retention-days: 7
+
+  helm-static:
+    name: Helm chart static checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: Kubernetes schema cache
+        uses: actions/cache@v4
+        with:
+          path: deploy/helm/mscd/ci/.schema-cache
+          key: kubeconform-1.34.1-${{ hashFiles('deploy/helm/mscd/ci/validate.sh') }}
+      - name: helm lint, helm template, kubeconform, render assertions
+        run: bash deploy/helm/mscd/ci/validate.sh
+
+  helm:
+    name: Helm install test (k3s)
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.nightly)
+    needs: helm-static
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build CA
+        env:
+          BUILD_CA: ${{ secrets.MSCD_BUILD_CA }}
+        run: |
+          printf '%s' "$BUILD_CA" > "$RUNNER_TEMP/build-ca.pem"
+          echo "MSCD_BUILD_CA=$RUNNER_TEMP/build-ca.pem" >> "$GITHUB_ENV"
+      - name: Install, helm test and upgrade in k3s
+        run: bash deploy/helm/mscd/ci/k3s-test.sh --build-ca "$MSCD_BUILD_CA"
+
+  bundle:
+    name: Offline bundle rehearsal
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.nightly)
+    needs: images
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: Build CA
+        env:
+          BUILD_CA: ${{ secrets.MSCD_BUILD_CA }}
+        run: |
+          printf '%s' "$BUILD_CA" > "$RUNNER_TEMP/build-ca.pem"
+          echo "MSCD_BUILD_CA=$RUNNER_TEMP/build-ca.pem" >> "$GITHUB_ENV"
+      - name: Rehearsal release keys (outside the repository)
+        run: |
+          npm run build -w @mscd/shared -w @mscd/pack-tools
+          keys="$RUNNER_TEMP/rehearsal-keys"
+          mkdir -p "$keys"
+          for n in pack licence anchor; do
+            node packages/pack-tools/dist/cli.js keygen --out "$keys" --name "$n-rehearsal"
+          done
+          openssl ecparam -name prime256v1 -genkey -noout -out "$keys/bundle-signing.key"
+          echo "REHEARSAL_KEYS=$keys" >> "$GITHUB_ENV"
+      - name: Free disk space for the images
+        run: docker system df && df -h /
+      - name: Build the bundle
+        run: |
+          deploy/scripts/build-bundle.sh --version 0.0.0-ci.${{ github.run_number }} \
+            --trusted-keys-dir "$REHEARSAL_KEYS" --pack-signing-key "$REHEARSAL_KEYS/pack-rehearsal.key" \
+            --sign-key "$REHEARSAL_KEYS/bundle-signing.key" --os-updates true --scan report
+      - name: Check, install and uninstall the bundle
+        run: |
+          v=0.0.0-ci.${{ github.run_number }}
+          cd deploy/dist
+          sha256sum -c "mscd-onprem-$v.tar.gz.sha256"
+          mkdir -p "$RUNNER_TEMP/delivery"
+          cp "mscd-onprem-$v.tar.gz" mscd-release.pub "$RUNNER_TEMP/delivery/"
+          cd "$RUNNER_TEMP/delivery"
+          tar -xzf "mscd-onprem-$v.tar.gz"
+          cd "mscd-onprem-$v"
+          sha256sum -c --quiet SHA256SUMS
+          sudo ./install.sh --yes --self-signed --dir "$RUNNER_TEMP/mscd" --http-port 18090 --https-port 18453 \
+            --org-slug rehearsal --org-name "CI Rehearsal" --verify-key ../mscd-release.pub
+          curl -fsSk https://localhost:18453/api/v1/system/profile
+          sudo ./uninstall.sh --dir "$RUNNER_TEMP/mscd" --purge --yes
+      - name: Upload the build logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-logs
+          path: deploy/dist/*.logs
+          retention-days: 7
