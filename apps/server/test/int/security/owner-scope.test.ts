@@ -231,9 +231,36 @@ describe('J.5 owner scope and read projections on every GET route', () => {
     }
     for (const gate of top.bundle.gates) if (gate.h !== 'hendra') expect([gate.h, gate.due], gate.id).toEqual(['none', null]);
     for (const [stage, records] of Object.entries(top.X)) for (const x of records) if (x.h !== 'hendra') expect([x.h, x.due], `${stage} ${x.id}`).toEqual(['none', null]);
-    for (const row of top.PREP) expect(['none', 'hendra']).toContain(row[1]);
-    for (const row of top.CYCLE_ITEMS) expect(['none', 'hendra']).toContain(row[2]);
-    for (const pattern of top.DRIFT) for (const row of pattern.rows ?? []) expect(['none', 'hendra']).toContain(row[2]);
+    // The bundle records behind a chain item whose holder is hidden carry no owner and no date either, so an item id
+    // cannot be joined to them to read what the item hides (holderShown of read-model-api/screens.ts).
+    const hiddenItems = top.bundle.chain.items.filter((i) => i.h !== 'hendra');
+    expect(hiddenItems.length).toBeGreaterThan(10);
+    let joined = 0;
+    for (const item of hiddenItems) {
+      if (item.kind === 'req') {
+        const r = top.bundle.reqs.find((x) => x.id === item.id);
+        if (r) { joined += 1; expect([r.owner, r.due ?? null], item.key).toEqual([undefined, null]); }
+      } else if (item.kind === 'doc') {
+        const doc = top.bundle.docs.find((x) => x.id === item.id);
+        if (doc) { joined += 1; expect([doc.owner, doc.approver, doc.rev], item.key).toEqual([undefined, undefined, '']); }
+      } else if (item.kind === 'ev') {
+        const e = top.bundle.evs.find((x) => x.code === item.id);
+        if (e) { joined += 1; expect([e.owner, e.next], item.key).toEqual([undefined, null]); }
+      }
+    }
+    expect(joined).toBeGreaterThan(0);
+    // No bundle record of anyone else names a holder or a date.
+    for (const r of top.bundle.reqs) if (r.owner !== undefined) expect(r.owner, r.id).toBe('hendra');
+    for (const doc of top.bundle.docs) if (doc.owner !== undefined || doc.approver !== undefined) expect(doc.owner, doc.id).toBe('hendra');
+    for (const e of top.bundle.evs) if (e.owner !== undefined) expect(e.owner, e.code).toBe('hendra');
+    for (const e of top.bundle.evs) if (e.owner === undefined) expect(e.next, e.code).toBeNull();
+    // Rows of PREP, CYCLE_ITEMS and DRIFT carry a due date, so only the caller's own rows are sent.
+    expect(manager.PREP.length + manager.CYCLE_ITEMS.length).toBeGreaterThan(0);
+    for (const row of top.PREP) expect(row[1]).toBe('hendra');
+    for (const row of top.CYCLE_ITEMS) expect(row[2]).toBe('hendra');
+    for (const pattern of top.DRIFT) for (const row of pattern.rows ?? []) expect(row[2]).toBe('hendra');
+    expect(top.PREP).toEqual(manager.PREP.filter((row) => row[1] === 'hendra'));
+    expect(top.CYCLE_ITEMS).toEqual(manager.CYCLE_ITEMS.filter((row) => row[2] === 'hendra'));
     // Top Management's own pending work keeps its holder and date.
     const own = manager.bundle.chain.items.filter((i) => i.h === 'hendra');
     for (const item of own) expect(top.bundle.chain.items.find((i) => i.key === item.key)).toMatchObject({ h: 'hendra', due: item.due });

@@ -192,13 +192,16 @@ export class ActivityService {
       if (counts.total === 0) throw new NotFoundError(`Phase ${phaseNo} has no activities`);
       await this.rules.enforce<Br12Input>(trx, 'BR-12', { kind: 'phase', phaseNo, total: counts.total, verified: counts.verified }, { msIds: [system.id] });
 
-      // The newest audit entry about the phase: a confirmation, or a change of one of its activities (ordered by the
-      // chain's sequence, so no clock is compared). Only a change newer than the last confirmation needs a new one.
+      // The newest audit entry about the phase: a confirmation, or a status change of one of its activities (ordered by
+      // the chain's sequence, so no clock is compared). Only a status change newer than the last confirmation needs a
+      // new one; edits that keep the status (a reassignment, for example) leave the confirmation standing.
       const latest = await sql<{ action: string }>`
         select a.action from audit_trail a
          where a.management_system_id = ${system.id}
            and ((a.action = 'phase.verified' and a.entity_type = 'phase' and a.entity_code = ${String(phaseNo)})
-                or (a.entity_type = ${ENTITY} and a.entity_id in (
+                or (a.entity_type = ${ENTITY}
+                    and (a.action = 'activity.transition' or (a.after_data ->> 'status') is distinct from (a.before_data ->> 'status'))
+                    and a.entity_id in (
                       select p.id from implementation_activity_progress p
                        where p.management_system_id = ${system.id} and p.phase_no = ${phaseNo} and p.deleted_at is null)))
          order by a.seq desc

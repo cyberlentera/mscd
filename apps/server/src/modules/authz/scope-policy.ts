@@ -308,23 +308,38 @@ export class ScopePolicyService implements ScopePolicy {
     if (ctx.kind === 'top_management') {
       // F.7, Q-8: Top Management gets pending data as aggregates only. Holders and due dates of pending work are kept
       // only for records the caller holds; counts stay as computed on the full data (the rule of the TS 9.2
-      // endpoints, `holderShown` in read-model-api/screens.ts).
+      // endpoints, `holderShown` in read-model-api/screens.ts). The bundle records lose their owner and dates too,
+      // since a chain item id joins to them; the PREP, CYCLE_ITEMS and DRIFT rows of other people are left out,
+      // because their tuples carry a due date that cannot be blanked.
       const shown = (holder: string | null | undefined) => !!holder && holder === ctx.handle;
       const hide = <T extends { h: string; due: string | null }>(x: T): T => (shown(x.h) ? x : { ...x, h: NONE_HANDLE, due: null });
       for (let i = 0; i < items.length; i += 1) items[i] = hide(items[i]!);
       for (let i = 0; i < gates.length; i += 1) gates[i] = hide(gates[i]!);
       for (const stage of Object.keys(X)) X[stage] = X[stage]!.map(hide);
-      for (let i = 0; i < PREP.length; i += 1) {
-        const row = PREP[i]!;
-        if (!shown(row[1])) PREP[i] = [row[0], NONE_HANDLE, row[2], row[3]];
+      for (let i = 0; i < reqs.length; i += 1) {
+        const r = reqs[i]!;
+        if (shown(r.owner)) continue;
+        const { owner: _owner, ...rest } = r;
+        reqs[i] = r.due === undefined ? rest : { ...rest, due: null };
       }
-      for (let i = 0; i < CYCLE_ITEMS.length; i += 1) {
-        const row = CYCLE_ITEMS[i]!;
-        if (!shown(row[2])) CYCLE_ITEMS[i] = [row[0], row[1], NONE_HANDLE, row[3], row[4], row[5]];
+      for (let i = 0; i < docs.length; i += 1) {
+        const d = docs[i]!;
+        if (shown(d.owner)) continue;
+        const { owner: _owner, approver: _approver, ...rest } = d;
+        docs[i] = { ...rest, rev: '' };
       }
+      for (let i = 0; i < evs.length; i += 1) {
+        const e = evs[i]!;
+        if (shown(e.owner)) continue;
+        const { owner: _owner, ...rest } = e;
+        evs[i] = { ...rest, next: null };
+      }
+      const ownRows = <T>(rows: T[], holder: (row: T) => string) => rows.filter((row) => shown(holder(row)));
+      PREP.splice(0, PREP.length, ...ownRows(PREP, (row) => row[1]));
+      CYCLE_ITEMS.splice(0, CYCLE_ITEMS.length, ...ownRows(CYCLE_ITEMS, (row) => row[2]));
       for (let i = 0; i < DRIFT.length; i += 1) {
         const pattern = DRIFT[i]!;
-        if (pattern.rows) DRIFT[i] = { ...pattern, rows: pattern.rows.map((row) => (shown(row[2]) ? row : [row[0], row[1], NONE_HANDLE, row[3]])) };
+        if (pattern.rows) DRIFT[i] = { ...pattern, rows: ownRows(pattern.rows, (row) => row[2]) };
       }
     }
 
