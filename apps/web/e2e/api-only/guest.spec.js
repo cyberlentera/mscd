@@ -43,19 +43,10 @@ test.describe('Guest auditor access @api-only', () => {
       expect((await read.json()).bundle.phases).toEqual([]);
       const write = await gp.request.post('/api/v1/reminders/bulk', { data: { ms: 'isms', scope: 'open_chain_items' }, headers: { origin: baseURL, 'x-csrf-token': me.csrfToken } });
       expect(write.status()).toBe(403);
-      // The app loads for the guest. Known defect (WP-27 handoff follow-up 1): the controller expects at least one
-      // implementation phase and the external auditor projection (G.5) has none, so the landing screen throws. While
-      // that crash is the only error, the step is reported as a known issue; any other error fails the test, and once
-      // the defect is fixed the step asserts the screen title.
+      // The app loads for the guest without a page error, although the external auditor projection (G.5) has no phases.
       await gp.goto('/');
-      const known = /reading 'no'/;
-      await expect.poll(() => guestErrors.length > 0 || ui.title(gp).isVisible(), { timeout: 15_000 }).toBe(true);
-      if (guestErrors.length > 0 && guestErrors.every((m) => known.test(m))) {
-        test.info().annotations.push({ type: 'issue', description: `known defect, guest landing screen crashes: ${guestErrors[0]}` });
-      } else {
-        expect(guestErrors, 'guest page errors').toEqual([]);
-        await expect(ui.title(gp)).toBeVisible();
-      }
+      await expect(ui.title(gp)).toBeVisible();
+      expect(guestErrors, 'guest page errors').toEqual([]);
     } catch (error) {
       for (const p of guest.pages()) await test.info().attach('guest page', { body: await p.screenshot(), contentType: 'image/png' });
       throw error;

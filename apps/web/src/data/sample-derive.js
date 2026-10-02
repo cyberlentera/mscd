@@ -181,7 +181,8 @@ export function phases(D, ov, d) {
 
 /** Number of the current phase (UI 2.6): the first phase not fully verified and without a locked activity, else the last. */
 export function overviewPhase(phs) {
-  return (phs.find((p) => p.c.verified < p.total && !p.c.locked) || phs[phs.length - 1]).no;
+  const p = phs.find((x) => x.c.verified < x.total && !x.c.locked) || phs[phs.length - 1];
+  return p ? p.no : null;
 }
 
 /** Everything the controller reads for one system (UI 4.2 MsBundle). */
