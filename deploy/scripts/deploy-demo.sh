@@ -5,7 +5,9 @@
 # Settings (environment variables):
 #   MSCD_DEMO_PUBLIC_URL  address people open in the browser, for example
 #                         http://203.0.113.10 (default: http://<first server address>)
-#   MSCD_PUBLIC_PORT      published web port (default 80)
+#   MSCD_PUBLIC_PORT      published web port (default: the first free port from 8080;
+#                         the chosen ports are kept in deploy/compose/.demo-ports for
+#                         the next run, delete that file to choose again)
 #   MSCD_DEMO_RESET=1     delete the demo data and seed it again
 #
 # Demo data and public demo keys: for trying the platform, never for real data.
@@ -22,12 +24,50 @@ if ! docker compose version >/dev/null 2>&1; then
   exit 1
 fi
 
-port="${MSCD_PUBLIC_PORT:-80}"
+# port_free PORT: true when nothing on this server listens on PORT.
+port_free() {
+  if command -v ss >/dev/null 2>&1; then
+    [ -z "$(ss -Hltn "sport = :$1" 2>/dev/null)" ]
+  else
+    if (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; then return 1; fi
+  fi
+}
+# pick_port START: the first free port from START, skipping ports already chosen in this run.
+chosen=" "
+pick_port() {
+  local p=$1
+  while [ "$p" -lt 65535 ]; do
+    case "$chosen" in *" $p "*) ;; *) if port_free "$p"; then chosen="$chosen$p "; echo "$p"; return; fi ;; esac
+    p=$((p + 1))
+  done
+  echo "No free port found from $1" >&2
+  exit 1
+}
+
+# Ports: values given in the environment win, then the ports of the last run (so an update keeps
+# the same address), then the first free ports.
+ports_file=deploy/compose/.demo-ports
+if [ -f "$ports_file" ]; then
+  # shellcheck disable=SC1090
+  . "$ports_file"
+fi
+port="${MSCD_PUBLIC_PORT:-${SAVED_PUBLIC_PORT:-$(pick_port 8080)}}"
+chosen="$chosen$port "
+https_port="${MSCD_HTTPS_PORT:-${SAVED_HTTPS_PORT:-$(pick_port 18443)}}"
+chosen="$chosen$https_port "
+keycloak_port="${MSCD_KEYCLOAK_PORT:-${SAVED_KEYCLOAK_PORT:-$(pick_port 18088)}}"
+chosen="$chosen$keycloak_port "
+mailpit_port="${MSCD_MAILPIT_PORT:-${SAVED_MAILPIT_PORT:-$(pick_port 18025)}}"
+printf 'SAVED_PUBLIC_PORT=%s\nSAVED_HTTPS_PORT=%s\nSAVED_KEYCLOAK_PORT=%s\nSAVED_MAILPIT_PORT=%s\n' \
+  "$port" "$https_port" "$keycloak_port" "$mailpit_port" > "$ports_file"
+echo "==> Web port $port (local only: HTTPS $https_port, Keycloak $keycloak_port, Mailpit $mailpit_port)"
+
 if [ -z "${MSCD_DEMO_PUBLIC_URL:-}" ]; then
   address="$(hostname -I 2>/dev/null | awk '{print $1}')"
   MSCD_DEMO_PUBLIC_URL="http://${address:-localhost}"
   [ "$port" = "80" ] || MSCD_DEMO_PUBLIC_URL="${MSCD_DEMO_PUBLIC_URL}:${port}"
 fi
+export MSCD_HTTPS_PORT="$https_port" MSCD_KEYCLOAK_PORT="$keycloak_port" MSCD_MAILPIT_PORT="$mailpit_port"
 version="demo-$(git rev-parse --short HEAD 2>/dev/null || date +%Y%m%d%H%M)"
 
 export MSCD_VERSION="$version" MSCD_DEMO_PUBLIC_URL MSCD_PUBLIC_PORT="$port"
@@ -107,6 +147,9 @@ docker image prune -f >/dev/null 2>&1 || true
 cat <<DONE
 
 MSCD demo is running: $MSCD_DEMO_PUBLIC_URL
+
+If the page does not open from another computer, allow port $port in the firewall
+(for example: ufw allow $port/tcp) and in the firewall of your VPS provider.
 
 Sign in with rina.kusuma@nusantaradigital.co.id and the password Mscd-Demo-2026!
 The second factor code: node tools/scripts/demo-totp.mjs rina
