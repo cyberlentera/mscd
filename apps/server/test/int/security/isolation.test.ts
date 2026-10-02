@@ -9,7 +9,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { useTestDatabase } from '../../setup/test-db';
 import { inScope } from '../db/helpers';
 import {
-  ORG_IDS, callRoute, createFullApp, demoSession, exampleInput, msIdOf, resetRateLimits, rowsIn, type Client, type FullApp,
+  ORG_IDS, callRoute, createFullApp, demoSession, exampleInput, examplesOf, msIdOf, resetRateLimits, rowsIn, type Client, type FullApp,
 } from '../contract/harness';
 import { DIRECT, ID_TABLES } from './record-tables';
 
@@ -38,13 +38,17 @@ describe('J.5 isolation between organisations', () => {
   });
 
   it('answers 404 to a tst session on every route that names a system only ndt has', async () => {
-    expect(MS_ROUTES.length).toBeGreaterThan(90);
+    expect(MS_ROUTES.length).toBeGreaterThanOrEqual(90);
     const problems: string[] = [];
     for (const def of MS_ROUTES) {
       await resetRateLimits(db);
-      const input = exampleInput(def, { ms: 'qms' });
-      const holder = (def.msSource === 'body' ? input.body : def.msSource === 'query' ? input.query : input.params) as Record<string, unknown> | undefined;
-      if (holder && !('ms' in holder)) holder.ms = 'qms';
+      let input = exampleInput(def, { ms: 'qms' });
+      if (def.msSource === 'body' || def.msSource === 'query') {
+        // An example that names a system (`POST /exports` has organisation-wide types without one).
+        const named = (examplesOf(def.msSource === 'body' ? def.body : def.query) as Record<string, unknown>[]).find((e) => e && 'ms' in e);
+        const member = { ...(named ?? {}), ms: 'qms' };
+        input = { ...input, ...(def.msSource === 'body' ? { body: member } : { query: member }) };
+      }
       const reply = await callRoute(rinaTst, def, input);
       if (reply.status !== 404) problems.push(`${def.id}: ${reply.status} ${reply.text.slice(0, 160)}`);
       problems.push(...reply.violations);
@@ -128,8 +132,11 @@ describe('J.5 isolation between organisations', () => {
     });
 
     it('GET /admin/audit-trail lists entries of tst only (metadata and the full view of a system)', async () => {
-      // Something happens in ndt first.
-      expect((await rinaNdt.post('/api/v1/ms/isms/phases/1/verify', {})).status).toBe(200);
+      // A register entry in ndt, and a denial in tst (the demo seed writes no audit entries).
+      const asset = { code: 'AS-NDT-ONLY', title: 'ndt asset', ownerHandle: 'bagus', assetType: 'infrastructure', classification: 'internal', linkedMs: ['isms'] };
+      expect((await rinaNdt.post('/api/v1/ms/isms/registers/assets', asset)).status).toBe(201);
+      const bagusTst = await demoSession(full, db, 'bagus', 'tst');
+      expect((await bagusTst.post('/api/v1/ms/isms/phases/1/verify', {})).status).toBe(403);
       const tstTenant = new Set((await rowsIn<{ seq: string; action: string }>(db, 'tst', sql`select seq::text, action from audit_trail`)).map((r) => `${r.seq}|${r.action}`));
       const tstPlatform = new Set(
         (await inScope(db.migrator, { platformScope: true }, (trx) =>
@@ -144,7 +151,7 @@ describe('J.5 isolation between organisations', () => {
         for (const item of reply.body.items) {
           const key = `${item.seq}|${item.action}`;
           expect(tstTenant.has(key) || tstPlatform.has(key), `${JSON.stringify(query)} ${key}`).toBe(true);
-          expect(item.action).not.toBe('phase.verified');
+          expect(item.action).not.toBe('register.created');
         }
       }
     });

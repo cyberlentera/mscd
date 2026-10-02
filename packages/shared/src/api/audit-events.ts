@@ -90,7 +90,7 @@ export const auditEventsCreateRoute = defineRoute({
   body: AuditEventCreateRequest,
   response: CommandResult,
   status: 201,
-  errors: [422],
+  errors: [404, 422],
   idempotent: true,
 });
 

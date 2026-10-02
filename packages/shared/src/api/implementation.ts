@@ -135,7 +135,7 @@ export const applicabilityCreateRoute = defineRoute({
   body: ApplicabilityCreateRequest,
   response: CommandResult,
   status: 201,
-  errors: [409, 422],
+  errors: [404, 409, 422],
   idempotent: true,
 });
 

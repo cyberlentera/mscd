@@ -236,7 +236,7 @@ export const registersCreateRoute = defineRoute({
   ...registerRoute, id: 'registers.create', method: 'POST', path: '/api/v1/ms/:ms/registers/:register',
   summary: 'Add a register row: risks need risk.manage and an owner (BR-17); the other kinds need register.manage (own)',
   params: RegisterParams, body: RegisterCreate, response: CommandResult, status: 201,
-  errors: [409, 422], idempotent: true,
+  errors: [404, 409, 422], idempotent: true,
 });
 
 export const registersUpdateRoute = defineRoute({
@@ -281,7 +281,7 @@ export const residualAcceptanceRoute = defineRoute({
 export const evidenceCreateRoute = defineRoute({
   ...ms, id: 'evidence.create', method: 'POST', path: '/api/v1/ms/:ms/evidence',
   summary: 'Create an evidence record with its targets', permission: 'evidence.manage', params: MsParams, body: EvidenceCreate,
-  response: CommandResult, status: 201, errors: [409, 422], idempotent: true,
+  response: CommandResult, status: 201, errors: [404, 409, 422], idempotent: true,
 });
 
 export const evidenceUpdateRoute = defineRoute({

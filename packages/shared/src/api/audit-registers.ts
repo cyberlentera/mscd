@@ -279,7 +279,7 @@ export const findingsListRoute = defineRoute({
 });
 export const findingsCreateRoute = defineRoute({
   ...ms, id: 'findings.create', method: 'POST', path: '/api/v1/ms/:ms/findings', summary: 'Raise a finding',
-  permission: 'finding.raise', params: MsParams, body: FindingCreate, response: CommandResult, status: 201, errors: [409, 422], idempotent: true,
+  permission: 'finding.raise', params: MsParams, body: FindingCreate, response: CommandResult, status: 201, errors: [404, 409, 422], idempotent: true,
 });
 export const findingsUpdateRoute = defineRoute({
   ...ms, id: 'findings.update', method: 'PATCH', path: '/api/v1/ms/:ms/findings/:id', summary: 'Change a finding, including its RCA and systemic check texts',
