@@ -201,7 +201,8 @@ test.describe('Controls & requirements', () => {
     expect(await tabCount(page, 'Controls implemented')).toBe(61);
   });
 
-  test('Mark complete and Verify never create or refresh evidence', async ({ page }) => {
+  // @sample-only: auditors do not verify in API mode (A.4 5.5); BR-01 may also reject the verification (E.3).
+  test('Mark complete and Verify never create or refresh evidence', { tag: '@sample-only' }, async ({ page }) => {
     await openApp(page);
     const before = await freshTabs(page);
     expect(before).toEqual({ Fresh: 64, Aging: 6, Expired: 6, Critical: 3, of: 'of 79' });
@@ -245,7 +246,8 @@ test.describe('Controls & requirements', () => {
     await expect(tab(page, 'Evidence')).toContainText('69 / 79 ready');
   });
 
-  test('a control held at Partial by its evidence explains the next step and keeps its status after a re-link', async ({ page }) => {
+  // @sample-only: the API picker lists the repository folder instead of the sample picker files (WP-25 deviation 3).
+  test('a control held at Partial by its evidence explains the next step and keeps its status after a re-link', { tag: '@sample-only' }, async ({ page }) => {
     await openControls(page);
     await tab(page, 'Partially implemented').click();
     await openRow(page, 'A.8.13');
@@ -268,7 +270,8 @@ test.describe('Controls & requirements', () => {
     await expect(ui.drawer(page)).toContainText('Complete, awaiting verification');
   });
 
-  test('a different verifier can verify and the control becomes Implemented', async ({ page }) => {
+  // @sample-only: auditors do not verify in API mode (A.4 5.5); e2e/api-only/commands.spec.js covers the hidden Verify.
+  test('a different verifier can verify and the control becomes Implemented', { tag: '@sample-only' }, async ({ page }) => {
     await openControls(page);
     await tab(page, 'Partially implemented').click();
     await openRow(page, 'A.5.13');
@@ -421,7 +424,8 @@ test.describe('Controls & requirements', () => {
     await expectToast(page, 'Opening PRC-07 v3.2: review workflow');
   });
 
-  test('Upload new version links a file and bumps the document version', async ({ page }) => {
+  // @sample-only: the API picker lists the Documents folder (WP-25 deviation 3) and a new version goes to in_review instead of approved (A.4 5.7).
+  test('Upload new version links a file and bumps the document version', { tag: '@sample-only' }, async ({ page }) => {
     await openControls(page);
     await tab(page, 'Documents approved').click();
     await openRow(page, 'POL-01');
@@ -448,7 +452,8 @@ test.describe('Controls & requirements', () => {
     await expect(listRow(page, 'POL-01')).toContainText('v5.0');
   });
 
-  test('Managed Vault systems upload a new document version instead of picking a file', async ({ page }) => {
+  // @sample-only: in API mode the upload sends a real file chosen in the file dialog (A.4 5.10) and the version goes to in_review (A.4 5.7); e2e/api-only/commands.spec.js covers it.
+  test('Managed Vault systems upload a new document version instead of picking a file', { tag: '@sample-only' }, async ({ page }) => {
     await openControls(page);
     await switchMs(page, 'QMS');
     await tab(page, 'Documents approved').click();

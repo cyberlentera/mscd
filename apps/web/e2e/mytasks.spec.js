@@ -87,7 +87,8 @@ test.describe('My Tasks', () => {
     await expect(tasks(page)).toHaveCount(3);
   });
 
-  test('Mark done on a record that does not hold a gate closes it in the chain', async ({ page }) => {
+  // @sample-only: Top Management holds no record.complete_action in the F.6 matrix, so the api refuses Mark done for that persona.
+  test('Mark done on a record that does not hold a gate closes it in the chain', { tag: '@sample-only' }, async ({ page }) => {
     await openApp(page);
     await switchRole(page, 'Top Management');
     await go(page, 'My Tasks');
@@ -144,7 +145,8 @@ test.describe('My Tasks', () => {
     await expect(dots(2)).toHaveCount(0);
   });
 
-  test('evidence tasks submit through the repository picker and leave the list', async ({ page }) => {
+  // @sample-only: the API picker lists the repository folder instead of the sample picker files (WP-25 deviation 3).
+  test('evidence tasks submit through the repository picker and leave the list', { tag: '@sample-only' }, async ({ page }) => {
     await openApp(page);
     await switchRole(page, 'Domain Owner');
     await expect(task(page, 'EV-0313')).toContainText('Re-link the file for backup job log & restore test');

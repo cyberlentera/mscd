@@ -46,7 +46,8 @@ test.describe('Review calendar', () => {
     await expect(listRow(page, 'REG-03').locator('td:nth-child(4)')).toHaveText('In review');
   });
 
-  test('a new version moves the document out of the overdue group', async ({ page }) => {
+  // @sample-only: the API picker lists the repository folder instead of the sample picker files (WP-25 deviation 3) and a new version goes to in_review (A.4 5.7).
+  test('a new version moves the document out of the overdue group', { tag: '@sample-only' }, async ({ page }) => {
     await openCalendar(page);
     await openRow(page, 'IMS-04');
     await drawerAction(page, 'Upload new version').click();
@@ -58,7 +59,8 @@ test.describe('Review calendar', () => {
     await expect(listRow(page, 'IMS-04')).toHaveCount(0);
   });
 
-  test('Calendar feed confirms with a toast', async ({ page }) => {
+  // @sample-only: in API mode Export .ics creates a calendar feed and shows its address (H.4 calendarFeed) instead of the sample clipboard toast.
+  test('Calendar feed confirms with a toast', { tag: '@sample-only' }, async ({ page }) => {
     await openCalendar(page);
     await ui.pageAction(page, 'Calendar feed').click();
     await expectToast(page, 'Calendar feed (.ics) copied to clipboard');

@@ -112,7 +112,8 @@ test.describe('Audit readiness', () => {
     await expect(activeTab(page).locator('div').nth(1)).toHaveText('Evidence');
   });
 
-  test('page actions name the right repository', async ({ page }) => {
+  // @sample-only: in API mode the evidence pack toast is the api's message (E.7) and Auditor access asks for the auditor's email (WP-25 deviation 5); e2e/api-only/guest.spec.js covers the grant.
+  test('page actions name the right repository', { tag: '@sample-only' }, async ({ page }) => {
     await openAudit(page);
     await ui.pageAction(page, 'Build evidence pack').click();
     await expectToast(page, 'Evidence pack is being compiled, manifest will appear in SharePoint Online');

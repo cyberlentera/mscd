@@ -100,7 +100,8 @@ test.describe('Management system switching resets the selection', () => {
 });
 
 test.describe('Organisation switching', () => {
-  test('a two-system on-premise organisation', async ({ page }) => {
+  // @sample-only: the demo seed adds the test organisation tst, which rina also belongs to (G.3), so the organisation menu lists four organisations.
+  test('a two-system on-premise organisation', { tag: '@sample-only' }, async ({ page }) => {
     await openApp(page);
     await switchOrg(page, 'PT Bank Sentosa Digital');
     await expect(ui.title(page)).toHaveText('Portfolio Overview');

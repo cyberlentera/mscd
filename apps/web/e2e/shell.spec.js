@@ -28,7 +28,8 @@ test.describe('App shell', () => {
     'Framework library': { 'Check for updates': 'Checked, 2 updates available' },
     'Storage repositories': { 'Connect repository': 'Repository connection wizard opened' },
   };
-  test('every screen has working page actions', async ({ page }) => {
+  // @sample-only: in API mode page actions are api commands whose toasts carry the api's answers (exports queued for the worker, the auditor's email asked, counts from the api; H.4, WP-25 deviations 5 and 7).
+  test('every screen has working page actions', { tag: '@sample-only' }, async ({ page }) => {
     await openApp(page);
     for (const label of SCREENS) {
       await go(page, label);

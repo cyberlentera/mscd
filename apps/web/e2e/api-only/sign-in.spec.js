@@ -10,7 +10,7 @@ async function signInWithPassword(page, email) {
   await page.goto('/');
   await expect(page).toHaveURL(/\/login/);
   await page.getByLabel('Work email').fill(email);
-  await page.getByLabel('Password', { exact: true }).fill(DEMO_PASSWORD);
+  await page.locator('#au-password').fill(DEMO_PASSWORD);
   await page.getByRole('button', { name: 'Continue' }).click();
 }
 
@@ -61,10 +61,8 @@ test.describe('Sign-in @api-only', () => {
     await page.locator('header div[style*="width: 300px"] button', { hasText: 'Sign out' }).click();
     await expect(page).toHaveURL(/\/login/);
     await expect(page.getByText('You have signed out.')).toBeVisible();
-    // The old session is gone: reloading stays on the sign-in page.
-    await page.reload();
-    await expect(page).toHaveURL(/\/login/);
-    await expect(page.getByLabel('Work email')).toBeVisible();
+    // The session is gone on the server too.
+    expect((await page.request.get('/api/v1/me')).status()).toBe(401);
   });
 
   test('a session that ends on the server sends the user back to sign in with a notice', async ({ page, baseURL }) => {

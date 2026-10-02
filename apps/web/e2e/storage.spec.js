@@ -14,7 +14,8 @@ async function openStorage(page, query = '') {
 }
 
 test.describe('Storage repositories', () => {
-  test('repository cards show status, reference health and scope', async ({ page }) => {
+  // @sample-only: in API mode the Managed Vault card follows the api's deployment (I.1; the test profile is on-premise) and the reference counts come from the api.
+  test('repository cards show status, reference health and scope', { tag: '@sample-only' }, async ({ page }) => {
     await openStorage(page);
     await expect(repos(page)).toHaveCount(4);
     await expect(repo(page, 'SharePoint Online')).toContainText('Connected');
@@ -32,7 +33,8 @@ test.describe('Storage repositories', () => {
     await expect(routing(page)).toHaveText([/ISMS.*SharePoint Online.*Link/, /QMS.*Managed Vault.*Upload/, /BCMS.*Google Shared Drive.*Zero-transit/, /ABMS.*Managed Vault.*Upload/]);
   });
 
-  test('repository actions: test connection, re-authorise, move and settings', async ({ page }) => {
+  // @sample-only: in API mode Test connection, Re-authorise and Move call the api and show its answers (H.4 repositoryAction, WP-25 follow-up).
+  test('repository actions: test connection, re-authorise, move and settings', { tag: '@sample-only' }, async ({ page }) => {
     await openStorage(page);
     const titles = (name) => repo(page, name).locator('button[title]').evaluateAll((b) => b.map((x) => x.title));
     expect(await titles('SharePoint Online')).toEqual(['Test connection', 'Settings']);
@@ -86,7 +88,8 @@ test.describe('Storage repositories', () => {
     await expect(listRows(page)).toHaveCount(14);
   });
 
-  test('re-linking a revoked file clears it from the attention list', async ({ page }) => {
+  // @sample-only: the API picker lists the repository folder instead of the sample picker files (WP-25 deviation 3).
+  test('re-linking a revoked file clears it from the attention list', { tag: '@sample-only' }, async ({ page }) => {
     await openStorage(page);
     await openRow(page, 'EV-0271');
     await expect(drawerFact(page, 'Integrity')).toHaveText('Access revoked');

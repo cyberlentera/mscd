@@ -66,7 +66,8 @@ test.describe('Framework library', () => {
     expect(widths).toEqual(['100%', '40%', '57%']);
   });
 
-  test('SaaS update channel checks for updates', async ({ page }) => {
+  // @sample-only: in API mode the deployment comes from the api's profile (I.1; the test profile is on-premise) and Check for updates calls the api (H.4).
+  test('SaaS update channel checks for updates', { tag: '@sample-only' }, async ({ page }) => {
     await openFw(page);
     await expect(channel(page)).toContainText('Update channel');
     await expect(channel(page)).toContainText('Packs are distributed automatically');
@@ -77,7 +78,8 @@ test.describe('Framework library', () => {
     await expectToast(page, 'Checked, 2 updates available');
   });
 
-  test('on-premise deployments use the offline update channel', async ({ page }) => {
+  // @sample-only: in API mode Import offline bundle opens the file dialog and sends the bundle to the api (A.4 5.10, H.4) instead of the sample toast.
+  test('on-premise deployments use the offline update channel', { tag: '@sample-only' }, async ({ page }) => {
     await openFw(page, '?deploy=onprem');
     await expect(channel(page)).toContainText('Offline update channel');
     await expect(channel(page)).toContainText('signed offline bundles imported by your platform team');

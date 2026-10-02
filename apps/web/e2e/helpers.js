@@ -19,8 +19,11 @@ export const test = base.extend({
       if (m.type() === 'error' && !text.startsWith('Failed to load resource')) problems.push('console.error: ' + text);
       if (m.type() === 'warning' && /react|warning/i.test(text)) problems.push('console.warn: ' + text);
     });
-    page.on('requestfailed', (r) => {
-      if (!/fonts\.(googleapis|gstatic)\.com/.test(r.url())) problems.push('requestfailed: ' + r.url());
+    page.on('requestfailed', async (r) => {
+      if (/fonts\.(googleapis|gstatic)\.com/.test(r.url())) return;
+      // A navigation may abort the body of a response that already arrived (the sign-out answer, for example).
+      if (r.failure()?.errorText === 'net::ERR_ABORTED' && (await r.response().catch(() => null))) return;
+      problems.push('requestfailed: ' + r.url());
     });
     await use(page);
     expect(problems, 'browser errors during test').toEqual([]);

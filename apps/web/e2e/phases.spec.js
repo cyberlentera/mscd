@@ -47,7 +47,8 @@ test.describe('Phase board', () => {
     expect(labels).toContain('Performance evaluation…');
   });
 
-  test('stepper phases switch the selected phase card and table', async ({ page }) => {
+  // @sample-only: in API mode Verify phase always sends the command and shows the api's answer (H.4 verifyPhase) instead of the sample's 'already verified' toast.
+  test('stepper phases switch the selected phase card and table', { tag: '@sample-only' }, async ({ page }) => {
     await openPhases(page);
     await step(page, 'Improvement & audit readiness').click();
     await expect(current(page)).toContainText('9. Improvement & audit readiness');

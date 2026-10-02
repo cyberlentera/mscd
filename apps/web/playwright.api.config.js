@@ -17,6 +17,7 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:4174',
     dataSource: 'api',
+    actionTimeout: 15_000,
     viewport: { width: 1440, height: 900 },
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',

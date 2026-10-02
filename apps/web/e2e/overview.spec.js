@@ -104,7 +104,8 @@ test.describe('Overview', () => {
     await expect(drawerFact(page, 'Control / requirement')).toContainText('A.8.15');
   });
 
-  test('Readiness report confirms with a toast', async ({ page }) => {
+  // @sample-only: in API mode the readiness report is an export task that the worker builds (WP-25 deviation 7); the E2E stack runs no worker (J.6).
+  test('Readiness report confirms with a toast', { tag: '@sample-only' }, async ({ page }) => {
     await openApp(page);
     await go(page, 'Overview');
     await ui.pageAction(page, 'Readiness report').click();

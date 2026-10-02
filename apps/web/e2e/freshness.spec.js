@@ -102,7 +102,8 @@ test.describe('Evidence freshness', () => {
     expect(await circles.nth(4).getAttribute('stroke-dashoffset')).toBe('-102.76');
   });
 
-  test('re-linking an unverifiable file through the SharePoint picker verifies it', async ({ page }) => {
+  // @sample-only: the API picker lists the repository folder instead of the sample picker files (WP-25 deviation 3); e2e/api-only/commands.spec.js covers picker linking.
+  test('re-linking an unverifiable file through the SharePoint picker verifies it', { tag: '@sample-only' }, async ({ page }) => {
     await openFresh(page);
     await tab(page, 'File cannot be verified').click();
     await openRow(page, 'EV-0124');
@@ -131,7 +132,8 @@ test.describe('Evidence freshness', () => {
     await expect(drawerAction(page, 'Submit evidence')).toHaveCount(1);
   });
 
-  test('the Google Shared Drive picker links files with or without a content hash', async ({ page }) => {
+  // @sample-only: the demo BCMS Shared Drive credential has expired (G.8 fixture), so the API picker answers with the repository error.
+  test('the Google Shared Drive picker links files with or without a content hash', { tag: '@sample-only' }, async ({ page }) => {
     await openFresh(page);
     await switchMs(page, 'BCMS');
     await openRow(page, 'EB-0145');
@@ -153,7 +155,8 @@ test.describe('Evidence freshness', () => {
     await expect(drawerFact(page, 'Fingerprint')).toContainText('SHA-256');
   });
 
-  test('Managed Vault evidence is uploaded instead of picked', async ({ page }) => {
+  // @sample-only: in API mode the upload sends a real file chosen in the file dialog (A.4 5.10); e2e/api-only/commands.spec.js covers it.
+  test('Managed Vault evidence is uploaded instead of picked', { tag: '@sample-only' }, async ({ page }) => {
     await openFresh(page);
     await switchMs(page, 'QMS');
     expect(await tabCount(page, 'Expired')).toBe(3);
@@ -208,7 +211,8 @@ test.describe('Evidence freshness', () => {
     await expect(ui.drawer(page)).toContainText('A.5.9');
   });
 
-  test('new evidence restarts the cycle even after the due date was changed by hand', async ({ page }) => {
+  // @sample-only: the API picker lists the repository folder instead of the sample picker files (WP-25 deviation 3).
+  test('new evidence restarts the cycle even after the due date was changed by hand', { tag: '@sample-only' }, async ({ page }) => {
     await openFresh(page);
     await openRow(page, 'EV-0124');
     await drawerAction(page, 'Reassign').click();
@@ -226,7 +230,8 @@ test.describe('Evidence freshness', () => {
     await expect(listRow(page, 'EV-0124').locator('td:nth-child(6)')).toHaveText('29 Dec 2026');
   });
 
-  test('Run integrity check counts the active system’s references', async ({ page }) => {
+  // @sample-only: in API mode the count is the number of references the api queued (H.4 runCheck, WP-25 follow-up), not the sample's evidence count.
+  test('Run integrity check counts the active system’s references', { tag: '@sample-only' }, async ({ page }) => {
     await openFresh(page);
     await ui.pageAction(page, 'Run integrity check').click();
     await expect(ui.toast(page)).toHaveText('Integrity check started for 79 references');

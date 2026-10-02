@@ -151,7 +151,8 @@ test.describe('Portfolio Overview', () => {
     await expect(ui.msSwitch(page)).toContainText('QMS');
   });
 
-  test('Export board confirms with a toast', async ({ page }) => {
+  // @sample-only: in API mode Export board is an export task that the worker builds and the browser downloads (WP-25 deviation 7); the E2E stack runs no worker (J.6).
+  test('Export board confirms with a toast', { tag: '@sample-only' }, async ({ page }) => {
     await openApp(page);
     await ui.pageAction(page, 'Export board').click();
     await expect(ui.toast(page)).toHaveText('Board exported as PDF');
