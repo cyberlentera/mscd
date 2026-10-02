@@ -195,9 +195,12 @@ describe('J.5 owner scope and read projections on every GET route', () => {
       problems.push(...reply.violations);
       if (reply.status !== 200) continue;
       checked += 1;
-      const text = JSON.stringify(reply.body);
+      // File and CSV answers carry no JSON body: their text is checked instead.
+      const text = reply.body === undefined ? reply.text : JSON.stringify(reply.body);
       if (/"web_?[uU]rl"/.test(text)) problems.push(`${def.id}: web_url sent`);
-      const holders = holdersIn(reply.body).filter((h) => !/=(none)?$/.test(h));
+      // G.5 keeps the system card fields (`MS[]`, with the manager and the gate approver); everything else names nobody.
+      const { MS: _card, ...records } = (reply.body ?? {}) as Record<string, unknown>;
+      const holders = holdersIn(records).filter((h) => !/=(none)?$/.test(h));
       if (holders.length > 0) problems.push(`${def.id}: holders ${holders.slice(0, 5).join(', ')}`);
       for (const code of allEvidence) if (!packEvidence.has(code) && text.includes(`"${code}"`)) problems.push(`${def.id}: evidence ${code} outside ready packs`);
     }
@@ -212,8 +215,12 @@ describe('J.5 owner scope and read projections on every GET route', () => {
     const others = (h: string | null) => h !== null && h !== 'none' && h !== 'hendra';
     // The full view has pending work of other people, so the rule is exercised.
     expect(manager.bundle.chain.items.filter((i) => others(i.h)).length).toBeGreaterThan(10);
-    // Same aggregates: the same items, counts and stage totals.
-    expect(top.bundle.chain.items.map((i) => i.key)).toEqual(manager.bundle.chain.items.map((i) => i.key));
+    // Same aggregates: the same items (apart from restricted documents, which only their owner and the managers
+    // see; an earlier test of this file made one), counts and stage totals.
+    const restricted = new Set(
+      (await rowsIn<{ code: string }>(db, 'ndt', sql`select doc_code as code from document where classification = 'restricted' and deleted_at is null`)).map((r) => r.code),
+    );
+    expect(top.bundle.chain.items.map((i) => i.key)).toEqual(manager.bundle.chain.items.filter((i) => !(i.key.includes(":doc:") && restricted.has(i.key.split(":").pop()!))).map((i) => i.key));
     expect(top.bundle.chain.recs).toEqual(manager.bundle.chain.recs);
     expect(top.bundle.gates.map((g) => g.id)).toEqual(manager.bundle.gates.map((g) => g.id));
     for (const item of top.bundle.chain.items) {

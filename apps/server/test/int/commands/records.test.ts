@@ -76,7 +76,8 @@ describe('record commands', () => {
       const otherOrg = await rina.post(RECORD_URL('isms', 'risk', (await refOf('isms:x:R-014', rinaNdt)).id, 'assignment'), { kind: 'x', holder: 'rina', dueAt: null });
       expect(otherOrg.status).toBe(404);
       const unknownType = await rina.post(RECORD_URL('isms', 'app_user', ref.id, 'assignment'), { kind: 'x', holder: 'rina', dueAt: null });
-      expect(unknownType.status).toBe(400);
+      // J.5: an {entityType} outside RECORD_ENTITY_TYPES is 404 (WP-30 fix; it was a 400 validation problem).
+      expect(unknownType.status).toBe(404);
     });
 
     it('answers 422 when the kind does not fit the entity type, and NOT-A-MEMBER for an unknown holder', async () => {

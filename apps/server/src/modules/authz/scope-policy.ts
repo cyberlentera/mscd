@@ -436,7 +436,14 @@ export class ScopePolicyService implements ScopePolicy {
       PEOPLE[handle] = ctx.externalAuditorOnly && handle !== 'none' ? [person[0], '-'] : [person[0], person[1]];
     }
 
-    const result: UiOrgSnapshot = { ...snapshot, CHAINS, TITLES, CLAUSE_AT_RISK, EXAMPLES, PEOPLE };
+    // A system card of a system where the caller holds no role keeps its aggregates, but not the gate suggestions:
+    // they are record codes of that system (J.5 "nothing of QMS", WP-30).
+    const MS = snapshot.MS.map((m) => {
+      if (roleSystems.has(m.id) || m.gtSuggestions === undefined) return m;
+      const { gtSuggestions: _hidden, ...card } = m;
+      return card;
+    });
+    const result: UiOrgSnapshot = { ...snapshot, MS, CHAINS, TITLES, CLAUSE_AT_RISK, EXAMPLES, PEOPLE };
     if (ctx.externalAuditorOnly) {
       const STAGES: UiOrgSnapshot['STAGES'] = {};
       for (const [ms, stages] of Object.entries(snapshot.STAGES)) if (roleSystems.has(ms)) STAGES[ms] = stages;
