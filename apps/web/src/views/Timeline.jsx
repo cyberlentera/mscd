@@ -58,7 +58,7 @@ export default function Timeline({ v }) {
             </div>
             <span style={{ padding: "3px 10px", borderRadius: "999px", fontSize: "12px", fontWeight: "600", background: v.tl?.evt?.bg, color: v.tl?.evt?.fg, whiteSpace: "nowrap" }}>{txt(v.tl?.evt?.tag)}</span>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "150px 1fr", rowGap: "6px", columnGap: "12px", fontSize: ".95em" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "150px 1fr", rowGap: "6px", columnGap: "12px", fontSize: "max(12px, .95em)" }}>
             <span style={{ color: "var(--tx3)" }}>{txt(v.t?.scope)}</span>
             <span>{txt(v.tl?.evt?.scope)}</span>
             <span style={{ color: "var(--tx3)" }}>{txt(v.t?.expectedFocus)}</span>
@@ -94,7 +94,7 @@ export default function Timeline({ v }) {
               <div style={{ fontWeight: "600", marginBottom: "6px" }}>{txt(v.t?.prepChecklist)}</div>
               {list(v.tl?.evt?.prep).map((p, $i40) => (<Fragment key={$i40}>
                 <div style={{ display: "grid", gridTemplateColumns: "20px 1fr 170px 110px", gap: "10px", alignItems: "center", padding: "6px 0", borderBottom: "1px solid var(--bd)" }}>
-                  <span style={{ width: "16px", height: "16px", borderRadius: "4px", border: `1.5px solid ${p?.bd ?? ''}`, background: p?.bg, color: p?.fg, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: "700" }}>{txt(p?.mark)}</span>
+                  <span style={{ width: "16px", height: "16px", borderRadius: "4px", border: `1.5px solid ${p?.bd ?? ''}`, background: p?.bg, color: p?.fg, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "700" }}>{txt(p?.mark)}</span>
                   <span style={{ textDecoration: p?.deco }}>{txt(p?.title)}</span>
                   <span style={{ fontSize: "12.5px", color: "var(--tx2)" }}>{txt(p?.owner)}</span>
                   <span style={{ fontSize: "12.5px", textAlign: "right", color: p?.dueFg }}>{txt(p?.due)}</span>
@@ -135,13 +135,13 @@ export default function Timeline({ v }) {
             <div style={{ padding: "12px var(--pad)", borderBottom: "1px solid var(--bd)", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <span style={{ fontWeight: "600" }}>{txt(v.t?.cycleComplete)}</span>
-                <span title={v.t?.cycleSub} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "11px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
+                <span title={v.t?.cycleSub} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "12px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
               </div>
               <button onClick={v.tl?.toggleCycle} style={{ border: "0", background: "transparent", padding: "0", font: "inherit", fontSize: "12.5px", color: "var(--acc)", cursor: "pointer", fontWeight: "500" }}>{txt(v.tl?.cycleBtn)}</button>
             </div>
             {list(v.tl?.cycle).map((c, $i43) => (<Fragment key={$i43}>
               <div style={{ display: "grid", gridTemplateColumns: "20px 1fr auto", gap: "10px", alignItems: "start", padding: "9px var(--pad)", borderBottom: "1px solid var(--bd)" }}>
-                <span style={{ marginTop: "2px", width: "16px", height: "16px", borderRadius: "50%", border: `1.5px solid ${c?.bd ?? ''}`, background: c?.bg, color: c?.fg, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: "700" }}>{txt(c?.mark)}</span>
+                <span style={{ marginTop: "2px", width: "16px", height: "16px", borderRadius: "50%", border: `1.5px solid ${c?.bd ?? ''}`, background: c?.bg, color: c?.fg, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "700" }}>{txt(c?.mark)}</span>
                 <span>
                   <span style={{ fontWeight: "500" }}>{txt(c?.title)}</span>{" "}
                   <span style={{ fontFamily: "var(--ffm)", fontSize: "12px", color: "var(--tx3)" }}>{txt(c?.clause)}</span>
@@ -161,7 +161,7 @@ export default function Timeline({ v }) {
           <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", boxShadow: "var(--sh)" }}>
             <div style={{ padding: "12px var(--pad)", borderBottom: "1px solid var(--bd)", display: "flex", alignItems: "center", gap: "8px" }}>
               <span style={{ fontWeight: "600" }}>{txt(v.t?.drift)}</span>
-              <span title={v.t?.driftSub} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "11px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
+              <span title={v.t?.driftSub} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "12px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
             </div>
             {list(v.tl?.drift).map((dr, $i44) => (<Fragment key={$i44}>
               <button onClick={dr?.go} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "10px", alignItems: "center", width: "100%", textAlign: "left", border: "0", borderBottom: "1px solid var(--bd)", background: dr?.rowBg, padding: "10px var(--pad)", cursor: "pointer", color: "var(--tx)", font: "inherit", fontSize: "var(--fs)" }}>

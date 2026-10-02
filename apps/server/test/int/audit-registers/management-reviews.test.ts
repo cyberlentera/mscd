@@ -91,6 +91,8 @@ describe('management reviews and cycle derivation', () => {
       expect((await rina.request('PUT', `${url}/inputs/MRI-09`, { content: 'Automate the access reviews' })).status).toBe(200);
       expect((await rina.request('PUT', `${url}/inputs/MRQ-01`, { content: 'x' })).status).toBe(404);
       expect((await bagus.request('PUT', `${url}/inputs/MRI-01`, { content: 'x' })).status).toBe(403);
+      // The QMS MS Manager does not manage ISMS reviews, so cannot move the joint review through the QMS path.
+      expect((await sari.post(`${REVIEWS('qms')}/${reviewId}/transitions`, { to: 'held', heldAt: '2026-09-28' })).status).toBe(403);
       const held = await rina.post(`${url}/transitions`, { to: 'held', heldAt: '2026-09-28' });
       expect(held.status).toBe(200);
 

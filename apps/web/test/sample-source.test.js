@@ -435,7 +435,15 @@ describe('modules', () => {
       vi.stubEnv('VITE_DATA_SOURCE', value);
       expect((await createDataSource()).kind, value).toBe('sample');
     }
+    // API mode (WP-25): the source needs the boot router's ApiClient; without it the call is refused, with it the API
+    // source shares that client (test/api/api-data-source.test.ts covers the source itself).
     vi.stubEnv('VITE_DATA_SOURCE', 'api');
-    await expect(createDataSource()).rejects.toThrow(/VITE_DATA_SOURCE=api is not available/);
+    await expect(createDataSource()).rejects.toThrow(/without the boot router's ApiClient/);
+    const { ApiClient } = await import('../src/data/api/ApiClient.ts');
+    const client = new ApiClient({ fetch: async () => new Response(null, { status: 204 }) });
+    const me = { user: { handle: 'rina' }, org: { slug: 'ndt' }, orgs: [], rolesByMs: {}, uiRoleByMs: {}, permissions: { org: [], ms: {} } };
+    const api = await createDataSource({ client, me, profile: {} });
+    expect(api.kind).toBe('api');
+    expect(api.client).toBe(client);
   });
 });

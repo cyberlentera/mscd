@@ -10,7 +10,7 @@ export default function Portfolio({ v }) {
         <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", boxShadow: "var(--sh)" }}>
           <div style={{ padding: "12px var(--pad)", borderBottom: "1px solid var(--bd)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontWeight: "600", display: "inline-flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap" }}>{txt(v.t?.attention)}{" "}
-              <span title={v.t?.noAvg} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "11px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
+              <span title={v.t?.noAvg} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "12px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
             </span>
             <span style={{ fontSize: "12px", color: "var(--tx3)" }}>{txt(v.attention?.length)}{" "}{txt(v.t?.items)}</span>
           </div>
@@ -23,7 +23,7 @@ export default function Portfolio({ v }) {
                 </div>
                 {list(g?.items).map((a, $i7) => (<Fragment key={$i7}>
                   <button onClick={a?.go} style={{ display: "grid", gridTemplateColumns: "46px minmax(0,1fr)", alignItems: "start", gap: "10px", width: "100%", textAlign: "left", border: "0", borderTop: "1px solid var(--bd)", background: "transparent", padding: "10px var(--pad)", cursor: "pointer", color: "var(--tx)", fontSize: "var(--fs)", transition: "background .15s" }} className="hv0">
-                    <span style={{ fontSize: "11px", fontWeight: "700", padding: "2px 0", borderRadius: "5px", textAlign: "center", background: a?.fill, color: "#fff", marginTop: "2px" }}>{txt(a?.short)}</span>{" "}
+                    <span style={{ fontSize: "12px", fontWeight: "700", padding: "2px 0", borderRadius: "5px", textAlign: "center", background: a?.fill, color: "#fff", marginTop: "2px" }}>{txt(a?.short)}</span>{" "}
                     <span style={{ minWidth: "0" }}>
                       <span style={{ display: "block", fontWeight: "500", lineHeight: "1.3" }}>{txt(a?.text)}</span>
                       {a?.sub ? (<>
@@ -67,7 +67,7 @@ export default function Portfolio({ v }) {
                   </>) : null}
                   {m?.noAudit ? (<>
                     <div style={{ fontWeight: "600", color: "var(--warn)", marginTop: "2px", display: "inline-flex", gap: "6px", alignItems: "center" }}>{txt(v.t?.noAudit)}{" "}
-                      <span title={v.t?.noAuditSub} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "11px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
+                      <span title={v.t?.noAuditSub} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "12px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
                     </div>
                   </>) : null}
                 </div>

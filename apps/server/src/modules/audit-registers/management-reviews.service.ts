@@ -221,6 +221,13 @@ export class ManagementReviewsService {
       pickTransition(MACHINE, from, to, authz, false);
       const today = todayOf(this.clock, org);
       const links = await linksOf(trx, ENTITY, row.id);
+      // A joint review changes every linked system (decisions, cycle items), so the caller must manage reviews in each, as on create.
+      for (const link of links) {
+        if (link.msId === record.ms.id) continue;
+        if ((await this.evaluator.evaluate(principal, 'management_review.manage', { scope: 'ms', ms: link.slug })) !== 'full') {
+          throw new ForbiddenError(`Changing a management review linked to ${link.slug} needs management_review.manage there`);
+        }
+      }
       const set: Record<string, unknown> = { status: to, updated_by: actor };
       const before: Record<string, unknown> = { status: from };
       const after: Record<string, unknown> = { status: to };

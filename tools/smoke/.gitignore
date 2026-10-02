@@ -1,0 +1,2 @@
+# Output of run-smoke.mjs: build logs, Compose logs, the Playwright report and traces.
+test-results/

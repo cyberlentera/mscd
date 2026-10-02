@@ -97,7 +97,8 @@ export class CleanupExpiredJob implements JobHandlerInstance<'cleanup.expired'> 
           { scope: 'job', orgId: org.id, requestId },
         );
         if (org.deleted_at !== null || !TENANT_SCHEMA.test(org.schema_name)) continue;
-        const tenant = await this.scope.withTenant({ orgId: org.id, schema: org.schema_name, userId: SYSTEM_USER_ID, requestId }, async (trx) => {
+        const tenantContext = { orgId: org.id, schema: org.schema_name, userId: SYSTEM_USER_ID, requestId };
+        const tenant = await this.scope.withTenant(tenantContext, async (trx) => {
           const intents = await trx
             .updateTable('upload_intent')
             .set({ status: 'expired', updated_at: now, updated_by: SYSTEM_USER_ID })
@@ -111,16 +112,24 @@ export class CleanupExpiredJob implements JobHandlerInstance<'cleanup.expired'> 
             .where('deleted_at', 'is', null)
             .where('expires_at', '<=', now)
             .executeTakeFirst();
-          // Registered steps run for active organisations only (a suspended one keeps its state until it returns).
-          const counts: Record<string, number> = {};
-          if (org.status === 'active') {
-            for (const step of steps) counts[step.name] = await step.run(trx, org.id, now);
-          }
-          return { intents: Number(intents.numUpdatedRows), exports: Number(exportsExpired.numUpdatedRows), counts };
+          return { intents: Number(intents.numUpdatedRows), exports: Number(exportsExpired.numUpdatedRows) };
         });
         uploadIntentsExpired += tenant.intents;
         exportFilesExpired += tenant.exports;
-        for (const [name, n] of Object.entries(tenant.counts)) tenantSteps[name] = (tenantSteps[name] ?? 0) + n;
+        // Registered steps run for active organisations only (a suspended one keeps its state until it returns), each
+        // in its own tenant transaction, so a failing step rolls back neither the expiries above nor the other steps.
+        if (org.status === 'active') {
+          let stepFailed = false;
+          for (const step of steps) {
+            try {
+              tenantSteps[step.name] = (tenantSteps[step.name] ?? 0) + (await this.scope.withTenant(tenantContext, (trx) => step.run(trx, org.id, now)));
+            } catch (error) {
+              stepFailed = true;
+              this.logger.error({ orgId: org.id, step: step.name, error: (error as Error).message }, 'cleanup.expired step failed for an organisation');
+            }
+          }
+          if (stepFailed) failedOrganisations.push(org.id);
+        }
       } catch (error) {
         failedOrganisations.push(org.id);
         this.logger.error({ orgId: org.id, error: (error as Error).message }, 'cleanup.expired failed for an organisation');

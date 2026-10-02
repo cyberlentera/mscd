@@ -5,6 +5,8 @@ export default defineConfig({
   timeout: 60_000,
   expect: { timeout: 5_000 },
   fullyParallel: true,
+  // @api-only specs (e2e/api-only) need the api; the API project runs them (playwright.api.config.js, build plan J.6).
+  grepInvert: /@api-only/,
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'e2e-report' }]],
   use: {
     baseURL: 'http://localhost:4173',

@@ -1,7 +1,8 @@
 import { test, expect, SCREENS, openApp, go } from './helpers.js';
 
 // WCAG 2.1 AA: 4.5:1 for normal text, 3:1 for large text (24px, or 18.66px bold).
-// Every visible text element is measured against the first opaque background behind it.
+// Every visible text element is measured against the first opaque background behind it. Text is also at least 12px
+// (the converter raises smaller sizes of the design template, scripts/convert-template.mjs).
 async function lowContrast(page) {
   return page.evaluate(() => {
     const parse = (c) => { const m = c.match(/rgba?\(([^)]+)\)/); if (!m) return null; const [r, g, b, a = 1] = m[1].split(',').map(Number); return { r, g, b, a }; };
@@ -36,6 +37,7 @@ async function lowContrast(page) {
       const c = blend(fg, bg);
       const L1 = lum(c), L2 = lum(bg); const ratio = (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05);
       const size = parseFloat(cs.fontSize); const bold = Number(cs.fontWeight) >= 700;
+      if (size < 11.95) bad.push(`font-size ${cs.fontSize} < 12px: "${walker.currentNode.nodeValue.trim().slice(0, 40)}"`);
       const min = size >= 24 || (bold && size >= 18.66) ? 3 : 4.5;
       if (ratio < min) bad.push(`${ratio.toFixed(2)} < ${min}: "${walker.currentNode.nodeValue.trim().slice(0, 40)}" ${cs.color} on rgb(${Math.round(bg.r)},${Math.round(bg.g)},${Math.round(bg.b)})`);
     }
@@ -44,7 +46,7 @@ async function lowContrast(page) {
 }
 
 for (const theme of ['light', 'dark']) {
-  test(`text contrast meets WCAG AA on every screen, ${theme} theme`, async ({ page }) => {
+  test(`text contrast meets WCAG AA and text is at least 12px on every screen, ${theme} theme`, async ({ page }) => {
     test.setTimeout(180_000);
     await openApp(page, `?theme=${theme}`);
     const failures = {};

@@ -129,7 +129,17 @@ function interp(raw, scope) {
 }
 // Contrast rules applied on top of the design template:
 // - white text on a filled accent uses --onacc (dark text in the dark theme, where white on orange is 3:1);
-// - text spans are not dimmed with opacity, which pushed secondary text below 4.5:1.
+// - text spans are not dimmed with opacity, which pushed secondary text below 4.5:1;
+// - no text is smaller than 12px: a pixel size below 12px becomes 12px (avatar initials, system short codes, timeline
+//   marks), and a size below 1em becomes max(12px, <size>), since .9em of the dense density (12.5px) is 11.25px.
+const MIN_FONT_PX = 12;
+function minFontSize(value) {
+  const px = /^(\d*\.?\d+)px$/.exec(value);
+  if (px) return Number(px[1]) < MIN_FONT_PX ? `${MIN_FONT_PX}px` : value;
+  const em = /^(\d*\.?\d+)(em|rem)$/.exec(value);
+  if (em && Number(em[1]) < 1) return `max(${MIN_FONT_PX}px, ${value})`;
+  return value;
+}
 function a11yDecls(tag, decls) {
   const pairs = decls.map(d => { const i = d.indexOf(':'); return i < 0 || !d.trim() ? null : [d.slice(0, i).trim(), d.slice(i + 1).trim()]; }).filter(Boolean);
   const accentFill = pairs.some(([k, v]) => (k === 'background' || k === 'background-color') && v === 'var(--acc)');
@@ -138,6 +148,7 @@ function a11yDecls(tag, decls) {
   return pairs
     .filter(([k]) => !(tag === 'span' && k === 'opacity'))
     .map(([k, v]) => {
+      if (k === 'font-size') return [k, minFontSize(v)];
       if (accentFill && k === 'color' && /^#fff(fff)?$/i.test(v)) return [k, 'var(--onacc)'];
       // Bound colours: text uses the theme-safe `ink`, fills behind white text use `fill` (see withInk in MscdApp.jsx).
       if (k === 'color' && boundColor.test(v)) return [k, v.replace(boundColor, '{{ $1.ink }}')];

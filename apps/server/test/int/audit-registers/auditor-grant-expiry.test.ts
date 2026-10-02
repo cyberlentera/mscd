@@ -7,6 +7,7 @@ import { randomBytes } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AUDITOR_GRANTS_EXPIRED_STEP, AuditorAccessModule } from '../../../src/modules/auditor-access/auditor-access.module';
 import { CleanupExpiredJob } from '../../../src/modules/jobs/cleanup-expired.job';
+import { TenantCleanupRegistry } from '../../../src/modules/jobs/tenant-cleanup';
 import { useTestDatabase } from '../../setup/test-db';
 import { adminClient, createJobsApp, type AdminClient, type JobsApp } from '../jobs/helpers';
 import { ORG_IDS } from './helpers';
@@ -72,5 +73,17 @@ describe('expired auditor grants are closed by cleanup.expired (F.14 step 5)', (
     const again = await app.moduleRef.get(CleanupExpiredJob).cleanup();
     expect(again.tenantSteps).toEqual({ [AUDITOR_GRANTS_EXPIRED_STEP]: 0 });
     expect((await state()).revocations).toHaveLength(1);
+  });
+
+  it('runs each step in its own transaction: a failing step marks the organisation failed but blocks no other step', async () => {
+    const registry = app.moduleRef.get(TenantCleanupRegistry);
+    registry.register({ name: 'failingStep', run: async () => { throw new Error('step failed on purpose'); } });
+    registry.register({ name: 'countingStep', run: async () => 1 });
+    const active = await admin.query<{ id: string }>(
+      `SELECT id FROM platform.organization WHERE status = 'active' AND deleted_at IS NULL AND to_regnamespace(schema_name) IS NOT NULL`,
+    );
+    const result = await app.moduleRef.get(CleanupExpiredJob).cleanup();
+    expect(result.tenantSteps).toEqual({ [AUDITOR_GRANTS_EXPIRED_STEP]: 0, failingStep: 0, countingStep: active.rows.length });
+    expect([...result.failedOrganisations].sort()).toEqual(active.rows.map((r) => r.id).sort());
   });
 });

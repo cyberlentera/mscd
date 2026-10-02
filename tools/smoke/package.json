@@ -8,7 +8,7 @@
   },
   "//": "The smoke test script is named smoke, never test: the root npm test runs the test script of every workspace, and the root test:smoke runs this smoke script (WP-03 handoff, deviation 1).",
   "scripts": {
-    "smoke": "node -e \"process.stderr.write('The full-stack smoke test is not implemented in this build yet (WP-31)\\n'); process.exit(2)\""
+    "smoke": "node run-smoke.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1"

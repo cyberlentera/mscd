@@ -21,10 +21,10 @@ export default function Drawer({ v }) {
             <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
               <span style={{ fontFamily: "var(--ffm)", fontWeight: "600" }}>{txt(v.det?.id)}</span>
               {list(v.det?.badges).map((b, $i75) => (<Fragment key={$i75}>
-                <span style={{ padding: "2px 8px", borderRadius: "999px", fontSize: ".9em", fontWeight: "600", background: b?.bg, color: b?.fg }}>{txt(b?.v)}</span>
+                <span style={{ padding: "2px 8px", borderRadius: "999px", fontSize: "max(12px, .9em)", fontWeight: "600", background: b?.bg, color: b?.fg }}>{txt(b?.v)}</span>
               </Fragment>))}
               {v.det?.note ? (<>
-                <span title={v.det?.note?.text} style={{ display: "inline-flex", width: "18px", height: "18px", borderRadius: "50%", background: v.det?.note?.bg, color: v.det?.note?.fg, fontSize: "11px", alignItems: "center", justifyContent: "center", cursor: "help", fontWeight: "700" }}>{"i"}</span>
+                <span title={v.det?.note?.text} style={{ display: "inline-flex", width: "18px", height: "18px", borderRadius: "50%", background: v.det?.note?.bg, color: v.det?.note?.fg, fontSize: "12px", alignItems: "center", justifyContent: "center", cursor: "help", fontWeight: "700" }}>{"i"}</span>
               </>) : null}
             </div>
             <div style={{ fontSize: "1.3em", fontWeight: "600", marginTop: "4px", lineHeight: "1.3" }}>{txt(v.det?.title)}</div>
@@ -34,7 +34,7 @@ export default function Drawer({ v }) {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "150px 1fr", rowGap: "8px", columnGap: "12px" }}>
             {list(v.det?.facts).map((f, $i76) => (<Fragment key={$i76}>
-              <div style={{ color: "var(--tx3)", fontSize: ".9em", paddingTop: "1px" }}>{txt(f?.k)}</div>
+              <div style={{ color: "var(--tx3)", fontSize: "max(12px, .9em)", paddingTop: "1px" }}>{txt(f?.k)}</div>
               <div style={{ fontFamily: f?.ff }}>
                 {f?.go ? (<>
                   <button onClick={f?.go} style={{ border: "0", background: "transparent", padding: "0", font: "inherit", color: "var(--acc)", cursor: "pointer", textDecoration: "underline", textAlign: "left" }}>{txt(f?.v)}</button>
@@ -50,10 +50,10 @@ export default function Drawer({ v }) {
               <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: ".08em", color: "var(--tx3)", marginBottom: "6px" }}>{txt(v.t?.upstream)}</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                 {list(v.det?.up).map((l, $i77) => (<Fragment key={$i77}>
-                  <button onClick={l?.go} style={{ border: "1px solid var(--bd)", background: "var(--sur2)", color: "var(--tx)", borderRadius: "6px", padding: "3px 8px", fontFamily: "var(--ffm)", fontSize: ".9em", cursor: "pointer", whiteSpace: "nowrap" }}>{txt(l?.v)}</button>
+                  <button onClick={l?.go} style={{ border: "1px solid var(--bd)", background: "var(--sur2)", color: "var(--tx)", borderRadius: "6px", padding: "3px 8px", fontFamily: "var(--ffm)", fontSize: "max(12px, .9em)", cursor: "pointer", whiteSpace: "nowrap" }}>{txt(l?.v)}</button>
                 </Fragment>))}
                 {v.det?.noUp ? (<>
-                  <span style={{ color: "var(--bad)", fontSize: ".9em" }}>{"- "}{txt(v.det?.noUp)}</span>
+                  <span style={{ color: "var(--bad)", fontSize: "max(12px, .9em)" }}>{"- "}{txt(v.det?.noUp)}</span>
                 </>) : null}
               </div>
             </div>
@@ -61,10 +61,10 @@ export default function Drawer({ v }) {
               <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: ".08em", color: "var(--tx3)", marginBottom: "6px" }}>{txt(v.t?.downstream)}</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                 {list(v.det?.down).map((l, $i78) => (<Fragment key={$i78}>
-                  <button onClick={l?.go} style={{ border: "1px solid var(--bd)", background: "var(--sur2)", color: "var(--tx)", borderRadius: "6px", padding: "3px 8px", fontFamily: "var(--ffm)", fontSize: ".9em", cursor: "pointer", whiteSpace: "nowrap" }}>{txt(l?.v)}</button>
+                  <button onClick={l?.go} style={{ border: "1px solid var(--bd)", background: "var(--sur2)", color: "var(--tx)", borderRadius: "6px", padding: "3px 8px", fontFamily: "var(--ffm)", fontSize: "max(12px, .9em)", cursor: "pointer", whiteSpace: "nowrap" }}>{txt(l?.v)}</button>
                 </Fragment>))}
                 {v.det?.noDown ? (<>
-                  <span style={{ color: "var(--bad)", fontSize: ".9em" }}>{"- "}{txt(v.det?.noDown)}</span>
+                  <span style={{ color: "var(--bad)", fontSize: "max(12px, .9em)" }}>{"- "}{txt(v.det?.noDown)}</span>
                 </>) : null}
               </div>
             </div>

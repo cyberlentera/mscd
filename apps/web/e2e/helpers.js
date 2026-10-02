@@ -2,8 +2,16 @@ import { test as base, expect } from '@playwright/test';
 
 // Every test fails if the browser logs an error, a React warning, or a request fails.
 // Google Fonts only serves the optional alternative font pairings, so its failures are ignored.
+// The API project (playwright.api.config.js, build plan J.6) sets `dataSource: 'api'`: before every test the api is
+// reset to the seed state and a session of `apiSession` (default rina, null for none) is minted (e2e-api/fixtures.js).
 export const test = base.extend({
-  page: async ({ page }, use) => {
+  dataSource: ['sample', { option: true }],
+  apiSession: ['rina', { option: true }],
+  page: async ({ page, dataSource, apiSession, baseURL }, use) => {
+    if (dataSource === 'api') {
+      const { prepareApiTest } = await import('../e2e-api/fixtures.js');
+      await prepareApiTest(page, { baseURL, handle: apiSession });
+    }
     const problems = [];
     page.on('pageerror', (e) => problems.push('pageerror: ' + e.message));
     page.on('console', (m) => {

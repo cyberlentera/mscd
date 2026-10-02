@@ -98,12 +98,12 @@ export default function MyTasks({ v }) {
                 <span>{txt(k?.kindLabel)}</span>
               </span>{" "}
               <span style={{ display: "block", fontWeight: "600", fontSize: "1.05em", marginTop: "2px", lineHeight: "1.3" }}>{txt(k?.title)}</span>{" "}
-              <span style={{ display: "block", color: "var(--tx2)", marginTop: "2px", lineHeight: "1.45", fontSize: ".95em" }}>{txt(k?.what)}</span>
+              <span style={{ display: "block", color: "var(--tx2)", marginTop: "2px", lineHeight: "1.45", fontSize: "max(12px, .95em)" }}>{txt(k?.what)}</span>
             </span>{" "}
             <span style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "flex-start" }}>
               <span style={{ padding: "3px 9px", borderRadius: "999px", fontSize: "12px", fontWeight: "600", whiteSpace: "nowrap", background: k?.bg, color: k?.fg }}>{txt(k?.due)}</span>
               <span title={k?.examples} style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "12px", color: "var(--tx3)", cursor: "help" }}>
-                <span style={{ display: "inline-flex", width: "14px", height: "14px", borderRadius: "50%", border: "1px solid var(--tx3)", alignItems: "center", justifyContent: "center", fontSize: "10px", fontFamily: "var(--ffm)" }}>{"i"}</span>{txt(v.t?.accepted)}
+                <span style={{ display: "inline-flex", width: "14px", height: "14px", borderRadius: "50%", border: "1px solid var(--tx3)", alignItems: "center", justifyContent: "center", fontSize: "12px", fontFamily: "var(--ffm)" }}>{"i"}</span>{txt(v.t?.accepted)}
               </span>
             </span>{" "}
             <span style={{ display: "flex", justifyContent: "flex-end", gap: "6px" }}>

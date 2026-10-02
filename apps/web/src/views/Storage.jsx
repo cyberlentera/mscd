@@ -19,7 +19,7 @@ export default function Storage({ v }) {
               </span>
             </div>
             {r?.msg ? (<>
-              <div style={{ padding: "8px 12px", borderRadius: "8px", background: r?.bg, color: r?.fg, fontSize: ".95em" }}>{txt(r?.msg)}</div>
+              <div style={{ padding: "8px 12px", borderRadius: "8px", background: r?.bg, color: r?.fg, fontSize: "max(12px, .95em)" }}>{txt(r?.msg)}</div>
             </>) : null}
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <span style={{ flex: "1", display: "flex", height: "8px", borderRadius: "4px", overflow: "hidden", background: "var(--bd)", transformOrigin: "left", animation: "growX .7s cubic-bezier(.2,.7,.2,1) both" }}>
