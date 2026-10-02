@@ -37,6 +37,49 @@ compose=(docker compose --env-file /dev/null
   -f deploy/compose/docker-compose.demo.yml
   -f deploy/compose/docker-compose.vps.yml)
 
+# Some servers (kernel or AppArmor settings of the host) refuse the hardened container options the
+# stack uses, and every container then stops with "exec ...: operation not permitted". Test them once
+# and, when needed, add an overlay that relaxes only what this server refuses.
+compat_file=deploy/compose/.docker-compose.compat.yml
+rm -f "$compat_file"
+probe() { docker run --rm --pull missing "$@" postgres:16.15-alpine true >/dev/null 2>&1; }
+hardened=(--cap-drop ALL --security-opt no-new-privileges:true --init)
+compat=""
+echo "==> Checking that this server accepts the container security options"
+if probe "${hardened[@]}"; then
+  echo "    All options work."
+elif probe "${hardened[@]}" --security-opt apparmor=unconfined; then
+  compat=apparmor
+  echo "    This server needs AppArmor relaxed for the demo containers."
+elif probe --cap-drop ALL --init; then
+  compat=nnp
+  echo "    This server refuses no-new-privileges; the demo runs without it."
+elif probe; then
+  compat=all
+  echo "    This server refuses the hardened options; the demo runs with Docker defaults."
+else
+  echo "Docker on this server cannot start any container. Details:" >&2
+  docker run --rm postgres:16.15-alpine true || true
+  uname -r >&2
+  echo "Reinstall Docker (curl -fsSL https://get.docker.com | sh) and try again." >&2
+  exit 1
+fi
+if [ -n "$compat" ]; then
+  {
+    echo "# Written by deploy-demo.sh for this server ($compat). Do not commit."
+    echo "services:"
+    for service in $("${compose[@]}" --profile '*' config --services); do
+      echo "  $service:"
+      case "$compat" in
+        apparmor) echo "    security_opt: [\"apparmor=unconfined\"]" ;;
+        nnp) echo "    security_opt: !reset []" ;;
+        all) printf '    security_opt: !reset []\n    cap_drop: !reset []\n    init: false\n' ;;
+      esac
+    done
+  } > "$compat_file"
+  compose+=(-f "$compat_file")
+fi
+
 echo "==> Building images $version (this takes several minutes the first time)"
 docker build --target demo -f deploy/docker/server.Dockerfile -t "cyberlentera/mscd-server-demo:$version" .
 docker build -f deploy/docker/web.Dockerfile --build-context nginx-config=deploy/nginx -t "cyberlentera/mscd-web:$version" .

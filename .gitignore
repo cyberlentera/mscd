@@ -22,3 +22,4 @@ deploy/helm/mscd/ci/.schema-cache/
 # Agent scratch files
 *.tmp.config.js
 tools/smoke/.explore/
+deploy/compose/.docker-compose.compat.yml
