@@ -25,7 +25,9 @@
 //                           image repositories (defaults cyberlentera/mscd-server-demo, cyberlentera/mscd-web,
 //                           cyberlentera/mscd-mock-providers)
 //   MSCD_HTTP_PORT, MSCD_HTTPS_PORT, MSCD_KEYCLOAK_PORT, MSCD_MAILPIT_PORT
-//                           published ports on 127.0.0.1 (defaults 18080, 18443, 18088, 18025)
+//                           published ports on 127.0.0.1 (defaults 18080, 18443, 18088, 18025); deploy/compose/.env
+//                           is not read
+//   MSCD_BUILD_CA, SMOKE_OUTPUT_DIR and --build-ca: a relative path is taken from the folder npm was started in
 //   MSCD_SUBNET, MSCD_WEB_ADDRESS
 //                           internal network and the fixed web address (default 172.31.250.0/24 and .10; when
 //                           another Docker network already uses that range a free 172.31.x.0/24 is chosen)
@@ -158,8 +160,8 @@ async function checkPorts(settings) {
   for (const [name, port] of wanted) if (!(await portFree(port))) busy.push(`${port} (${name})`);
   if (busy.length > 0) {
     throw new UsageError(
-      `port ${busy.join(', ')} on 127.0.0.1 is already in use. Stop what listens there or choose other ports, ` +
-        'for example MSCD_HTTP_PORT=28080 MSCD_HTTPS_PORT=28443 MSCD_KEYCLOAK_PORT=28088 MSCD_MAILPIT_PORT=28025.',
+      `port ${busy.join(', ')} on 127.0.0.1 is already in use. Stop what listens there, or set ` +
+        'MSCD_HTTP_PORT, MSCD_HTTPS_PORT, MSCD_KEYCLOAK_PORT and MSCD_MAILPIT_PORT to free ports.',
     );
   }
 }
@@ -185,14 +187,14 @@ function dockerSubnets(project) {
     'network',
     'inspect',
     '--format',
-    '{{.Name}} {{index .Labels "com.docker.compose.project"}} {{range .IPAM.Config}}{{.Subnet}} {{end}}',
+    '{{.Name}}|{{index .Labels "com.docker.compose.project"}}|{{range .IPAM.Config}}{{.Subnet}} {{end}}',
     ...ids,
   ]).split('\n');
   const out = [];
   for (const line of lines) {
-    const [name, label, ...subnets] = line.trim().split(/\s+/);
+    const [name, label, subnets = ''] = line.trim().split('|');
     if (!name || label === project) continue;
-    for (const s of subnets) if (/^[0-9.]+\/\d+$/.test(s)) out.push({ name, subnet: s });
+    for (const s of subnets.split(/\s+/)) if (/^[0-9.]+\/\d+$/.test(s)) out.push({ name, subnet: s });
   }
   return out;
 }
@@ -256,8 +258,16 @@ async function buildImages(refs, buildCa, outputDir) {
 
 // ---- stack ------------------------------------------------------------------------------------------------------
 
+// --env-file /dev/null: Compose would otherwise read deploy/compose/.env (the operator's file of an on-premise
+// install, which publishes 0.0.0.0:80 and 443 and sets COMPOSE_PROFILES). The smoke stack takes every setting from
+// the variables main() passes.
 function composeArgs(project, ...rest) {
-  return ['compose', '-p', project, ...COMPOSE_FILES.flatMap((f) => ['-f', f]), ...rest];
+  return ['compose', '-p', project, '--env-file', os.devNull, ...COMPOSE_FILES.flatMap((f) => ['-f', f]), ...rest];
+}
+
+/** A path given by the user: relative to the folder npm was started in (INIT_CWD), else to the current folder. */
+function userPath(p) {
+  return path.resolve(process.env.INIT_CWD || process.cwd(), p);
 }
 
 async function stackDown(project, env) {
@@ -298,6 +308,7 @@ function showUnhealthy(project, env) {
 // ---- main -------------------------------------------------------------------------------------------------------
 
 let cleanup = null;
+let interrupted = false;
 
 async function main() {
   let options;
@@ -312,8 +323,8 @@ async function main() {
   }
 
   const env = { ...process.env };
-  // The stack is defined only by the two files and the variables below, not by a .env or settings of the shell
-  // meant for another Compose project.
+  // The stack is defined only by the two files and the variables below, not by a .env (composeArgs passes an empty
+  // --env-file) or settings of the shell meant for another Compose project.
   for (const name of ['COMPOSE_FILE', 'COMPOSE_PROJECT_NAME', 'COMPOSE_PROFILES', 'COMPOSE_ENV_FILES']) delete env[name];
   env.MSCD_VERSION = env.MSCD_VERSION || 'smoke';
   const project = env.SMOKE_PROJECT || 'mscd-smoke';
@@ -326,6 +337,12 @@ async function main() {
   } catch (e) {
     throw new UsageError(e.message);
   }
+  // The runner and the browser use these values, so Compose gets them explicitly (also the defaults).
+  env.MSCD_HTTP_PORT = String(settings.httpPort);
+  env.MSCD_HTTPS_PORT = String(settings.httpsPort);
+  env.MSCD_KEYCLOAK_PORT = String(settings.keycloakPort);
+  env.MSCD_MAILPIT_PORT = String(settings.mailpitPort);
+  env.MSCD_BIND_ADDRESS = '127.0.0.1';
   const versions = checkDocker();
   if (options.down) {
     return (await stackDown(project, env)) === 0 ? 0 : 1;
@@ -334,10 +351,18 @@ async function main() {
   const failedVectors = selfTest();
   if (failedVectors.length > 0) throw new Error(`the TOTP helper fails the RFC 6238 vectors at ${failedVectors.join(', ')}`);
 
-  const outputDir = path.resolve(env.SMOKE_OUTPUT_DIR || path.join(HERE, 'test-results'));
+  const outputDir = env.SMOKE_OUTPUT_DIR ? userPath(env.SMOKE_OUTPUT_DIR) : path.join(HERE, 'test-results');
   rmSync(outputDir, { recursive: true, force: true });
   mkdirSync(outputDir, { recursive: true });
   log(`Docker ${versions.docker}, Compose ${versions.compose}; project ${project}; output in ${outputDir}`);
+
+  // An earlier run that was killed may have left the project behind: start from empty volumes.
+  await stackDown(project, env);
+  await checkPorts(settings);
+  const network = chooseSubnet(env, project);
+  env.MSCD_SUBNET = network.subnet;
+  env.MSCD_WEB_ADDRESS = network.webAddress;
+  if (network.chosen) log(`172.31.${DEFAULT_SUBNET_OCTET}.0/24 is used by another Docker network; the stack uses ${network.subnet}`);
 
   const refs = imageRefs(env);
   const skipBuild = env.SMOKE_SKIP_BUILD === '1' || env.SMOKE_SKIP_BUILD === 'true';
@@ -355,23 +380,16 @@ async function main() {
       tempCaDir = mkdtempSync(path.join(os.tmpdir(), 'mscd-smoke-ca-'));
       buildCa = path.join(tempCaDir, 'empty-ca.pem');
       writeFileSync(buildCa, '');
-    } else if (!existsSync(buildCa) || !statSync(buildCa).isFile()) {
-      throw new UsageError(`--build-ca ${buildCa} is not a file`);
+    } else {
+      buildCa = userPath(buildCa);
+      if (!existsSync(buildCa) || !statSync(buildCa).isFile()) throw new UsageError(`--build-ca ${buildCa} is not a file`);
     }
     try {
-      await buildImages(refs, path.resolve(buildCa), outputDir);
+      await buildImages(refs, buildCa, outputDir);
     } finally {
       if (tempCaDir) rmSync(tempCaDir, { recursive: true, force: true });
     }
   }
-
-  // An earlier run that was killed may have left the project behind: start from empty volumes.
-  await stackDown(project, env);
-  await checkPorts(settings);
-  const network = chooseSubnet(env, project);
-  env.MSCD_SUBNET = network.subnet;
-  env.MSCD_WEB_ADDRESS = network.webAddress;
-  if (network.chosen) log(`172.31.${DEFAULT_SUBNET_OCTET}.0/24 is used by another Docker network; the stack uses ${network.subnet}`);
 
   const keep = options.keep || env.SMOKE_KEEP === '1' || env.SMOKE_KEEP === 'true';
   let stackStarted = false;
@@ -392,6 +410,7 @@ async function main() {
     log(`starting the stack: web ${settings.baseUrl}, Keycloak 127.0.0.1:${settings.keycloakPort}, Mailpit ${settings.mailpitUrl}, network ${network.subnet}`);
     const up = await run('docker', composeArgs(project, 'up', '-d', '--wait', '--wait-timeout', String(UP_TIMEOUT_SECONDS)), { env });
     if (up !== 0) {
+      if (interrupted) return 130;
       showUnhealthy(project, env);
       const file = await saveComposeLogs(project, env, outputDir);
       throw new Error(`docker compose up --wait failed (exit ${up}); service logs in ${file}`);
@@ -405,6 +424,7 @@ async function main() {
       env: testEnv,
       cwd: HERE,
     });
+    if (interrupted) return 130;
     if (result !== 0) {
       const file = await saveComposeLogs(project, env, outputDir);
       log(`the smoke tests failed; report in ${path.join(outputDir, 'report')}, service logs in ${file}`);
@@ -419,6 +439,7 @@ async function main() {
 }
 
 async function onSignal(signal) {
+  interrupted = true;
   process.stderr.write(`\nsmoke: ${signal} received, stopping\n`);
   for (const child of current) child.kill('SIGTERM');
   try {
