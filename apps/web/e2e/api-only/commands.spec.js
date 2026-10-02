@@ -5,11 +5,6 @@ import { test, expect, ui, go, openApp, switchMs, openRow, drawerAction, drawerF
 // (A.4 5.7), the Managed Vault receives a real file (A.4 5.10), and the picker lists the mock SharePoint library.
 const BR01 = 'This entry cannot be set to implemented without evidence from the current period';
 
-// The picker modal of the generated views grows with its listing and does not scroll, so with the full
-// SharePoint folder of the API its lower rows and the Link button can sit below a 900 px viewport (see the WP-27
-// handoff). The tests click those buttons with a DOM click, which needs no scrolling.
-const domClick = (locator) => locator.dispatchEvent('click');
-
 test.describe('Commands against the api @api-only', () => {
   test('BR-01 refuses a verification without current evidence with the api message', async ({ page, baseURL }) => {
     // rina (MS Manager of QMS) marks Cl. 6.3 complete; it has no evidence of the current period.
@@ -59,7 +54,7 @@ test.describe('Commands against the api @api-only', () => {
     const files = modal.locator('button[style*="grid-template-columns: 1fr auto"]');
     await expect(files.first()).toBeVisible();
     const name = (await files.first().innerText()).split('\n')[0].trim();
-    await domClick(modal.locator('button', { hasText: 'Link selected file' }));
+    await modal.locator('button', { hasText: 'Link selected file' }).click();
     await expectToast(page, `POL-01: ${name} linked, new version in review`);
     // The document waits for its review (A.4 5.7): it left the approved list and the register shows it in review.
     await go(page, 'Document register');
@@ -76,8 +71,8 @@ test.describe('Commands against the api @api-only', () => {
     await drawerAction(page, 'Re-link file').click();
     const modal = ui.modal(page);
     await expect(modal).toContainText('Compliance / ISMS / Evidence / 2026 / Q3');
-    await domClick(modal.locator('button', { hasText: 'Access-Review-Q3-2026.xlsx' }));
-    await domClick(modal.locator('button', { hasText: 'Link selected file' }));
+    await modal.locator('button', { hasText: 'Access-Review-Q3-2026.xlsx' }).click();
+    await modal.locator('button', { hasText: 'Link selected file' }).click();
     await expectToast(page, 'Evidence linked: version pinned, hash recorded, Access-Review-Q3-2026.xlsx');
     await expect(ui.modal(page)).toHaveCount(0);
   });

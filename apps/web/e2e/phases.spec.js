@@ -47,8 +47,7 @@ test.describe('Phase board', () => {
     expect(labels).toContain('Performance evaluation…');
   });
 
-  // @sample-only: in API mode Verify phase always sends the command and shows the api's answer (H.4 verifyPhase) instead of the sample's 'already verified' toast.
-  test('stepper phases switch the selected phase card and table', { tag: '@sample-only' }, async ({ page }) => {
+  test('stepper phases switch the selected phase card and table', async ({ page }) => {
     await openPhases(page);
     await step(page, 'Improvement & audit readiness').click();
     await expect(current(page)).toContainText('9. Improvement & audit readiness');
@@ -66,11 +65,21 @@ test.describe('Phase board', () => {
     await expect(current(page)).toContainText('Verified');
     await expect(banner(page)).toContainText('Phase verified.');
     await expect(statusCol(page)).toHaveText(Array(5).fill('Verified'));
-    await ui.pageAction(page, 'Verify phase').click();
-    await expectToast(page, 'Phase 1 is already verified');
+    // BR-12: a phase with activities that are not Verified cannot be verified.
     await step(page, 'Risk assessment & SoA').click();
     await ui.pageAction(page, 'Verify phase').click();
     await expectToast(page, 'Phase verification needs all activities Verified');
+  });
+
+  test('Verify phase on a phase that is already verified says so', async ({ page, dataSource }) => {
+    // Known defect, not a decision (WP-27 handoff follow-up 2): the demo seed holds no `phase.verified` audit entry, so
+    // the api's first confirmation of phase 1 answers "Phase 1 verified" instead of D.3's "Phase 1 is already verified".
+    test.fixme(dataSource === 'api', 'the demo seed has no phase.verified entry for the phases it seeds as verified');
+    await openPhases(page);
+    await step(page, 'Initiation & mandate').click();
+    await expect(current(page)).toContainText('1. Initiation & mandate');
+    await ui.pageAction(page, 'Verify phase').click();
+    await expectToast(page, 'Phase 1 is already verified');
   });
 
   test('gate banner link opens the open gate items', async ({ page }) => {

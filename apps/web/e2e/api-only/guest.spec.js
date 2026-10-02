@@ -19,6 +19,9 @@ test.describe('Guest auditor access @api-only', () => {
     const guest = await browser.newContext({ baseURL, viewport: { width: 1440, height: 900 } });
     try {
       const gp = await guest.newPage();
+      // The page fixture watches only `page`; the guest's page errors are collected here.
+      const guestErrors = [];
+      gp.on('pageerror', (e) => guestErrors.push(e.message));
       await gp.goto(link.replace(/^https?:\/\/[^/]+/, baseURL));
       const [, code] = await waitForMail(AUDITOR, /one-time code is (\d{6})/);
       // The sixth digit submits the code.
@@ -40,8 +43,19 @@ test.describe('Guest auditor access @api-only', () => {
       expect((await read.json()).bundle.phases).toEqual([]);
       const write = await gp.request.post('/api/v1/reminders/bulk', { data: { ms: 'isms', scope: 'open_chain_items' }, headers: { origin: baseURL, 'x-csrf-token': me.csrfToken } });
       expect(write.status()).toBe(403);
-      // Known defect (WP-27 handoff): the app crashes on the guest's landing screen because the controller expects at
-      // least one implementation phase, and the external auditor projection (G.5) has none.
+      // The app loads for the guest. Known defect (WP-27 handoff follow-up 1): the controller expects at least one
+      // implementation phase and the external auditor projection (G.5) has none, so the landing screen throws. While
+      // that crash is the only error, the step is reported as a known issue; any other error fails the test, and once
+      // the defect is fixed the step asserts the screen title.
+      await gp.goto('/');
+      const known = /reading 'no'/;
+      await expect.poll(() => guestErrors.length > 0 || ui.title(gp).isVisible(), { timeout: 15_000 }).toBe(true);
+      if (guestErrors.length > 0 && guestErrors.every((m) => known.test(m))) {
+        test.info().annotations.push({ type: 'issue', description: `known defect, guest landing screen crashes: ${guestErrors[0]}` });
+      } else {
+        expect(guestErrors, 'guest page errors').toEqual([]);
+        await expect(ui.title(gp)).toBeVisible();
+      }
     } catch (error) {
       for (const p of guest.pages()) await test.info().attach('guest page', { body: await p.screenshot(), contentType: 'image/png' });
       throw error;

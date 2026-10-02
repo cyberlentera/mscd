@@ -15,7 +15,8 @@
 //
 // No worker runs: jobs stay queued, and the suite asserts command results, not job effects. The addresses of the
 // run (Mailpit API, database) are written to node_modules/.cache/mscd/e2e-api-stack.json for the specs. On SIGTERM,
-// SIGINT, a failed start or the end of a child process everything is stopped and every container is removed.
+// SIGINT, a failed start, the end of a child process or the end of the process that started the stack, everything is
+// stopped and every container is removed; containers of an earlier stack that was killed are removed at start.
 //
 // Environment: MSCD_TEST_CONTAINER_PREFIX names the containers <prefix>e2e-<service>-<random> (default "mscd-");
 // MSCD_TEST_PG_IMAGE replaces postgres:16.15-alpine; E2E_STACK_SKIP_BUILD=1 skips step 1 apart from ensure-built.
@@ -79,7 +80,7 @@ function docker(args) {
 function startContainer(service, image, ports, args = [], command = [], files = []) {
   const name = `${PREFIX}e2e-${service}-${RUN_ID}`;
   const publish = ports.flatMap((p) => ['-p', `127.0.0.1::${p}`]);
-  const labels = ['--label', 'mscd.test=true', '--label', `mscd.test.expires=${Date.now() + CONTAINER_LIFETIME_MS}`, '--label', `mscd.e2e.run=${RUN_ID}`];
+  const labels = ['--label', 'mscd.test=true', '--label', `mscd.test.expires=${Date.now() + CONTAINER_LIFETIME_MS}`, '--label', `mscd.e2e.run=${RUN_ID}`, '--label', `mscd.e2e.pid=${process.pid}`];
   const id = docker(['create', '--name', name, ...labels, ...publish, ...args, image, ...command]);
   containers.push(id);
   for (const [source, target] of files) docker(['cp', source, `${id}:${target}`]);
@@ -115,6 +116,8 @@ async function httpOk(url) {
   return response.ok;
 }
 
+const EXPECTED_NOISE = /^PostgreSQL idle client error: terminating connection due to administrator command$/;
+
 /** A child process whose output is prefixed; its end before the stack stops ends the stack. */
 function startChild(name, command, args, env, cwd = ROOT) {
   const child = spawn(command, args, { cwd, env, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -126,8 +129,11 @@ function startChild(name, command, args, env, cwd = ROOT) {
       buffer += chunk;
       let index;
       while ((index = buffer.indexOf('\n')) !== -1) {
-        target.write(`[${name}] ${buffer.slice(0, index)}\n`);
+        const line = buffer.slice(0, index);
         buffer = buffer.slice(index + 1);
+        // Every reset ends the idle connections of the api's pool (DROP DATABASE ... WITH (FORCE)); expected noise.
+        if (EXPECTED_NOISE.test(line)) continue;
+        target.write(`[${name}] ${line}\n`);
       }
     });
   };
@@ -162,21 +168,78 @@ async function stop(code) {
 }
 
 for (const signal of ['SIGTERM', 'SIGINT', 'SIGHUP']) process.on(signal, () => void stop(0));
+// When Playwright goes away, its end of the output pipes closes: writes fail with EPIPE, which must not end this
+// process before the containers are removed.
+for (const stream of [process.stdout, process.stderr]) stream.on('error', () => undefined);
+process.on('uncaughtException', (error) => {
+  try {
+    process.stderr.write(`e2e-api stack: ${error.stack ?? error.message}\n`);
+  } catch {
+    // the output may be gone
+  }
+  void stop(1);
+});
+
+/** Parent and grandparent (Playwright runs the command through a shell); the stack stops when either ends. */
+function ancestors() {
+  const pids = [process.ppid];
+  try {
+    const stat = readFileSync(`/proc/${process.ppid}/stat`, 'utf8');
+    const grandparent = Number(stat.slice(stat.lastIndexOf(')') + 2).split(' ')[1]);
+    if (grandparent > 1) pids.push(grandparent);
+  } catch {
+    // no /proc: only the parent is watched
+  }
+  return pids;
+}
+const WATCHED = ancestors();
+setInterval(() => {
+  for (const pid of WATCHED) {
+    try {
+      process.kill(pid, 0);
+    } catch {
+      log(`process ${pid} that started the stack has ended; stopping`);
+      void stop(1);
+      return;
+    }
+  }
+}, 2000).unref();
 
 function pgUrl(port, database, user = 'postgres', password) {
   return `postgres://${encodeURIComponent(user)}:${encodeURIComponent(password)}@127.0.0.1:${port}/${database}`;
 }
 
-/** Containers of an earlier API E2E stack that was killed before it could remove them (runs are serialised). */
-function removeLeftovers() {
-  let ids = '';
+/** True while process `pid` of this host exists (a signal 0 to a process of another user also proves it exists). */
+function alive(pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
   try {
-    ids = docker(['ps', '-aq', '--filter', 'label=mscd.e2e.run']);
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error.code === 'EPERM';
+  }
+}
+
+/**
+ * Containers of an earlier API E2E stack that was killed before it could remove them. A container is a leftover when
+ * its `mscd.test.expires` time has passed or the stack process named by `mscd.e2e.pid` no longer exists; containers
+ * of a stack that is still running (for example in its build and seed phase) are kept.
+ */
+function removeLeftovers() {
+  let rows = '';
+  try {
+    rows = docker(['ps', '-a', '--filter', 'label=mscd.e2e.run', '--format', '{{.ID}}\t{{.Label "mscd.test.expires"}}\t{{.Label "mscd.e2e.pid"}}']);
   } catch {
     return;
   }
-  if (!ids) return;
-  const list = ids.split('\n');
+  const now = Date.now();
+  const list = rows
+    .split('\n')
+    .filter(Boolean)
+    .map((row) => row.split('\t'))
+    .filter(([, expires, pid]) => !(Number(expires) > now) || !alive(Number(pid)))
+    .map(([id]) => id);
+  if (list.length === 0) return;
   docker(['rm', '-f', '-v', ...list]);
   log(`removed ${list.length} container(s) left over by an earlier run`);
 }

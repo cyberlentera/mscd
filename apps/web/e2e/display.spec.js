@@ -147,7 +147,7 @@ test.describe('Display settings', () => {
     }
   }
 
-  test('IBM Plex is self-hosted and used by default', async ({ page }) => {
+  test('IBM Plex is self-hosted and used by default', async ({ page }, testInfo) => {
     const fontRequests = [];
     page.on('requestfinished', (r) => { if (/ibm-plex/.test(r.url())) fontRequests.push(r.url()); });
     await openApp(page);
@@ -155,7 +155,8 @@ test.describe('Display settings', () => {
     await page.evaluate(() => document.fonts.ready);
     expect(await page.evaluate(() => document.fonts.check('600 16px "IBM Plex Sans"'))).toBe(true);
     expect(fontRequests.length).toBeGreaterThan(0);
-    const origin = new URL(page.url()).origin + '/';
+    // The configured base URL of the project (sample 4173, API 4174, build plan J.6).
+    const origin = new URL(testInfo.project.use.baseURL).origin + '/';
     expect(fontRequests.every((u) => u.startsWith(origin))).toBe(true);
   });
 
