@@ -1,10 +1,10 @@
 // Per-request state of a contract route (build plan D.1, F.7): the route definition, the validated input, the
 // principal and the authorisation decision. The guard fills it; handlers read it through the parameter decorators
 // of `api-route.ts`, services through `request.mscd`.
-import type { RouteDef } from '@mscd/shared';
+import { RECORD_ENTITY_TYPES, type RouteDef } from '@mscd/shared';
 import type { FastifyRequest } from 'fastify';
 import type { ZodType } from 'zod';
-import { ValidationError } from './problems';
+import { NotFoundError, ValidationError } from './problems';
 import { zodFieldErrors } from './problem-filter';
 import type { AuthzState, Principal } from './tokens';
 
@@ -80,6 +80,12 @@ function parsePart(schema: ZodType | undefined, value: unknown, part: 'params' |
  * Streamed and multipart bodies are not read here: the handler consumes them.
  */
 export function validateRouteInput(def: RouteDef, request: FastifyRequest): RouteInput {
+  // D.1: an `{entityType}` path segment outside `RECORD_ENTITY_TYPES` is 404 before anything else runs (the record
+  // type does not exist for the API), not a validation problem of the request.
+  const entityType = (request.params as Record<string, unknown> | undefined)?.entityType;
+  if (entityType !== undefined && !(RECORD_ENTITY_TYPES as readonly unknown[]).includes(entityType)) {
+    throw new NotFoundError('Unknown record type');
+  }
   const errors: ValidationError[] = [];
   const parts = {} as Record<'params' | 'query' | 'body' | 'headers', unknown>;
   const raw: Record<'params' | 'query' | 'body' | 'headers', unknown> = {

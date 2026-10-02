@@ -235,6 +235,44 @@ check_release_keys() {
     esac
 }
 
+# semver_below A B: true when semantic version A is lower than B (a
+# pre-release such as 1.0.0-rc.1 is lower than 1.0.0).
+semver_below() {
+    local a=${1%%-*} b=${2%%-*} i x y
+    local -a pa pb
+    IFS=. read -r -a pa <<<"$a"
+    IFS=. read -r -a pb <<<"$b"
+    for i in 0 1 2; do
+        x=$((10#${pa[$i]:-0})) y=$((10#${pb[$i]:-0}))
+        if ((x != y)); then
+            ((x < y))
+            return
+        fi
+    done
+    [[ $1 == *-* && $2 != *-* ]]
+}
+
+# check_pack_versions: every framework pack names the lowest server version
+# that may install it (engine_min_version); a bundle whose server is older
+# could not install its own packs.
+check_pack_versions() {
+    local manifest min id too_new=()
+    for manifest in "$REPO_DIR"/packs/sources/*/manifest.json; do
+        [[ -f $manifest ]] || continue
+        min=$(sed -n 's/.*"engine_min_version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$manifest" | head -n1)
+        id=$(basename -- "$(dirname -- "$manifest")")
+        if [[ -n $min ]] && semver_below "$VERSION" "$min"; then
+            too_new+=("$id (needs $min)")
+        fi
+    done
+    if ((${#too_new[@]} > 0)); then
+        fail "Version $VERSION is lower than the server version the packs need: ${too_new[*]}" \
+            "Use a version that is at least the engine_min_version of every pack in packs/sources"
+    else
+        pass "Every pack can be installed by server version $VERSION"
+    fi
+}
+
 check_build_ca() {
     if [[ -z $BUILD_CA ]]; then
         BUILD_CA=$WORK/build-ca.pem
@@ -591,6 +629,7 @@ main() {
     abort_if_failed
     check_build_ca
     check_release_keys
+    check_pack_versions
     if [[ $REVISION == *-dirty ]]; then
         if [[ $RELEASE == true ]]; then
             fail "The sources have uncommitted or untracked files ($REVISION)" "Commit the sources before building a release"

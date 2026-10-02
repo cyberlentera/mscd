@@ -58,12 +58,16 @@ export function isBusinessRoute(def: RouteDef): boolean {
   return def.auth !== 'public' && !def.path.startsWith('/api/v1/auth/') && !def.id.startsWith('me.');
 }
 
-/** True when the guard admits a user who holds only `role` (F.6, F.7). */
-export function expectedAllowed(def: RouteDef, role: RoleKey, member?: unknown): boolean {
+/**
+ * True when the guard admits a user who holds only `role` (F.6, F.7). `namesSystem` says whether the request names
+ * a system: an ms-scoped check of a request without one fails (F.7, WP-05 contract).
+ */
+export function expectedAllowed(def: RouteDef, role: RoleKey, member?: unknown, namesSystem = true): boolean {
   // External auditors (accounts whose only role is the auditor role) never change anything on business routes.
   if (role === 'EA' && def.method !== 'GET' && isBusinessRoute(def)) return false;
   const { any, all } = checksOf(def, member);
   if (any.length === 0 && all.length === 0) return true;
-  if (!any.some((c) => roleHolds(role, c))) return false;
-  return all.every((c) => roleHolds(role, c));
+  const holds = (c: Check) => (c.scope !== 'ms' || namesSystem) && roleHolds(role, c);
+  if (!any.some(holds)) return false;
+  return all.every(holds);
 }

@@ -339,7 +339,9 @@ export const managementReviewsListRoute = defineRoute({
 });
 export const managementReviewsCreateRoute = defineRoute({
   ...ms, id: 'management-reviews.create', method: 'POST', path: '/api/v1/ms/:ms/management-reviews', summary: 'Plan a management review (one input row per mandatory input and linked system)',
-  permission: 'management_review.manage', params: MsParams, body: ManagementReviewCreate, response: CommandResult, status: 201, errors: [409, 422], idempotent: true,
+  permission: 'management_review.manage', params: MsParams, body: ManagementReviewCreate, response: CommandResult, status: 201,
+  // 404: a linked system in the body that the organisation does not have (WP-30).
+  errors: [404, 409, 422], idempotent: true,
 });
 export const managementReviewsInputRoute = defineRoute({
   ...ms, id: 'management-reviews.input', method: 'PUT', path: '/api/v1/ms/:ms/management-reviews/:id/inputs/:defCode', summary: 'Record the input of the path system',

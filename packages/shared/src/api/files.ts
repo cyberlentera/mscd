@@ -192,7 +192,8 @@ export const uploadIntentsCreateRoute = defineRoute({
   body: UploadIntentRequest,
   response: UploadIntent,
   status: 201,
-  errors: [413, 422, 429],
+  // 404: the system or the record the intent names does not exist there (RecordResolver, F.7; WP-30).
+  errors: [404, 413, 422, 429],
   idempotent: true,
   rateLimits: [{ key: 'user', max: 60, windowSeconds: 3600 }],
 });
