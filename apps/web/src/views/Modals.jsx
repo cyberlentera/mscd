@@ -7,12 +7,12 @@ export default function Modals({ v }) {
   return (
     <>{v.modal ? (<>
       <div onClick={v.closeModal} style={{ position: "fixed", inset: "0", background: "rgba(20,16,10,.35)", zIndex: "50" }}></div>
-      <div className="mscd" data-theme={v.theme} data-font={v.font} style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "520px", maxWidth: "92vw", background: "var(--sur)", color: "var(--tx)", border: "1px solid var(--bd)", borderRadius: "14px", zIndex: "51", fontFamily: "var(--ff)", fontSize: "13px", animation: "drawerIn .18s ease" }}>
+      <div className="mscd" data-theme={v.theme} data-font={v.font} style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "520px", maxWidth: "92vw", background: "var(--sur)", color: "var(--tx)", border: "1px solid var(--bd)", borderRadius: "14px", zIndex: "51", fontFamily: "var(--ff)", fontSize: "13px", animation: "drawerIn .18s ease", maxHeight: "88vh", display: "flex", flexDirection: "column" }}>
         <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--bd)" }}>
           <div style={{ fontWeight: "600", fontSize: "15px" }}>{txt(v.modal?.title)}</div>
           <div style={{ color: "var(--tx2)", marginTop: "2px", fontSize: "12px" }}>{txt(v.modal?.sub)}</div>
         </div>
-        <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: "14px" }}>
+        <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: "14px", overflowY: "auto", minHeight: "0" }}>
           {v.modal?.isReassign ? (<>
             <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <span style={{ fontSize: "12px", color: "var(--tx3)", textTransform: "uppercase", letterSpacing: ".06em" }}>{txt(v.t?.newHolder)}</span>
