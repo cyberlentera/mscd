@@ -5315,11 +5315,11 @@ Acceptance:
 
 ```bash
 K=$(mktemp -d) && for n in pack licence anchor; do node packages/pack-tools/dist/cli.js keygen --out "$K" --name "$n-rehearsal"; done
-deploy/scripts/build-bundle.sh --version 0.9.0-wp33 --build-ca "$MSCD_BUILD_CA" --trusted-keys-dir "$K" --pack-signing-key "$K/pack-rehearsal.key"
-tar -xzf deploy/dist/mscd-onprem-0.9.0-wp33.tar.gz -C /tmp && cd /tmp/mscd-onprem-0.9.0-wp33 && sha256sum -c SHA256SUMS
-bash /home/claude/repo/deploy/scripts/check-release-artefacts.sh /tmp/mscd-onprem-0.9.0-wp33
+deploy/scripts/build-bundle.sh --version 1.0.1-wp33 --build-ca "$MSCD_BUILD_CA" --trusted-keys-dir "$K" --pack-signing-key "$K/pack-rehearsal.key"
+tar -xzf deploy/dist/mscd-onprem-1.0.1-wp33.tar.gz -C /tmp && cd /tmp/mscd-onprem-1.0.1-wp33 && sha256sum -c SHA256SUMS
+bash /home/claude/repo/deploy/scripts/check-release-artefacts.sh /tmp/mscd-onprem-1.0.1-wp33
 D=$(mktemp -d) && cp /home/claude/repo/packages/pack-tools/dev-keys/pack-signing.pub "$D/" && ! bash /home/claude/repo/deploy/scripts/check-release-artefacts.sh "$D"
-./install.sh --yes --self-signed --dir /tmp/mscd-wp33 --http-port 18090 --https-port 18453
+./install.sh --yes --self-signed --org-slug wp33 --org-name "WP33 Rehearsal" --admin-email admin@wp33.example --dir /tmp/mscd-wp33 --http-port 18090 --https-port 18453
 curl -fsSk https://localhost:18453/api/v1/system/profile
 ./uninstall.sh --dir /tmp/mscd-wp33 --purge --yes
 cd /home/claude/repo && node -e "require('yaml').parse(require('fs').readFileSync('.github/workflows/ci.yml','utf8'))"

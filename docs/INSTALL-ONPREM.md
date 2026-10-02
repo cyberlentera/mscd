@@ -358,7 +358,7 @@ Some settings have no screen in this release: the licence, identity providers, t
    }
    ```
 
-4. Run the commands of the following sections, one at a time. Each prints the HTTP status and the answer. `200`, `201` and `204` mean success. Any other status comes with a message that explains the problem.
+4. Run the commands of the following sections, one at a time. Each prints the HTTP status and the answer. Any `2xx` status (`200`, `201`, `202` or `204`) means success. Any other status comes with a message that explains the problem.
 
 `await mscd('GET', '/license')` shows the installed licence, and `await mscd('GET', '/admin/identity-providers')` and `await mscd('GET', '/admin/storage/repositories')` list what is configured. Every change is recorded in the audit trail.
 
@@ -396,7 +396,11 @@ How accounts are matched: Entra ID tokens carry no verified email, so MSCD never
 
 ```js
 await mscd('POST', '/admin/users', { email: 'budi.santoso@acme.co.id', displayName: 'Budi Santoso', adminRoles: [] })
-``` Automatic account creation (`jitProvisioning: true`) needs a provider that sends verified emails and an email domain verified by the operator:
+```
+
+The answer is `202` with `"invited"`, for a new and an existing account alike.
+
+Automatic account creation (`jitProvisioning: true`) needs a provider that sends verified emails and an email domain verified by the operator:
 
 ```bash
 sudo docker compose run --rm cli tenant verify-domain --org acme --domain acme.co.id --by "Ana Wijaya"
@@ -927,7 +931,13 @@ Remove everything: the data volumes, the install directory with its secrets, the
 sudo /opt/mscd/uninstall.sh --purge
 ```
 
-Both commands ask for confirmation. Add `--yes` to skip it. For an installation in another directory, pass `--dir DIR`. On Kubernetes: `helm uninstall mscd -n mscd`, then delete the Secrets and the database when you no longer need them.
+Both commands ask for confirmation. Add `--yes` to skip it. For an installation in another directory, pass `--dir DIR`.
+
+`--purge` deletes every tag of the `cyberlentera/mscd-server` and `cyberlentera/mscd-web` images on the host, not only the version you installed. The confirmation lists them. If you keep other MSCD versions on the same host, for example for a rehearsal, tag them with another name first (`docker tag cyberlentera/mscd-web:1.0.0 keep/mscd-web:1.0.0`) or load them again from their bundle afterwards.
+
+The scripts use the Compose project name `mscd`. If you set the `COMPOSE_PROJECT_NAME` variable when you ran `install.sh`, set the same value for `upgrade.sh` and `uninstall.sh`, for example `sudo env COMPOSE_PROJECT_NAME=mscd-test /opt/mscd/uninstall.sh`. Without it they do not find the containers, volumes and networks of that installation and leave them in place. Most operators never set this variable.
+
+On Kubernetes: `helm uninstall mscd -n mscd`, then delete the Secrets and the database when you no longer need them.
 
 ## 20. Security summary
 

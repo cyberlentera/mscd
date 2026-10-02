@@ -89,11 +89,20 @@ main() {
     fi
     if [[ -z $other_owner ]]; then
         mapfile -t volumes < <(project_volumes)
+        # Only the versions this installation used (its .env and the upgrade backups), so other tags of the
+        # same repositories on this host (another installation, a test build) are kept.
+        local env_file versions=() version
+        for env_file in "$INSTALL_DIR/.env" "$INSTALL_DIR"/backups/*/.env; do
+            [[ -f $env_file ]] || continue
+            version=$(kv_get "$env_file" MSCD_VERSION)
+            [[ -n $version ]] && versions+=("$version")
+        done
         for repo in "$(kv_get "$INSTALL_DIR/.env" MSCD_IMAGE)" "$(kv_get "$INSTALL_DIR/.env" MSCD_SERVER_IMAGE)" \
             "$MSCD_DEFAULT_IMAGE" "$MSCD_DEFAULT_SERVER_IMAGE"; do
             [[ -n $repo ]] || continue
-            mapfile -t -O "${#images[@]}" images < <(docker image ls --format '{{.Repository}}:{{.Tag}}' "$repo" 2>/dev/null |
-                grep -v ':<none>$' || true)
+            for version in "${versions[@]}"; do
+                if docker image inspect "$repo:$version" >/dev/null 2>&1; then images+=("$repo:$version"); fi
+            done
         done
         if ((${#images[@]} > 0)); then
             mapfile -t images < <(printf '%s\n' "${images[@]}" | sort -u)

@@ -370,14 +370,22 @@ jobs:
           echo "REHEARSAL_KEYS=$keys" >> "$GITHUB_ENV"
       - name: Free disk space for the images
         run: docker system df && df -h /
+      - name: Bundle version
+        # One patch above apps/server/package.json, so the version is never
+        # lower than the engine_min_version of the packs (build-bundle.sh
+        # refuses such a build; a pre-release of the same version is lower).
+        run: |
+          base=$(node -p "require('./apps/server/package.json').version")
+          IFS=. read -r major minor patch <<<"${base%%-*}"
+          echo "BUNDLE_VERSION=$major.$minor.$((patch + 1))-ci.${{ github.run_number }}" >> "$GITHUB_ENV"
       - name: Build the bundle
         run: |
-          deploy/scripts/build-bundle.sh --version 0.0.0-ci.${{ github.run_number }} \
+          deploy/scripts/build-bundle.sh --version "$BUNDLE_VERSION" \
             --trusted-keys-dir "$REHEARSAL_KEYS" --pack-signing-key "$REHEARSAL_KEYS/pack-rehearsal.key" \
             --sign-key "$REHEARSAL_KEYS/bundle-signing.key" --os-updates true --scan report
       - name: Check, install and uninstall the bundle
         run: |
-          v=0.0.0-ci.${{ github.run_number }}
+          v=$BUNDLE_VERSION
           cd deploy/dist
           sha256sum -c "mscd-onprem-$v.tar.gz.sha256"
           mkdir -p "$RUNNER_TEMP/delivery"
