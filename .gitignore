@@ -18,3 +18,7 @@ deploy/dist/
 
 # Kubernetes schemas downloaded by the Helm static checks
 deploy/helm/mscd/ci/.schema-cache/
+
+# Agent scratch files
+*.tmp.config.js
+tools/smoke/.explore/
