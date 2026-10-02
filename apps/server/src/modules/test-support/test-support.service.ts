@@ -13,6 +13,7 @@ import { MscdConfig } from '../../config/mscd-config';
 import { NO_ORGANISATION } from '../authz/authz-infra';
 import { SessionService } from '../identity/session.service';
 import { OidcDiscovery } from '../identity/oidc/discovery';
+import { sha256 } from '../identity/tokens';
 import { LicenceService } from '../license/licence.service';
 import { PackInstallerDatabase } from '../packs/pack-installer.service';
 import { TenantResolver } from '../tenancy/tenant-resolver';
@@ -89,7 +90,7 @@ export class TestSupportService {
     const presented = this.sessions.readCookie(request);
     const now = this.clock.now();
     const issued = await this.scope.withTenant({ orgId: org.id, schema: org.schema, userId: user.id }, async (trx) => {
-      if (presented) await this.sessions.revoke(trx, this.sessions.hashOf(presented), 'signed_in_again');
+      if (presented) await this.sessions.revoke(trx, sha256(presented), 'signed_in_again');
       return this.sessions.create(trx, {
         userId: user.id,
         organizationId: org.id,
