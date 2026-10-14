@@ -138,12 +138,12 @@ test.describe('My Tasks', () => {
 
   // The due badge ('9 Des 2026, Lewat tanggal audit') and the button ('Buka item penghambat') are widest for the
   // Domain Owner in Indonesian: neither leaves its column nor reaches the other at 1280 px.
-  for (const [query, role] of [['', 'Domain Owner'], ['?lang=id', 'Pemilik Domain']]) {
+  for (const [query, role, title] of [['', 'Domain Owner', 'My Tasks'], ['?lang=id', 'Pemilik Domain', 'Tugas Saya']]) {
     test(`task rows of the ${role} fit at 1280 px`, async ({ page }) => {
       await page.setViewportSize({ width: 1280, height: 900 });
       await openApp(page, query);
       await switchRole(page, role);
-      await expect(ui.title(page)).toHaveText('My Tasks');
+      await expect(ui.title(page)).toHaveText(title);
       await expect(tasks(page)).toHaveCount(31);
       const bad = await tasks(page).evaluateAll((rows) => rows.flatMap((row) => {
         const [, , due, act] = row.children;
