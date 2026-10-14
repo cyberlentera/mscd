@@ -114,10 +114,10 @@ export class FreshnessService {
             kind: 'evidence_aging',
             msId: e.msId,
             digest: true,
-            title: { en: `Evidence ageing: ${e.code}`, id: `Bukti menua: ${e.code}` },
+            title: { en: `Evidence ageing: ${e.code}`, id: `Bukti hampir kedaluwarsa: ${e.code}` },
             body: {
               en: `${e.code} ${e.title} (produced ${fmtDay(e.producedAt, 'en')}) is ageing. Provide a newer version before it expires.`,
-              id: `${e.code} ${e.title} (dibuat ${fmtDay(e.producedAt, 'id')}) mulai menua. Sediakan versi yang lebih baru sebelum kedaluwarsa.`,
+              id: `${e.code} ${e.title} (dibuat ${fmtDay(e.producedAt, 'id')}) hampir kedaluwarsa. Sediakan versi yang lebih baru sebelum masa berlakunya habis.`,
             },
             ref: { module: 'implementation', entityType: 'evidence', id: e.id, code: e.code },
             createdBy: SYSTEM_USER_ID,
@@ -335,17 +335,17 @@ export class FreshnessService {
       rule === 'BR-31'
         ? {
             en: `The evidence file of ${entry.code} can no longer be verified in its repository, so the control is now partially implemented (BR-31). Re-link it or upload the correct version.`,
-            id: `Berkas bukti ${entry.code} tidak dapat diverifikasi lagi di repositorinya, sehingga kontrol kini diterapkan sebagian (BR-31). Tautkan ulang atau unggah versi yang benar.`,
+            id: `Berkas bukti ${entry.code} tidak dapat diverifikasi lagi di repositorinya, sehingga kontrol kini sebagian diterapkan (BR-31). Tautkan ulang atau unggah versi yang benar.`,
           }
         : {
             en: `The evidence of ${entry.code} has expired, so the control is now partially implemented (BR-11). Provide current evidence and verify it again.`,
-            id: `Bukti ${entry.code} telah kedaluwarsa, sehingga kontrol kini diterapkan sebagian (BR-11). Sediakan bukti terkini dan verifikasi kembali.`,
+            id: `Bukti ${entry.code} telah kedaluwarsa, sehingga kontrol kini sebagian diterapkan (BR-11). Sediakan bukti terkini dan verifikasi kembali.`,
           };
     const created = await this.notifications.create(trx, {
       recipientUserId: entry.owner_user_id,
       kind: 'freshness_downgrade',
       msId: entry.management_system_id,
-      title: { en: `${entry.code} downgraded to partially implemented`, id: `${entry.code} diturunkan menjadi diterapkan sebagian` },
+      title: { en: `${entry.code} downgraded to partially implemented`, id: `${entry.code} diturunkan menjadi sebagian diterapkan` },
       body: text,
       ref: { module: 'implementation', entityType: 'applicability_entry', id: entry.id, code: entry.code },
       createdBy: SYSTEM_USER_ID,

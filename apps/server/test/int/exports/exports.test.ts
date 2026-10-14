@@ -165,7 +165,7 @@ describe('exports (D.3, E.2, F.13, F.15)', () => {
 
     // Indonesian headers on request.
     const id = await rina.call('GET', '/api/v1/ms/isms/documents/export?format=csv', undefined, { 'accept-language': 'id-ID,id;q=0.9,en;q=0.5' });
-    expect(id.raw.toString('utf8').replace(/^\uFEFF/, '').split('\r\n')[0]).toBe('ID,Judul,Jenis,Versi,Status,Disetujui,Tinjauan berikutnya,Pemilik,Dibagikan,Sistem');
+    expect(id.raw.toString('utf8').replace(/^\uFEFF/, '').split('\r\n')[0]).toBe('ID,Judul,Jenis,Versi,Status,Disetujui,Tinjauan berikutnya,Pemilik,Dipakai bersama,Sistem');
   });
 
   it('respects ScopePolicy: a restricted document is missing for Top Management; Domain Owners may not export', async () => {

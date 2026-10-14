@@ -20,7 +20,7 @@ export default function FrameworkLibrary({ v }) {
             </tr>
           </thead>
           <tbody>
-            {list(v.fw?.cards).map((f, $i84) => (<Fragment key={$i84}>
+            {list(v.fw?.cards).map((f, $i86) => (<Fragment key={$i86}>
               <tr data-hov="1" style={{ transition: "background .15s" }}>
                 <td data-tip={f?.name} style={{ padding: "12px var(--pad)", borderBottom: "1px solid var(--bd)", verticalAlign: "top" }}>
                   <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
@@ -84,13 +84,13 @@ export default function FrameworkLibrary({ v }) {
               <strong style={{ color: "#f2eee7" }}>{txt(v.fw?.to)}</strong>{", "}{txt(v.t?.signature)}{" ✓ "}{txt(v.fw?.sig)}
             </div>
             <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "12px" }}>
-              {list(v.fw?.featureChips).map((fc, $i85) => (<Fragment key={$i85}>
+              {list(v.fw?.featureChips).map((fc, $i87) => (<Fragment key={$i87}>
                 <span style={{ padding: "3px 9px", borderRadius: "999px", fontSize: "12px", border: "1px solid rgba(255,255,255,.18)", color: "#f2eee7" }}>{txt(fc)}</span>
               </Fragment>))}
             </div>
           </div>
           <div style={{ position: "relative", display: "flex", gap: "20px" }}>
-            {list(v.fw?.lic).map((l, $i86) => (<Fragment key={$i86}>
+            {list(v.fw?.lic).map((l, $i88) => (<Fragment key={$i88}>
               <div style={{ textAlign: "center", minWidth: "64px" }}>
                 <div style={{ fontSize: "26px", fontWeight: "600", lineHeight: "1" }}>{txt(l?.n)}</div>
                 <div style={{ fontSize: "12px", color: "#cfc7b8", marginTop: "4px", whiteSpace: "nowrap" }}>{txt(l?.k)}</div>

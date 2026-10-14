@@ -44,7 +44,7 @@ const KIND_OF: Readonly<Record<string, string>> = {
 
 /** "Reminder: <action> for <title>, due <date>" (E.5) in both languages. */
 function reminderText(item: Pick<ItemInfo, 'title' | 'act' | 'due'>): { en: string; id: string } {
-  const due = (lang: 'en' | 'id') => (item.due ? (lang === 'en' ? `, due ${fmtDay(item.due, 'en')}` : `, tenggat ${fmtDay(item.due, 'id')}`) : '');
+  const due = (lang: 'en' | 'id') => (item.due ? (lang === 'en' ? `, due ${fmtDay(item.due, 'en')}` : `, jatuh tempo ${fmtDay(item.due, 'id')}`) : '');
   return {
     en: `Reminder: ${item.act[0]} for ${item.title[0]}${due('en')}`,
     id: `Pengingat: ${item.act[1]} untuk ${item.title[1]}${due('id')}`,

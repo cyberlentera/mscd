@@ -27,8 +27,8 @@ export const TEXT = {
   // brand panel
   headline: ['The chain stays intact, or you hear about it first.', 'Rantai tetap utuh, atau Anda yang pertama tahu.'],
   factFrameworks: ['ISO/IEC 27001, ISO 9001, ISO 22301, ISO 37001', 'ISO/IEC 27001, ISO 9001, ISO 22301, ISO 37001'],
-  factChain: ['One traceability chain from risk to evidence', 'Satu rantai keterlacakan dari risiko hingga bukti'],
-  factFiles: ['Files stay in your repository', 'File tetap berada di repositori Anda'],
+  factChain: ['One traceability chain for risks, controls, documents and evidence', 'Satu rantai ketertelusuran untuk risiko, kontrol, dokumen, dan bukti'],
+  factFiles: ['Files stay in your repository', 'Berkas tetap berada di repositori Anda'],
   chainIssue: ['Issue', 'Isu'],
   chainRisk: ['Risk', 'Risiko'],
   chainControl: ['Control', 'Kontrol'],
@@ -152,8 +152,8 @@ export const TEXT = {
   // new password (/reset-password, /invite)
   resetTitle: ['Choose a new password', 'Pilih kata sandi baru'],
   passwordRules: [
-    'Use 12 to 256 characters. Avoid your email address, your user name and common passwords.',
-    'Gunakan 12 sampai 256 karakter. Hindari alamat email, nama pengguna, dan kata sandi yang umum.',
+    'Use 12-256 characters. Avoid your email address, your user name and common passwords.',
+    'Gunakan 12-256 karakter. Hindari alamat email, nama pengguna, dan kata sandi yang umum.',
   ],
   newPassword: ['New password', 'Kata sandi baru'],
   repeatPassword: ['Repeat the new password', 'Ulangi kata sandi baru'],

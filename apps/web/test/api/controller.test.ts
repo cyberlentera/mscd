@@ -116,7 +116,7 @@ describe('controller in API mode', () => {
     const chips = tm.rows.flatMap((r: AnyRecord) => r.roles);
     expect(chips.length).toBeGreaterThan(0);
     expect(new Set(chips.map((g: AnyRecord) => g.short))).toEqual(new Set(['ISMS']));
-    expect(chips.some((g: AnyRecord) => g.label === 'Internal auditor' || g.label === 'Top management')).toBe(false);
+    expect(chips.some((g: AnyRecord) => g.label === 'Internal Auditor' || g.label === 'Top Management')).toBe(false);
     // A chip of another system opens that system with the role there: a Domain Owner cannot open Outstanding items.
     app.go('chain', { ms: 'qms', person: 'joko' });
     expect([app.state.ms, app.state.role, app.state.screen]).toEqual(['qms', 'owner', 'mytasks']);
@@ -144,6 +144,9 @@ describe('controller in API mode', () => {
     expect(jr.systems.map((s: AnyRecord) => s.short)).toEqual(['QMS', 'BCMS']);
     expect(jr.stages[0].acts).toEqual([]);
     expect(jr.track[0].go).toBeNull();
+    // A stage without an action is inert: default cursor and aria-disabled; Certification keeps Audit readiness.
+    expect(jr.track[0]).toMatchObject({ cursor: 'default', off: 'true' });
+    expect(jr.track[5]).toMatchObject({ cursor: 'pointer', off: null });
     expect(jr.stages[5].acts.map((a: AnyRecord) => a.label)).toEqual(['Audit readiness']);
     app.state = { ...app.state, screen: 'team' };
     const tm = app.renderVals().tm;

@@ -12,7 +12,7 @@ export default function SummaryTabs({ v }) {
           <div style={{ position: "absolute", left: "5%", top: "17px", height: "3px", width: v.stepper?.fillW, background: "var(--ok)", borderRadius: "2px", transformOrigin: "left", animation: "growX .8s cubic-bezier(.2,.7,.2,1) both" }}></div>
           {list(v.stepper?.steps).map((sp, $i35) => (<Fragment key={$i35}>
             <button onClick={sp?.go} title={sp?.name} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", border: "0", background: "transparent", padding: "0", cursor: "pointer", color: "var(--tx)", font: "inherit", fontSize: "var(--fs)", minWidth: "0" }}>
-              <span style={{ width: "36px", height: "36px", borderRadius: "50%", display: "inline-flex", alignItems: "center", justifyContent: "center", fontWeight: "700", fontSize: "14px", background: sp?.bg, color: sp?.fg, border: `3px solid ${sp?.ring ?? ''}`, boxShadow: sp?.sh, transition: "transform .15s" }} className="hv2">{txt(sp?.mark)}</span>{" "}
+              <span style={{ width: "36px", height: "36px", borderRadius: "50%", display: "inline-flex", alignItems: "center", justifyContent: "center", fontWeight: "700", fontSize: "14px", background: sp?.bg, color: sp?.fg, border: `3px solid ${sp?.ring ?? ''}`, outline: sp?.ol, outlineOffset: "2px", transition: "transform .15s" }} className="hv2">{txt(sp?.mark)}</span>{" "}
               <span style={{ fontSize: "12.5px", lineHeight: "1.3", textAlign: "center", color: sp?.lc, fontWeight: sp?.fw, maxWidth: "120px" }}>{txt(sp?.short)}</span>
             </button>
           </Fragment>))}

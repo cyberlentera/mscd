@@ -75,6 +75,7 @@ test.describe('App shell', () => {
     await page.locator('header button', { hasText: /^ID$/ }).click();
     await expect(ui.title(page)).toHaveText('Beranda');
     await expect(page.locator('aside nav')).toContainText('Status bukti');
+    await expect(page.locator('aside nav')).toContainText('Pemeliharaan');
     await page.locator('header button', { hasText: /^EN$/ }).click();
     await expect(ui.title(page)).toHaveText('Home');
   });
@@ -133,7 +134,7 @@ test.describe('App shell', () => {
     await pick('Auditor');
     await expect(page.locator('aside nav button')).toHaveCount(11);
     await expect(page.locator('aside nav button[title="Standards & licence"]')).toHaveCount(0);
-    await pick('Top management');
+    await pick('Top Management');
     await expect(ui.title(page)).toHaveText('Home');
     // The api sends Top Management aggregates only, so Start here and Team & roles are not offered there.
     await expect(page.locator('aside nav button')).toHaveCount(dataSource === 'api' ? 6 : 8);

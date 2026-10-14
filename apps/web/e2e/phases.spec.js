@@ -162,7 +162,7 @@ test.describe('Roadmap', () => {
     await openRow(page, '9.4');
     await drawerAction(page, 'Verify output').click();
     await expect(ui.modal(page)).toContainText('Verify activity output');
-    await expect(ui.modal(page)).toContainText('9.4 Map evidence to new requirements, Dewi Anggraini to Rina Kusuma, 29 Sep 2026');
+    await expect(ui.modal(page)).toContainText('9.4 Map evidence to new requirements, completed by Dewi Anggraini, verify as Rina Kusuma, 29 Sep 2026');
     await ui.modal(page).locator('button', { hasText: 'Confirm verification' }).click();
     await expectToast(page, 'Verified. Status recalculated');
     await expect(listRow(page, '9.4').locator('td:nth-child(7)')).toHaveText('Verified');

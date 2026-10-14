@@ -7,7 +7,8 @@ import {
 import { CONNECTION_LOST } from '../../src/data/api/ApiClient';
 import { AUTH_MESSAGE_KEYS, LOGIN_ERROR_CODES } from '../../../../packages/shared/src/api/auth';
 
-const FORBIDDEN = /[\u2014\u00b7]/;
+// Writing rules: no en or em dash, centre dot, curly quote or arrow character.
+const FORBIDDEN = /[\u2013\u2014\u00b7\u2018\u2019\u201c\u201d\u2190\u2192]/;
 
 describe('language', () => {
   it('follows ?lang= first, then the browser language', () => {
@@ -31,7 +32,7 @@ describe('language', () => {
 describe('texts', () => {
   const pairs = [...Object.values(TEXT), ...Object.values(LOGIN_ERROR_MESSAGES), ...Object.values(MESSAGE_KEYS)];
 
-  it('have both languages, without em dash or centre dot', () => {
+  it('have both languages, without the characters the writing rules forbid', () => {
     for (const [en, id] of pairs) {
       expect(en.length).toBeGreaterThan(0);
       expect(id.length).toBeGreaterThan(0);

@@ -24,7 +24,7 @@ export const RULE_MESSAGES: Readonly<Record<RuleId, RuleMessageTemplate>> = {
   // Digest 6.2 (TS 8.1, PRD 6.3, PRD 8.2)
   'BR-01': {
     en: 'This entry cannot be set to implemented without evidence from the current period whose file is intact or moved. Set it to partially implemented or planned instead.',
-    id: 'Entri ini tidak dapat diubah menjadi diterapkan tanpa bukti dari periode berjalan yang berkasnya utuh atau dipindahkan. Ubah menjadi diterapkan sebagian atau direncanakan.',
+    id: 'Entri ini tidak dapat diubah menjadi diterapkan tanpa bukti dari periode berjalan yang berkasnya utuh atau dipindahkan. Ubah menjadi sebagian diterapkan atau direncanakan.',
   },
   'BR-02': {
     en: 'Link this applicable entry to at least one risk. Until it is, the entry cannot be verified and blocks the checkpoint.',
@@ -65,7 +65,7 @@ export const RULE_MESSAGES: Readonly<Record<RuleId, RuleMessageTemplate>> = {
   },
   'BR-11': {
     en: 'The evidence has expired. The entry was set to partially implemented and a task was created for the evidence owner.',
-    id: 'Bukti telah kedaluwarsa. Entri diubah menjadi diterapkan sebagian dan tugas dibuat untuk pemilik bukti.',
+    id: 'Bukti telah kedaluwarsa. Entri diubah menjadi sebagian diterapkan dan tugas dibuat untuk pemilik bukti.',
   },
   'BR-12': {
     en: 'This activity stays locked until every activity of checkpoint phase {phase} is verified.',
@@ -82,7 +82,7 @@ export const RULE_MESSAGES: Readonly<Record<RuleId, RuleMessageTemplate>> = {
   },
   'BR-15': {
     en: 'This finding is past its due date.',
-    id: 'Temuan ini telah melewati tenggat waktunya.',
+    id: 'Temuan ini telah melewati tanggal jatuh temponya.',
   },
   'BR-16': {
     en: 'A document cannot be approved by its own author. Approval is always separate from creation.',
@@ -193,7 +193,7 @@ export const RULE_MESSAGES: Readonly<Record<RuleId, RuleMessageTemplate>> = {
   },
   'BR-41': {
     en: 'This due date falls after the audit on {date}. Bring the due date forward or prepare an explanation.',
-    id: 'Tenggat ini jatuh setelah audit pada {date}. Majukan tenggatnya atau siapkan penjelasan.',
+    id: 'Tanggal jatuh tempo ini melewati audit pada {date}. Majukan tanggalnya atau siapkan penjelasan.',
     defaults: { date: { en: 'the next audit date', id: 'tanggal audit berikutnya' } },
   },
   'BR-42': {

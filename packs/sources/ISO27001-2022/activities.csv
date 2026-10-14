@@ -43,8 +43,8 @@ phase_no,phase_name_en,phase_name_id,is_gate_phase,activity_no,title,clause_ref,
 6,Documentation,Dokumentasi,false,4,Define record retention,,,Define record retention: approved and recorded in the register
 6,Documentation,Dokumentasi,false,5,Publish document register,,,Publish document register: approved and recorded in the register
 6,Documentation,Dokumentasi,false,6,Train document owners,,,Train document owners: approved and recorded in the register
-6,Documentation,Dokumentasi,false,7,Approve tier 1–2 documents,,,Approve tier 1–2 documents: approved and recorded in the register
-6,Documentation,Dokumentasi,false,8,Approve tier 3–4 documents,,,Approve tier 3–4 documents: approved and recorded in the register
+6,Documentation,Dokumentasi,false,7,Approve tier 1-2 documents,,,Approve tier 1-2 documents: approved and recorded in the register
+6,Documentation,Dokumentasi,false,8,Approve tier 3-4 documents,,,Approve tier 3-4 documents: approved and recorded in the register
 7,Operation & awareness,Operasi & kepedulian,false,1,Run awareness campaign,,,Run awareness campaign: approved and recorded in the register
 7,Operation & awareness,Operasi & kepedulian,false,2,Role-based security training,,,Role-based security training: approved and recorded in the register
 7,Operation & awareness,Operasi & kepedulian,false,3,Operate controls and collect evidence,,,Operate controls and collect evidence: approved and recorded in the register

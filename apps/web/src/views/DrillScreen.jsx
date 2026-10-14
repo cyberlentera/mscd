@@ -49,7 +49,7 @@ export default function DrillScreen({ v }) {
       </>) : null}
       <SummaryTabs v={v} />
       {v.tabs?.length ? (<>
-        <div style={{ display: "flex", background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", boxShadow: "var(--sh)", overflow: "hidden" }}>
+        <div style={{ display: "flex", background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", overflow: "hidden" }}>
           {list(v.tabs).map((tb, $i38) => (<Fragment key={$i38}>
             <button onClick={tb?.go} style={{ flex: "1 1 0", minWidth: "0", textAlign: "left", background: tb?.bg, border: "0", borderRight: "1px solid var(--bd)", borderBottom: `3px solid ${tb?.bar ?? ''}`, padding: "12px 14px 10px", cursor: "pointer", color: "var(--tx)", font: "inherit", fontSize: "var(--fs)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "0 6px", flexWrap: "wrap" }}>
@@ -81,7 +81,7 @@ export default function DrillScreen({ v }) {
         </div>
       </>) : null}
       {v.freq ? (<>
-        <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", boxShadow: "var(--sh)", padding: "12px var(--pad)" }}>
+        <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", padding: "12px var(--pad)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
             <span style={{ fontWeight: "600", display: "inline-flex", alignItems: "center", gap: "12px" }}>
               <svg width="44" height="44" viewBox="0 0 44 44" style={{ transform: "rotate(-90deg)" }}>
@@ -142,7 +142,7 @@ export default function DrillScreen({ v }) {
       <GoldenThread v={v} />
       <Timeline v={v} />
       {v.showList ? (<>
-        <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", boxShadow: "var(--sh)" }}>
+        <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)" }}>
           <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 260px", alignItems: "center", gap: "12px", padding: "10px var(--pad)", borderBottom: "1px solid var(--bd)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", minWidth: "0" }}>
               {v.listTitle ? (<>
@@ -281,7 +281,12 @@ export default function DrillScreen({ v }) {
                                 <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: ".08em", color: "var(--tx3)", marginBottom: "6px" }}>{txt(v.t?.upstream)}</div>
                                 <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                                   {list(row?.det?.up).map((l, $i63) => (<Fragment key={$i63}>
-                                    <button onClick={l?.go} style={{ border: "1px solid var(--bd)", background: "var(--sur)", color: "var(--tx)", borderRadius: "6px", padding: "3px 8px", fontFamily: "var(--ffm)", fontSize: "max(12px, .9em)", cursor: "pointer", whiteSpace: "nowrap" }}>{txt(l?.v)}</button>
+                                    {l?.go ? (<>
+                                      <button onClick={l?.go} style={{ border: "1px solid var(--bd)", background: "var(--sur)", color: "var(--tx)", borderRadius: "6px", padding: "3px 8px", fontFamily: "var(--ffm)", fontSize: "max(12px, .9em)", cursor: "pointer", whiteSpace: "nowrap" }}>{txt(l?.v)}</button>
+                                    </>) : null}
+                                    {l?.plain ? (<>
+                                      <span style={{ padding: "4px 0", fontFamily: "var(--ffm)", fontSize: "max(12px, .9em)", color: "var(--tx)", whiteSpace: "nowrap" }}>{txt(l?.v)}</span>
+                                    </>) : null}
                                   </Fragment>))}
                                   {row?.det?.noUp ? (<>
                                     <span style={{ color: "var(--bad)", fontSize: "max(12px, .9em)" }}>{"- "}{txt(row?.det?.noUp)}</span>
@@ -292,7 +297,12 @@ export default function DrillScreen({ v }) {
                                 <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: ".08em", color: "var(--tx3)", marginBottom: "6px" }}>{txt(v.t?.downstream)}</div>
                                 <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                                   {list(row?.det?.down).map((l, $i64) => (<Fragment key={$i64}>
-                                    <button onClick={l?.go} style={{ border: "1px solid var(--bd)", background: "var(--sur)", color: "var(--tx)", borderRadius: "6px", padding: "3px 8px", fontFamily: "var(--ffm)", fontSize: "max(12px, .9em)", cursor: "pointer", whiteSpace: "nowrap" }}>{txt(l?.v)}</button>
+                                    {l?.go ? (<>
+                                      <button onClick={l?.go} style={{ border: "1px solid var(--bd)", background: "var(--sur)", color: "var(--tx)", borderRadius: "6px", padding: "3px 8px", fontFamily: "var(--ffm)", fontSize: "max(12px, .9em)", cursor: "pointer", whiteSpace: "nowrap" }}>{txt(l?.v)}</button>
+                                    </>) : null}
+                                    {l?.plain ? (<>
+                                      <span style={{ padding: "4px 0", fontFamily: "var(--ffm)", fontSize: "max(12px, .9em)", color: "var(--tx)", whiteSpace: "nowrap" }}>{txt(l?.v)}</span>
+                                    </>) : null}
                                   </Fragment>))}
                                   {row?.det?.noDown ? (<>
                                     <span style={{ color: "var(--bad)", fontSize: "max(12px, .9em)" }}>{"- "}{txt(row?.det?.noDown)}</span>

@@ -1,8 +1,10 @@
 import {
-  test, expect, openApp, go, ui, switchRole, expectToast, activeTab, listRow, listRows, drawerFact, tab, tabCount,
+  test, expect, openApp, go, ui, switchRole, expectToast, activeTab, listRow, listRows, drawerFact, drawerAction, tab, tabCount,
+  expectNoTextOverflow,
 } from './helpers.js';
 
-const tasks = (page) => page.locator('main div[style*="grid-template-columns: 4px 44px"]');
+// Task rows share the columns of the list (a subgrid), so every due date and button lines up with the widest one.
+const tasks = (page) => page.locator('main div[style*="grid-template-columns: subgrid"]');
 const task = (page, id) => tasks(page).filter({ has: page.locator('span', { hasText: new RegExp('^' + id.replace('.', '\\.') + '$') }) });
 const filters = (page) => page.locator('main button[style*="height: 28px"][style*="border-radius: 999px"]');
 const filter = (page, label) => filters(page).filter({ hasText: new RegExp('^' + label + '\\s*\\d+$') });
@@ -24,7 +26,7 @@ test.describe('My Tasks', () => {
     await expect(hero(page)).toContainText('29 Sep 2026');
     await expect(hero(page)).toContainText('100%');
     await expect(hero(page)).toContainText('Nothing is overdue. 1 due this week, 2 later.');
-    await expect(page.locator('main')).toContainText('28 Sep 2026 to 4 Oct 2026');
+    await expect(page.locator('main')).toContainText('28 Sep - 4 Oct 2026');
     await expect(days(page)).toHaveCount(7);
     await expect(days(page).locator('span:nth-child(1)')).toHaveText(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
     await expect(days(page).locator('span:nth-child(2)')).toHaveText(['28', '29', '30', '1', '2', '3', '4']);
@@ -134,6 +136,27 @@ test.describe('My Tasks', () => {
     await isActive(filter(page, 'All'));
   });
 
+  // The due badge ('9 Des 2026, Lewat tanggal audit') and the button ('Buka item penghambat') are widest for the
+  // Domain Owner in Indonesian: neither leaves its column nor reaches the other at 1280 px.
+  for (const [query, role] of [['', 'Domain Owner'], ['?lang=id', 'Pemilik Domain']]) {
+    test(`task rows of the ${role} fit at 1280 px`, async ({ page }) => {
+      await page.setViewportSize({ width: 1280, height: 900 });
+      await openApp(page, query);
+      await switchRole(page, role);
+      await expect(ui.title(page)).toHaveText('My Tasks');
+      await expect(tasks(page)).toHaveCount(31);
+      const bad = await tasks(page).evaluateAll((rows) => rows.flatMap((row) => {
+        const [, , due, act] = row.children;
+        const r = (el) => el.getBoundingClientRect();
+        const badge = r(due.firstElementChild), btn = r(act.querySelector('button'));
+        const text = due.firstElementChild.textContent + ' / ' + act.textContent;
+        return badge.right > r(due).right + 0.5 || btn.left < r(act).left - 0.5 || badge.right > btn.left - 8 ? [text] : [];
+      }));
+      expect(bad, 'task rows whose due badge or button leaves its column').toEqual([]);
+      await expectNoTextOverflow(page);
+    });
+  }
+
   test('the week strip marks overdue work and due dates', async ({ page }) => {
     await openApp(page);
     await switchRole(page, 'Domain Owner');
@@ -180,6 +203,18 @@ test.describe('My Tasks', () => {
     await expect(activeTab(page)).toContainText('Blocking items');
     await expect(ui.drawer(page)).toContainText('A.8.12');
     await expect(drawerFact(page, 'Justification')).toHaveText('-');
+  });
+
+  test('top management opens a blocking item in Outstanding items, since the controls list is not theirs', async ({ page }) => {
+    await openApp(page);
+    await switchRole(page, 'Top Management');
+    await go(page, 'My Tasks');
+    const t = tasks(page).filter({ hasText: 'Approve revised SoA' });
+    await expect(t.locator('button')).toHaveText('Open blocking item');
+    await t.locator('button').click();
+    await expect(ui.title(page)).toHaveText('Outstanding items');
+    await expect(ui.drawer(page)).toContainText('SOA-01');
+    await expect(drawerAction(page, 'Trace from here')).toHaveCount(0);
   });
 
   test('top management and the auditor see their own tasks', async ({ page }) => {

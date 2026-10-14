@@ -27,8 +27,8 @@ export function exportDownloadUrl(taskId: string): string {
 const TYPE_NAMES: Readonly<Record<ExportRequest['type'], readonly [string, string]>> = {
   portfolio_board: ['Portfolio board', 'Papan portofolio'],
   readiness: ['Readiness report', 'Laporan kesiapan'],
-  soa: ['Statement of Applicability', 'Pernyataan Keberlakuan'],
-  document_register: ['Document register', 'Daftar dokumen'],
+  soa: ['Statement of Applicability', 'Statement of Applicability'],
+  document_register: ['Document register', 'Daftar induk dokumen'],
   audit_trail: ['Audit trail', 'Jejak audit'],
 };
 

@@ -3,7 +3,7 @@ import {
   drawerAction, drawerFact, openRow, expectToast, switchOrg, closeDrawer,
 } from './helpers.js';
 
-const repos = (page) => page.locator('main div[style*="box-shadow"][style*="flex-direction: column"][style*="gap: 10px"]');
+const repos = (page) => page.locator('main div[style*="border-radius: var(--r)"][style*="flex-direction: column"][style*="gap: 10px"]');
 const repo = (page, name) => repos(page).filter({ has: page.locator('div', { hasText: new RegExp('^' + name + '$') }) });
 const routing = (page) => page.locator('main table').first().locator('tbody > tr');
 const ids = (page) => listRows(page).locator('td:nth-child(2) > div > :first-child');

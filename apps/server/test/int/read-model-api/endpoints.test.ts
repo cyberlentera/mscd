@@ -47,7 +47,7 @@ describe('Per-screen read endpoints (TS 9.2)', () => {
 
   it('answers in the language of Accept-Language (D.1)', async () => {
     const id = ImplementationSummary.parse((await rina.get('/api/v1/ms/isms/implementation/summary', 'id-ID,id;q=0.9,en;q=0.8')).body);
-    expect(id.cards.map((c) => c.label)).toEqual(['Kontrol diimplementasikan', 'Diimplementasikan sebagian', 'Item penghambat, Risiko & SoA', 'Dokumen disetujui', 'Dokumen kedaluwarsa']);
+    expect(id.cards.map((c) => c.label)).toEqual(['Kontrol diterapkan', 'Sebagian diterapkan', 'Item penghambat, Risiko & SoA', 'Dokumen disetujui', 'Dokumen kedaluwarsa']);
     expect(id.phases[0]!.text).toBe('5 dari 5 terverifikasi');
     const en = (await rina.get<ImplementationSummary>('/api/v1/ms/isms/implementation/summary', 'fr-FR, en;q=0.5, id;q=0.4')).body;
     expect(en.cards[0]!.label).toBe('Controls implemented');

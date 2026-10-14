@@ -6,7 +6,7 @@ import { txt, list } from './util.js';
 export default function Timeline({ v }) {
   return (
     <>{v.tl ? (<>
-      <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", boxShadow: "var(--sh)", padding: "var(--pad) var(--pad) 10px" }}>
+      <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", padding: "var(--pad) var(--pad) 10px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", gap: "12px" }}>
           <span style={{ fontWeight: "600", whiteSpace: "nowrap" }}>{txt(v.t?.cycleTimeline)}</span>
           <span style={{ display: "flex", gap: "14px", fontSize: "12px", color: "var(--tx3)", alignItems: "center" }}>
@@ -40,7 +40,7 @@ export default function Timeline({ v }) {
                 <button onClick={l?.add} style={{ position: "absolute", left: `${v.tl?.todayPct ?? ''}%`, top: "16px", height: "26px", padding: "0 10px", borderRadius: "999px", border: "1px dashed var(--bd)", background: "var(--sur)", color: "var(--tx3)", font: "inherit", fontSize: "12px", cursor: "pointer", whiteSpace: "nowrap", marginLeft: "14px" }}>{"+ "}{txt(v.t?.addEvent)}</button>
               </>) : null}{" "}
               {list(l?.evts).map((e, $i50) => (<Fragment key={$i50}>
-                <button onClick={e?.go} title={e?.title} style={{ position: "absolute", left: `${e?.x ?? ''}%`, top: "20px", transform: "translateX(-50%)", width: "18px", height: "18px", borderRadius: "50%", background: e?.fill, border: `3px solid ${e?.ring ?? ''}`, cursor: "pointer", padding: "0", boxShadow: e?.sh, animation: e?.anim }}></button>{" "}
+                <button onClick={e?.go} title={e?.title} style={{ position: "absolute", left: `${e?.x ?? ''}%`, top: "20px", transform: "translateX(-50%)", width: "18px", height: "18px", borderRadius: "50%", background: e?.fill, border: `3px solid ${e?.ring ?? ''}`, cursor: "pointer", padding: "0", outline: e?.ol }}></button>{" "}
                 <span style={{ position: "absolute", left: `${e?.x ?? ''}%`, top: e?.ly, transform: "translateX(-50%)", fontSize: "12px", color: e?.lc, whiteSpace: "nowrap", fontWeight: e?.fw }}>{txt(e?.short)}</span>
               </Fragment>))}
             </div>
@@ -48,7 +48,7 @@ export default function Timeline({ v }) {
         </div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.3fr) minmax(0,1fr)", gap: "var(--pad)" }}>
-        <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", boxShadow: "var(--sh)", padding: "var(--pad)", display: "flex", flexDirection: "column", gap: "14px" }}>
+        <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", padding: "var(--pad)", display: "flex", flexDirection: "column", gap: "14px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "flex-start" }}>
             <div>
               <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: ".08em", color: "var(--tx3)" }}>{txt(v.t?.eventDetail)}{", "}{txt(v.tl?.evt?.short)}</div>
@@ -79,13 +79,15 @@ export default function Timeline({ v }) {
                   <div style={{ fontSize: "12px", color: "var(--tx3)" }}>{txt(r?.l)}</div>
                 </div>
               </Fragment>))}
-              <button onClick={v.tl?.evt?.goReady} style={{ flex: "none", border: "0", background: "var(--accbg)", color: "var(--acc)", padding: "0 14px", font: "inherit", fontSize: "var(--fs)", fontWeight: "600", cursor: "pointer" }}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>{txt(v.t?.openReadiness)}{" "}
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "none" }}>
-                    <path d="M5 12h14M13 6l6 6-6 6"></path>
-                  </svg>
-                </span>
-              </button>
+              {v.tl?.evt?.goReady ? (<>
+                <button onClick={v.tl?.evt?.goReady} style={{ flex: "none", border: "0", background: "var(--accbg)", color: "var(--acc)", padding: "0 14px", font: "inherit", fontSize: "var(--fs)", fontWeight: "600", cursor: "pointer" }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>{txt(v.t?.openReadiness)}{" "}
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "none" }}>
+                      <path d="M5 12h14M13 6l6 6-6 6"></path>
+                    </svg>
+                  </span>
+                </button>
+              </>) : null}
             </div>
           </>) : null}
           {v.tl?.evt?.prep ? (<>
@@ -126,7 +128,7 @@ export default function Timeline({ v }) {
           </>) : null}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--pad)" }}>
-          <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", boxShadow: "var(--sh)" }}>
+          <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)" }}>
             <div style={{ padding: "12px var(--pad)", borderBottom: "1px solid var(--bd)", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <span style={{ fontWeight: "600" }}>{txt(v.t?.cycleComplete)}</span>
@@ -148,7 +150,7 @@ export default function Timeline({ v }) {
               </div>
             </Fragment>))}
           </div>
-          <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", boxShadow: "var(--sh)" }}>
+          <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)" }}>
             <div style={{ padding: "12px var(--pad)", borderBottom: "1px solid var(--bd)", display: "flex", alignItems: "center", gap: "8px" }}>
               <span style={{ fontWeight: "600" }}>{txt(v.t?.drift)}</span>
               <span data-tip={v.t?.driftSub} tabIndex="0" role="img" aria-label={v.t?.driftSub} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "12px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>

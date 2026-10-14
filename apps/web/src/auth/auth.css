@@ -4,7 +4,7 @@
 
 .au-root{
   --au-bg:#f4f2ee;--au-sur:#ffffff;--au-bd:#e6e1d7;--au-field:#8f877a;--au-tx:#1c1a17;--au-tx2:#4a453d;--au-tx3:#6b655a;
-  --au-acc:#ad4f0b;--au-acc-h:#8f3f07;--au-onacc:#ffffff;--au-ring:rgba(173,79,11,.2);--au-hover:#faf9f6;
+  --au-acc:#ad4f0b;--au-acc-h:#8f3f07;--au-onacc:#ffffff;--au-hover:#faf9f6;
   --au-bad:#bf2f25;--au-badbg:#fbe3df;--au-badtx:#7e1c15;--au-ok:#1f7a48;--au-okbg:#e4f3ea;--au-oktx:#145332;
   --au-info:#2a58b8;--au-infobg:#e3ebfb;--au-infotx:#1d3f86;
   --au-ff:'IBM Plex Sans',system-ui,sans-serif;--au-ffm:'IBM Plex Mono',ui-monospace,monospace;
@@ -13,7 +13,7 @@
 }
 .au-root[data-theme="dark"]{
   --au-bg:#131210;--au-sur:#1c1a17;--au-bd:#302d27;--au-field:#7a7366;--au-tx:#f2eee7;--au-tx2:#cfc7b8;--au-tx3:#a39b8c;
-  --au-acc:#e8731a;--au-acc-h:#f08a3a;--au-onacc:#131210;--au-ring:rgba(232,115,26,.28);--au-hover:#22201c;
+  --au-acc:#e8731a;--au-acc-h:#f08a3a;--au-onacc:#131210;--au-hover:#22201c;
   --au-bad:#f5776c;--au-badbg:#3d1a16;--au-badtx:#fbd0cb;--au-ok:#5fcf90;--au-okbg:#17301f;--au-oktx:#c5f0d6;
   --au-info:#93b3f5;--au-infobg:#172440;--au-infotx:#d3e0fb
 }
@@ -83,9 +83,9 @@ body:has(.au-root[data-theme="dark"]),body:has(.au-boot[data-theme="dark"]){back
 .au-label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500;color:var(--au-tx2)}
 .au-label-row{display:flex;justify-content:space-between;gap:12px}
 .au-label-row a{font-weight:500}
-.au-input{width:100%;height:46px;padding:0 14px;border-radius:10px;border:1px solid var(--au-field);background:var(--au-sur);color:var(--au-tx);font:inherit;font-size:14.5px;outline:none;transition:border-color .15s,box-shadow .15s}
+.au-input{width:100%;height:46px;padding:0 14px;border-radius:10px;border:1px solid var(--au-field);background:var(--au-sur);color:var(--au-tx);font:inherit;font-size:14.5px;outline:none;transition:border-color .15s}
 .au-input::placeholder{color:var(--au-tx3);opacity:1}
-.au-input:focus,.au-input:focus-visible{border-color:var(--au-acc);box-shadow:0 0 0 4px var(--au-ring);outline:none}
+.au-input:focus,.au-input:focus-visible{border-color:var(--au-acc);outline:2px solid var(--au-acc);outline-offset:2px}
 .au-input[aria-invalid="true"]{border-color:var(--au-bad)}
 .au-code{font-family:var(--au-ffm);font-size:22px;letter-spacing:.32em;text-align:center;height:54px}
 .au-code-recovery{font-size:18px;letter-spacing:.12em}

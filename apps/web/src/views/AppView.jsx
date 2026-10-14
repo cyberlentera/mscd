@@ -46,7 +46,7 @@ export default function AppView({ v }) {
       <Modals v={v} />
       <div style={{ position: "fixed", right: "24px", bottom: "24px", zIndex: "45", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "12px", fontFamily: "var(--ff)" }}>
         {v.tera?.open ? (<>
-          <div style={{ width: "340px", background: "var(--sur)", color: "var(--tx)", border: "1px solid var(--bd)", borderRadius: "14px", overflow: "hidden", animation: "popIn .25s cubic-bezier(.2,.7,.2,1)", boxShadow: "0 18px 40px rgba(20,16,10,.18)" }}>
+          <div style={{ width: "340px", background: "var(--sur)", color: "var(--tx)", border: "1px solid var(--bd)", borderRadius: "14px", overflow: "hidden", animation: "popIn .25s cubic-bezier(.2,.7,.2,1)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 14px", background: "#1c1a17", color: "#f2eee7" }}>
               <span style={{ width: "40px", height: "40px", borderRadius: "12px", background: "#2a2621", display: "inline-flex", alignItems: "center", justifyContent: "center", flex: "none" }}>
                 <svg viewBox="0 0 48 48" width="30" height="30" fill="none" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block" }}>
@@ -77,7 +77,7 @@ export default function AppView({ v }) {
               <div>
                 <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: ".06em", color: "var(--tx3)", marginBottom: "6px" }}>{txt(v.t?.teraHow)}</div>
                 <ol style={{ margin: "0", padding: "0", listStyle: "none", display: "flex", flexDirection: "column", gap: "6px" }}>
-                  {list(v.tera?.how).map((h, $i94) => (<Fragment key={$i94}>
+                  {list(v.tera?.how).map((h, $i96) => (<Fragment key={$i96}>
                     <li style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
                       <span style={{ flex: "none", width: "20px", height: "20px", borderRadius: "50%", background: "var(--accbg)", color: "var(--acc)", fontSize: "12px", fontWeight: "700", display: "inline-flex", alignItems: "center", justifyContent: "center", marginTop: "1px" }}>{txt(h?.n)}</span>
                       <span>{txt(h?.text)}</span>
@@ -89,7 +89,7 @@ export default function AppView({ v }) {
             </div>
           </div>
         </>) : null}
-        <button onClick={v.tera?.toggle} title={v.t?.askTera} style={{ width: "54px", height: "54px", borderRadius: "50%", border: "0", background: "#1c1a17", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", animation: "teraBob 3.2s ease-in-out infinite, teraGlow 3.2s ease-in-out infinite", transition: "transform .15s" }} className="hv10">
+        <button onClick={v.tera?.toggle} title={v.t?.askTera} style={{ width: "54px", height: "54px", borderRadius: "50%", border: "1px solid var(--bd)", background: "#1c1a17", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", animation: "teraBob 3.2s ease-in-out infinite", transition: "transform .15s" }} className="hv10">
           <svg viewBox="0 0 48 48" width="32" height="32" fill="none" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block" }}>
             <path d="M19 9c0-3 2-5 5-5s5 2 5 5" stroke="#f2eee7" strokeWidth="2.5"></path>
             <rect x="15" y="9" width="18" height="4" rx="2" fill="#f2eee7"></rect>

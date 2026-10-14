@@ -43,7 +43,7 @@ phase_no,phase_name_en,phase_name_id,is_gate_phase,activity_no,title,clause_ref,
 8,Performance evaluation & improvement,Evaluasi kinerja & peningkatan,false,5,Implement corrective actions,,IMS-03,Implement corrective actions: approved and recorded in the register
 8,Performance evaluation & improvement,Evaluasi kinerja & peningkatan,false,6,Verify corrective action effectiveness,,IMS-03,Verify corrective action effectiveness: approved and recorded in the register
 9,ISO 9001:2026 transition,Transisi ISO 9001:2026,false,1,Install ISO 9001:2026 framework pack,,,Install ISO 9001:2026 framework pack: approved and recorded in the register
-9,ISO 9001:2026 transition,Transisi ISO 9001:2026,false,2,Run gap analysis 2015 to 2026,,PLN-Q05,Run gap analysis 2015 to 2026: approved and recorded in the register
+9,ISO 9001:2026 transition,Transisi ISO 9001:2026,false,2,Run gap analysis against ISO 9001:2026,,PLN-Q05,Run gap analysis against ISO 9001:2026: approved and recorded in the register
 9,ISO 9001:2026 transition,Transisi ISO 9001:2026,false,3,Map documents to new requirements,,,Map documents to new requirements: approved and recorded in the register
 9,ISO 9001:2026 transition,Transisi ISO 9001:2026,false,4,Map evidence to new requirements,,,Map evidence to new requirements: approved and recorded in the register
 9,ISO 9001:2026 transition,Transisi ISO 9001:2026,false,5,Review three new requirements,,,Review three new requirements: approved and recorded in the register

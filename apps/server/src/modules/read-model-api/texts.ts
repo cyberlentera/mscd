@@ -33,8 +33,8 @@ export const UNASSIGNED: Pair = ['Unassigned', 'Belum ditugaskan'];
 
 /** Summary card labels (UI 2.5 Controls tabs); the first two depend on the system's unit. */
 export const CARD_LABELS = {
-  implemented: { ctrl: ['Controls implemented', 'Kontrol diimplementasikan'], req: ['Requirements implemented', 'Persyaratan diimplementasikan'] },
-  partial: ['Partially implemented', 'Diimplementasikan sebagian'],
+  implemented: { ctrl: ['Controls implemented', 'Kontrol diterapkan'], req: ['Requirements implemented', 'Persyaratan diterapkan'] },
+  partial: ['Partially implemented', 'Sebagian diterapkan'],
   gateItems: ['Blocking items', 'Item penghambat'],
   documentsApproved: ['Documents approved', 'Dokumen disetujui'],
   documentsExpired: ['Documents expired', 'Dokumen kedaluwarsa'],
@@ -52,10 +52,10 @@ export function phaseText(c: { verified: number; complete: number; progress: num
 
 /** Requirement status labels (C.11 UI codes). */
 export const REQ_STATUS_LABELS: Readonly<Record<ReqStatus, Pair>> = {
-  implemented: ['Implemented', 'Diimplementasikan'],
-  partial: ['Partially implemented', 'Diimplementasikan sebagian'],
+  implemented: ['Implemented', 'Diterapkan'],
+  partial: ['Partially implemented', 'Sebagian diterapkan'],
   planned: ['Planned', 'Direncanakan'],
-  ns: ['Not started', 'Belum dimulai'],
+  ns: ['Not started', 'Belum mulai'],
   blocked: ['Blocked: open blocking item', 'Terblokir: item penghambat terbuka'],
   na: ['Not applicable', 'Tidak berlaku'],
   complete: ['Complete, awaiting verification', 'Selesai, menunggu verifikasi'],
@@ -71,8 +71,8 @@ export const DOC_STATUS_LABELS: Readonly<Record<DocStatus, Pair>> = {
 
 /** Freshness band labels (E.3). */
 export const FRESHNESS_LABELS: Readonly<Record<FreshnessStatus, Pair>> = {
-  fresh: ['Fresh', 'Segar'],
-  aging: ['Aging', 'Menua'],
+  fresh: ['Fresh', 'Mutakhir'],
+  aging: ['Aging', 'Hampir kedaluwarsa'],
   expired: ['Expired', 'Kedaluwarsa'],
   critical: ['Critical', 'Kritis'],
 };
@@ -96,6 +96,6 @@ export const RECORD_STATE: Readonly<Record<'open' | 'ready', Pair>> = {
 
 /** Titles of chain nodes without a record (UI 2.9 `resolveNode`). */
 export const NODE_MISSING: Readonly<Record<'record' | 'evidence', Pair>> = {
-  record: ['No record linked', 'Tidak ada rekaman yang ditautkan'],
-  evidence: ['No evidence recorded this cycle', 'Tidak ada bukti tercatat pada siklus ini'],
+  record: ['No record linked', 'Tidak ada rekaman tertaut'],
+  evidence: ['No evidence recorded this cycle', 'Belum ada bukti tercatat siklus ini'],
 };

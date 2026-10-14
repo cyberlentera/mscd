@@ -55,11 +55,20 @@ export default function Team({ v }) {
                 <td style={{ padding: "12px 14px", borderBottom: "1px solid var(--bd)", borderLeft: "1px solid var(--bd)", verticalAlign: "middle" }}>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                     {list(r?.roles).map((g, $i26) => (<Fragment key={$i26}>
-                      <button onClick={g?.go} style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "26px", padding: "0 9px 0 7px", borderRadius: "999px", border: "1px solid var(--bd)", background: "var(--sur2)", color: "var(--tx)", font: "inherit", fontSize: "12.5px", cursor: "pointer", whiteSpace: "nowrap" }}>
-                        <span style={{ width: "8px", height: "8px", borderRadius: "2px", background: g?.color }}></span>
-                        <span style={{ fontWeight: "600" }}>{txt(g?.short)}</span>
-                        <span style={{ color: "var(--tx2)" }}>{txt(g?.label)}</span>
-                      </button>
+                      {g?.go ? (<>
+                        <button onClick={g?.go} style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "26px", padding: "0 9px 0 7px", borderRadius: "999px", border: "1px solid var(--bd)", background: "var(--sur2)", color: "var(--tx)", font: "inherit", fontSize: "12.5px", cursor: "pointer", whiteSpace: "nowrap" }}>
+                          <span style={{ width: "8px", height: "8px", borderRadius: "2px", background: g?.color }}></span>
+                          <span style={{ fontWeight: "600" }}>{txt(g?.short)}</span>
+                          <span style={{ color: "var(--tx2)" }}>{txt(g?.label)}</span>
+                        </button>
+                      </>) : null}
+                      {g?.plain ? (<>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "26px", padding: "0 9px 0 7px", fontSize: "12.5px", whiteSpace: "nowrap" }}>
+                          <span style={{ width: "8px", height: "8px", borderRadius: "2px", background: g?.color }}></span>
+                          <span style={{ fontWeight: "600" }}>{txt(g?.short)}</span>
+                          <span style={{ color: "var(--tx2)" }}>{txt(g?.label)}</span>
+                        </span>
+                      </>) : null}
                     </Fragment>))}
                   </div>
                 </td>

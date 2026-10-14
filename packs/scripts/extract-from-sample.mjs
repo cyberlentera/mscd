@@ -142,7 +142,7 @@ const QUESTION_ID = {
   'Which Annex A control implements the treatment?': 'Kontrol Annex A mana yang menerapkan perlakuan ini?',
   'Why is this control applicable, and is the justification risk-based?': 'Mengapa kontrol ini berlaku, dan apakah justifikasinya berbasis risiko?',
   'Where is it written down, and is that version current?': 'Di mana hal ini didokumentasikan, dan apakah versinya masih berlaku?',
-  'Prove it operated this cycle, not at implementation.': 'Buktikan bahwa ini berjalan pada siklus ini, bukan hanya saat implementasi.',
+  'Prove it operated during this cycle, after implementation.': 'Buktikan bahwa ini berjalan selama siklus ini, setelah diterapkan.',
   'How do you know it is effective?': 'Bagaimana Anda mengetahui bahwa ini efektif?',
   'Which issues and interested parties drive the QMS?': 'Isu dan pihak berkepentingan mana yang mendorong QMS?',
   'How were risks and opportunities determined?': 'Bagaimana risiko dan peluang ditentukan?',

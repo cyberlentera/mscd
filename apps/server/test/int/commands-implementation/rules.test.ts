@@ -88,7 +88,7 @@ describe('rule engine', () => {
       expect(template.id.length, rule).toBeGreaterThan(10);
       const filled = ruleMessages(rule);
       for (const text of [filled.en, filled.id, template.en, template.id]) {
-        expect(text, rule).not.toMatch(/[—·]/);
+        expect(text, rule).not.toMatch(/[\u2013\u2014\u00b7\u2018\u2019\u201c\u201d\u2190\u2192]/);
       }
       expect(filled.en, rule).not.toMatch(/[{}]/);
       expect(filled.id, rule).not.toMatch(/[{}]/);

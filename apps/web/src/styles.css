@@ -2,8 +2,8 @@ body{margin:0;background:#f4f2ee}
 .mscd>main{background:radial-gradient(ellipse at 100% 0%,rgba(232,115,26,.07),transparent 50%),radial-gradient(ellipse at 0% 100%,rgba(122,79,211,.05),transparent 50%)}
 .mscd[data-theme="dark"]>main{background:radial-gradient(ellipse at 100% 0%,rgba(232,115,26,.12),transparent 50%),radial-gradient(ellipse at 0% 100%,rgba(122,79,211,.1),transparent 50%)}
 a{color:var(--acc)}a:hover{color:var(--tx)}
-.mscd{--bg:#f4f2ee;--sur:#ffffff;--sur2:#f8f6f2;--bd:#e6e1d7;--tx:#1c1a17;--tx2:#4a453d;--tx3:#6b655a;--acc:#ad4f0b;--onacc:#ffffff;--accbg:#fdeee1;--gold:#c9a25b;--ok:#1f7a48;--warn:#8a6508;--bad:#bf2f25;--info:#2a58b8;--okbg:#e4f3ea;--warnbg:#fbf1d3;--badbg:#fbe3df;--infobg:#e3ebfb;--pad:16px;--fs:13.5px;--rh:48px;--r:10px;--sh:none;--onst:#fff}
-.mscd[data-theme="dark"]{--acc:#e8731a;--onacc:#131210;--bg:#131210;--sur:#1c1a17;--sur2:#22201c;--bd:#302d27;--tx:#f2eee7;--tx2:#cfc7b8;--tx3:#a39b8c;--accbg:#3a2412;--ok:#5fcf90;--warn:#e8bd4a;--bad:#f5776c;--info:#93b3f5;--okbg:#17301f;--warnbg:#3a2f12;--badbg:#3d1a16;--infobg:#172440;--sh:none;--onst:#131210}
+.mscd{--bg:#f4f2ee;--sur:#ffffff;--sur2:#f8f6f2;--bd:#e6e1d7;--tx:#1c1a17;--tx2:#4a453d;--tx3:#6b655a;--acc:#ad4f0b;--onacc:#ffffff;--accbg:#fdeee1;--gold:#c9a25b;--ok:#1f7a48;--warn:#8a6508;--bad:#bf2f25;--info:#2a58b8;--okbg:#e4f3ea;--warnbg:#fbf1d3;--badbg:#fbe3df;--infobg:#e3ebfb;--pad:16px;--fs:13.5px;--rh:48px;--r:10px;--onst:#fff}
+.mscd[data-theme="dark"]{--acc:#e8731a;--onacc:#131210;--bg:#131210;--sur:#1c1a17;--sur2:#22201c;--bd:#302d27;--tx:#f2eee7;--tx2:#cfc7b8;--tx3:#a39b8c;--accbg:#3a2412;--ok:#5fcf90;--warn:#e8bd4a;--bad:#f5776c;--info:#93b3f5;--okbg:#17301f;--warnbg:#3a2f12;--badbg:#3d1a16;--infobg:#172440;--onst:#131210}
 /* --onst is the text colour on a filled status colour (step circles, ticks): white on the deep light-theme fills, dark on the bright dark-theme fills. */
 /* The audit hero is an inverted card (dark on a light page). In dark theme it stays a dark card so the bright status colours keep their contrast. */
 .mscd[data-theme="dark"] [data-hero]{--tx:#2a2621;--bg:#f2eee7;border:1px solid var(--bd)}
@@ -26,12 +26,9 @@ a{color:var(--acc)}a:hover{color:var(--tx)}
 @keyframes meshA{0%{transform:translate(-10%,-10%) scale(1)}50%{transform:translate(12%,8%) scale(1.15)}100%{transform:translate(-10%,-10%) scale(1)}}
 @keyframes meshB{0%{transform:translate(10%,0) scale(1.1)}50%{transform:translate(-12%,-14%) scale(.95)}100%{transform:translate(10%,0) scale(1.1)}}
 @keyframes teraBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-@keyframes teraGlow{0%,100%{box-shadow:0 0 0 0 rgba(232,115,26,.0),0 10px 24px rgba(20,16,10,.25)}50%{box-shadow:0 0 0 8px rgba(232,115,26,.18),0 10px 24px rgba(20,16,10,.25)}}
 @keyframes growX{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @keyframes popIn{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
 @keyframes riseIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-@keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(191,47,37,.45)}70%{box-shadow:0 0 0 10px rgba(191,47,37,0)}100%{box-shadow:0 0 0 0 rgba(191,47,37,0)}}
-@keyframes pulseAcc{0%{box-shadow:0 0 0 0 rgba(232,115,26,.5)}70%{box-shadow:0 0 0 9px rgba(232,115,26,0)}100%{box-shadow:0 0 0 0 rgba(232,115,26,0)}}
 @keyframes drawLine{from{transform:scaleY(0)}to{transform:scaleY(1)}}
 @keyframes radarIn{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
 @keyframes spinDash{from{stroke-dashoffset:300}to{stroke-dashoffset:0}}

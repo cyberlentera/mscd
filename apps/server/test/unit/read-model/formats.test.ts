@@ -51,7 +51,7 @@ describe('MS fields (G.5 MS[])', () => {
   });
 
   it('formats edition, location mode, themes and the newest open alert', () => {
-    expect(editionText({ edition: '2015' }, { edition: '2026' })).toBe('2015 to 2026');
+    expect(editionText({ edition: '2015' }, { edition: '2026' })).toBe('2015 + 2026');
     expect(editionText({ edition: '2019' }, null)).toBe('2019');
     expect(locModeText('managed_vault', 'stored')).toBe('Managed Vault');
     expect(locModeText('google_drive', 'zero_transit')).toBe('Customer Repository, Zero-transit');
@@ -95,7 +95,7 @@ describe('pack and licence cards (G.5 PACKS, LICENCE)', () => {
       storageAdapters: ['managed_vault', 'm365', 'google_drive', 'smb'], features: ['integrated_mode', 'edition_transition', 'link_health_monitor', 'auditor_guest_access'],
       maxManagementSystems: 10, maxUsers: 150, frameworksUsed: 4, managementSystems: 4, activeUsers: 86, verified: true,
     })).toEqual(ndt.LICENCE);
-    expect(licenceCard({ organization: 'x', validUntil: '2027-03-31', frameworks: [], storageAdapters: [], features: [], maxManagementSystems: 1, maxUsers: 1, frameworksUsed: 0, managementSystems: 0, activeUsers: 0, verified: false }).sig).toEqual(['Ed25519, not verified', 'Ed25519, tidak terverifikasi']);
+    expect(licenceCard({ organization: 'x', validUntil: '2027-03-31', frameworks: [], storageAdapters: [], features: [], maxManagementSystems: 1, maxUsers: 1, frameworksUsed: 0, managementSystems: 0, activeUsers: 0, verified: false }).sig).toEqual(['Ed25519, unverified', 'Ed25519, tidak terverifikasi']);
   });
 });
 

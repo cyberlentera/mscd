@@ -1,4 +1,4 @@
-import { test, expect, openApp, go, ui, expectToast, switchMs } from './helpers.js';
+import { test, expect, openApp, go, ui, expectToast, switchMs, switchRole } from './helpers.js';
 
 const main = (page) => page.locator('main');
 const stageRow = (page, title) => main(page).locator('div[style*="grid-template-columns: 34px"]').filter({ hasText: title });
@@ -38,6 +38,23 @@ test.describe('Start here', () => {
     await expect(ui.title(page)).toHaveText('Team & roles');
   });
 
+  // @sample-only: in API mode Top Management reads aggregates only and gets no Start here (test/api/controller.test.ts).
+  test('a stage node without an action the role can open is inert', { tag: '@sample-only' }, async ({ page }) => {
+    await openApp(page);
+    await switchRole(page, 'Top Management');
+    await go(page, 'Start here');
+    const node = (title) => main(page).locator(`button[title="${title}"][style*="flex-direction: column"]`);
+    // Set up opens Standards & licence and File storage, which Top Management does not open
+    await expect(stageRow(page, 'Set up the workspace').locator('button')).toHaveCount(0);
+    await expect(node('Set up')).toHaveAttribute('aria-disabled', 'true');
+    await expect(node('Set up')).toHaveCSS('cursor', 'default');
+    // Team opens Team & roles
+    await expect(node('Team')).not.toHaveAttribute('aria-disabled');
+    await expect(node('Team')).toHaveCSS('cursor', 'pointer');
+    await node('Team').click();
+    await expect(ui.title(page)).toHaveText('Team & roles');
+  });
+
   test('follows the selected system and the Indonesian interface', async ({ page }) => {
     await openApp(page, '?lang=id');
     await go(page, 'Mulai di sini');
@@ -59,7 +76,7 @@ test.describe('Team & roles', () => {
     await expect(rina).toContainText('ISMS');
     await expect(rina).toContainText('MS Manager');
     const maya = rows.filter({ hasText: 'Maya Putri' });
-    await expect(maya).toContainText('Internal auditor');
+    await expect(maya).toContainText('Internal Auditor');
   });
 
   test('opens the outstanding items of a person', async ({ page }) => {

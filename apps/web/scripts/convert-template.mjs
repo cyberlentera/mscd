@@ -41,8 +41,8 @@ const PATCHES = [
   ['<sc-if value="{{ isFw }}">\n      <div style="background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden">',
    '<sc-if value="{{ isFw }}">\n      <div style="background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);overflow-x:auto">'],
   // Portfolio rows layout: scroll instead of clipping the right-hand columns on narrow screens.
-  ['<sc-if value="{{ pfRows }}">\n        <div style="background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden">',
-   '<sc-if value="{{ pfRows }}">\n        <div style="background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--sh);overflow-x:auto">'],
+  ['<sc-if value="{{ pfRows }}">\n        <div style="background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden">',
+   '<sc-if value="{{ pfRows }}">\n        <div style="background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);overflow-x:auto">'],
   // Summary tabs: the "65 / 93 ready" sub-label overflowed into the next tab on narrow screens; wrap it under the number.
   ['display:flex;justify-content:space-between;align-items:baseline;gap:6px">', 'display:flex;justify-content:space-between;align-items:baseline;gap:0 6px;flex-wrap:wrap">'],
   // Portfolio cards: long clause names pushed the percentage out of the card; let the name wrap instead.
@@ -57,9 +57,10 @@ const PATCHES = [
   // Audit hero: marked so the dark theme can give it a dark surface (styles.css).
   ['<div style="display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,2fr);gap:0;background:var(--tx);color:var(--bg);',
    '<div data-hero="" style="display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,2fr);gap:0;background:var(--tx);color:var(--bg);'],
-  // Traceability nodes: long stage names (RISK & OPPORTUNITY) broke out of the narrow node box at 1280 px.
+  // Traceability nodes: long stage names (RISK & OPPORTUNITY) broke out of the narrow node box at 1280 px. A node
+  // the role can open and a plain node (the role cannot open its record) each carry the stage name.
   ['<div style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:{{ n.fg }};font-weight:700">{{ n.stage }}</div>',
-   '<div style="font-size:12px;text-transform:uppercase;letter-spacing:.04em;overflow-wrap:anywhere;color:{{ n.fg }};font-weight:700">{{ n.stage }}</div>'],
+   '<div style="font-size:12px;text-transform:uppercase;letter-spacing:.04em;overflow-wrap:anywhere;color:{{ n.fg }};font-weight:700">{{ n.stage }}</div>', 2],
   // List footer: "Showing 1 item", not "1 items".
   ['<span>{{ t.showing }} {{ rowCount }} {{ t.items }}</span>', '<span>{{ t.showing }} {{ rowCount }} {{ itemsWord }}</span>'],
   // Modal confirm button can be disabled (Reassign without a due date).

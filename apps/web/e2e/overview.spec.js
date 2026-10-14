@@ -24,7 +24,7 @@ test.describe('Readiness by clause', () => {
     await expect(page.locator('main')).toContainText('Next checkpoint: Bribery risk assessment, 1 item');
     await expect(page.locator('main')).not.toContainText('1 items');
     await switchMs(page, 'ISMS');
-    await expect(page.locator('main')).toContainText('Scale 0 to 4, average of four dimensions');
+    await expect(page.locator('main')).toContainText('Scale 0-4, average of four dimensions');
   });
 
   const CLAUSE_TARGETS = [

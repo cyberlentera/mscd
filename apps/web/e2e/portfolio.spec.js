@@ -1,6 +1,6 @@
 import { test, expect, openApp, ui, listRows, expectShown, activeTab, tab, contrastProblems } from './helpers.js';
 
-const cards = (page) => page.locator('main div[style*="box-shadow"][style*="flex-direction: column"]').filter({ has: page.locator('svg polygon') });
+const cards = (page) => page.locator('main div[style*="border-radius: var(--r)"][style*="flex-direction: column"][style*="gap: 14px"]').filter({ has: page.locator('svg polygon') });
 const card = (page, short) => cards(page).filter({ has: page.locator('span', { hasText: new RegExp('^' + short + '$') }) });
 const attention = (page) => page.locator('main button[style*="grid-template-columns: 46px"]');
 
@@ -74,7 +74,7 @@ test.describe('Home', () => {
       await expect(radar.locator('text')).toHaveText(['4', '5', '6', '7', '8', '9', '10']);
       const points = await radar.locator('polygon').nth(2).getAttribute('points');
       expect(points.split(' ')).toHaveLength(7);
-      await expect(c).toContainText('Clause readiness, 4 to 10');
+      await expect(c).toContainText('Clause readiness, 4-10');
     }
     await expect(card(page, 'ISMS')).toContainText('44 days left, 12 Nov 2026');
     await expect(card(page, 'BCMS')).toContainText('134 days left, 10 Feb 2027');
@@ -137,6 +137,9 @@ test.describe('Home', () => {
     const rows = table.locator('tbody > tr');
     await expect(rows).toHaveCount(4);
     await expect(rows.nth(0)).toContainText('ISMS, Information security management system');
+    // the system colour is a swatch before the name, not a coloured left border on the row
+    await expect(rows.nth(0)).toHaveCSS('border-left-width', '0px');
+    await expect(rows.nth(0).locator('td').first().locator('button > span').first()).toHaveCSS('background-color', 'rgb(232, 115, 26)');
     await expect(rows.nth(0)).toContainText('Surveillance audit 1');
     await expect(rows.nth(3)).toContainText('No audit event scheduled');
     // each row draws one readiness bar per clause

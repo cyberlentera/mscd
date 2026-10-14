@@ -1,7 +1,7 @@
 import { test, expect, openApp, go, ui, switchMs, activeTab, drawerFact, contrastProblems, finishAnimations } from './helpers.js';
 
 const input = (page) => page.locator('main input[placeholder^="Enter any ID"]');
-const traceBtn = (page) => page.locator('main button', { hasText: /^Trace from here$/ });
+const traceBtn = (page) => page.locator('main button', { hasText: /^Trace$/ });
 const suggestions = (page) => page.locator('main button[style*="height: 26px"]');
 const rows = (page) => page.locator('main div[style*="grid-template-columns: 150px 28px 1fr"]');
 const nodeBtn = (page, i) => rows(page).nth(i).locator('button');

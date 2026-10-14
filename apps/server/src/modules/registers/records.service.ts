@@ -164,7 +164,7 @@ export class RecordCommandsService {
           recipientUserId: holder,
           kind: 'prep_task_assigned',
           title: { en: `Preparation task assigned: ${code}`, id: `Tugas persiapan ditugaskan: ${code}` },
-          body: { en: `${code}, due ${body.dueAt}`, id: `${code}, tenggat ${body.dueAt}` },
+          body: { en: `${code}, due ${body.dueAt}`, id: `${code}, jatuh tempo ${body.dueAt}` },
           msId: record.ms.id,
           ref: refOf(entityType, id, code, updatedAt),
           digest: true,

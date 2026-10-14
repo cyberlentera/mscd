@@ -19,6 +19,7 @@ import {
   type ShareableEntityType,
 } from '@mscd/shared';
 import { sql, type RawBuilder } from 'kysely';
+import { fmtDay } from '../../common/dates';
 import { assertIfMatch } from '../../common/etag';
 import { ConflictError, ForbiddenError, ValidationError } from '../../common/problems';
 import {
@@ -405,10 +406,11 @@ export class RegistersService {
          where metric_id = ${row.id} and deleted_at is null and period_start <= ${body.periodEnd}::date and period_end >= ${body.periodStart}::date
          limit 1`.execute(trx);
       if (overlaps[0]) {
+        const { period_start: from, period_end: to } = overlaps[0];
         throw unprocessable(
           'metric.period_overlap',
-          `The period overlaps the value recorded for ${overlaps[0].period_start} to ${overlaps[0].period_end}`,
-          `Periode tumpang tindih dengan nilai yang tercatat untuk ${overlaps[0].period_start} sampai ${overlaps[0].period_end}`,
+          `The period overlaps the value recorded for ${fmtDay(from, 'en')} - ${fmtDay(to, 'en')}`,
+          `Periode tumpang tindih dengan nilai yang tercatat untuk ${fmtDay(from, 'id')} - ${fmtDay(to, 'id')}`,
         );
       }
       const valueId = randomUUID();

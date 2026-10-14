@@ -23,7 +23,7 @@ const ui = {
   roleButton: (page) => page.locator('header > div:last-child > div:last-child > button'),
   pageAction: (page, label) => page.locator(`main button[title="${label}"]`).first(),
   portfolioCards: (page) =>
-    page.locator('main div[style*="box-shadow"][style*="flex-direction: column"]').filter({ has: page.locator('svg polygon') }),
+    page.locator('main div[style*="border-radius: var(--r)"][style*="flex-direction: column"][style*="gap: 14px"]').filter({ has: page.locator('svg polygon') }),
 };
 const list = (page) => page.locator('main input[placeholder^="Search"]').locator('xpath=../..');
 const listRows = (page) => list(page).locator('tbody > tr[style*="cursor: pointer"]');

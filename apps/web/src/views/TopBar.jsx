@@ -32,12 +32,14 @@ export default function TopBar({ v }) {
                 <span style={{ fontSize: "12px", color: "var(--tx3)", textAlign: "right" }}>{txt(o?.stage)}</span>
               </button>
             </Fragment>))}
-            <div style={{ borderTop: "1px solid var(--bd)", margin: "6px 0" }}></div>
-            <button onClick={v.goIntegrated} style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%", textAlign: "left", border: "0", borderRadius: "8px", padding: "9px 10px", cursor: "pointer", background: "transparent", color: "var(--tx)", fontSize: "var(--fs)" }}>
-              <span style={{ width: "10px", height: "10px", borderRadius: "3px", background: "linear-gradient(135deg,#e8731a,#3a6fd8,#1f8a8a,#7a4fd3)" }}></span>
-              <span style={{ fontWeight: "600" }}>{txt(v.t?.integrated)}</span>
-              <span style={{ color: "var(--tx3)" }}>{"IMS"}</span>
-            </button>
+            {v.goIntegrated ? (<>
+              <div style={{ borderTop: "1px solid var(--bd)", margin: "6px 0" }}></div>
+              <button onClick={v.goIntegrated} style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%", textAlign: "left", border: "0", borderRadius: "8px", padding: "9px 10px", cursor: "pointer", background: "transparent", color: "var(--tx)", fontSize: "var(--fs)" }}>
+                <span style={{ width: "10px", height: "10px", borderRadius: "3px", background: "linear-gradient(135deg,#e8731a,#3a6fd8,#1f8a8a,#7a4fd3)" }}></span>
+                <span style={{ fontWeight: "600" }}>{txt(v.t?.integrated)}</span>
+                <span style={{ color: "var(--tx3)" }}>{"IMS"}</span>
+              </button>
+            </>) : null}
           </div>
         </>) : null}
       </div>

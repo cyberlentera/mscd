@@ -56,7 +56,7 @@ Sample: `ndt` (4 systems, saas, 2 sites), `bsd` (isms and qms, onprem, 3 sites),
 |---|---|---|---|---|
 | `id` | `MsId` | `'isms'` | Key prefix everywhere; lookups into `STAGES`, `X`, `PHASES`, `PHASE_STATE`, `CHAINS`, `EVENTS`, `PREP`, `PAST`, `CYCLE_ITEMS`, `DRIFT`, `FOCUS`, `PACKS`; hard-coded switches in `gateName`, `docDetail` approver, `phases` owner pool, `gtScreen` suggestions, `portfolio` attention, `fwScreen` | `management_system.id`, exposed as a slug |
 | `code` | string | `'ISO/IEC 27001'` | `portfolio`, `msOptions`, `fwScreen` (`code + ' : ' + ed.split(' ')[0]`) | `framework.code` (pack) |
-| `ed` | string | `'2022'`, `'2015 to 2026'` | `portfolio`, `msOptions`, `fwScreen` | Active `framework_version` edition; `from to to` while transitioning |
+| `ed` | string | `'2022'`, `'2015 + 2026'` | `portfolio`, `msOptions`, `fwScreen` | Active `framework_version` edition; `active + target` while transitioning |
 | `short` | string | `'ISMS'` | `portfolio`, attention, tasks, timeline lanes, `fwScreen`, `storageScreen` (repo and routing filter, row column), `docDetail` path and used-by, sample vault path | `management_system.code` short label |
 | `name` | `Pair` | `['Information security management system','Sistem manajemen keamanan informasi']` | `portfolio`, `fwScreen` | Pack label |
 | `mgr` | `PersonId` | `'rina'` | `phasesScreen` owner action `'Verified by ' + pname(ms.mgr)` | User holding the MS Manager role |

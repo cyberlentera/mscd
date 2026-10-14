@@ -88,5 +88,5 @@ export const EDITION_STATUS_WORDS: Readonly<Record<'current' | 'transition' | 'w
 /** Licence signature line (G.5 `LICENCE.sig`). */
 export const SIGNATURE_TEXT: Readonly<Record<'verified' | 'unverified', Pair>> = {
   verified: ['Ed25519, verified', 'Ed25519, terverifikasi'],
-  unverified: ['Ed25519, not verified', 'Ed25519, tidak terverifikasi'],
+  unverified: ['Ed25519, unverified', 'Ed25519, tidak terverifikasi'],
 };

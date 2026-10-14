@@ -21,7 +21,8 @@ import { LOGIN_ERROR_CODES } from '../../../../packages/shared/src/api/auth';
 import { PROFILE, fakeEnv, makeApi } from './helpers';
 
 const TOKEN = 'Q2hhbmdlTWUtVG9rZW4tVmFsdWUtMDEyMzQ1Njc4OWFi';
-const FORBIDDEN = /[\u2014\u00b7]/;
+// Writing rules: no en or em dash, centre dot, curly quote or arrow character.
+const FORBIDDEN = /[\u2013\u2014\u00b7\u2018\u2019\u201c\u201d\u2190\u2192]/;
 
 function render<P extends object>(component: ComponentType<P>, props: P): string {
   return renderToStaticMarkup(createElement(component, props));

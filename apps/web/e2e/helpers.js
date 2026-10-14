@@ -129,6 +129,8 @@ export const activeTab = (page) => page.locator('main button[style*="flex: 1 1 0
 export const drawerAction = (page, label) => ui.drawer(page).locator(`button[title="${label}"]`);
 export const drawerFact = (page, key) => ui.drawer(page).locator('xpath=.//div[normalize-space(text())="' + key + '"]/following-sibling::div[1]');
 export const drawerLinks = (page, which) => ui.drawer(page).locator('xpath=.//div[normalize-space(text())="' + which + '"]/following-sibling::div[1]/button');
+// Related records the role cannot open: plain text instead of a link (the "- No ..." notes are left out).
+export const drawerPlain = (page, which) => ui.drawer(page).locator('xpath=.//div[normalize-space(text())="' + which + '"]/following-sibling::div[1]/span[not(starts-with(normalize-space(.), "- "))]');
 export async function openRow(page, text) {
   await listRow(page, text).locator('td').first().click();
   await expect(ui.drawer(page)).toBeVisible();

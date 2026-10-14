@@ -124,7 +124,7 @@ export class CalendarFeedService {
         ok: true,
         changed: [],
         downloadUrl: calendarFeedUrl(ms, token),
-        message: ['Calendar feed created; copy the link now, it is shown once', 'Umpan kalender dibuat; salin tautannya sekarang, tautan hanya ditampilkan sekali'],
+        message: ['Calendar feed created; copy the link now, it is shown once', 'Feed kalender dibuat; salin tautannya sekarang, tautan hanya ditampilkan sekali'],
       };
     });
   }
@@ -156,7 +156,7 @@ export class CalendarFeedService {
         ok: true,
         changed: [],
         count: revoked.length,
-        message: revoked.length > 0 ? ['Calendar feed revoked', 'Umpan kalender dicabut'] : ['No calendar feed to revoke', 'Tidak ada umpan kalender untuk dicabut'],
+        message: revoked.length > 0 ? ['Calendar feed revoked', 'Feed kalender dicabut'] : ['No calendar feed to revoke', 'Tidak ada feed kalender untuk dicabut'],
       };
     });
   }

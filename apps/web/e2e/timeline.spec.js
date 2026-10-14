@@ -82,14 +82,28 @@ test.describe('Certification cycle', () => {
     await expect(card).toContainText('65 days left');
     await expect(card).toContainText('Lembaga Sertifikasi Garuda Mutu');
     await expect(card.locator('div[style*="grid-template-columns: 20px 1fr 170px 110px"]')).toHaveCount(5);
-    // the selected marker is highlighted
-    await expect(marker(page, 'Recertification + 2026 transition, 3 Dec 2026')).toHaveCSS('box-shadow', /rgba?\(/);
+    // the selected marker is highlighted with a ring (an outline, no shadow)
+    await expect(marker(page, 'Recertification + 2026 transition, 3 Dec 2026')).toHaveCSS('outline-style', 'solid');
+    await expect(marker(page, 'Recertification + 2026 transition, 3 Dec 2026')).toHaveCSS('box-shadow', 'none');
   });
 
-  test('Open audit readiness switches to the event’s system', async ({ page }) => {
+  test('a marker reached with the keyboard shows the focus ring', async ({ page }) => {
+    await openTimeline(page);
+    const isms = lane(page, 'ISMS').locator('button[title]');
+    await isms.first().focus();
+    await page.keyboard.press('Tab');
+    const focused = isms.nth(1);
+    await expect(focused).toBeFocused();
+    expect(await focused.evaluate((el) => el.matches(':focus-visible'))).toBe(true);
+    // An unselected marker sets no outline of its own, so the browser's focus ring shows.
+    await expect(focused).not.toHaveCSS('outline-style', 'none');
+    await expect(focused).not.toHaveCSS('outline-width', '0px');
+  });
+
+  test('Open Audit readiness switches to the event’s system', async ({ page }) => {
     await openTimeline(page);
     await marker(page, 'Recertification + 2026 transition, 3 Dec 2026').click();
-    await eventCard(page).locator('button', { hasText: 'Open audit readiness' }).click();
+    await eventCard(page).locator('button', { hasText: 'Open Audit readiness' }).click();
     await expect(ui.title(page)).toHaveText('Audit readiness');
     await expect(ui.msSwitch(page)).toContainText('QMS');
     await expect(page.locator('main')).toContainText('Recertification & ISO 9001:2026 transition audit');

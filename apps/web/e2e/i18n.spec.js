@@ -104,7 +104,7 @@ test.describe('Indonesian interface', () => {
   test('generated sentences, dates and plurals follow the language', async ({ page }) => {
     await openApp(page, '?lang=id');
     await go(page, 'Tugas Saya');
-    await expect(page.locator('main')).toContainText('28 Sep 2026 sampai 4 Okt 2026');
+    await expect(page.locator('main')).toContainText('28 Sep - 4 Okt 2026');
     await expect(page.locator('main')).toContainText('Rekaman');
     await expect(page.locator('main')).toContainText('Selesaikan penerapan classification of information');
     await go(page, 'Daftar induk dokumen');

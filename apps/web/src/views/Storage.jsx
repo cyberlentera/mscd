@@ -8,7 +8,7 @@ export default function Storage({ v }) {
     <>{v.isStorage ? (<>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: "var(--pad)" }}>
         {list(v.st?.repos).map((r, $i29) => (<Fragment key={$i29}>
-          <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", boxShadow: "var(--sh)", padding: "var(--pad)", display: "flex", flexDirection: "column", gap: "10px" }}>
+          <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", padding: "var(--pad)", display: "flex", flexDirection: "column", gap: "10px" }}>
             <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: "10px", alignItems: "start" }}>
               <div data-tip={r?.tip} style={{ minWidth: "0" }}>
                 <div style={{ fontSize: "1.1em", fontWeight: "600", lineHeight: "1.3", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{txt(r?.name)}</div>
@@ -60,7 +60,7 @@ export default function Storage({ v }) {
           </div>
         </Fragment>))}
       </div>
-      <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", boxShadow: "var(--sh)", overflow: "hidden" }}>
+      <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", overflow: "hidden" }}>
         <div style={{ padding: "12px var(--pad)", borderBottom: "1px solid var(--bd)", fontWeight: "600" }}>{txt(v.t?.routing)}</div>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>

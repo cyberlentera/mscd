@@ -5,5 +5,5 @@ treatment,3,Risk treatment,Perlakuan risiko,"What was done about it, and is it c
 control,4,Control,Kontrol,Which Annex A control implements the treatment?,Kontrol Annex A mana yang menerapkan perlakuan ini?,applicability,,,true,6.1.3 d),8,,
 soa,5,SoA,SoA,"Why is this control applicable, and is the justification risk-based?","Mengapa kontrol ini berlaku, dan apakah justifikasinya berbasis risiko?",justification,chain_record,,true,6.1.3 d),6,SoA,SoA
 document,6,Document,Dokumen,"Where is it written down, and is that version current?","Di mana hal ini didokumentasikan, dan apakah versinya masih berlaku?",document,,,true,7.5,7,,
-evidence,7,Evidence,Bukti,"Prove it operated this cycle, not at implementation.","Buktikan bahwa ini berjalan pada siklus ini, bukan hanya saat implementasi.",evidence,,,true,8.1 / 9.1,8,,
+evidence,7,Evidence,Bukti,"Prove it operated during this cycle, after implementation.","Buktikan bahwa ini berjalan selama siklus ini, setelah diterapkan.",evidence,,,true,8.1 / 9.1,8,,
 metric,8,Metric,Metrik,How do you know it is effective?,Bagaimana Anda mengetahui bahwa ini efektif?,entity,metric,,true,9.1,9,,

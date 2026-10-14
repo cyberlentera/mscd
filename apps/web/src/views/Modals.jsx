@@ -17,7 +17,7 @@ export default function Modals({ v }) {
             <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <span style={{ fontSize: "12px", color: "var(--tx3)", textTransform: "uppercase", letterSpacing: ".06em" }}>{txt(v.t?.newHolder)}</span>
               <select value={v.modal?.h ?? ''} onChange={v.modalSetH} style={{ height: "36px", padding: "0 10px", borderRadius: "8px", border: "1px solid var(--bd)", background: "var(--sur2)", color: "var(--tx)", fontSize: "13px" }}>
-                {list(v.peopleOptions).map((p, $i92) => (<Fragment key={$i92}>
+                {list(v.peopleOptions).map((p, $i94) => (<Fragment key={$i94}>
                   <option value={p?.id ?? ''}>{txt(p?.label)}</option>
                 </Fragment>))}
               </select>
@@ -33,7 +33,7 @@ export default function Modals({ v }) {
           {v.modal?.isPicker ? (<>
             <div style={{ fontFamily: "var(--ffm)", fontSize: "12px", color: "var(--tx2)", padding: "8px 10px", borderRadius: "8px", background: "var(--sur2)", border: "1px solid var(--bd)" }}>{txt(v.modal?.path)}</div>
             <div style={{ border: "1px solid var(--bd)", borderRadius: "8px", overflow: "hidden" }}>
-              {list(v.modal?.files).map((f, $i93) => (<Fragment key={$i93}>
+              {list(v.modal?.files).map((f, $i95) => (<Fragment key={$i95}>
                 <button onClick={f?.go} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "10px", width: "100%", textAlign: "left", border: "0", borderBottom: "1px solid var(--bd)", padding: "9px 12px", cursor: "pointer", background: f?.bg, color: "var(--tx)", font: "inherit", fontSize: "13px" }}>
                   <span>
                     <span style={{ fontWeight: "500" }}>{txt(f?.name)}</span>

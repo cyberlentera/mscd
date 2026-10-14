@@ -60,7 +60,7 @@ export class EntityLinksService {
       const column = CODE_COLUMNS[body.entityType];
       if (!column) {
         throw unprocessable('entity_link.not_by_code', `Records of type ${body.entityType} cannot be linked by code`,
-          `Catatan bertipe ${body.entityType} tidak dapat ditautkan dengan kode`);
+          `Rekaman bertipe ${body.entityType} tidak dapat ditautkan dengan kode`);
       }
       const { rows } = await sql<{ id: string; updated_at: Date }>`
         select id, updated_at from ${sql.table(body.entityType)} where ${sql.ref(column)} = ${body.entityCode} and deleted_at is null for update`.execute(trx);

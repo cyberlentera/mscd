@@ -370,7 +370,7 @@ export class AuditEventCommandsService {
       recipientUserId: owner,
       kind: 'prep_task_assigned',
       title: { en: `Preparation task assigned: ${ref.code}`, id: `Tugas persiapan ditugaskan: ${ref.code}` },
-      body: { en: `${ref.code}, due ${due}`, id: `${ref.code}, tenggat ${due}` },
+      body: { en: `${ref.code}, due ${due}`, id: `${ref.code}, jatuh tempo ${due}` },
       msId: system.id,
       ref,
       digest: true,

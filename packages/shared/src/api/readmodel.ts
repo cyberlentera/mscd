@@ -68,7 +68,7 @@ export const GateConsistency = named(
   {
     valid: [
       { gatePhases: [4], blockedActivities: 4, openGateItems: 4, flagged: false },
-      { gatePhases: [4], blockedActivities: 3, openGateItems: 4, flagged: true, messages: { en: 'Blocked activities and open gate items differ', id: 'Aktivitas terblokir dan butir gerbang terbuka berbeda' } },
+      { gatePhases: [4], blockedActivities: 3, openGateItems: 4, flagged: true, messages: { en: 'The number of blocked activities does not match the open blocking items. Check the blocking references.', id: 'Jumlah aktivitas yang terblokir tidak sesuai dengan item penghambat yang terbuka. Periksa rujukan pemblokirannya.' } },
     ],
     invalid: [{ gatePhases: [4], blockedActivities: -1, openGateItems: 4, flagged: false }, { gatePhases: [4], blockedActivities: 1, openGateItems: 4 }],
   },
@@ -91,7 +91,7 @@ export const ImplementationSummary = named(
     valid: [{
       cards: [
         { key: 'implemented', label: 'Controls implemented', count: 61, total: 93 }, { key: 'partial', label: 'Partially implemented', count: 18 },
-        { key: 'gate_items', label: 'Gate items, Risk & SoA', count: 4 }, { key: 'documents_approved', label: 'Documents approved', count: 14, total: 22 },
+        { key: 'gate_items', label: 'Blocking items, Risk & SoA', count: 4 }, { key: 'documents_approved', label: 'Documents approved', count: 14, total: 22 },
         { key: 'documents_expired', label: 'Documents expired', count: 5 },
       ],
       criticalEvidence: 3, unverifiableEvidence: 3, currentPhase: 9, phases: [], maturity: [{ clause: 4, readiness: 100, dimensions: [4, 4, 4, 4] }],
@@ -415,7 +415,7 @@ export const readDocumentsRoute = defineRoute({
 
 export const readGatesRoute = defineRoute({
   ...read, id: 'readmodel.gates', path: '/api/v1/ms/:ms/gates',
-  summary: 'Gate items with the records they hold back',
+  summary: 'Blocking items with the records they hold back',
   params: MsParams, response: z.array(GateItemView), errors: [404],
 });
 

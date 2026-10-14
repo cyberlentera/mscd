@@ -1,6 +1,6 @@
 import {
   test, expect, openApp, go, ui, list, listRows, listRow, chips, chip, chipCount, expectShown, moreButton, search,
-  tabs, tab, tabCount, activeTab, drawerAction, drawerFact, drawerLinks, openRow, expectToast, switchMs, switchRole, closeDrawer,
+  tabs, tab, tabCount, activeTab, drawerAction, drawerFact, drawerLinks, drawerPlain, openRow, expectToast, switchMs, switchRole, closeDrawer,
 } from './helpers.js';
 
 const hero = (page) => page.locator('main div[style*="background: var(--tx)"]').first();
@@ -257,6 +257,20 @@ test.describe('Outstanding items', () => {
     await go(page, 'Outstanding items');
     await expect(listRows(page)).toHaveCount(1);
     await expect(page.locator('main')).not.toContainText('Outstanding by person');
+  });
+
+  test('top management reads the records up and down the chain as plain text and has no Trace', async ({ page }) => {
+    await openApp(page);
+    await switchRole(page, 'Top Management');
+    await go(page, 'Outstanding items');
+    await tab(page, 'Risk').click();
+    await openRow(page, 'R-014');
+    // the Traceability viewer is not a Top Management screen, so nothing in the detail leads there
+    await expect(drawerLinks(page, 'Linked from')).toHaveCount(0);
+    await expect(drawerLinks(page, 'Leads to')).toHaveCount(0);
+    await expect(drawerPlain(page, 'Linked from')).toHaveText(['CI-02']);
+    await expect(drawerPlain(page, 'Leads to')).toHaveText(['T-014', 'A.8.2']);
+    await expect(drawerAction(page, 'Trace from here')).toHaveCount(0);
   });
 
   test('a system without an audit shows the no-audit state with its stages', async ({ page }) => {

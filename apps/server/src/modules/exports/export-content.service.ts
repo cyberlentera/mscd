@@ -90,10 +90,10 @@ type Labels = Readonly<Record<string, readonly [string, string]>>;
 
 const REQ_STATUS: Labels = {
   implemented: ['Implemented', 'Diterapkan'],
-  partial: ['Partially implemented', 'Diterapkan sebagian'],
+  partial: ['Partially implemented', 'Sebagian diterapkan'],
   planned: ['Planned', 'Direncanakan'],
-  ns: ['Not started', 'Belum dimulai'],
-  blocked: ['Blocked', 'Terhambat'],
+  ns: ['Not started', 'Belum mulai'],
+  blocked: ['Blocked', 'Terblokir'],
   na: ['Not applicable', 'Tidak berlaku'],
   complete: ['Complete, awaiting verification', 'Selesai, menunggu verifikasi'],
 };
@@ -103,8 +103,8 @@ const DOC_STATUS: Labels = {
   review: ['In review', 'Dalam tinjauan'],
   draft: ['Draft', 'Draf'],
 };
-const FRESHNESS: Labels = { fresh: ['Fresh', 'Segar'], aging: ['Aging', 'Menua'], expired: ['Expired', 'Kedaluwarsa'], critical: ['Critical', 'Kritis'] };
-const INTEGRITY: Labels = { ok: ['OK', 'OK'], degraded: ['Degraded', 'Menurun'], broken: ['Broken', 'Rusak'] };
+const FRESHNESS: Labels = { fresh: ['Fresh', 'Mutakhir'], aging: ['Aging', 'Hampir kedaluwarsa'], expired: ['Expired', 'Kedaluwarsa'], critical: ['Critical', 'Kritis'] };
+const INTEGRITY: Labels = { ok: ['OK', 'OK'], degraded: ['Degraded', 'Terganggu'], broken: ['Broken', 'Rusak'] };
 const CLAUSES: Readonly<Record<number, readonly [string, string]>> = {
   4: ['Context of the organisation', 'Konteks organisasi'],
   5: ['Leadership', 'Kepemimpinan'],
@@ -116,16 +116,16 @@ const CLAUSES: Readonly<Record<number, readonly [string, string]>> = {
 };
 
 const T = {
-  soaSheet: ['Statement of Applicability', 'Pernyataan Keberlakuan'],
-  docSheet: ['Document register', 'Daftar dokumen'],
+  soaSheet: ['Statement of Applicability', 'Statement of Applicability'],
+  docSheet: ['Document register', 'Daftar induk dokumen'],
   soaColumns: [
     ['ID', 'ID'], ['Title', 'Judul'], ['Theme', 'Tema'], ['Applicable', 'Berlaku'], ['Justification', 'Justifikasi'], ['Status', 'Status'],
     ['Owner', 'Pemilik'], ['Implementing document', 'Dokumen pelaksana'], ['Frequency', 'Frekuensi'], ['Last evidence', 'Bukti terakhir'],
-    ['Freshness', 'Kesegaran'], ['Integrity', 'Integritas'],
+    ['Freshness', 'Kemutakhiran'], ['Integrity', 'Integritas'],
   ],
   docColumns: [
     ['ID', 'ID'], ['Title', 'Judul'], ['Type', 'Jenis'], ['Version', 'Versi'], ['Status', 'Status'], ['Approved', 'Disetujui'],
-    ['Next review', 'Tinjauan berikutnya'], ['Owner', 'Pemilik'], ['Shared', 'Dibagikan'], ['System', 'Sistem'],
+    ['Next review', 'Tinjauan berikutnya'], ['Owner', 'Pemilik'], ['Shared', 'Dipakai bersama'], ['System', 'Sistem'],
   ],
   yes: ['Yes', 'Ya'],
   no: ['No', 'Tidak'],
@@ -139,24 +139,24 @@ const T = {
   readiness: ['Readiness', 'Kesiapan'],
   stages: ['Readiness per chain step', 'Kesiapan per tahap rantai'],
   stage: ['Step', 'Tahap'],
-  records: ['Records', 'Catatan'],
+  records: ['Records', 'Rekaman'],
   open: ['Open', 'Terbuka'],
   overdue: ['Overdue', 'Terlambat'],
   after: ['Due after audit', 'Lewat tanggal audit'],
   ready: ['Ready', 'Siap'],
-  next: ['Next due', 'Jatuh tempo berikutnya'],
+  next: ['Next due', 'Jatuh tempo berikut'],
   gateItems: ['Blocking items', 'Item penghambat'],
   type: ['Type', 'Jenis'],
-  why: ['Reason', 'Alasan'],
+  why: ['Why it blocks', 'Alasan menghambat'],
   holder: ['Assigned to', 'PIC'],
   due: ['Due', 'Jatuh tempo'],
-  blockers: ['Blockers', 'Penghambat'],
+  blockers: ['Blockers', 'Hambatan'],
   item: ['Item', 'Item'],
   title: ['Title', 'Judul'],
   value: ['Value', 'Nilai'],
-  blockedBy: ['Blocked by', 'Dihambat oleh'],
+  blockedBy: ['Blocked by', 'Diblokir oleh'],
   noGate: ['No open blocking items.', 'Tidak ada item penghambat terbuka.'],
-  noBlockers: ['Nothing is blocked.', 'Tidak ada yang terhambat.'],
+  noBlockers: ['Nothing is blocked.', 'Tidak ada yang terblokir.'],
   nextAudit: ['Next audit', 'Audit berikutnya'],
   noAudit: ['No audit scheduled', 'Tidak ada audit terjadwal'],
   edition: ['Standard', 'Standar'],

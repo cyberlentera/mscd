@@ -46,8 +46,8 @@ export default function Journey({ v }) {
             <div style={{ position: "absolute", left: "7.14%", right: "7.14%", top: "22px", height: "2px", background: "rgba(255,255,255,.14)" }}></div>
             <div style={{ position: "absolute", left: "7.14%", top: "22px", height: "2px", width: v.jr?.fillW, background: "linear-gradient(90deg,#1f7a48,#e8731a)", transformOrigin: "left", animation: "growX .9s cubic-bezier(.2,.7,.2,1) both" }}></div>
             {list(v.jr?.track).map((s, $i18) => (<Fragment key={$i18}>
-              <button onClick={s?.go} title={s?.short} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", border: "0", background: "transparent", color: "inherit", cursor: "pointer", font: "inherit", padding: "0 4px", minWidth: "0" }}>
-                <span style={{ width: "44px", height: "44px", borderRadius: "13px", display: "flex", alignItems: "center", justifyContent: "center", background: s?.dotBg, color: s?.dotFg, border: `1.5px solid ${s?.dotBd ?? ''}`, animation: s?.pulse }}>
+              <button onClick={s?.go} title={s?.short} aria-disabled={s?.off} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", border: "0", background: "transparent", color: "inherit", cursor: s?.cursor, font: "inherit", padding: "0 4px", minWidth: "0" }}>
+                <span style={{ width: "44px", height: "44px", borderRadius: "13px", display: "flex", alignItems: "center", justifyContent: "center", background: s?.dotBg, color: s?.dotFg, border: `1.5px solid ${s?.dotBd ?? ''}` }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "none" }}>
                     <path d={s?.d}></path>
                   </svg>

@@ -20,7 +20,7 @@ export default function Drawer({ v }) {
           <div>
             <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
               <span style={{ fontFamily: "var(--ffm)", fontWeight: "600" }}>{txt(v.det?.id)}</span>
-              {list(v.det?.badges).map((b, $i87) => (<Fragment key={$i87}>
+              {list(v.det?.badges).map((b, $i89) => (<Fragment key={$i89}>
                 <span style={{ padding: "2px 8px", borderRadius: "999px", fontSize: "max(12px, .9em)", fontWeight: "600", background: b?.bg, color: b?.fg }}>{txt(b?.v)}</span>
               </Fragment>))}
               {v.det?.note ? (<>
@@ -33,7 +33,7 @@ export default function Drawer({ v }) {
             </>) : null}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "150px 1fr", rowGap: "8px", columnGap: "12px" }}>
-            {list(v.det?.facts).map((f, $i88) => (<Fragment key={$i88}>
+            {list(v.det?.facts).map((f, $i90) => (<Fragment key={$i90}>
               <div style={{ color: "var(--tx3)", fontSize: "max(12px, .9em)", paddingTop: "1px" }}>{txt(f?.k)}</div>
               <div style={{ fontFamily: f?.ff }}>
                 {f?.go ? (<>
@@ -49,8 +49,13 @@ export default function Drawer({ v }) {
             <div>
               <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: ".08em", color: "var(--tx3)", marginBottom: "6px" }}>{txt(v.t?.upstream)}</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                {list(v.det?.up).map((l, $i89) => (<Fragment key={$i89}>
-                  <button onClick={l?.go} style={{ border: "1px solid var(--bd)", background: "var(--sur2)", color: "var(--tx)", borderRadius: "6px", padding: "3px 8px", fontFamily: "var(--ffm)", fontSize: "max(12px, .9em)", cursor: "pointer", whiteSpace: "nowrap" }}>{txt(l?.v)}</button>
+                {list(v.det?.up).map((l, $i91) => (<Fragment key={$i91}>
+                  {l?.go ? (<>
+                    <button onClick={l?.go} style={{ border: "1px solid var(--bd)", background: "var(--sur2)", color: "var(--tx)", borderRadius: "6px", padding: "3px 8px", fontFamily: "var(--ffm)", fontSize: "max(12px, .9em)", cursor: "pointer", whiteSpace: "nowrap" }}>{txt(l?.v)}</button>
+                  </>) : null}
+                  {l?.plain ? (<>
+                    <span style={{ padding: "4px 0", fontFamily: "var(--ffm)", fontSize: "max(12px, .9em)", color: "var(--tx)", whiteSpace: "nowrap" }}>{txt(l?.v)}</span>
+                  </>) : null}
                 </Fragment>))}
                 {v.det?.noUp ? (<>
                   <span style={{ color: "var(--bad)", fontSize: "max(12px, .9em)" }}>{"- "}{txt(v.det?.noUp)}</span>
@@ -60,8 +65,13 @@ export default function Drawer({ v }) {
             <div>
               <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: ".08em", color: "var(--tx3)", marginBottom: "6px" }}>{txt(v.t?.downstream)}</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                {list(v.det?.down).map((l, $i90) => (<Fragment key={$i90}>
-                  <button onClick={l?.go} style={{ border: "1px solid var(--bd)", background: "var(--sur2)", color: "var(--tx)", borderRadius: "6px", padding: "3px 8px", fontFamily: "var(--ffm)", fontSize: "max(12px, .9em)", cursor: "pointer", whiteSpace: "nowrap" }}>{txt(l?.v)}</button>
+                {list(v.det?.down).map((l, $i92) => (<Fragment key={$i92}>
+                  {l?.go ? (<>
+                    <button onClick={l?.go} style={{ border: "1px solid var(--bd)", background: "var(--sur2)", color: "var(--tx)", borderRadius: "6px", padding: "3px 8px", fontFamily: "var(--ffm)", fontSize: "max(12px, .9em)", cursor: "pointer", whiteSpace: "nowrap" }}>{txt(l?.v)}</button>
+                  </>) : null}
+                  {l?.plain ? (<>
+                    <span style={{ padding: "4px 0", fontFamily: "var(--ffm)", fontSize: "max(12px, .9em)", color: "var(--tx)", whiteSpace: "nowrap" }}>{txt(l?.v)}</span>
+                  </>) : null}
                 </Fragment>))}
                 {v.det?.noDown ? (<>
                   <span style={{ color: "var(--bad)", fontSize: "max(12px, .9em)" }}>{"- "}{txt(v.det?.noDown)}</span>
@@ -70,7 +80,7 @@ export default function Drawer({ v }) {
             </div>
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", paddingTop: "6px", borderTop: "1px solid var(--bd)" }}>
-            {list(v.det?.actions).map((a, $i91) => (<Fragment key={$i91}>
+            {list(v.det?.actions).map((a, $i93) => (<Fragment key={$i93}>
               <button onClick={a?.go} title={a?.label} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px", height: "34px", minWidth: "34px", padding: `0 ${a?.px ?? ''}`, borderRadius: "8px", border: `1px solid ${a?.bd ?? ''}`, background: a?.bg, color: a?.fg, font: "inherit", fontSize: "var(--fs)", fontWeight: "500", cursor: "pointer", whiteSpace: "nowrap" }}>
                 {a?.icon ? (<>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "none" }}>

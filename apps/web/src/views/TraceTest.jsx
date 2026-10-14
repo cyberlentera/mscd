@@ -6,7 +6,7 @@ import { txt, list } from './util.js';
 export default function TraceTest({ v }) {
   return (
     <>{v.trace ? (<>
-      <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", boxShadow: "var(--sh)" }}>
+      <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)" }}>
         <div style={{ padding: "12px var(--pad)", borderBottom: "1px solid var(--bd)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ fontWeight: "600" }}>{txt(v.t?.traceTest)}</span>
@@ -21,17 +21,32 @@ export default function TraceTest({ v }) {
         <div style={{ padding: "calc(var(--pad) + 6px) var(--pad)", display: "flex", alignItems: "flex-start", gap: "0", overflow: "auto" }}>
           {list(v.trace?.nodes).map((n, $i43) => (<Fragment key={$i43}>
             <div style={{ display: "flex", alignItems: "flex-start", flex: "1 1 0", minWidth: "120px" }}>
-              <button onClick={n?.go} style={{ flex: "1", minWidth: "0", textAlign: "left", border: `1.5px solid ${n?.fg ?? ''}`, background: n?.bg, borderRadius: "10px", padding: "10px 10px", cursor: "pointer", color: "var(--tx)", font: "inherit", fontSize: "var(--fs)", animation: n?.anim, animationDelay: n?.delay, transition: "transform .15s" }} className="hv3">
-                <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: ".04em", overflowWrap: "anywhere", color: n?.fg, fontWeight: "700" }}>{txt(n?.stage)}</div>
-                <div style={{ fontFamily: "var(--ffm)", fontWeight: "600", marginTop: "4px" }}>{txt(n?.id)}</div>
-                <div style={{ fontSize: "12px", color: "var(--tx2)", marginTop: "2px", lineHeight: "1.3", minHeight: "32px" }}>{txt(n?.title)}</div>
-                {n?.holder ? (<>
-                  <div style={{ fontSize: "12px", marginTop: "6px", paddingTop: "6px", borderTop: `1px dashed ${n?.fg ?? ''}`, color: n?.fg }}>
-                    <strong>{txt(n?.holder)}</strong>
-                    <br />{txt(n?.dueLabel)}
-                  </div>
-                </>) : null}
-              </button>{" "}
+              {n?.go ? (<>
+                <button onClick={n?.go} style={{ flex: "1", minWidth: "0", textAlign: "left", border: `1.5px solid ${n?.fg ?? ''}`, background: n?.bg, borderRadius: "10px", padding: "10px 10px", cursor: "pointer", color: "var(--tx)", font: "inherit", fontSize: "var(--fs)", animation: n?.anim, animationDelay: n?.delay, transition: "transform .15s" }} className="hv3">
+                  <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: ".04em", overflowWrap: "anywhere", color: n?.fg, fontWeight: "700" }}>{txt(n?.stage)}</div>
+                  <div style={{ fontFamily: "var(--ffm)", fontWeight: "600", marginTop: "4px" }}>{txt(n?.id)}</div>
+                  <div style={{ fontSize: "12px", color: "var(--tx2)", marginTop: "2px", lineHeight: "1.3", minHeight: "32px" }}>{txt(n?.title)}</div>
+                  {n?.holder ? (<>
+                    <div style={{ fontSize: "12px", marginTop: "6px", paddingTop: "6px", borderTop: `1px dashed ${n?.fg ?? ''}`, color: n?.fg }}>
+                      <strong>{txt(n?.holder)}</strong>
+                      <br />{txt(n?.dueLabel)}
+                    </div>
+                  </>) : null}
+                </button>
+              </>) : null}
+              {n?.plain ? (<>
+                <div style={{ flex: "1", minWidth: "0", border: `1.5px solid ${n?.fg ?? ''}`, background: n?.bg, borderRadius: "10px", padding: "10px 10px", color: "var(--tx)", fontSize: "var(--fs)", animation: n?.anim, animationDelay: n?.delay }}>
+                  <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: ".04em", overflowWrap: "anywhere", color: n?.fg, fontWeight: "700" }}>{txt(n?.stage)}</div>
+                  <div style={{ fontFamily: "var(--ffm)", fontWeight: "600", marginTop: "4px" }}>{txt(n?.id)}</div>
+                  <div style={{ fontSize: "12px", color: "var(--tx2)", marginTop: "2px", lineHeight: "1.3", minHeight: "32px" }}>{txt(n?.title)}</div>
+                  {n?.holder ? (<>
+                    <div style={{ fontSize: "12px", marginTop: "6px", paddingTop: "6px", borderTop: `1px dashed ${n?.fg ?? ''}`, color: n?.fg }}>
+                      <strong>{txt(n?.holder)}</strong>
+                      <br />{txt(n?.dueLabel)}
+                    </div>
+                  </>) : null}
+                </div>
+              </>) : null}
               {n?.arrow ? (<>
                 <span style={{ flex: "none", width: "18px", height: "2px", marginTop: "38px", background: n?.arrowColor, transformOrigin: "left", animation: "growX .3s both", animationDelay: n?.delay }}></span>
               </>) : null}
@@ -44,7 +59,7 @@ export default function TraceTest({ v }) {
           <span style={{ marginLeft: "auto", fontSize: "12px", whiteSpace: "nowrap", fontFamily: "var(--ffm)" }}>{txt(v.t?.renderedIn)}{" "}{txt(v.trace?.ms)}{" ms"}</span>
         </div>
       </div>
-      <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", boxShadow: "var(--sh)", overflow: "hidden" }}>
+      <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", overflow: "hidden" }}>
         <div style={{ padding: "12px var(--pad)", borderBottom: "1px solid var(--bd)", fontWeight: "600" }}>{txt(v.t?.stageTable)}</div>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>

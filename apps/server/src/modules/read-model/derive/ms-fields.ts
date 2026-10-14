@@ -69,9 +69,9 @@ function label(labels: PackLabels, key: string): Pair | null {
   return value ? [value[0], value[1]] : null;
 }
 
-/** G.5 `ed`: the active edition, or `<active> to <target>` during a transition. */
+/** G.5 `ed`: the active edition, or `<active> + <target>` during a transition (both editions are in use). */
 export function editionText(active: Pick<VersionInfo, 'edition'>, target: Pick<VersionInfo, 'edition'> | null): string {
-  return target ? `${active.edition} to ${target.edition}` : active.edition;
+  return target ? `${active.edition} + ${target.edition}` : active.edition;
 }
 
 /** G.5 `locMode`: `Managed Vault` for a vault default, else `Customer Repository, ` plus the default rule's mode label. */

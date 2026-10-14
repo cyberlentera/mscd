@@ -154,7 +154,7 @@ describe('applicability commands', () => {
       expect(response.body).toMatchObject({
         rule: 'BR-01',
         messageKey: 'rule.BR-01',
-        messages: { en: expect.stringMatching(/partially implemented or planned/), id: expect.stringMatching(/diterapkan sebagian atau direncanakan/) },
+        messages: { en: expect.stringMatching(/partially implemented or planned/), id: expect.stringMatching(/sebagian diterapkan atau direncanakan/) },
       });
       expect((await entryOf(db, 'tst', 'isms', entry!.code)).status).toBe('partially_implemented');
     });

@@ -1,6 +1,6 @@
 import {
   test, expect, openApp, go, ui, list, listRows, listRow, chips, chip, chipCount, expectShown, moreButton, search,
-  tab, tabs, tabCount, activeTab, drawerAction, drawerFact, drawerLinks, openRow, expectToast, switchRole, switchMs, closeDrawer,
+  tab, tabs, tabCount, activeTab, drawerAction, drawerFact, drawerLinks, drawerPlain, openRow, expectToast, switchRole, switchMs, closeDrawer,
 } from './helpers.js';
 
 const heads = (page) => list(page).locator('thead th');
@@ -174,6 +174,31 @@ test.describe('Annex A controls', () => {
     await expect(ui.drawer(page)).toBeVisible();
     await expect(ui.drawer(page)).toContainText('Privileged access rights');
     await expect(listRow(page, 'A.8.2')).toHaveAttribute('style', /var\(--accbg\)/);
+  });
+
+  // @sample-only: the api sends a Domain Owner only their own records, so another holder's document is not in the detail.
+  test('a domain owner follows only their own records from the detail and has no Trace', { tag: '@sample-only' }, async ({ page }) => {
+    await openApp(page);
+    await switchRole(page, 'Domain Owner');
+    await go(page, 'Annex A controls');
+    await chip(page, 'All').click();
+    await openRow(page, 'A.5.9');
+    // risks open only in the Traceability viewer, which a Domain Owner does not have
+    await expect(drawerLinks(page, 'Linked from')).toHaveCount(0);
+    await expect(drawerPlain(page, 'Linked from')).toHaveText(['R-003', 'R-014']);
+    // the document is held by Rina Kusuma, the evidence by the owner
+    await expect(drawerPlain(page, 'Leads to')).toHaveText(['PRC-05']);
+    await expect(drawerLinks(page, 'Leads to')).toHaveText(['EV-0124']);
+    await expect(drawerFact(page, 'Implementing document').locator('button')).toHaveCount(0);
+    await expect(drawerFact(page, 'Last evidence').locator('button')).toHaveCount(1);
+    await expect(drawerAction(page, 'Trace from here')).toHaveCount(0);
+    await drawerLinks(page, 'Leads to').click();
+    await expect(ui.title(page)).toHaveText('Evidence status');
+    await expect(ui.drawer(page)).toContainText('EV-0124');
+    await expect(drawerAction(page, 'Trace from here')).toHaveCount(0);
+    await drawerFact(page, 'Control / requirement').locator('button').click();
+    await expect(ui.title(page)).toHaveText('Annex A controls');
+    await expect(ui.drawer(page)).toContainText('A.5.9');
   });
 
   test('Mark complete moves a control to "awaiting verification" and blocks self-verification', async ({ page }) => {

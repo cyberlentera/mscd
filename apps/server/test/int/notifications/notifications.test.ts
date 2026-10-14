@@ -229,9 +229,9 @@ describe('notifications (E.6)', () => {
 
   it('notifications.digest sends one email per user with the previous day\'s digest rows', async () => {
     await mail.clear();
-    const a = await ctx.notify('tst', { recipientUserId: ids.maya!, kind: 'evidence_aging', digest: true, title: pairs('Evidence ageing: EV-0101', 'Bukti menua: EV-0101'), body: pairs('Ageing one', 'Menua satu') });
+    const a = await ctx.notify('tst', { recipientUserId: ids.maya!, kind: 'evidence_aging', digest: true, title: pairs('Evidence ageing: EV-0101', 'Bukti hampir kedaluwarsa: EV-0101'), body: pairs('Ageing one', 'Hampir kedaluwarsa satu') });
     const b = await ctx.notify('tst', { recipientUserId: ids.maya!, kind: 'drift_detected', digest: true, title: pairs('Drift: stale risk R-014', 'Drift: risiko R-014'), body: pairs('Drift body', 'Isi drift') });
-    const c = await ctx.notify('tst', { recipientUserId: ids.bagus!, kind: 'evidence_aging', digest: true, title: pairs('Evidence ageing: EV-0202', 'Bukti menua: EV-0202'), body: pairs('Ageing two', 'Menua dua') });
+    const c = await ctx.notify('tst', { recipientUserId: ids.bagus!, kind: 'evidence_aging', digest: true, title: pairs('Evidence ageing: EV-0202', 'Bukti hampir kedaluwarsa: EV-0202'), body: pairs('Ageing two', 'Hampir kedaluwarsa dua') });
 
     // Rows created today wait for tomorrow's digest.
     ctx.clock.setNow(new Date());
@@ -248,7 +248,7 @@ describe('notifications (E.6)', () => {
     expect(toMaya.mailKind).toBe('notification:digest');
     const toBagus = await mail.waitFor(emails.bagus!, (m) => m.subject.startsWith('[MSCD] Ringkasan'));
     expect(toBagus.subject).toBe('[MSCD] Ringkasan harian: 1 notifikasi');
-    expect(toBagus.text).toContain('Menua dua');
+    expect(toBagus.text).toContain('Hampir kedaluwarsa dua');
 
     const rows = await inOrg(db, 'tst', (trx) => trx.selectFrom('notification').select(['id', 'email_status']).where('id', 'in', [a!, b!, c!]).execute());
     expect(rows.every((r) => r.email_status === 'sent')).toBe(true);

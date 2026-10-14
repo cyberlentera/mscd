@@ -6,7 +6,7 @@ import { txt, list } from './util.js';
 export default function PageDetail({ v }) {
   return (
     <>{v.showPage ? (<>
-      <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", boxShadow: "var(--sh)" }}>
+      <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)" }}>
         <div style={{ padding: "10px var(--pad)", borderBottom: "1px solid var(--bd)" }}>
           <button onClick={v.closeSel} style={{ border: "0", background: "transparent", padding: "0", font: "inherit", fontSize: "var(--fs)", color: "var(--acc)", cursor: "pointer", fontWeight: "500", display: "inline-flex", alignItems: "center", gap: "6px" }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "none" }}>
@@ -49,7 +49,12 @@ export default function PageDetail({ v }) {
                 <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: ".08em", color: "var(--tx3)", marginBottom: "6px" }}>{txt(v.t?.upstream)}</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                   {list(v.det?.up).map((l, $i68) => (<Fragment key={$i68}>
-                    <button onClick={l?.go} style={{ border: "1px solid var(--bd)", background: "var(--sur2)", color: "var(--tx)", borderRadius: "6px", padding: "3px 8px", fontFamily: "var(--ffm)", fontSize: "max(12px, .9em)", cursor: "pointer", whiteSpace: "nowrap" }}>{txt(l?.v)}</button>
+                    {l?.go ? (<>
+                      <button onClick={l?.go} style={{ border: "1px solid var(--bd)", background: "var(--sur2)", color: "var(--tx)", borderRadius: "6px", padding: "3px 8px", fontFamily: "var(--ffm)", fontSize: "max(12px, .9em)", cursor: "pointer", whiteSpace: "nowrap" }}>{txt(l?.v)}</button>
+                    </>) : null}
+                    {l?.plain ? (<>
+                      <span style={{ padding: "4px 0", fontFamily: "var(--ffm)", fontSize: "max(12px, .9em)", color: "var(--tx)", whiteSpace: "nowrap" }}>{txt(l?.v)}</span>
+                    </>) : null}
                   </Fragment>))}
                   {v.det?.noUp ? (<>
                     <span style={{ color: "var(--bad)", fontSize: "max(12px, .9em)" }}>{"- "}{txt(v.det?.noUp)}</span>
@@ -60,7 +65,12 @@ export default function PageDetail({ v }) {
                 <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: ".08em", color: "var(--tx3)", marginBottom: "6px" }}>{txt(v.t?.downstream)}</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                   {list(v.det?.down).map((l, $i69) => (<Fragment key={$i69}>
-                    <button onClick={l?.go} style={{ border: "1px solid var(--bd)", background: "var(--sur2)", color: "var(--tx)", borderRadius: "6px", padding: "3px 8px", fontFamily: "var(--ffm)", fontSize: "max(12px, .9em)", cursor: "pointer", whiteSpace: "nowrap" }}>{txt(l?.v)}</button>
+                    {l?.go ? (<>
+                      <button onClick={l?.go} style={{ border: "1px solid var(--bd)", background: "var(--sur2)", color: "var(--tx)", borderRadius: "6px", padding: "3px 8px", fontFamily: "var(--ffm)", fontSize: "max(12px, .9em)", cursor: "pointer", whiteSpace: "nowrap" }}>{txt(l?.v)}</button>
+                    </>) : null}
+                    {l?.plain ? (<>
+                      <span style={{ padding: "4px 0", fontFamily: "var(--ffm)", fontSize: "max(12px, .9em)", color: "var(--tx)", whiteSpace: "nowrap" }}>{txt(l?.v)}</span>
+                    </>) : null}
                   </Fragment>))}
                   {v.det?.noDown ? (<>
                     <span style={{ color: "var(--bad)", fontSize: "max(12px, .9em)" }}>{"- "}{txt(v.det?.noDown)}</span>

@@ -6,7 +6,7 @@ import { txt, list } from './util.js';
 export default function PendingPeople({ v }) {
   return (
     <>{v.people ? (<>
-      <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", boxShadow: "var(--sh)" }}>
+      <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)" }}>
         <div style={{ padding: "12px var(--pad)", borderBottom: "1px solid var(--bd)", display: "flex", alignItems: "center", gap: "8px" }}>
           <span style={{ fontWeight: "600" }}>{txt(v.t?.perPerson)}</span>
           <span data-tip={v.t?.perPersonSub} tabIndex="0" role="img" aria-label={v.t?.perPersonSub} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "12px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>

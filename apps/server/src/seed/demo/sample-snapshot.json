@@ -87,8 +87,8 @@
      "certifier": "PT Sertifikasi Nusantara",
      "lead": "Ir. Dwi Hartanto, IRCA LA",
      "cert": [
-      "Certified 14 Mar 2025, cycle 2025–2028",
-      "Tersertifikasi 14 Mar 2025, siklus 2025–2028"
+      "Certified 14 Mar 2025, cycle 2025-2028",
+      "Tersertifikasi 14 Mar 2025, siklus 2025-2028"
      ],
      "stage": [
       "Surveillance 1, year 2",
@@ -144,7 +144,7 @@
     {
      "id": "qms",
      "code": "ISO 9001",
-     "ed": "2015 to 2026",
+     "ed": "2015 + 2026",
      "short": "QMS",
      "name": [
       "Quality management system",
@@ -157,8 +157,8 @@
      "certifier": "Lembaga Sertifikasi Garuda Mutu",
      "lead": "Ir. Bambang Sutrisno",
      "cert": [
-      "Certified 22 Jun 2023, cycle 2023–2026",
-      "Tersertifikasi 22 Jun 2023, siklus 2023–2026"
+      "Certified 22 Jun 2023, cycle 2023-2026",
+      "Tersertifikasi 22 Jun 2023, siklus 2023-2026"
      ],
      "stage": [
       "Recertification + transition audit",
@@ -1847,7 +1847,7 @@
        "owner": "fajar",
        "doc": "PRC-15",
        "freq": "semi",
-       "note": "Maintenance log lives in a departed employee’s OneDrive",
+       "note": "Maintenance log lives in a departed employee's OneDrive",
        "gate": false,
        "just": "Required by risk treatment; see linked risks.",
        "risks": [
@@ -5754,7 +5754,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0124",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0163",
@@ -5779,7 +5779,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0163",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0229",
@@ -5804,7 +5804,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0229",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0253",
@@ -5829,7 +5829,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0253",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0271",
@@ -5854,7 +5854,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0271",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0292",
@@ -5879,7 +5879,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0292",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0298",
@@ -5904,7 +5904,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0298",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0313",
@@ -5929,7 +5929,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0313",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0319",
@@ -5954,7 +5954,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0319",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0346",
@@ -5979,7 +5979,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0346",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:x:M-07",
@@ -6764,7 +6764,7 @@
         {
          "key": "isms:act:6.7",
          "no": "6.7",
-         "title": "Approve tier 1–2 documents",
+         "title": "Approve tier 1-2 documents",
          "st": "verified",
          "blocker": null,
          "owner": "yusuf",
@@ -6776,7 +6776,7 @@
         {
          "key": "isms:act:6.8",
          "no": "6.8",
-         "title": "Approve tier 3–4 documents",
+         "title": "Approve tier 3-4 documents",
          "st": "verified",
          "blocker": null,
          "owner": "andi",
@@ -9377,7 +9377,7 @@
         {
          "key": "qms:act:9.2",
          "no": "9.2",
-         "title": "Run gap analysis 2015 to 2026",
+         "title": "Run gap analysis against ISO 9001:2026",
          "st": "verified",
          "blocker": null,
          "owner": "yusuf",
@@ -13880,7 +13880,7 @@
        "Evidence",
        "Bukti"
       ],
-      "q": "Prove it operated this cycle, not at implementation.",
+      "q": "Prove it operated during this cycle, after implementation.",
       "src": "ev"
      },
      {
@@ -14846,7 +14846,7 @@
     "abms": []
    },
    "FOCUS": {
-    "isms": "Vulnerability remediation (NC-2025-02), supplier and cloud controls (A.5.19–5.23), evidence of operation since Stage 2",
+    "isms": "Vulnerability remediation (NC-2025-02), supplier and cloud controls (A.5.19-5.23), evidence of operation since Stage 2",
     "qms": "Transition to ISO 9001:2026 structure, external provider control, customer satisfaction analysis",
     "bcms": "Scope, BIA method and results, leadership, readiness for Stage 2",
     "abms": "-"
@@ -15452,8 +15452,8 @@
      "certifier": "PT Sertifikasi Nusantara",
      "lead": "Ir. Dwi Hartanto, IRCA LA",
      "cert": [
-      "Certified 14 Mar 2025, cycle 2025–2028",
-      "Tersertifikasi 14 Mar 2025, siklus 2025–2028"
+      "Certified 14 Mar 2025, cycle 2025-2028",
+      "Tersertifikasi 14 Mar 2025, siklus 2025-2028"
      ],
      "stage": [
       "Surveillance 1, year 2",
@@ -15509,7 +15509,7 @@
     {
      "id": "qms",
      "code": "ISO 9001",
-     "ed": "2015 to 2026",
+     "ed": "2015 + 2026",
      "short": "QMS",
      "name": [
       "Quality management system",
@@ -15522,8 +15522,8 @@
      "certifier": "Lembaga Sertifikasi Garuda Mutu",
      "lead": "Ir. Bambang Sutrisno",
      "cert": [
-      "Certified 22 Jun 2023, cycle 2023–2026",
-      "Tersertifikasi 22 Jun 2023, siklus 2023–2026"
+      "Certified 22 Jun 2023, cycle 2023-2026",
+      "Tersertifikasi 22 Jun 2023, siklus 2023-2026"
      ],
      "stage": [
       "Recertification + transition audit",
@@ -17035,7 +17035,7 @@
        "owner": "fajar",
        "doc": "PRC-15",
        "freq": "semi",
-       "note": "Maintenance log lives in a departed employee’s OneDrive",
+       "note": "Maintenance log lives in a departed employee's OneDrive",
        "gate": false,
        "just": "Required by risk treatment; see linked risks.",
        "risks": [
@@ -20942,7 +20942,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0124",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0163",
@@ -20967,7 +20967,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0163",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0229",
@@ -20992,7 +20992,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0229",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0253",
@@ -21017,7 +21017,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0253",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0271",
@@ -21042,7 +21042,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0271",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0292",
@@ -21067,7 +21067,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0292",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0298",
@@ -21092,7 +21092,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0298",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0313",
@@ -21117,7 +21117,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0313",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0319",
@@ -21142,7 +21142,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0319",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0346",
@@ -21167,7 +21167,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0346",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:x:M-07",
@@ -21952,7 +21952,7 @@
         {
          "key": "isms:act:6.7",
          "no": "6.7",
-         "title": "Approve tier 1–2 documents",
+         "title": "Approve tier 1-2 documents",
          "st": "verified",
          "blocker": null,
          "owner": "yusuf",
@@ -21964,7 +21964,7 @@
         {
          "key": "isms:act:6.8",
          "no": "6.8",
-         "title": "Approve tier 3–4 documents",
+         "title": "Approve tier 3-4 documents",
          "st": "verified",
          "blocker": null,
          "owner": "andi",
@@ -24565,7 +24565,7 @@
         {
          "key": "qms:act:9.2",
          "no": "9.2",
-         "title": "Run gap analysis 2015 to 2026",
+         "title": "Run gap analysis against ISO 9001:2026",
          "st": "verified",
          "blocker": null,
          "owner": "yusuf",
@@ -24795,7 +24795,7 @@
        "Evidence",
        "Bukti"
       ],
-      "q": "Prove it operated this cycle, not at implementation.",
+      "q": "Prove it operated during this cycle, after implementation.",
       "src": "ev"
      },
      {
@@ -25496,7 +25496,7 @@
     ]
    },
    "FOCUS": {
-    "isms": "Vulnerability remediation (NC-2025-02), supplier and cloud controls (A.5.19–5.23), evidence of operation since Stage 2",
+    "isms": "Vulnerability remediation (NC-2025-02), supplier and cloud controls (A.5.19-5.23), evidence of operation since Stage 2",
     "qms": "Transition to ISO 9001:2026 structure, external provider control, customer satisfaction analysis"
    },
    "PREP": {
@@ -25933,8 +25933,8 @@
      "certifier": "PT Sertifikasi Nusantara",
      "lead": "Ir. Dwi Hartanto, IRCA LA",
      "cert": [
-      "Certified 14 Mar 2025, cycle 2025–2028",
-      "Tersertifikasi 14 Mar 2025, siklus 2025–2028"
+      "Certified 14 Mar 2025, cycle 2025-2028",
+      "Tersertifikasi 14 Mar 2025, siklus 2025-2028"
      ],
      "stage": [
       "Surveillance 1, year 2",
@@ -27416,7 +27416,7 @@
        "owner": "fajar",
        "doc": "PRC-15",
        "freq": "semi",
-       "note": "Maintenance log lives in a departed employee’s OneDrive",
+       "note": "Maintenance log lives in a departed employee's OneDrive",
        "gate": false,
        "just": "Required by risk treatment; see linked risks.",
        "risks": [
@@ -31323,7 +31323,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0124",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0163",
@@ -31348,7 +31348,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0163",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0229",
@@ -31373,7 +31373,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0229",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0253",
@@ -31398,7 +31398,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0253",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0271",
@@ -31423,7 +31423,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0271",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0292",
@@ -31448,7 +31448,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0292",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0298",
@@ -31473,7 +31473,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0298",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0313",
@@ -31498,7 +31498,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0313",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0319",
@@ -31523,7 +31523,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0319",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:ev:EV-0346",
@@ -31548,7 +31548,7 @@
         ],
         "down": [],
         "ref": "isms:ev:EV-0346",
-        "q": "Prove it operated this cycle, not at implementation."
+        "q": "Prove it operated during this cycle, after implementation."
        },
        {
         "key": "isms:x:M-07",
@@ -32333,7 +32333,7 @@
         {
          "key": "isms:act:6.7",
          "no": "6.7",
-         "title": "Approve tier 1–2 documents",
+         "title": "Approve tier 1-2 documents",
          "st": "verified",
          "blocker": null,
          "owner": "yusuf",
@@ -32345,7 +32345,7 @@
         {
          "key": "isms:act:6.8",
          "no": "6.8",
-         "title": "Approve tier 3–4 documents",
+         "title": "Approve tier 3-4 documents",
          "st": "verified",
          "blocker": null,
          "owner": "andi",
@@ -32755,7 +32755,7 @@
        "Evidence",
        "Bukti"
       ],
-      "q": "Prove it operated this cycle, not at implementation.",
+      "q": "Prove it operated during this cycle, after implementation.",
       "src": "ev"
      },
      {
@@ -33177,7 +33177,7 @@
     ]
    },
    "FOCUS": {
-    "isms": "Vulnerability remediation (NC-2025-02), supplier and cloud controls (A.5.19–5.23), evidence of operation since Stage 2"
+    "isms": "Vulnerability remediation (NC-2025-02), supplier and cloud controls (A.5.19-5.23), evidence of operation since Stage 2"
    },
    "PREP": {
     "isms": [
@@ -33478,8 +33478,8 @@
       "Define record retention",
       "Publish document register",
       "Train document owners",
-      "Approve tier 1–2 documents",
-      "Approve tier 3–4 documents"
+      "Approve tier 1-2 documents",
+      "Approve tier 3-4 documents"
      ]
     },
     {
@@ -33610,7 +33610,7 @@
      "n": "ISO 9001:2026 transition",
      "acts": [
       "Install ISO 9001:2026 framework pack",
-      "Run gap analysis 2015 to 2026",
+      "Run gap analysis against ISO 9001:2026",
       "Map documents to new requirements",
       "Map evidence to new requirements",
       "Review three new requirements",

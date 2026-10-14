@@ -133,7 +133,7 @@ test.describe('Organisation switching', () => {
     await go(page, 'Standards & licence');
     await expect(page.locator('main table tbody > tr')).toHaveCount(1);
     await go(page, 'File storage');
-    await expect(page.locator('main div[style*="box-shadow"][style*="gap: 10px"]').filter({ hasText: 'references' })).toHaveCount(2);
+    await expect(page.locator('main div[style*="border-radius: var(--r)"][style*="flex-direction: column"][style*="gap: 10px"]').filter({ hasText: 'references' })).toHaveCount(2);
   });
 
   test('switching organisation clears filters and returns to the full tenant', async ({ page }) => {
