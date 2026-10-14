@@ -29,6 +29,7 @@ a{color:#e8731a}a:hover{color:#c25c0f}
 @keyframes msInA{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @keyframes msInB{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @keyframes drawerIn{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
+@keyframes modalIn{from{transform:translate(-50%,-50%) translateX(24px);opacity:0}to{transform:translate(-50%,-50%);opacity:1}}
 @keyframes toastIn{from{transform:translate(-50%,12px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
 @keyframes meshA{0%{transform:translate(-10%,-10%) scale(1)}50%{transform:translate(12%,8%) scale(1.15)}100%{transform:translate(-10%,-10%) scale(1)}}
 @keyframes meshB{0%{transform:translate(10%,0) scale(1.1)}50%{transform:translate(-12%,-14%) scale(.95)}100%{transform:translate(10%,0) scale(1.1)}}
@@ -834,7 +835,7 @@ a{color:#e8731a}a:hover{color:#c25c0f}
 <!-- ===== Modals ===== -->
 <sc-if value="{{ modal }}">
   <div onClick="{{ closeModal }}" style="position:fixed;inset:0;background:rgba(20,16,10,.35);z-index:50"></div>
-  <div class="mscd" data-theme="{{ theme }}" data-font="{{ font }}" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:520px;max-width:92vw;background:var(--sur);color:var(--tx);border:1px solid var(--bd);border-radius:14px;z-index:51;font-family:var(--ff);font-size:13px;animation:drawerIn .18s ease;max-height:88vh;display:flex;flex-direction:column">
+  <div class="mscd" data-theme="{{ theme }}" data-font="{{ font }}" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:520px;max-width:92vw;background:var(--sur);color:var(--tx);border:1px solid var(--bd);border-radius:14px;z-index:51;font-family:var(--ff);font-size:13px;animation:modalIn .18s ease;max-height:88vh;display:flex;flex-direction:column">
     <div style="padding:16px 20px;border-bottom:1px solid var(--bd)"><div style="font-weight:600;font-size:15px">{{ modal.title }}</div><div style="color:var(--tx2);margin-top:2px;font-size:12px">{{ modal.sub }}</div></div>
     <div style="padding:16px 20px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;min-height:0">
       <sc-if value="{{ modal.isReassign }}">

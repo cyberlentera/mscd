@@ -19,7 +19,9 @@ a{color:var(--acc)}a:hover{color:var(--tx)}
 .mscd ::-webkit-scrollbar{width:10px;height:10px}.mscd ::-webkit-scrollbar-thumb{background:var(--bd);border-radius:5px}
 @keyframes msInA{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @keyframes msInB{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* The modal is centred with a transform, so its entry animation keeps that transform (drawerIn would replace it and the modal would jump). */
 @keyframes drawerIn{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
+@keyframes modalIn{from{transform:translate(-50%,-50%) translateX(24px);opacity:0}to{transform:translate(-50%,-50%);opacity:1}}
 @keyframes toastIn{from{transform:translate(-50%,12px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
 @keyframes meshA{0%{transform:translate(-10%,-10%) scale(1)}50%{transform:translate(12%,8%) scale(1.15)}100%{transform:translate(-10%,-10%) scale(1)}}
 @keyframes meshB{0%{transform:translate(10%,0) scale(1.1)}50%{transform:translate(-12%,-14%) scale(.95)}100%{transform:translate(10%,0) scale(1.1)}}
