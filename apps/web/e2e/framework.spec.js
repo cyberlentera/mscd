@@ -22,7 +22,7 @@ test.describe('Standards & licence', () => {
     await expect(row(page, 'ISO 9001 : 2015')).toContainText('Edition transition');
     await expect(row(page, 'ISO 9001 : 2015')).toContainText('Update available 1.0.0');
     await expect(row(page, 'ISO 9001 : 2015')).toContainText('2026, 2015 in transition');
-    await expect(row(page, 'ISO 22301 : 2019')).toContainText('Zero-transit');
+    await expect(row(page, 'ISO 22301 : 2019').locator('[data-tip*="Zero-transit"]')).toHaveCount(1);
     await expect(row(page, 'ISO 37001 : 2025')).toContainText('Beta pack');
     await expect(row(page, 'ISO 37001 : 2025')).toContainText('Update available 0.7.0');
     // only the edition in transition offers the transition assistant
