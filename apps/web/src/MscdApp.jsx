@@ -30,6 +30,12 @@ const errorText = (e) => (e && e.error && e.error.message) || CONNECTION_LOST;
 // A stored fingerprint is shown as its first 10 and last 4 characters; a check time as its date.
 const shortHash = (h) => h.length > 17 ? h.slice(0,10)+'...'+h.slice(-4) : h;
 const dayOf = (t) => String(t).split(' ').slice(0,3).join(' ');
+// A check time such as '1 Oct 2026 06:00' as '2026-10-01 06:00', so a column of check times sorts by date.
+const MONTH_NO = { Jan:1, Feb:2, Mar:3, Apr:4, May:5, Mei:5, Jun:6, Jul:7, Aug:8, Agu:8, Sep:9, Oct:10, Okt:10, Nov:11, Dec:12, Des:12 };
+const timeKey = (t) => { const m=/^(\d{1,2}) (\w{3}) (\d{4})(?: (\d\d:\d\d))?$/.exec(String(t||'')); return m&&MONTH_NO[m[2]]?m[3]+'-'+String(MONTH_NO[m[2]]).padStart(2,'0')+'-'+m[1].padStart(2,'0')+(m[4]?' '+m[4]:''):t; };
+// Business roles whose read scope of a system is full (readScopeKind, F.7). Other scopes leave records out or blank
+// their holders, so screens that count the whole system (Start here, Team & roles) use only systems read in full.
+const FULL_SCOPE_ROLES = ['ms_manager','programme_owner','internal_auditor'];
 
 // Management system colours are brand hues. As text and as badge fills behind white text they need
 // theme-specific variants to reach 4.5:1, so every view-model object carrying a colour also gets
@@ -93,10 +99,12 @@ export default class MscdApp extends React.Component {
         const w=(res.warnings||[]).map(x=>this.li(x.message)).filter(Boolean); this._suffix=w.length?w.join(' '):null; try{ done(res); } finally { this._suffix=null; } end(); },
         e=>{ console.warn('command failed',e); this.toast(this.li(errorText(e))); end(); }); }
   // Escape closes the top layer first: the modal, then the detail drawer, then any open menu.
-  onKey=(e)=>{ if(e.key!=='Escape') return; const s=this.state;
+  onKey=(e)=>{ if(e.key!=='Escape') return; const s=this.state; if(this._offTip) this._offTip();
     if(s.modal) this.setState({modal:null}); else if(s.sel) this.setState({sel:null}); else if(s.msMenu||s.roleMenu||s.orgMenu||s.tera) this.setState({msMenu:false,roleMenu:false,orgMenu:false,tera:false}); };
-  // A new screen starts at the top instead of keeping the previous screen's scroll offset.
-  componentDidUpdate(_,prev){ if(prev.screen!==this.state.screen&&typeof window!=='undefined') window.scrollTo(0,0); }
+  // A new screen starts at the top instead of keeping the previous screen's scroll offset. The hover popover closes
+  // when the screen, the system, the open row or the modal changes, because the element it belongs to may be gone.
+  componentDidUpdate(_,prev){ const s=this.state; if(prev.screen!==s.screen&&typeof window!=='undefined') window.scrollTo(0,0);
+    if(this._offTip&&(prev.screen!==s.screen||prev.ms!==s.ms||prev.sel!==s.sel||prev.expanded!==s.expanded||prev.modal!==s.modal)) this._offTip(); }
   CountUp = ({value})=>{ const [v,setV]=React.useState(0); const ref=React.useRef(0); React.useEffect(()=>{ const from=ref.current, to=Number(value)||0; if(from===to) return; const t0=performance.now(), dur=650; let raf; const step=(t)=>{ const p=Math.min(1,(t-t0)/dur); const e=1-Math.pow(1-p,3); const cur=Math.round(from+(to-from)*e); setV(cur); ref.current=cur; if(p<1) raf=requestAnimationFrame(step); }; raf=requestAnimationFrame(step); return ()=>cancelAnimationFrame(raf); },[value]); return React.createElement('span',null,v); };
   num(n){ return n; }
   clauseTitles(){ return this.L==='id'?['Konteks','Kepemimpinan','Perencanaan','Dukungan','Operasi','Evaluasi kinerja','Peningkatan']:['Context','Leadership','Planning','Support','Operation','Performance evaluation','Improvement']; }
@@ -114,24 +122,34 @@ export default class MscdApp extends React.Component {
   // API mode: the organisation, system and role come from the new session's Me (H.5 steps 2 and 5); a switch that needs
   // a new sign-in (409 reauth-required, D-26) is handled by the boot router, which shows the sign-in page.
   setOrg(id){ const o=this.ORGS.find(x=>x.id===id); this.setState({orgMenu:false}); this.ds.switchOrg(id).then(snap=>this.setState(s=>{ const W=this.withSnap(snap); const ap=this.api?this.apiState(W.D,{...s,ms:null}):{org:id,ms:o.ms[0],role:s.role}; const no=(W.D.orgs||[]).find(x=>x.id===ap.org)||o; const n=no?no.ms.length:1;
-      return {...W,...ap,deploy:no?no.deploy:s.deploy,orgMenu:false,anim:s.anim+1,screen:this.landing(ap.role,n>1?'portfolio':'m1overview',n<2),sel:null,person:null,q:'',tab:{},chip:{},freq:null,expanded:{},evt:null,drift:null,traceId:null,gtId:null,gtQ:'',more:0,taskFilter:null}; }),
+      return {...W,...ap,deploy:no?no.deploy:s.deploy,orgMenu:false,anim:s.anim+1,screen:this.landing(ap.role,n>1?'portfolio':'m1overview',n<2,ap.ms,W.D),sel:null,person:null,q:'',tab:{},chip:{},freq:null,expanded:{},evt:null,drift:null,traceId:null,gtId:null,gtQ:'',more:0,taskFilter:null}; }),
       e=>{ console.warn('organisation switch failed',e); if(!(e&&e.reauth)) this.toast(this.li(errorText(e))); }); }
-  // Screens each role can open; null means every screen.
-  visFor(role){ return {manager:null,owner:['mytasks','m1overview','controls','docs','fresh'],auditor:['portfolio','audit','chain','gt','docs','controls','fresh','timeline','mytasks','journey','team'],top:['portfolio','m1overview','timeline','audit','chain','mytasks','journey','team']}[role]; }
+  // Screens each role can open; null means every screen. API mode: Start here and Team & roles count the holders and
+  // packs of the whole system, so they open only in a system the session user reads in full (fullScope). `ms` and `D`
+  // default to the current system and data.
+  visFor(role,ms,D){ const v={manager:null,owner:['mytasks','m1overview','controls','docs','fresh'],auditor:['portfolio','audit','chain','gt','docs','controls','fresh','timeline','mytasks','journey','team'],top:['portfolio','m1overview','timeline','audit','chain','mytasks','journey','team']}[role];
+    return v&&this.api&&!this.fullScope(ms??this.state.ms,D)?v.filter(s=>s!=='journey'&&s!=='team'):v; }
+  // API mode: true when the session user's read scope of the system is full (MS Manager, Programme Owner, Internal
+  // Auditor). Top Management reads aggregates only, owners their own records and external auditors a projection.
+  fullScope(ms,D=this.D){ if(!this.api) return true; const me=D&&D.me; const r=me&&me.rolesByMs?me.rolesByMs[ms]:null;
+    if(Array.isArray(r)) return r.some(x=>FULL_SCOPE_ROLES.includes(x)); return !!(me&&me.uiRoleByMs&&me.uiRoleByMs[ms]==='manager'); }
   // Keep the wanted screen when the role may open it, otherwise fall back to the role's first screen.
-  landing(role,want,single){ const vis=this.visFor(role); const shown=s=>!(single&&s==='portfolio'); if(want==='portfolio'&&single) want='m1overview'; if(!vis||vis.includes(want)) return want; return vis.find(shown); }
+  landing(role,want,single,ms,D){ const vis=this.visFor(role,ms,D); const shown=s=>!(single&&s==='portfolio'); if(want==='portfolio'&&single) want='m1overview'; if(!vis||vis.includes(want)) return want; return vis.find(shown); }
   get me(){ if(this.api&&this.D.me) return this.D.me.user.handle; const r=this.D.ROLES[this.state.role]; return r?r.who:'none'; }
   // Name and job title of a person; the session user also when PEOPLE does not list them (API mode).
   personOf(id){ const D=this.D; if(D.PEOPLE[id]) return D.PEOPLE[id]; if(this.api&&D.me&&id===D.me.user.handle) return [D.me.user.displayName,D.me.user.jobTitle||'-']; return D.PEOPLE.none||['Unassigned','-']; }
   // Permission of the session user in a system (API mode, H.5 step 6).
   can(ms,perm){ const P=this.D.permissions||(this.D.me&&this.D.me.permissions); return !!(P&&P.ms&&(P.ms[ms]||[]).includes(perm)); }
+  // Organisation permission of the session user (API mode), such as pack.read.
+  canOrg(perm){ const P=this.D.permissions||(this.D.me&&this.D.me.permissions); return !!(P&&(P.org||[]).includes(perm)); }
   // Label of a UI role: the snapshot's ROLES entry, else the static label.
   roleLabel(role){ const r=this.D.ROLES[role]; return this.li(r?r.label:(ROLE_LABELS[role]||[role,role])); }
   t(k){ const v=this.D.T[k]; return v ? v[this.L==='id'?1:0] : k; }
   li(a){ return Array.isArray(a) ? a[this.L==='id'?1:0] : a; }
   tone(t){ const M={ok:['var(--okbg)','var(--ok)'],warn:['var(--warnbg)','var(--warn)'],bad:['var(--badbg)','var(--bad)'],info:['var(--infobg)','var(--info)'],mute:['var(--sur2)','var(--tx2)'],acc:['var(--accbg)','var(--acc)']}; const c=M[t]||M.mute; return {bg:c[0],fg:c[1]}; }
   badge(v,t){ return {badge:true,v,...this.tone(t)}; }
-  person(id){ const p=this.D.PEOPLE[id]||this.D.PEOPLE.none; const un=id==='none'; const i=p[0].split(' ').map(w=>w[0]).slice(0,2).join(''); return {person:true,v:this.pname(id),s:p[1],i:un?'?':i,bg:un?'var(--badbg)':'var(--accbg)',fg:un?'var(--bad)':'var(--acc)',go:this.canOpen('chain')?this.lk(()=>this.go('chain',{person:id})):null}; }
+  // A person cell; its link opens the person's outstanding items in system msId (default the current one).
+  person(id,msId){ const p=this.D.PEOPLE[id]||this.D.PEOPLE.none; const un=id==='none'; const i=p[0].split(' ').map(w=>w[0]).slice(0,2).join(''); return {person:true,v:this.pname(id),s:p[1],i:un?'?':i,bg:un?'var(--badbg)':'var(--accbg)',fg:un?'var(--bad)':'var(--acc)',go:this.canOpen('chain')?this.lk(()=>this.go('chain',{person:id,...(msId?{ms:msId}:{})})):null}; }
   pname(id){ return this.D.PEOPLE[id]&&id!=='none'?this.D.PEOPLE[id][0]:this.li(['Unassigned','Belum ditugaskan']); }
   // Document tiers as shown to the reader (the stored tier stays the English key).
   tierName(t,plural){ const M={Policy:[['Policy','Kebijakan'],['Policies','Kebijakan']],Standard:[['Standard','Standar'],['Standards','Standar']],Procedure:[['Procedure','Prosedur'],['Procedures','Prosedur']],Plan:[['Plan','Rencana'],['Plans','Rencana']],Register:[['Register','Register'],['Registers','Register']],Record:[['Record','Rekaman'],['Records','Rekaman']],Form:[['Form','Formulir'],['Forms','Formulir']]}[t]; return M?this.li(M[plural?1:0]):t; }
@@ -139,11 +157,13 @@ export default class MscdApp extends React.Component {
   count(n,one,many){ return n+' '+this.t(n===1?one:many); }
   toast(m){ if(this._suffix&&m) m=m+'. '+this._suffix; clearTimeout(this._tt); this.setState({toast:m}); this._tt=setTimeout(()=>this.setState({toast:null}),3400); }
   // extra.ms switches the management system as part of the navigation (used by cross-system lists such as Storage).
-  go(screen,extra){ const x={...(extra||{})}; const sw=!!x.ms&&x.ms!==this.state.ms; if(x.gtId!==undefined&&x.gtQ===undefined) x.gtQ=x.gtId||''; if(sw&&this.api) x.role=this.roleIn(this.D,x.ms,this.state.role);
+  // API mode: the role follows the new system, and a screen that role cannot open falls back to its first one (as setMs).
+  go(screen,extra){ const x={...(extra||{})}; const sw=!!x.ms&&x.ms!==this.state.ms; if(x.gtId!==undefined&&x.gtQ===undefined) x.gtQ=x.gtId||'';
+    if(sw&&this.api){ x.role=this.roleIn(this.D,x.ms,this.state.role); screen=this.landing(x.role,screen,this.MSL.length<2,x.ms); }
     this.setState(s=>({screen,sel:null,person:null,q:'',expanded:{},msMenu:false,roleMenu:false,orgMenu:false,more:0,...(sw?{tab:{},chip:{},freq:null,drift:null,evt:null,traceId:null,gtId:null,gtQ:'',anim:s.anim+1}:{}),...x})); }
   goIn(ms){ return (screen,extra)=>this.go(screen,{...(extra||{}),ms:ms.id}); }
   // API mode: the UI role follows the system (H.5 step 5); a screen the new role cannot open falls back to its first one.
-  setMs(id){ this.setState(s=>{ const x={}; if(this.api){ x.role=this.roleIn(this.D,id,s.role); if(x.role!==s.role) x.screen=this.landing(x.role,s.screen,this.MSL.length<2); }
+  setMs(id){ this.setState(s=>{ const x={}; if(this.api){ x.role=this.roleIn(this.D,id,s.role); const to=this.landing(x.role,s.screen,this.MSL.length<2,id); if(to!==s.screen) x.screen=to; }
     return {ms:id,anim:s.anim+1,sel:null,person:null,q:'',tab:{},chip:{},freq:null,expanded:{},msMenu:false,more:0,drift:null,evt:null,traceId:null,gtId:null,gtQ:'',...x}; }); }
   // Hover popover for any element with data-tip: secondary text (job titles, notes, file modes) shows on hover or focus
   // instead of as a second line under each value. One element outside the app, placed in the viewport, so a
@@ -152,11 +172,15 @@ export default class MscdApp extends React.Component {
     const show=(el)=>{ const txt=el?el.getAttribute('data-tip'):''; this._tipEl=el; if(!txt){ pop.hidden=true; return; } pop.textContent=txt; pop.hidden=false; const r=el.getBoundingClientRect(); const w=pop.offsetWidth, h=pop.offsetHeight; const x=Math.min(Math.max(8,r.left),window.innerWidth-w-8); let y=r.bottom+6; if(y+h>window.innerHeight-8) y=Math.max(8,r.top-h-6); pop.style.left=x+'px'; pop.style.top=y+'px'; };
     this._onTip=e=>{ const el=e.target&&e.target.closest?e.target.closest('[data-tip]'):null; if(el!==this._tipEl) show(el); };
     this._offTip=()=>{ pop.hidden=true; this._tipEl=null; };
-    document.addEventListener('mouseover',this._onTip); document.addEventListener('focusin',this._onTip); document.addEventListener('mousedown',this._offTip); document.addEventListener('mouseleave',this._offTip); window.addEventListener('scroll',this._offTip,true); }
-  dropTips(){ if(!this._tip) return; document.removeEventListener('mouseover',this._onTip); document.removeEventListener('focusin',this._onTip); document.removeEventListener('mousedown',this._offTip); document.removeEventListener('mouseleave',this._offTip); window.removeEventListener('scroll',this._offTip,true); this._tip.remove(); this._tip=null; }
+    // The popover also closes when the pointer leaves the window, or when focus leaves the element it belongs to.
+    this._outTip=e=>{ const el=this._tipEl; if(!el) return; const to=e.relatedTarget; if(e.type==='mouseout'?!to:el.contains(e.target)&&!(to&&el.contains(to))) this._offTip(); };
+    document.addEventListener('mouseover',this._onTip); document.addEventListener('focusin',this._onTip); document.addEventListener('mousedown',this._offTip); document.addEventListener('mouseout',this._outTip); document.addEventListener('focusout',this._outTip); window.addEventListener('scroll',this._offTip,true); }
+  dropTips(){ if(!this._tip) return; document.removeEventListener('mouseover',this._onTip); document.removeEventListener('focusin',this._onTip); document.removeEventListener('mousedown',this._offTip); document.removeEventListener('mouseout',this._outTip); document.removeEventListener('focusout',this._outTip); window.removeEventListener('scroll',this._offTip,true); this._tip.remove(); this._tip=null; }
   // A link inside a clickable row: it navigates without also opening the row.
   lk(fn){ return e=>{ if(e&&e.stopPropagation) e.stopPropagation(); fn(); }; }
   canOpen(screen){ const vis=this.visFor(this.state.role); return !vis||vis.includes(screen); }
+  // A Domain Owner's lists hold only their own records, so a link to another list opens only a record they own.
+  listed(owner){ return this.state.role!=='owner'||owner===this.me; }
   openKey(key){ return this.pat==='inline'?{expanded:{[key]:true}}:{sel:key}; }
   // Column sorting of list screens: ascending, descending, then back to the screen's own order (with its groups).
   toggleSort(screen,i){ this.setState(s=>{ const cur=(s.sort||{})[screen]; const next=!cur||cur.i!==i?{i,dir:1}:cur.dir>0?{i,dir:-1}:null; return {sort:{...(s.sort||{}),[screen]:next},more:0}; }); }
@@ -185,7 +209,7 @@ export default class MscdApp extends React.Component {
   link(v,go){ return {v,go:go||(()=>this.go('gt',{gtId:v}))}; }
   // 'Managed Vault' plus mode 'Managed Vault' reads as one name, not 'Managed Vault, Managed Vault'.
   locText(name,mode){ return mode&&mode!==name?name+', '+mode:name; }
-  locCell(locId,mode,integ){ const D=this.D, L=this.L; const l=D.LOC[locId]; const ig=integ?D.INTEG[integ]:null; const bad=ig&&ig[2]!=='ok'; return {loc:true,v:l[2],icon:l[4],color:l[3],title:this.locText(l[0],mode),s:ig?ig[L==='id'?1:0]:(mode?mode.split(', ').pop():''),sColor:bad?'var(--'+(ig[2]==='bad'?'bad':'warn')+')':'var(--tx3)',tag:bad?{v:ig[L==='id'?1:0],...this.tone(ig[2]==='bad'?'bad':'warn')}:null}; }
+  locCell(locId,mode,integ){ const D=this.D, L=this.L; const l=D.LOC[locId]; const ig=integ?D.INTEG[integ]:null; const bad=ig&&ig[2]!=='ok'; return {loc:true,v:l[2],icon:l[4],color:l[3],title:this.locText(l[0],mode),s:ig?ig[L==='id'?1:0]:'',sColor:bad?'var(--'+(ig[2]==='bad'?'bad':'warn')+')':'var(--tx3)',tag:bad?{v:ig[L==='id'?1:0],...this.tone(ig[2]==='bad'?'bad':'warn')}:null}; }
   locFacts(e,ms){ const D=this.D, fs=[]; const loc=D.LOC[e.loc][0]; const ig=D.INTEG[e.integ]; fs.push(this.fact(this.t('storage'),this.locText(loc,ms.locMode)+(e.path?', '+e.path:'')));
     fs.push(this.fact(this.t('pinned'),e.ver||'-',{mono:true})); fs.push(this.fact(this.t('hash'),e.hashAlg==='none'?this.t('noHash'):(e.hashAlg||'SHA-256')+', '+(e.hash?shortHash(e.hash):(e.code||'').replace(/\W/g,'').toLowerCase()+'a91f...3c7e'),{mono:true}));
     fs.push(this.fact(this.t('integrity'),ig[this.L==='id'?1:0]+(e.integ==='pending'?', '+this.t('lastCheck')+' '+(e.lastGoodCheck?dayOf(e.lastGoodCheck):'27 Sep 2026')+' (ok)':''),{color:'var(--'+(ig[2]==='ok'?'ok':ig[2]==='bad'?'bad':'warn')+')'})); return fs; }
@@ -224,7 +248,7 @@ export default class MscdApp extends React.Component {
   itemDetail(it,d){ const D=this.D, ms=d.ms, L=this.L; if(it.kind==='req'&&it.ref) return {...this.reqDetail(it.ref,d),q:it.q}; if(it.kind==='doc'&&it.ref) return {...this.docDetail(it.ref,d),q:it.q}; if(it.kind==='ev'&&it.ref) return {...this.evDetail(it.ref,d),q:it.q};
     const stT={pending:'warn',overdue:'bad',missing:'bad'}[it.st]; const badges=[this.badge(this.t(it.st),stT)]; if(it.after) badges.push(this.badge(this.t('after'),'bad')); if(it.gate) badges.push(this.badge(this.t('gate'),'bad'));
     const facts=[this.fact(this.t('c_stage'),this.li((D.STAGES[ms.id].find(s=>s.id===it.stage)||{}).l)),this.fact(this.t('c_action'),it.act),this.fact(this.t('c_holder'),this.pname(it.h)+', '+(D.PEOPLE[it.h]||D.PEOPLE.none)[1],{color:it.h==='none'?'var(--bad)':'inherit'}),this.fact(this.t('c_due'),it.due?D.fmt(it.due,L)+(it.after?', '+this.t('after'):''):'-',{color:it.st==='overdue'||it.after?'var(--bad)':'inherit'})];
-    let note=null; if(it.after) note={text:this.li(['Due '+D.fmt(it.due,L)+' is after the audit on '+D.fmt(ms.audit.date,L)+'. It will not be ready on audit day unless the date is moved earlier: flagged since the item was created.','Jatuh tempo '+D.fmt(it.due,L)+' jatuh setelah audit pada '+D.fmt(ms.audit.date,L)+'. Item ini tidak akan siap pada hari audit kecuali tanggalnya dimajukan: ditandai sejak item dibuat.']),...this.tone('bad')}; else if(it.st==='missing') note={text:this.li(['Broken chain: this step has no record or no PIC. The auditor will see a gap between '+(it.up[0]||'the upstream record')+' and its downstream evidence.','Rantai putus: tahap ini tidak punya rekaman atau PIC. Auditor akan melihat celah antara '+(it.up[0]||'rekaman hulu')+' dan bukti hilirnya.']),...this.tone('bad')};
+    let note=null; if(it.after) note={text:this.li(['Due '+D.fmt(it.due,L)+' is after the audit on '+D.fmt(ms.audit.date,L)+'. It will not be ready on audit day unless the date is moved earlier: flagged since the item was created.','Jatuh tempo '+D.fmt(it.due,L)+' jatuh setelah audit pada '+D.fmt(ms.audit.date,L)+'. Item ini tidak akan siap pada hari audit kecuali tanggalnya dimajukan: ditandai sejak item dibuat.']),...this.tone('bad')}; else if(it.st==='missing') note={text:this.li(['Broken chain: this step has no record or no PIC. The auditor will see a gap between '+(it.up[0]||'the record it is linked from')+' and the evidence it leads to.','Rantai putus: tahap ini tidak punya rekaman atau PIC. Auditor akan melihat celah antara '+(it.up[0]||'rekaman asalnya')+' dan bukti yang dituju.']),...this.tone('bad')};
     const actions=[this.act(this.t('remind'),this.remindGo(it.key,it.h,this.t('toastRemind')+' '+this.pname(it.h)+', email + in-app'),it.h!=='none'),this.act(this.t('reassign'),()=>this.openReassign(it.key,it.h,it.due,it.id),it.h==='none'),this.act(this.t('changeDue'),()=>this.openReassign(it.key,it.h,it.due,it.id)),this.act(this.t('trace'),()=>this.go('gt',{gtId:it.id}))];
     return {id:it.id,title:it.title,badges,facts,note,actions,q:it.q,up:it.up.map(u=>this.link(u)),down:it.down.map(u=>this.link(u)),noUp:it.up.length?null:this.t('noUpstream'),noDown:it.down.length?null:(it.stage==='risk'||it.stage==='treatment'?this.t('noDownstream'):null)}; }
 
@@ -255,13 +279,13 @@ export default class MscdApp extends React.Component {
   // ---------- rows ----------
   reqRow(c,d){ const D=this.D, ms=d.ms, L=this.L; const key=ms.id+':req:'+c.id; const doc=d.docs.find(x=>x.id===c.doc); const ev=d.evs.find(e=>e.ctrl===c.id); const stT={implemented:'ok',partial:'warn',planned:'info',ns:'mute',blocked:'bad',na:'mute',complete:'info'}[c.st];
     const trace=id=>this.canOpen('gt')?this.lk(()=>this.go('gt',{gtId:id})):null;
-    const cells=[{mono:true,v:c.id,go:trace(c.id),tag:c.gate?{v:this.t('gate'),...this.tone('bad')}:null,tagMl:'8px'},{text:true,v:c.title,fw:500,sub:c.note||c.theme,subColor:c.note?'var(--warn)':'var(--tx3)'},this.badge(this.t(c.st),stT),this.person(c.owner),{text:true,v:c.doc,fw:400,go:doc&&this.canOpen('docs')?this.lk(()=>this.go('docs',{...this.openKey(ms.id+':doc:'+doc.id),chip:{...this.state.chip,docs:'all'}})):null,sub:doc?(doc.title.length>34?doc.title.slice(0,32)+'...':doc.title)+', v'+doc.ver:'',subColor:doc&&doc.st!=='approved'?'var(--bad)':'var(--tx3)',tag:doc&&doc.st!=='approved'?{v:this.t(doc.st),...this.tone(doc.st==='expired'?'bad':doc.st==='draft'?'info':'warn')}:null,tagMl:'0'},ev?{mono:true,v:ev.code,go:this.canOpen('fresh')?this.lk(()=>this.go('fresh',{...this.openKey(ms.id+':ev:'+ev.code),tab:{...this.state.tab,fresh:null},freq:null})):null,sub:D.fmt(ev.prod,L),subColor:'var(--tx3)',tag:{v:this.t(ev.fresh),...this.tone({fresh:'ok',aging:'warn',expired:'warn',critical:'bad'}[ev.fresh])},tagMl:'0'}:{text:true,v:'-',fw:400,subColor:'var(--tx3)'},ev?this.locCell(ev.loc,null,ev.integ):{text:true,v:'-',fw:400}];
+    const cells=[{mono:true,v:c.id,go:trace(c.id),tag:c.gate?{v:this.t('gate'),...this.tone('bad')}:null,tagMl:'8px'},{text:true,v:c.title,fw:500,sub:c.note||c.theme,subColor:c.note?'var(--warn)':'var(--tx3)'},this.badge(this.t(c.st),stT),this.person(c.owner),{text:true,v:c.doc,fw:400,go:doc&&this.canOpen('docs')&&this.listed(doc.owner)?this.lk(()=>this.go('docs',{...this.openKey(ms.id+':doc:'+doc.id),chip:{...this.state.chip,docs:'all'}})):null,sub:doc?(doc.title.length>34?doc.title.slice(0,32)+'...':doc.title)+', v'+doc.ver:'',subColor:doc&&doc.st!=='approved'?'var(--bad)':'var(--tx3)',tag:doc&&doc.st!=='approved'?{v:this.t(doc.st),...this.tone(doc.st==='expired'?'bad':doc.st==='draft'?'info':'warn')}:null,tagMl:'0'},ev?{mono:true,v:ev.code,go:this.canOpen('fresh')&&this.listed(ev.owner)?this.lk(()=>this.go('fresh',{...this.openKey(ms.id+':ev:'+ev.code),tab:{...this.state.tab,fresh:null},freq:null})):null,sub:D.fmt(ev.prod,L),subColor:'var(--tx3)',tag:{v:this.t(ev.fresh),...this.tone({fresh:'ok',aging:'warn',expired:'warn',critical:'bad'}[ev.fresh])},tagMl:'0'}:{text:true,v:'-',fw:400,subColor:'var(--tx3)'},ev?this.locCell(ev.loc,null,ev.integ):{text:true,v:'-',fw:400}];
     return {key,cells,det:()=>this.reqDetail(c,d)}; }
   docRow(doc,d){ const D=this.D, ms=d.ms, L=this.L; const key=ms.id+':doc:'+doc.id; const stT={approved:'ok',expired:'bad',review:'warn',draft:'info'}[doc.st];
     const cells=[{mono:true,v:doc.id,go:this.canOpen('gt')?this.lk(()=>this.go('gt',{gtId:doc.id})):null,tag:doc.shared?{v:this.t('shared'),...this.tone('info')}:null,tagMl:'8px'},{text:true,v:doc.title,fw:500,sub:this.tierName(doc.tier),subColor:'var(--tx3)'},this.badge(this.t(doc.st),stT),this.person(doc.owner),{mono:true,v:'v'+doc.ver},this.dateCell(doc.appr,null,true),this.dateCell(doc.rev,null),this.locCell(ms.loc,ms.locMode)];
     return {key,cells,det:()=>this.docDetail(doc,d)}; }
   evRow(e,d){ const D=this.D, ms=d.ms, L=this.L; const key=ms.id+':ev:'+e.code; const c=d.reqs.find(x=>x.id===e.ctrl);
-    const cells=[{mono:true,v:e.code,go:this.canOpen('gt')?this.lk(()=>this.go('gt',{gtId:e.code})):null,sub:e.title,subColor:'var(--tx2)'},{text:true,v:e.ctrl,fw:500,go:c&&this.canOpen('controls')?this.lk(()=>this.go('controls',{...this.openKey(ms.id+':req:'+c.id),tab:{...this.state.tab,controls:c.st==='partial'||c.st==='complete'?'partial':'implemented'},chip:{...this.state.chip,controls:'all'}})):null,sub:c?c.title:'',subColor:'var(--tx3)'},{text:true,v:D.FREQ[e.freq][L==='id'?1:0],fw:400},this.dateCell(e.prod,null,true),e.next?this.dateCell(e.next,null):{text:true,v:'-',fw:400},this.badge(this.t(e.fresh),{fresh:'ok',aging:'warn',expired:'warn',critical:'bad'}[e.fresh]),this.locCell(e.loc,null,e.integ),this.person(e.owner)];
+    const cells=[{mono:true,v:e.code,go:this.canOpen('gt')?this.lk(()=>this.go('gt',{gtId:e.code})):null,sub:e.title,subColor:'var(--tx2)'},{text:true,v:e.ctrl,fw:500,go:c&&this.canOpen('controls')&&this.listed(c.owner)?this.lk(()=>this.go('controls',{...this.openKey(ms.id+':req:'+c.id),tab:{...this.state.tab,controls:c.st==='partial'||c.st==='complete'?'partial':'implemented'},chip:{...this.state.chip,controls:'all'}})):null,sub:c?c.title:'',subColor:'var(--tx3)'},{text:true,v:D.FREQ[e.freq][L==='id'?1:0],fw:400},this.dateCell(e.prod,null,true),e.next?this.dateCell(e.next,null):{text:true,v:'-',fw:400},this.badge(this.t(e.fresh),{fresh:'ok',aging:'warn',expired:'warn',critical:'bad'}[e.fresh]),this.locCell(e.loc,null,e.integ),this.person(e.owner)];
     return {key,cells,det:()=>this.evDetail(e,d)}; }
   itemRow(it,d,showStage){ const D=this.D, ms=d.ms, L=this.L; const stT={pending:'warn',overdue:'bad',missing:'bad'}[it.st]; const stage=this.li((D.STAGES[ms.id].find(s=>s.id===it.stage)||{}).l);
     const cells=[{mono:true,v:it.id,go:this.canOpen('gt')?this.lk(()=>this.go('gt',{gtId:it.id})):null,tag:it.gate?{v:this.t('gate'),...this.tone('bad')}:null,tagMl:'8px'},{text:true,v:it.title,fw:500,sub:showStage?stage:(!it.ref?'':it.kind==='req'?this.t(it.ref.st):it.kind==='doc'?this.t(it.ref.st)+', v'+it.ref.ver:it.kind==='ev'?this.t(it.ref.fresh)+', '+D.INTEG[it.ref.integ][L==='id'?1:0]:''),subColor:'var(--tx3)'},this.badge(this.t(it.st),stT),{text:true,v:it.act,fw:400},this.person(it.h),it.due?this.dateCell(it.due,ms.audit):{text:true,v:'-',fw:400,tag:{v:this.t('missing'),...this.tone('bad')},tagMl:'0'}];
@@ -509,30 +533,38 @@ export default class MscdApp extends React.Component {
     const chip=st.chip.storage||'issues'; const issues=all.filter(x=>x.e.integ!=='ok'); const cnt=k=>all.filter(x=>x.e.integ===k).length;
     const chips=this.chipList('storage',[{id:'issues',label:this.li(['Needs attention','Perlu perhatian']),n:issues.length,always:true},...Object.keys(D.INTEG).filter(k=>k!=='ok').map(k=>({id:k,label:D.INTEG[k][L==='id'?1:0],n:cnt(k)})),{id:'all',label:this.t('all'),n:all.length}],chip);
     const list=(chip==='issues'?issues:chip==='all'?all:all.filter(x=>x.e.integ===chip)).filter(x=>this.match(q,x.e.code,x.e.title,x.dm.ms.short,this.pname(x.e.owner),D.INTEG[x.e.integ][0]));
-    const rows=list.map(({e,dm})=>({key:dm.ms.id+':ev:'+e.code,cells:[{mono:true,v:e.code,sub:e.title,subColor:'var(--tx2)'},{text:true,v:dm.ms.short,fw:600},{text:true,v:D.LOC[e.loc][0],fw:400,sub:e.path,subColor:'var(--tx3)'},this.badge(D.INTEG[e.integ][L==='id'?1:0],D.INTEG[e.integ][2]),{text:true,v:e.lastCheck??(e.integ==='pending'?'27 Sep 2026 06:00':'29 Sep 2026 06:00'),fw:400,sub:e.ver+', '+(e.hashAlg==='none'?this.t('noHash'):e.hashAlg),subColor:'var(--tx3)'},this.person(e.owner)],det:()=>this.evDetail(e,dm)}));
+    const rows=list.map(({e,dm})=>{ const last=e.lastCheck??(e.integ==='pending'?'27 Sep 2026 06:00':'29 Sep 2026 06:00');
+      return {key:dm.ms.id+':ev:'+e.code,cells:[{mono:true,v:e.code,sub:e.title,subColor:'var(--tx2)'},{text:true,v:dm.ms.short,fw:600},{text:true,v:D.LOC[e.loc][0],fw:400,sub:e.path,subColor:'var(--tx3)'},this.badge(D.INTEG[e.integ][L==='id'?1:0],D.INTEG[e.integ][2]),{text:true,v:last,sv:timeKey(last),fw:400,sub:e.ver+', '+(e.hashAlg==='none'?this.t('noHash'):e.hashAlg),subColor:'var(--tx3)'},this.person(e.owner,dm.ms.id)],det:()=>this.evDetail(e,dm)}; });
     return {st:{repos:repos.map(r=>({...r,tip:[r.type,r.modes].filter(Boolean).join(', ')})),routing,linkTip:this.t('linkHealthSub')+', '+this.t('nextCheck')+' 30 Sep 2026 06:00'},tabs:[],cols:[this.t('c_code'),this.t('c_ms'),this.t('c_repo'),this.t('integrity'),this.t('c_lastcheck'),this.t('c_owner')],rows,chips,empty:rows.length?null:{title:this.t('noRows'),sub:''}}; }
 
   // ---------- Start here: the customer journey of one system ----------
   // Seven stages. A certified system sits in Maintain; any other system sits in the first stage it has not passed.
   // Stages before the current one that still carry open issues show as needing attention.
+  // API mode: PACKS holds only the packs the session user may read (pack.read), and ROLES names the demo personas,
+  // or outside demo mode only the session user, so neither is read as a fact about the organisation without them.
   journeyOf(m){ const D=this.D, L=this.L, li=a=>this.li(a); const d=this.data(m); const ch=this.chain(d); const phs=this.phases(d); const gate=this.gateItems(d);
-    const c=(tone)=>(label,val)=>({label,val,tone}); const ok=c('ok'), warn=c('warn'), bad=c('bad'), mute=c('mute'); const en=x=>Array.isArray(x)?x[0]:String(x||'');
-    const pack=(D.PACKS||{})[m.id]; const repo=(D.REPOS||[]).find(r=>r.id===m.loc); const locName=(D.LOC[m.loc]||[m.loc])[0];
-    const s1=[pack?ok(li(['Standard','Standar']),m.code):bad(li(['Standard','Standar']),li(['Not installed','Belum dipasang'])),
+    const c=(tone)=>(label,val)=>({label,val,tone}); const ok=c('ok'), warn=c('warn'), bad=c('bad'), mute=c('mute'); const en=x=>Array.isArray(x)?x[0]:String(x||''), idt=x=>Array.isArray(x)?x[1]:'';
+    const pack=(D.PACKS||{})[m.id]; const packKnown=!this.api||this.canOrg('pack.read'); const roster=!this.api||!!D.demo;
+    const repo=(D.REPOS||[]).find(r=>r.id===m.loc); const locName=(D.LOC[m.loc]||[m.loc])[0];
+    const s1=[pack?ok(li(['Standard','Standar']),m.code):packKnown?bad(li(['Standard','Standar']),li(['Not installed','Belum dipasang'])):mute(li(['Standard','Standar']),li(['Not visible to your role','Tidak terlihat untuk peran Anda'])),
       m.scope?ok(li(['Scope','Ruang lingkup']),li(m.scope)):bad(li(['Scope','Ruang lingkup']),li(['Not set','Belum diisi'])),
       m.certifier&&m.certifier!=='-'?ok(this.t('certifier'),m.certifier):warn(this.t('certifier'),li(['Not chosen yet','Belum dipilih'])),
       !repo||repo.status==='ok'?ok(this.t('nav_storage'),locName):warn(this.t('nav_storage'),locName+', '+li(['connector needs attention','konektor perlu perhatian']))];
-    const unReq=d.reqs.filter(x=>!x.owner||x.owner==='none').length; const unItems=ch.items.filter(i=>i.h==='none').length; const unN=unReq+unItems;
-    const pics=new Set([...d.reqs.map(x=>x.owner),...d.docs.map(x=>x.owner)].filter(h=>h&&h!=='none')).size; const aud=D.ROLES&&D.ROLES.auditor?D.ROLES.auditor.who:null;
-    const s2=[m.mgr?ok(this.t('role_mgr'),this.pname(m.mgr)):bad(this.t('role_mgr'),li(['Not appointed','Belum ditunjuk'])),
-      ok(li(['PICs assigned','PIC yang ditugaskan']),pics+' '+this.t('tm_people')),
+    // Items without a PIC as Team & roles and Outstanding items count them (open chain items without a holder), plus
+    // requirements without an owner that have no such item, so a requirement is not counted twice.
+    const unReq=d.reqs.filter(x=>!x.owner||x.owner==='none'); const noPic=ch.items.filter(i=>i.h==='none');
+    const noPicReq=new Set(noPic.filter(i=>i.kind==='req'||i.kind==='soa').map(i=>i.id)); const unN=noPic.length+unReq.filter(x=>!noPicReq.has(x.id)).length;
+    const hasMgr=!!m.mgr&&m.mgr!=='none'; const pics=new Set([...d.reqs.map(x=>x.owner),...d.docs.map(x=>x.owner)].filter(h=>h&&h!=='none')).size;
+    const aud=roster&&D.ROLES&&D.ROLES.auditor?D.ROLES.auditor.who:null;
+    const s2=[hasMgr?ok(this.t('role_mgr'),this.pname(m.mgr)):bad(this.t('role_mgr'),li(['Not appointed','Belum ditunjuk'])),
+      ok(li(['PICs assigned','PIC yang ditugaskan']),this.count(pics,'tm_personOne','tm_people')),
       unN?warn(li(['Items without a PIC','Item tanpa PIC']),String(unN)):ok(li(['Items without a PIC','Item tanpa PIC']),li(['None','Tidak ada'])),
-      aud?ok(this.t('role_ia'),this.pname(aud)):warn(this.t('role_ia'),li(['Not appointed','Belum ditunjuk']))];
+      ...(roster?[aud?ok(this.t('role_ia'),this.pname(aud)):warn(this.t('role_ia'),li(['Not appointed','Belum ditunjuk']))]:[])];
     const dc=s=>d.docs.filter(x=>x.st===s).length; const nd=d.docs.length; const appr=dc('approved'); const wip=dc('draft')+dc('review');
-    const s3=[(appr===nd?ok:warn)(this.t('docsApproved'),appr+' / '+nd),(wip?warn:ok)(li(['Draft or in review','Draf atau dalam tinjauan']),String(wip)),(dc('expired')?bad:ok)(this.t('docsExpired'),String(dc('expired')))];
+    const s3=[(nd&&appr===nd?ok:nd?warn:bad)(this.t('docsApproved'),nd?appr+' / '+nd:li(['No documents yet','Belum ada dokumen'])),(wip?warn:ok)(li(['Draft or in review','Draf atau dalam tinjauan']),String(wip)),(dc('expired')?bad:ok)(this.t('docsExpired'),String(dc('expired')))];
     const vph=phs.filter(p=>p.c.verified===p.total).length; const gp=phs.find(p=>p.gate); const gateDone=!gp||gp.c.verified===gp.total;
     const appl=d.reqs.filter(x=>x.st!=='na'); const impl=appl.filter(x=>x.st==='implemented').length; const share=impl/Math.max(1,appl.length);
-    const s4=[(vph===phs.length?ok:warn)(li(['Roadmap phases verified','Fase roadmap terverifikasi']),vph+' / '+phs.length),
+    const s4=[(vph===phs.length?ok:warn)(li(['Roadmap phases verified','Fase peta jalan terverifikasi']),vph+' / '+phs.length),
       gateDone?ok(li(['Checkpoint','Titik periksa']),this.gateName(m)):bad(li(['Checkpoint','Titik periksa']),this.gateName(m)+', '+this.count(gate.length,'gateItem','gateItems').toLowerCase()),
       (share>=0.8?ok:warn)(this.t(m.unit==='ctrl'?'ctrlImpl':'reqImpl'),impl+' / '+appl.length)];
     const ci=(D.CYCLE_ITEMS||{})[m.id]||[]; const cyc=cl=>ci.find(x=>x[0]===cl);
@@ -540,25 +572,33 @@ export default class MscdApp extends React.Component {
     const cVal=x=>!x?li(['Not planned yet','Belum direncanakan']):x[4]==='done'?this.t('done'):(x[4]==='progress'?this.t('progress'):this.t('planned'))+(x[3]?', '+D.fmt(x[3],L):'');
     const ia=cyc('9.2'), mr=cyc('9.3'), ca=cyc('10.2');
     const s5=[c(cTone(ia))(li(['Internal audit','Audit internal']),cVal(ia)),c(cTone(mr))(li(['Management review','Tinjauan manajemen']),cVal(mr)),...(ca?[c(cTone(ca))(li(['Corrective actions','Tindakan korektif']),cVal(ca))]:[])];
-    const ev=(D.EVENTS||{})[m.id]||[]; const past=ev.filter(e=>D.dd(e.d)<0); const certEv=[...past].reverse().find(e=>e.result&&/stage 2|recert/i.test(en(e.t))); const st1=ev.find(e=>/stage 1/i.test(en(e.t)));
+    // Certification: the last past Stage 2 or recertification with a result decides, by its event type and outcome;
+    // an event without them (an older snapshot) is recognised by its label in either language and its result text.
+    const ev=(D.EVENTS||{})[m.id]||[]; const past=ev.filter(e=>D.dd(e.d)<0); const NEG=/^(not recommended|tidak direkomendasikan)/i;
+    const isType=(e,types,re)=>e.type?types.includes(e.type):re.test(en(e.t))||re.test(idt(e.t));
+    const lastCert=[...past].reverse().find(e=>isType(e,['stage2','recertification'],/stage 2|recert|certification audit|tahap 2|resert|audit sertifikasi/i)&&(e.outcome||e.result));
+    const certEv=lastCert&&(lastCert.outcome?lastCert.outcome!=='not_recommended':!NEG.test(en(lastCert.result))&&!NEG.test(idt(lastCert.result)))?lastCert:null;
+    const st1=ev.find(e=>isType(e,['stage1'],/stage 1|tahap 1/i)); const OUTCOME={recommended:['Recommended','Direkomendasikan'],recommended_with_conditions:['Recommended with conditions','Direkomendasikan dengan syarat'],not_recommended:['Not recommended','Tidak direkomendasikan']};
+    const resultOf=e=>e.result?li(e.result):e.outcome&&OUTCOME[e.outcome]?li(OUTCOME[e.outcome]):'';
     const s6=[(m.certifier&&m.certifier!=='-'?ok:mute)(this.t('certifier'),m.certifier&&m.certifier!=='-'?m.certifier:li(['Not chosen yet','Belum dipilih'])),
-      st1?(D.dd(st1.d)<0?ok(li(['Stage 1','Tahap 1']),D.fmt(st1.d,L)+(st1.result?', '+li(st1.result):'')):mute(li(['Stage 1','Tahap 1']),this.t('planned')+', '+D.fmt(st1.d,L))):(certEv?ok(li(['Stage 1','Tahap 1']),li(['Passed in an earlier cycle','Lulus di siklus sebelumnya'])):mute(li(['Stage 1','Tahap 1']),li(['Not scheduled','Belum dijadwalkan']))),
-      certEv?ok(li(['Last certification audit','Audit sertifikasi terakhir']),D.fmt(certEv.d,L)+', '+li(certEv.result)):mute(li(['Certificate','Sertifikat']),li(['Not certified yet','Belum tersertifikasi']))];
+      st1?(D.dd(st1.d)<0?ok(li(['Stage 1','Tahap 1']),[D.fmt(st1.d,L),resultOf(st1)].filter(Boolean).join(', ')):mute(li(['Stage 1','Tahap 1']),this.t('planned')+', '+D.fmt(st1.d,L))):(certEv?ok(li(['Stage 1','Tahap 1']),li(['Passed in an earlier cycle','Lulus di siklus sebelumnya'])):mute(li(['Stage 1','Tahap 1']),li(['Not scheduled','Belum dijadwalkan']))),
+      certEv?ok(li(['Last certification audit','Audit sertifikasi terakhir']),[D.fmt(certEv.d,L),resultOf(certEv)].filter(Boolean).join(', ')):lastCert?bad(li(['Last certification audit','Audit sertifikasi terakhir']),[D.fmt(lastCert.d,L),resultOf(lastCert)].filter(Boolean).join(', ')):mute(li(['Certificate','Sertifikat']),li(['Not certified yet','Belum tersertifikasi']))];
     const au=m.audit; const stale=d.evs.filter(e=>e.fresh==='critical'||e.fresh==='expired').length; const odr=d.docs.filter(x=>D.dd(x.rev)<0).length; const doneC=ci.filter(x=>x[4]==='done').length;
     const s7=[au?(D.dd(au.date)<=60?warn:ok)(this.t('nextAudit'),li(au.name)+', '+D.dd(au.date)+' '+this.t('daysLeft')):mute(this.t('nextAudit'),this.t('noAudit')),
       (stale?bad:ok)(li(['Expired or critical evidence','Bukti kedaluwarsa atau kritis']),String(stale)),(odr?warn:ok)(li(['Document reviews overdue','Tinjauan dokumen terlambat']),String(odr)),
       ci.length?(doneC===ci.length?ok:warn)(this.t('cycleComplete'),doneC+' / '+ci.length):mute(this.t('cycleComplete'),'-')];
-    const certified=!!certEv; const passed=[!!pack&&!!m.scope,!!m.mgr&&unReq===0,nd>0&&appr/nd>=0.6,gateDone&&share>=0.8,!!ia&&ia[4]==='done'&&!!mr&&mr[4]==='done',certified];
+    const certified=!!certEv; const passed=[(!!pack||!packKnown)&&!!m.scope,hasMgr&&!unReq.length,nd>0&&appr/nd>=0.6,gateDone&&share>=0.8,!!ia&&ia[4]==='done'&&!!mr&&mr[4]==='done',certified];
+    const who=(...k)=>k.map(x=>this.t(x)).join(', ');
     const cur=certified?7:passed.findIndex(p=>!p)+1;
     const ctrlLabel=this.t(m.unit==='ctrl'?'nav_annex':'nav_reqs');
     const stages=[
-      {no:1,icon:'M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2.1-.1-2.9a2.2 2.2 0 0 0-2.9-.1zM12 15l-3-3a22 22 0 0 1 2-3.9A12.9 12.9 0 0 1 22 2c0 2.7-.8 7.5-6 11a22.4 22.4 0 0 1-4 2z',title:li(['Set up the workspace','Siapkan workspace']),short:li(['Set up','Persiapan']),what:li(['Standard, scope and file storage are ready.','Standar, ruang lingkup, dan penyimpanan berkas siap dipakai.']),who:'Tenant Admin',checks:s1,acts:[['fw','nav_fw'],['storage','nav_storage']]},
-      {no:2,icon:'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8',title:li(['Assign the team','Tetapkan tim']),short:li(['Team','Tim']),what:li(['Every item has one named PIC.','Setiap item punya satu PIC.']),who:'MS Manager',checks:s2,acts:[['team','nav_team']]},
-      {no:3,icon:'M6 3h8l4 4v14H6zM14 3v4h4M9 13h6M9 17h6',title:li(['Prepare documents','Siapkan dokumen']),short:li(['Documents','Dokumen']),what:li(['Mandatory documents are approved and controlled.','Dokumen wajib sudah disetujui dan terkendali.']),who:'MS Manager, PIC',checks:s3,acts:[['docs','nav_docs']]},
-      {no:4,icon:'M4 6h2M9 6h11M4 12h2M9 12h11M4 18h2M9 18h11',title:li(['Implement the requirements','Terapkan persyaratan']),short:li(['Implement','Implementasi']),what:li(['Roadmap phases are verified and controls are operating.','Fase roadmap terverifikasi dan kontrol sudah berjalan.']),who:'PIC, MS Manager',checks:s4,acts:[['phases','nav_phases'],['controls',null,ctrlLabel]]},
-      {no:5,icon:'M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',title:li(['Internal audit and management review','Audit internal dan tinjauan manajemen']),short:li(['Internal audit','Audit internal']),what:li(['The organisation checks itself once per cycle.','Organisasi memeriksa dirinya sendiri setiap siklus.']),who:li(['Internal auditor, Top management','Auditor internal, Manajemen puncak']),checks:s5,acts:[['timeline','nav_timeline']]},
+      {no:1,icon:'M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2.1-.1-2.9a2.2 2.2 0 0 0-2.9-.1zM12 15l-3-3a22 22 0 0 1 2-3.9A12.9 12.9 0 0 1 22 2c0 2.7-.8 7.5-6 11a22.4 22.4 0 0 1-4 2z',title:li(['Set up the workspace','Siapkan ruang kerja']),short:li(['Set up','Persiapan']),what:li(['Standard, scope and file storage are ready.','Standar, ruang lingkup, dan penyimpanan berkas siap dipakai.']),who:who('role_admin'),checks:s1,acts:[['fw','nav_fw'],['storage','nav_storage']]},
+      {no:2,icon:'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8',title:li(['Assign the team','Tetapkan tim']),short:li(['Team','Tim']),what:li(['Every item has one named PIC.','Setiap item punya satu PIC.']),who:who('role_mgr'),checks:s2,acts:[['team','nav_team']]},
+      {no:3,icon:'M6 3h8l4 4v14H6zM14 3v4h4M9 13h6M9 17h6',title:li(['Prepare documents','Siapkan dokumen']),short:li(['Documents','Dokumen']),what:li(['Mandatory documents are approved and controlled.','Dokumen wajib sudah disetujui dan terkendali.']),who:who('role_mgr','role_pic'),checks:s3,acts:[['docs','nav_docs']]},
+      {no:4,icon:'M4 6h2M9 6h11M4 12h2M9 12h11M4 18h2M9 18h11',title:li(['Implement the requirements','Terapkan persyaratan']),short:li(['Implement','Implementasi']),what:li(['Roadmap phases are verified and controls are operating.','Fase peta jalan terverifikasi dan kontrol sudah berjalan.']),who:who('role_pic','role_mgr'),checks:s4,acts:[['phases','nav_phases'],['controls',null,ctrlLabel]]},
+      {no:5,icon:'M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',title:li(['Internal audit and management review','Audit internal dan tinjauan manajemen']),short:li(['Internal audit','Audit internal']),what:li(['The organisation checks itself once per cycle.','Organisasi memeriksa dirinya sendiri setiap siklus.']),who:who('role_ia','role_top'),checks:s5,acts:[['timeline','nav_timeline']]},
       {no:6,icon:'M12 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12zM8.2 13.9L7 22l5-3 5 3-1.2-8.1',title:li(['Certification audit','Audit sertifikasi']),short:li(['Certification','Sertifikasi']),what:li(['Stage 1 and Stage 2 by the certification body.','Tahap 1 dan Tahap 2 oleh lembaga sertifikasi.']),who:this.t('certifier'),checks:s6,acts:[['audit','nav_audit']]},
-      {no:7,icon:'M21 12a9 9 0 1 1-3-6.7M21 3v6h-6',title:li(['Maintain the certificate','Pertahankan sertifikat']),short:li(['Maintain','Pemeliharaan']),what:li(['Surveillance every year and recertification in year three.','Surveilans setiap tahun dan resertifikasi di tahun ketiga.']),who:'MS Manager, PIC',checks:s7,acts:[['fresh','nav_fresh'],['cal','nav_cal']]},
+      {no:7,icon:'M21 12a9 9 0 1 1-3-6.7M21 3v6h-6',title:li(['Maintain the certificate','Pertahankan sertifikat']),short:li(['Maintain','Pemeliharaan']),what:li(['Surveillance every year and recertification in year three.','Surveilans setiap tahun dan resertifikasi di tahun ketiga.']),who:who('role_mgr','role_pic'),checks:s7,acts:[['fresh','nav_fresh'],['cal','nav_cal']]},
     ];
     return {cur,stages}; }
   journeyScreen(d){ const D=this.D, L=this.L, ms=d.ms; const jr=this.journeyOf(ms); const cur=jr.cur; const n=jr.stages.length;
@@ -566,19 +606,22 @@ export default class MscdApp extends React.Component {
     const DOT={done:{dotBg:'#1f7a48',dotFg:'#ffffff',dotBd:'#1f7a48'},attn:{dotBg:'#e8bd4a',dotFg:'#1c1a17',dotBd:'#e8bd4a'},cur:{dotBg:'#e8731a',dotFg:'#ffffff',dotBd:'#f5a462'},todo:{dotBg:'rgba(255,255,255,.06)',dotFg:'#a39b8c',dotBd:'rgba(255,255,255,.2)'}};
     const stages=jr.stages.map(s=>{ const issues=s.checks.filter(x=>x.tone==='warn'||x.tone==='bad').length; const state=s.no<cur?(issues?'attn':'done'):s.no===cur?'cur':'todo';
       const tag={done:['jr_done','ok'],attn:['jr_attn','warn'],cur:[cur===7?'jr_ongoing':'jr_cur','acc'],todo:['jr_todo','mute']}[state]; const tg=state==='cur'?{bg:'var(--acc)',fg:'var(--onacc)'}:this.tone(tag[1]);
-      const acts=s.acts.map(([id,key,label],i)=>({label:label||this.t(key),go:()=>this.go(id),...(i===0&&state==='cur'?{bg:'var(--acc)',fg:'var(--onacc)',bd:'var(--acc)'}:{bg:'var(--sur)',fg:'var(--tx)',bd:'var(--bd)'})}));
+      const acts=s.acts.filter(([id])=>this.canOpen(id)).map(([id,key,label],i)=>({label:label||this.t(key),go:()=>this.go(id),...(i===0&&state==='cur'?{bg:'var(--acc)',fg:'var(--onacc)',bd:'var(--acc)'}:{bg:'var(--sur)',fg:'var(--tx)',bd:'var(--bd)'})}));
       return {no:s.no,title:s.title,short:s.short,what:s.what,who:s.who,tag:this.t(tag[0]),tagBg:tg.bg,tagFg:tg.fg,state,rowBg:state==='cur'?'var(--accbg)':'transparent',numBg:state==='done'?'var(--ok)':state==='attn'?'var(--warn)':state==='cur'?'var(--acc)':'var(--sur2)',numFg:state==='todo'?'var(--tx3)':state==='cur'?'var(--onacc)':'var(--onst)',
-        node:{...DOT[state],d:state==='done'?CHECK:state==='attn'?ALERT:s.icon,pulse:state==='cur'?'pulseAcc 2.2s ease-out infinite':'none',lc:state==='todo'?'#a39b8c':'#f2eee7',fw:state==='cur'?700:500,go:acts[0].go},
+        node:{...DOT[state],d:state==='done'?CHECK:state==='attn'?ALERT:s.icon,pulse:state==='cur'?'pulseAcc 2.2s ease-out infinite':'none',lc:state==='todo'?'#a39b8c':'#f2eee7',fw:state==='cur'?700:500,go:acts[0]?acts[0].go:null},
         checks:s.checks.map(x=>{ const t=this.tone(x.tone); return {label:x.label,val:x.val,bg:t.bg,fg:t.fg,d:x.tone==='ok'?CHECK:x.tone==='mute'?'M8 12h8':ALERT}; }),acts}; });
     const curS=stages[cur-1];
-    const systems=this.MSL.length>1?this.MSL.map(m=>{ const j=m.id===ms.id?jr:this.journeyOf(m); const on=m.id===ms.id; return {short:m.short,color:m.color,label:j.stages[j.cur-1].short,n:j.cur+'/'+n,bg:on?'rgba(255,255,255,.16)':'rgba(255,255,255,.05)',bd:on?'rgba(255,255,255,.4)':'rgba(255,255,255,.16)',go:()=>this.setMs(m.id)}; }):[];
+    // API mode: only systems the session user reads in full (the others are counted from a projection of their data).
+    const sys=this.MSL.filter(m=>this.fullScope(m.id)); const systems=sys.length>1?sys.map(m=>{ const j=m.id===ms.id?jr:this.journeyOf(m); const on=m.id===ms.id; return {short:m.short,color:m.color,label:j.stages[j.cur-1].short,n:j.cur+'/'+n,bg:on?'rgba(255,255,255,.16)':'rgba(255,255,255,.05)',bd:on?'rgba(255,255,255,.4)':'rgba(255,255,255,.16)',go:()=>this.setMs(m.id)}; }):[];
     const next=ms.audit?this.li(ms.audit.name)+', '+D.fmt(ms.audit.date,L)+', '+D.dd(ms.audit.date)+' '+this.t('daysLeft'):this.t('noAudit');
     return {jr:{ms:{short:ms.short,code:ms.code,color:ms.color,name:this.li(ms.name)},eyebrow:this.t('jr_stageOf').replace('{n}',cur).replace('{t}',n),title:curS.title,what:curS.what,nextLabel:this.t('nextAudit'),next,systems,track:stages.map(s=>({...s.node,short:s.short,no:s.no})),fillW:((cur-1)/(n-1)*85.7).toFixed(1)+'%',stages}}; }
   // ---------- Team & roles: who holds which role in each system ----------
-  teamScreen(){ const D=this.D; const people={}; const P=id=>people[id]||(people[id]={id,roles:[],owned:0,docs:0,open:0,over:0,perMs:{}});
-    const aud=D.ROLES&&D.ROLES.auditor?D.ROLES.auditor.who:null, top=D.ROLES&&D.ROLES.top?D.ROLES.top.who:null;
-    this.MSL.forEach(m=>{ const d=this.data(m); const ch=this.chain(d);
-      d.reqs.forEach(x=>{ if(x.owner&&x.owner!=='none') P(x.owner).owned++; }); d.docs.forEach(x=>{ if(x.owner&&x.owner!=='none') P(x.owner).docs++; });
+  // The internal auditor and top management come from the demo roster (ROLES); outside demo mode the API's ROLES
+  // names only the session user, so those roles are not labelled. API mode counts only systems read in full.
+  teamScreen(){ const D=this.D; const people={}; const P=id=>people[id]||(people[id]={id,roles:[],ctrl:0,req:0,docs:0,open:0,over:0,perMs:{}});
+    const roster=!this.api||!!D.demo; const aud=roster&&D.ROLES&&D.ROLES.auditor?D.ROLES.auditor.who:null, top=roster&&D.ROLES&&D.ROLES.top?D.ROLES.top.who:null;
+    this.MSL.filter(m=>this.fullScope(m.id)).forEach(m=>{ const d=this.data(m); const ch=this.chain(d);
+      d.reqs.forEach(x=>{ if(x.owner&&x.owner!=='none') P(x.owner)[m.unit==='ctrl'?'ctrl':'req']++; }); d.docs.forEach(x=>{ if(x.owner&&x.owner!=='none') P(x.owner).docs++; });
       ch.items.forEach(i=>{ const p=P(i.h||'none'); p.open++; if(i.st!=='pending') p.over++; p.perMs[m.id]=(p.perMs[m.id]||0)+1; });
       const roleOf=id=>id===m.mgr?'role_mgr':id===aud?'role_ia':id===top?'role_top':'role_pic';
       const ids=new Set([m.mgr,aud,top,...d.reqs.map(x=>x.owner),...d.docs.map(x=>x.owner),...ch.items.map(i=>i.h)].filter(x=>x&&x!=='none'));
@@ -587,9 +630,10 @@ export default class MscdApp extends React.Component {
     const un=people.none&&people.none.open?people.none:null; const all=un?[un,...list]:list; const max=Math.max(1,...all.map(p=>p.open));
     const rows=all.map(p=>{ const none=p.id==='none'; const pr=this.personOf(p.id); const best=Object.entries(p.perMs).sort((a,b)=>b[1]-a[1])[0];
       return {name:none?this.t('tm_unassigned'):pr[0],job:none?this.t('tm_unassignedSub'):pr[1],i:none?'?':pr[0].split(' ').map(w=>w[0]).slice(0,2).join(''),abg:none?'var(--badbg)':'var(--accbg)',afg:none?'var(--bad)':'var(--acc)',
-        roles:p.roles,owns:none?'-':p.owned+' '+this.li(['controls or requirements','kontrol atau persyaratan'])+', '+p.docs+' '+this.t('tm_docs'),open:p.open,over:p.over?p.over+' '+this.t('overdue').toLowerCase():'',
+        roles:p.roles,owns:none?'-':[p.ctrl?this.count(p.ctrl,'tm_control','tm_ctrl'):'',p.req?this.count(p.req,'tm_requirement','tm_req'):'',p.docs?this.count(p.docs,'tm_doc','tm_docs'):''].filter(Boolean).join(', ')||'-',open:p.open,over:p.over?p.over+' '+this.t('overdue').toLowerCase():'',
         seg:[{w:(p.open-p.over)/max*100,color:'var(--warn)'},{w:p.over/max*100,color:'var(--bad)'}],canGo:!!best,go:best?()=>this.go('chain',{ms:best[0],person:p.id}):null,btn:none?this.t('tm_assign'):this.t('tm_viewItems')}; });
-    const stats=[{n:list.length,l:this.t('tm_people'),color:'var(--tx)'},{n:un?un.open:0,l:this.li(['items without a PIC','item tanpa PIC']),color:un?'var(--bad)':'var(--ok)'},{n:list.filter(p=>p.over).length,l:this.li(['people with overdue items','orang dengan item terlambat']),color:list.some(p=>p.over)?'var(--warn)':'var(--ok)'}];
+    const unOpen=un?un.open:0, late=list.filter(p=>p.over).length;
+    const stats=[{n:list.length,l:this.t(list.length===1?'tm_personOne':'tm_people'),color:'var(--tx)'},{n:unOpen,l:this.li(unOpen===1?['item without a PIC','item tanpa PIC']:['items without a PIC','item tanpa PIC']),color:un?'var(--bad)':'var(--ok)'},{n:late,l:this.li(late===1?['person with overdue items','orang dengan item terlambat']:['people with overdue items','orang dengan item terlambat']),color:late?'var(--warn)':'var(--ok)'}];
     const steps=[{n:1,label:this.t('tm_s1'),icon:'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM16 11l2 2 4-4'},{n:2,label:this.t('tm_s2'),icon:'M12 16V4M7 9l5-5 5 5M4 20h16'},{n:3,label:this.t('tm_s3'),icon:'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4'}];
     const rules=[['tm_r1','tm_r1d','M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM5 21v-1a7 7 0 0 1 14 0v1'],['tm_r2','tm_r2d','M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21v-2a4 4 0 0 1 4-4h6M17 14l5 5M22 14l-5 5'],['tm_r3','tm_r3d','M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z']].map(([a,b,icon])=>({title:this.t(a),detail:this.t(b),icon}));
     return {tm:{rows,stats,steps,rules,cols:[this.t('tm_person'),this.t('tm_roles'),this.t('tm_owns'),this.t('tm_open'),'']}}; }
@@ -633,7 +677,7 @@ export default class MscdApp extends React.Component {
     if(B[screen]) scr={...scr,...B[screen]()}; else if(isPortfolio) pfv=this.portfolio();
     scr.tabs=(scr.tabs||[]).map(tb=>({...tb,nEl:this.num(tb.n)})); if(scr.hero) scr.hero={...scr.hero,nums:scr.hero.nums.map(h=>({...h,nEl:this.num(h.n)}))};
     const rows=scr.cols.length?this.finishRows(this.sortRows(scr.rows,screen)):[]; const sortS=(st.sort||{})[screen];
-    const colHeads=scr.cols.map((label,i)=>{ const on=!!sortS&&sortS.i===i; return {label,go:()=>this.toggleSort(screen,i),icon:on?(sortS.dir>0?'M6 15l6-6 6 6':'M6 9l6 6 6-6'):'M8 9l4-4 4 4M8 15l4 4 4-4',op:on?1:.45,fg:on?'var(--acc)':'inherit',aria:on?(sortS.dir>0?'ascending':'descending'):'none'}; }); const det=st.sel&&this._dets&&this._dets[st.sel]?this._dets[st.sel]():null; const showPage=this.pat==='page'&&!!det; const showPanel=this.pat==='panel'&&!!det;
+    const colHeads=scr.cols.map((label,i)=>{ const on=!!sortS&&sortS.i===i; return {label,go:()=>this.toggleSort(screen,i),icon:on?(sortS.dir>0?'M6 15l6-6 6 6':'M6 9l6 6 6-6'):'M8 9l4-4 4 4M8 15l4 4 4-4',op:on?1:.75,fg:on?'var(--acc)':'inherit',aria:on?(sortS.dir>0?'ascending':'descending'):'none'}; }); const det=st.sel&&this._dets&&this._dets[st.sel]?this._dets[st.sel]():null; const showPage=this.pat==='page'&&!!det; const showPanel=this.pat==='panel'&&!!det;
     const subtitle=isPortfolio?D.fmt(D.TODAY_S,L):isTasks?(scr.tasks&&scr.tasks.n?this.count(scr.tasks.n,'item','items'):''):'';
     return {...base,...orgVals,tera,pageActions,updatedAt,t,ms,pack:ms.pack,nav,msOptions,roleOptions,goIntegrated:()=>{ this.go('portfolio'); },me:{name:meP[0],role:this.roleLabel(role)+', '+meP[1],i:meP[0].split(' ').map(w=>w[0]).slice(0,2).join('')},
       deployLabel:this.t(deploy==='saas'?'saas':'onprem'),toggleDeploy:()=>this.setState({deploy:deploy==='saas'?'onprem':'saas'}),
@@ -645,7 +689,7 @@ export default class MscdApp extends React.Component {
   // Persona switch (demo): the source acts as the new persona from now on; the snapshot and the state change together.
   // API mode: the new session's Me decides the role in the current system (H.5 step 5).
   setRole(id,screen,single){ this.ds.switchPersona(id).then(snap=>this.setState(s=>{ const W=this.withSnap(snap); const ap=this.api?this.apiState(W.D,s):{role:id}; const r=ap.role;
-      return {...W,...ap,roleMenu:false,screen:this.landing(r,r==='owner'?'mytasks':r==='top'?'portfolio':screen,single),sel:null,expanded:{},person:null,taskFilter:null}; }),
+      return {...W,...ap,roleMenu:false,screen:this.landing(r,r==='owner'?'mytasks':r==='top'?'portfolio':screen,single,ap.ms,W.D),sel:null,expanded:{},person:null,taskFilter:null}; }),
       e=>{ console.warn('persona switch failed',e); this.toast(this.li(errorText(e))); }); }
   // Interface language; API requests follow it (Accept-Language).
   setLang(l){ this.setState({lang:l}); if(this.api&&this.ds.setLanguage) this.ds.setLanguage(l); }
