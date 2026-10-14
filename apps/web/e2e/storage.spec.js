@@ -68,6 +68,8 @@ test.describe('File storage', () => {
     await chip(page, 'Access revoked').click();
     await expect(ids(page)).toHaveText(['EV-0271']);
     await expect(listRow(page, 'EV-0271')).toContainText('OneDrive (personal)');
+    // the evidence title stays visible next to its code
+    await expect(listRow(page, 'EV-0271').locator('td:nth-child(2)').getByText('Equipment maintenance log', { exact: true })).toBeVisible();
     await chip(page, 'Check pending').click();
     await expect(listRows(page)).toHaveCount(11);
     await expect(listRows(page).locator('td:nth-child(3)')).toHaveText(Array(11).fill('BCMS'));

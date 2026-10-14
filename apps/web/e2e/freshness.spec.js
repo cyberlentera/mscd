@@ -194,6 +194,13 @@ test.describe('Evidence status', () => {
 
   test('evidence detail explains the freshness rule and links to its control', async ({ page }) => {
     await openFresh(page);
+    // the evidence title and its control's title stay visible next to their codes, with the full text in the popover
+    const row = listRow(page, 'EV-0124');
+    await expect(row.locator('td:nth-child(2)').getByText('Asset register export', { exact: true })).toBeVisible();
+    await expect(row.locator('td:nth-child(3)').getByText('Inventory of information and other associated assets', { exact: true })).toBeVisible();
+    await expect(row.locator('td:nth-child(3)')).toHaveAttribute('data-tip', 'Inventory of information and other associated assets');
+    // a cell with a popover keeps the row's pointer: the whole row opens on click
+    await expect(row.locator('td:nth-child(3)')).toHaveCSS('cursor', 'pointer');
     await openRow(page, 'EV-0124');
     await expect(drawerFact(page, 'Freshness rule')).toHaveText('Quarterly, Fresh ≤ 92 d, Aging ≤ 115 d, Expired ≤ 182 d, Critical > 182 d');
     await expect(drawerFact(page, 'Produced')).toHaveText('20 Jun 2026 (101 d)');

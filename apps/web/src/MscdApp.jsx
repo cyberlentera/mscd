@@ -170,14 +170,18 @@ export default class MscdApp extends React.Component {
   // scrolling table never clips it.
   initTips(){ if(typeof document==='undefined'||this._tip) return; const pop=document.createElement('div'); pop.className='mscd-pop'; pop.setAttribute('role','tooltip'); pop.hidden=true; document.body.appendChild(pop); this._tip=pop;
     const show=(el)=>{ const txt=el?el.getAttribute('data-tip'):''; this._tipEl=el; if(!txt){ pop.hidden=true; return; } pop.textContent=txt; pop.hidden=false; const r=el.getBoundingClientRect(); const w=pop.offsetWidth, h=pop.offsetHeight; const x=Math.min(Math.max(8,r.left),window.innerWidth-w-8); let y=r.bottom+6; if(y+h>window.innerHeight-8) y=Math.max(8,r.top-h-6); pop.style.left=x+'px'; pop.style.top=y+'px'; };
+    const kbFocus=a=>{ try{ return !!a&&a!==document.body&&a.matches(':focus-visible'); }catch{ return false; } };
     // Keyboard focus on a control that holds an info icon (the checkpoint flag inside a phase button) shows that icon's text.
-    const tipOf=e=>{ const t=e.target; const el=t&&t.closest?t.closest('[data-tip]'):null; if(el||e.type!=='focusin'||!t.querySelector) return el; try{ return t.matches(':focus-visible')?t.querySelector('[data-tip]:not([data-tip=""])'):null; }catch{ return null; } };
+    const tipOf=e=>{ const t=e.target; const el=t&&t.closest?t.closest('[data-tip]'):null; if(el||e.type!=='focusin'||!t.querySelector) return el; return kbFocus(t)?t.querySelector('[data-tip]:not([data-tip=""])'):null; };
     this._onTip=e=>{ const el=tipOf(e); if(el!==this._tipEl) show(el); };
     this._offTip=()=>{ pop.hidden=true; this._tipEl=null; };
     // The popover also closes when the pointer leaves the window, or when focus leaves the element it belongs to.
     this._outTip=e=>{ const el=this._tipEl; if(!el) return; const to=e.relatedTarget, from=e.target; if(e.type==='mouseout'?!to:(el.contains(from)||(from&&from.contains&&from.contains(el)))&&!(to&&el.contains(to))) this._offTip(); };
-    document.addEventListener('mouseover',this._onTip); document.addEventListener('focusin',this._onTip); document.addEventListener('mousedown',this._offTip); document.addEventListener('mouseout',this._outTip); document.addEventListener('focusout',this._outTip); window.addEventListener('scroll',this._offTip,true); }
-  dropTips(){ if(!this._tip) return; document.removeEventListener('mouseover',this._onTip); document.removeEventListener('focusin',this._onTip); document.removeEventListener('mousedown',this._offTip); document.removeEventListener('mouseout',this._outTip); document.removeEventListener('focusout',this._outTip); window.removeEventListener('scroll',this._offTip,true); this._tip.remove(); this._tip=null; }
+    // Scrolling closes the popover, except one opened by keyboard focus: the browser scrolls a newly focused element
+    // into view just after its popover opens, so that popover follows its element while the element is on screen.
+    this._scrollTip=()=>{ const el=this._tipEl, a=document.activeElement; if(el&&kbFocus(a)&&(el.contains(a)||a.contains(el))){ const r=el.getBoundingClientRect(); if(r.bottom>0&&r.top<window.innerHeight){ show(el); return; } } this._offTip(); };
+    document.addEventListener('mouseover',this._onTip); document.addEventListener('focusin',this._onTip); document.addEventListener('mousedown',this._offTip); document.addEventListener('mouseout',this._outTip); document.addEventListener('focusout',this._outTip); window.addEventListener('scroll',this._scrollTip,true); }
+  dropTips(){ if(!this._tip) return; document.removeEventListener('mouseover',this._onTip); document.removeEventListener('focusin',this._onTip); document.removeEventListener('mousedown',this._offTip); document.removeEventListener('mouseout',this._outTip); document.removeEventListener('focusout',this._outTip); window.removeEventListener('scroll',this._scrollTip,true); this._tip.remove(); this._tip=null; }
   // A link inside a clickable row: it navigates without also opening the row.
   lk(fn){ return e=>{ if(e&&e.stopPropagation) e.stopPropagation(); fn(); }; }
   canOpen(screen){ const vis=this.visFor(this.state.role); return !vis||vis.includes(screen); }

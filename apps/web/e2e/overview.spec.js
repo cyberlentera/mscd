@@ -72,6 +72,11 @@ test.describe('Readiness by clause', () => {
     await expect(phases(page)).toHaveCount(9);
     await expect(phases(page).nth(3)).toContainText('Risk assessment & SoA');
     await expect(phases(page).nth(3).locator('[data-tip="CHECKPOINT"]')).toHaveCount(1);
+    // the checkpoint flag is announced as an image, and keyboard focus on its phase shows the flag's popover
+    await expect(phases(page).nth(3).locator('[role="img"][aria-label="CHECKPOINT"]')).toHaveCount(1);
+    await phases(page).nth(2).focus();
+    await page.keyboard.press('Tab');
+    await expect(page.locator('.mscd-pop')).toHaveText('CHECKPOINT');
     await expect(phases(page).nth(3)).toContainText('4 blocked');
     await expect(phases(page).nth(0)).toContainText('Verified');
     await expect(phases(page).nth(8)).toContainText('4 / 7');

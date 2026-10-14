@@ -253,6 +253,11 @@ test.describe('Annex A controls', () => {
     await openRow(page, 'A.8.13');
     const note = ui.drawer(page).locator('span[data-tip^="Status is held at Partial"]');
     await expect(note).toHaveAttribute('data-tip', 'Status is held at Partial because the last evidence is critical for a monthly control. Link current-cycle evidence, then mark the control complete so it can be verified.');
+    // keyboard and screen-reader users reach the same note: it takes focus, opens the popover and carries the text as its name
+    await expect(note).toHaveAttribute('role', 'img');
+    await expect(note).toHaveAttribute('aria-label', 'Status is held at Partial because the last evidence is critical for a monthly control. Link current-cycle evidence, then mark the control complete so it can be verified.');
+    await note.focus();
+    await expect(page.locator('.mscd-pop')).toHaveText(/^Status is held at Partial/);
     await drawerLinks(page, 'Leads to').filter({ hasText: 'EV-0313' }).click();
     await expect(ui.title(page)).toHaveText('Evidence status');
     await expect(ui.drawer(page).locator('span[data-tip]').first()).toHaveAttribute('data-tip', /stays at Partial\. Re-link the file or submit new evidence, then mark the control complete for verification\./);
