@@ -186,7 +186,7 @@ describe('commands apply the override patches of the old controller', () => {
     const { res, after } = await commandCase((ds) => ds.markComplete('isms:req:A.8.8'), (c) => c.ovSet('isms:req:A.8.8', { st: 'complete', by: 'rina' }));
     expect(res).toEqual({ ok: true, changed: ['isms'] });
     expect(req(after, 'isms', 'A.8.8')).toMatchObject({ st: 'complete', by: 'rina' });
-    expect(item(after, 'isms', 'isms:req:A.8.8').act).toEqual(['Verify output (Rina Kusuma marked complete)', 'Verifikasi output (ditandai selesai oleh Rina Kusuma)']);
+    expect(item(after, 'isms', 'isms:req:A.8.8').act).toEqual(['Verify output (Rina Kusuma marked complete)', 'Verifikasi hasil (ditandai selesai oleh Rina Kusuma)']);
   });
 
   it('markComplete acts as the persona chosen with switchPersona', async () => {
@@ -247,7 +247,7 @@ describe('commands apply the override patches of the old controller', () => {
   it('startReview moves an expired document to review', async () => {
     const { after } = await commandCase((ds) => ds.startReview('isms:doc:PRC-07'), (c) => c.ovSet('isms:doc:PRC-07', { st: 'review' }));
     expect(doc(after, 'isms', 'PRC-07').st).toBe('review');
-    expect(item(after, 'isms', 'isms:doc:PRC-07').act).toEqual(['Approve review', 'Setujui review']);
+    expect(item(after, 'isms', 'isms:doc:PRC-07').act).toEqual(['Approve review', 'Setujui tinjauan']);
     expect((await createSampleDataSource().startReview('isms:req:A.8.8')).error.status).toBe(422);
   });
 

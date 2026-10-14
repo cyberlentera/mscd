@@ -97,7 +97,7 @@ test.describe('My Tasks', () => {
     await expect(tasks(page).filter({ hasText: 'Approve revised SoA' }).locator('button')).toHaveText('Open blocking item');
     await expect(task(page, 'R-022').locator('button')).toHaveText('Mark done');
     await task(page, 'R-022').locator('button').click();
-    await expectToast(page, 'Item updated. After-audit flag recalculated.');
+    await expectToast(page, 'Item updated. Due after audit flag recalculated.');
     await expect(task(page, 'R-022')).toHaveCount(0);
     await expect(tasks(page)).toHaveCount(2);
     await go(page, 'Outstanding items');

@@ -14,8 +14,8 @@ const STATUS_TEXT = {
   blocked: ['Resolve blocking item: justification missing', 'Selesaikan item penghambat: justifikasi belum ada'],
 };
 const DOC_TEXT = {
-  expired: ['Start review: review date passed', 'Mulai review: tanggal review terlewati'],
-  review: ['Approve review', 'Setujui review'],
+  expired: ['Start review: review date passed', 'Mulai tinjauan: tanggal tinjauan terlewati'],
+  review: ['Approve review', 'Setujui tinjauan'],
   draft: ['Continue draft and approve', 'Lanjutkan draf dan setujui'],
 };
 const GATE_TYPE = { risk: ['Risk', 'Risiko'], treatment: ['Treatment', 'Perlakuan'], soa: ['SoA', 'SoA'], bia: ['BIA', 'BIA'] };
@@ -90,7 +90,7 @@ export function chain(D, ov, d) {
       d.reqs.forEach((c, i) => {
         if (c.st === 'implemented' || c.st === 'na') return;
         let act = STATUS_TEXT[c.st];
-        if (c.st === 'complete') { const by = pname(D, c.by || c.owner); act = ['Verify output (' + by[0] + ' marked complete)', 'Verifikasi output (ditandai selesai oleh ' + by[1] + ')']; }
+        if (c.st === 'complete') { const by = pname(D, c.by || c.owner); act = ['Verify output (' + by[0] + ' marked complete)', 'Verifikasi hasil (ditandai selesai oleh ' + by[1] + ')']; }
         // Sample fabrication (UI 2.15): a requirement without a due date gets one spread over the next 95 days.
         const due = c.due || (c.st === 'blocked' ? null : D.addD('2026-10-01', (i * 9) % 95));
         items.push(mk(s.id, 'req', c.id, same(c.title), act, c.owner, due, { missing: c.st === 'blocked', gate: c.gate, up: c.risks, down: [c.doc], ref: c, q: s.q }));

@@ -295,7 +295,7 @@ test.describe('Annex A controls', () => {
     await expect(modal).toContainText('A.5.13, completed by Rina Kusuma, verify as Maya Putri, 29 Sep 2026');
     await modal.locator('button', { hasText: 'Confirm verification' }).click();
     await expect(ui.modal(page)).toHaveCount(0);
-    await expectToast(page, 'Verified. Status recalculated across Module 1, 2 and 3.');
+    await expectToast(page, 'Verified. Status recalculated on every screen.');
     expect(await tabCount(page, 'Controls implemented')).toBe(62);
     expect(await tabCount(page, 'Partially implemented')).toBe(17);
     await tab(page, 'Controls implemented').click();
@@ -341,7 +341,7 @@ test.describe('Annex A controls', () => {
     await modal.locator('input[type="date"]').fill('2026-12-01');
     await modal.locator('button', { hasText: 'Save' }).click();
     await expect(ui.modal(page)).toHaveCount(0);
-    await expectToast(page, 'Item updated. After-audit flag recalculated.');
+    await expectToast(page, 'Item updated. Due after audit flag recalculated.');
     await expect(listRow(page, 'A.5.13').locator('td:nth-child(5)')).toContainText('Dewi Anggraini');
     await expect(drawerFact(page, 'Owner')).toHaveText('Dewi Anggraini, HR Manager');
 
@@ -404,7 +404,7 @@ test.describe('Annex A controls', () => {
     await tab(page, 'Blocking items, Risk & SoA').click();
     await openRow(page, 'R-031');
     await expect(ui.drawer(page)).toContainText('Unpatched hypervisor in Surabaya DC');
-    await expect(drawerFact(page, 'Stage')).toHaveText('Risk');
+    await expect(drawerFact(page, 'Step')).toHaveText('Risk');
     await expect(drawerFact(page, 'Next action')).toHaveText('Select a treatment: no treatment linked');
   });
 

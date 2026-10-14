@@ -126,7 +126,7 @@ describe('reminders', () => {
     const result = response.body as unknown as BulkReminderResult;
     // Hendra still has other open items; only R-022 and PRC-07 were reminded in the last 72 hours.
     expect(result.count).toBe(holders.size);
-    expect(result.message).toEqual([`Reminders sent to ${holders.size} holders`, `Pengingat dikirim ke ${holders.size} pemegang`]);
+    expect(result.message).toEqual([`Reminders sent to ${holders.size} people`, `Pengingat dikirim ke ${holders.size} PIC`]);
     expect(result.data.skipped.map((x) => `${x.recipient} ${x.recordKey}`).sort()).toEqual(['bagus isms:doc:PRC-07', 'hendra isms:x:R-022']);
     const notified = await rowsOf<{ n: number }>(db, 'tst', sql`
       select count(distinct recipient_user_id)::int as n from reminder where bulk_id is not null and notification_id is not null`);

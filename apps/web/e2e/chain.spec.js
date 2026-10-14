@@ -152,7 +152,7 @@ test.describe('Outstanding items', () => {
     await modal.locator('input[type="date"]').fill('2026-12-01');
     await expect(modal).toContainText('This date falls after the audit event');
     await modal.locator('button', { hasText: 'Save' }).click();
-    await expectToast(page, 'Item updated. After-audit flag recalculated.');
+    await expectToast(page, 'Item updated. Due after audit flag recalculated.');
     await expect(listRow(page, 'R-022')).toContainText('1 Dec 2026');
     await expect(listRow(page, 'R-022')).toContainText('Due after audit');
     expect(await chipCount(page, 'Due after audit')).toBe(2);
@@ -226,7 +226,7 @@ test.describe('Outstanding items', () => {
     await openChain(page);
     await tab(page, 'Risk').click();
     await openRow(page, 'R-014');
-    await expect(drawerFact(page, 'Stage')).toHaveText('Risk');
+    await expect(drawerFact(page, 'Step')).toHaveText('Risk');
     await expect(drawerFact(page, 'Next action')).toHaveText('Annual reassessment');
     await expect(drawerFact(page, 'Assigned to')).toHaveText('Bagus Prasetyo, IT Infrastructure Lead');
     await expect(drawerFact(page, 'Due date')).toHaveText('10 Sep 2026');

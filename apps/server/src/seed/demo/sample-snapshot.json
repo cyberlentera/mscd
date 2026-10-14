@@ -5536,7 +5536,7 @@
         ],
         "act": [
          "Start review: review date passed",
-         "Mulai review: tanggal review terlewati"
+         "Mulai tinjauan: tanggal tinjauan terlewati"
         ],
         "h": "bagus",
         "due": "2026-09-06",
@@ -5559,7 +5559,7 @@
         ],
         "act": [
          "Start review: review date passed",
-         "Mulai review: tanggal review terlewati"
+         "Mulai tinjauan: tanggal tinjauan terlewati"
         ],
         "h": "bagus",
         "due": "2026-09-24",
@@ -5586,7 +5586,7 @@
         ],
         "act": [
          "Approve review",
-         "Setujui review"
+         "Setujui tinjauan"
         ],
         "h": "bagus",
         "due": "2026-10-30",
@@ -5613,7 +5613,7 @@
         ],
         "act": [
          "Start review: review date passed",
-         "Mulai review: tanggal review terlewati"
+         "Mulai tinjauan: tanggal tinjauan terlewati"
         ],
         "h": "fajar",
         "due": "2026-09-17",
@@ -5640,7 +5640,7 @@
         ],
         "act": [
          "Start review: review date passed",
-         "Mulai review: tanggal review terlewati"
+         "Mulai tinjauan: tanggal tinjauan terlewati"
         ],
         "h": "bagus",
         "due": "2026-07-23",
@@ -5667,7 +5667,7 @@
         ],
         "act": [
          "Start review: review date passed",
-         "Mulai review: tanggal review terlewati"
+         "Mulai tinjauan: tanggal tinjauan terlewati"
         ],
         "h": "bagus",
         "due": "2026-08-19",
@@ -8443,7 +8443,7 @@
         ],
         "act": [
          "Verify output (Sari Wulandari marked complete)",
-         "Verifikasi output (ditandai selesai oleh Sari Wulandari)"
+         "Verifikasi hasil (ditandai selesai oleh Sari Wulandari)"
         ],
         "h": "sari",
         "due": "2027-01-03",
@@ -8540,7 +8540,7 @@
         ],
         "act": [
          "Approve review",
-         "Setujui review"
+         "Setujui tinjauan"
         ],
         "h": "andi",
         "due": "2026-10-06",
@@ -8565,7 +8565,7 @@
         ],
         "act": [
          "Start review: review date passed",
-         "Mulai review: tanggal review terlewati"
+         "Mulai tinjauan: tanggal tinjauan terlewati"
         ],
         "h": "sari",
         "due": "2026-09-20",
@@ -9810,7 +9810,7 @@
        "owner": "tono",
        "doc": "PLN-B01",
        "freq": "annual",
-       "note": "BIA-03: RTO 8h exceeds MTPD 4h; BIA-06 not started: holds the BIA & Risk Assessment gate",
+       "note": "BIA-03: RTO 8h exceeds MTPD 4h; BIA-06 not started",
        "gate": true,
        "just": "Requirement within scope",
        "risks": [],
@@ -9826,7 +9826,7 @@
        "owner": "bagus",
        "doc": "PLN-B02",
        "freq": "annual",
-       "note": "Awaiting BIA gate",
+       "note": "Waiting for the BIA checkpoint",
        "gate": false,
        "just": "Requirement within scope",
        "risks": [],
@@ -9842,7 +9842,7 @@
        "owner": "bagus",
        "doc": "PLN-B02",
        "freq": "annual",
-       "note": "Awaiting BIA gate",
+       "note": "Waiting for the BIA checkpoint",
        "gate": false,
        "just": "Requirement within scope",
        "risks": [],
@@ -10947,8 +10947,8 @@
         "Persyaratan"
        ],
        "why": [
-        "BIA-03: RTO 8h exceeds MTPD 4h; BIA-06 not started: holds the BIA & Risk Assessment gate",
-        "BIA-03: RTO 8h exceeds MTPD 4h; BIA-06 not started: holds the BIA & Risk Assessment gate"
+        "BIA-03: RTO 8h exceeds MTPD 4h; BIA-06 not started",
+        "BIA-03: RTO 8h exceeds MTPD 4h; BIA-06 not started"
        ],
        "h": "tono",
        "due": null,
@@ -11705,7 +11705,7 @@
        "owner": "lina",
        "doc": "POL-A01",
        "freq": "annual",
-       "note": "Bribery risk assessment not started: holds the gate for phase 2",
+       "note": "Bribery risk assessment not started",
        "gate": true,
        "just": "Requirement within scope",
        "risks": [],
@@ -13161,8 +13161,8 @@
         "Persyaratan"
        ],
        "why": [
-        "Bribery risk assessment not started: holds the gate for phase 2",
-        "Bribery risk assessment not started: holds the gate for phase 2"
+        "Bribery risk assessment not started",
+        "Bribery risk assessment not started"
        ],
        "h": "lina",
        "due": null,
@@ -20724,7 +20724,7 @@
         ],
         "act": [
          "Start review: review date passed",
-         "Mulai review: tanggal review terlewati"
+         "Mulai tinjauan: tanggal tinjauan terlewati"
         ],
         "h": "bagus",
         "due": "2026-09-06",
@@ -20747,7 +20747,7 @@
         ],
         "act": [
          "Start review: review date passed",
-         "Mulai review: tanggal review terlewati"
+         "Mulai tinjauan: tanggal tinjauan terlewati"
         ],
         "h": "bagus",
         "due": "2026-09-24",
@@ -20774,7 +20774,7 @@
         ],
         "act": [
          "Approve review",
-         "Setujui review"
+         "Setujui tinjauan"
         ],
         "h": "bagus",
         "due": "2026-10-30",
@@ -20801,7 +20801,7 @@
         ],
         "act": [
          "Start review: review date passed",
-         "Mulai review: tanggal review terlewati"
+         "Mulai tinjauan: tanggal tinjauan terlewati"
         ],
         "h": "fajar",
         "due": "2026-09-17",
@@ -20828,7 +20828,7 @@
         ],
         "act": [
          "Start review: review date passed",
-         "Mulai review: tanggal review terlewati"
+         "Mulai tinjauan: tanggal tinjauan terlewati"
         ],
         "h": "bagus",
         "due": "2026-07-23",
@@ -20855,7 +20855,7 @@
         ],
         "act": [
          "Start review: review date passed",
-         "Mulai review: tanggal review terlewati"
+         "Mulai tinjauan: tanggal tinjauan terlewati"
         ],
         "h": "bagus",
         "due": "2026-08-19",
@@ -23631,7 +23631,7 @@
         ],
         "act": [
          "Verify output (Sari Wulandari marked complete)",
-         "Verifikasi output (ditandai selesai oleh Sari Wulandari)"
+         "Verifikasi hasil (ditandai selesai oleh Sari Wulandari)"
         ],
         "h": "sari",
         "due": "2027-01-03",
@@ -23728,7 +23728,7 @@
         ],
         "act": [
          "Approve review",
-         "Setujui review"
+         "Setujui tinjauan"
         ],
         "h": "andi",
         "due": "2026-10-06",
@@ -23753,7 +23753,7 @@
         ],
         "act": [
          "Start review: review date passed",
-         "Mulai review: tanggal review terlewati"
+         "Mulai tinjauan: tanggal tinjauan terlewati"
         ],
         "h": "sari",
         "due": "2026-09-20",
@@ -31105,7 +31105,7 @@
         ],
         "act": [
          "Start review: review date passed",
-         "Mulai review: tanggal review terlewati"
+         "Mulai tinjauan: tanggal tinjauan terlewati"
         ],
         "h": "bagus",
         "due": "2026-09-06",
@@ -31128,7 +31128,7 @@
         ],
         "act": [
          "Start review: review date passed",
-         "Mulai review: tanggal review terlewati"
+         "Mulai tinjauan: tanggal tinjauan terlewati"
         ],
         "h": "bagus",
         "due": "2026-09-24",
@@ -31155,7 +31155,7 @@
         ],
         "act": [
          "Approve review",
-         "Setujui review"
+         "Setujui tinjauan"
         ],
         "h": "bagus",
         "due": "2026-10-30",
@@ -31182,7 +31182,7 @@
         ],
         "act": [
          "Start review: review date passed",
-         "Mulai review: tanggal review terlewati"
+         "Mulai tinjauan: tanggal tinjauan terlewati"
         ],
         "h": "fajar",
         "due": "2026-09-17",
@@ -31209,7 +31209,7 @@
         ],
         "act": [
          "Start review: review date passed",
-         "Mulai review: tanggal review terlewati"
+         "Mulai tinjauan: tanggal tinjauan terlewati"
         ],
         "h": "bagus",
         "due": "2026-07-23",
@@ -31236,7 +31236,7 @@
         ],
         "act": [
          "Start review: review date passed",
-         "Mulai review: tanggal review terlewati"
+         "Mulai tinjauan: tanggal tinjauan terlewati"
         ],
         "h": "bagus",
         "due": "2026-08-19",

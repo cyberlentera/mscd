@@ -37,7 +37,7 @@ describe('Per-screen read endpoints (TS 9.2)', () => {
       ['implemented', 61, 93], ['partial', 18, undefined], ['gate_items', 4, undefined], ['documents_approved', 14, 22], ['documents_expired', 5, undefined],
     ]);
     expect(summary.cards[0]!.label).toBe('Controls implemented');
-    expect(summary.cards[2]!.label).toBe('Gate items, Risk & SoA');
+    expect(summary.cards[2]!.label).toBe('Blocking items, Risk & SoA');
     expect(summary.currentPhase).toBe(4);
     expect(summary.phases[0]).toMatchObject({ no: 1, text: '5 of 5 verified' });
     expect(summary.maturity.map((m) => m.clause)).toEqual([4, 5, 6, 7, 8, 9, 10]);
@@ -47,7 +47,7 @@ describe('Per-screen read endpoints (TS 9.2)', () => {
 
   it('answers in the language of Accept-Language (D.1)', async () => {
     const id = ImplementationSummary.parse((await rina.get('/api/v1/ms/isms/implementation/summary', 'id-ID,id;q=0.9,en;q=0.8')).body);
-    expect(id.cards.map((c) => c.label)).toEqual(['Kontrol diimplementasikan', 'Diimplementasikan sebagian', 'Item gate, Risiko & SoA', 'Dokumen disetujui', 'Dokumen kedaluwarsa']);
+    expect(id.cards.map((c) => c.label)).toEqual(['Kontrol diimplementasikan', 'Diimplementasikan sebagian', 'Item penghambat, Risiko & SoA', 'Dokumen disetujui', 'Dokumen kedaluwarsa']);
     expect(id.phases[0]!.text).toBe('5 dari 5 terverifikasi');
     const en = (await rina.get<ImplementationSummary>('/api/v1/ms/isms/implementation/summary', 'fr-FR, en;q=0.5, id;q=0.4')).body;
     expect(en.cards[0]!.label).toBe('Controls implemented');

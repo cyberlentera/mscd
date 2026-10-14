@@ -138,7 +138,7 @@ describe('activity and phase commands', () => {
     const behindGate = await setActivity('9.3', { status: 'not_started', owner: 'bagus', out: null, doc: null });
     const start = await bagus.post(ACTIVITY_URL('isms', behindGate.id), { to: 'in_progress' });
     expect(start.status).toBe(422);
-    expect(start.body).toMatchObject({ rule: 'BR-12', messages: { en: expect.stringMatching(/critical gate phase 4/), id: expect.stringMatching(/fase gerbang kritis 4/) } });
+    expect(start.body).toMatchObject({ rule: 'BR-12', messages: { en: expect.stringMatching(/checkpoint phase 4/), id: expect.stringMatching(/fase titik periksa 4/) } });
     expect((await bagus.post(ACTIVITY_URL('isms', behindGate.id), { to: 'complete' })).body.rule).toBe('BR-12');
     // Phase 2 has no critical gate before it: not started to complete in one command (A.4 5.12).
     const early = await setActivity('2.1', { status: 'not_started', owner: 'bagus', out: null, doc: null });
@@ -175,7 +175,7 @@ describe('activity and phase commands', () => {
     expect(blocked.status).toBe(200);
     const unblocked = await bagus.post(ACTIVITY_URL('isms', act.id), { to: 'in_progress' });
     expect(unblocked.status).toBe(422);
-    expect(unblocked.body).toMatchObject({ rule: 'BR-12', messages: { en: expect.stringMatching(/critical gate phase 4/) } });
+    expect(unblocked.body).toMatchObject({ rule: 'BR-12', messages: { en: expect.stringMatching(/checkpoint phase 4/) } });
     expect(await activityOf(db, 'tst', 'isms', '9.3')).toMatchObject({ status: 'blocked', blockerRef: gate });
   });
 

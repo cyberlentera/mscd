@@ -29,13 +29,13 @@ export const REQUIREMENT_ACTION: Readonly<Partial<Record<ReqStatus, Pair>>> = {
 
 /** `Verify output (<name> marked complete)` (UI 2.3). */
 export function verifyOutputAction(name: Pair): Pair {
-  return [`Verify output (${name[0]} marked complete)`, `Verifikasi output (ditandai selesai oleh ${name[1]})`];
+  return [`Verify output (${name[0]} marked complete)`, `Verifikasi hasil (ditandai selesai oleh ${name[1]})`];
 }
 
 /** Chain item action of a document by UI status (UI 2.3). */
 export const DOCUMENT_ACTION: Readonly<Record<'expired' | 'review' | 'draft', Pair>> = {
-  expired: ['Start review: review date passed', 'Mulai review: tanggal review terlewati'],
-  review: ['Approve review', 'Setujui review'],
+  expired: ['Start review: review date passed', 'Mulai tinjauan: tanggal tinjauan terlewati'],
+  review: ['Approve review', 'Setujui tinjauan'],
   draft: ['Continue draft and approve', 'Lanjutkan draf dan setujui'],
 };
 

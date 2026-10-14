@@ -200,7 +200,7 @@ export class RemindersService {
         ok: true,
         changed: [],
         count: holders,
-        message: [`Reminders sent to ${holders} holders`, `Pengingat dikirim ke ${holders} pemegang`],
+        message: [`Reminders sent to ${holders} people`, `Pengingat dikirim ke ${holders} PIC`],
         data: { skipped },
       };
     });
