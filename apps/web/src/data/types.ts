@@ -139,7 +139,12 @@ export interface Repository {
 export interface PackCard { v: string; installed: string; eds: Text; update: Text | null; status?: 'current' | 'transition' | 'beta' }
 export interface Licence { org: string; to: string; fw: string; ms: string; users: string; adapters: string; features: Text[]; sig: Text }
 
-export interface AuditEvent { t: Text; short?: Text; d: IsoDate; days: number; result?: Text; next?: boolean }
+export interface AuditEvent {
+  t: Text; short?: Text; d: IsoDate; days: number; result?: Text; next?: boolean;
+  /** Event type and recorded outcome (`audit_event.event_type`, `outcome`): the journey reads certification from them. */
+  type?: 'stage1' | 'stage2' | 'surveillance' | 'recertification' | 'transition' | 'special';
+  outcome?: 'recommended' | 'recommended_with_conditions' | 'not_recommended';
+}
 export interface DriftRule { id: string; l: Pair; rows?: [string, string, PersonId, IsoDate][]; src?: 'unverif' | 'metric' | 'exercise' | 'nohash' }
 
 /** Session user as returned by GET /me (D.2 `Me`); present in API mode. */

@@ -119,7 +119,7 @@ test.describe('App shell', () => {
     await expect(page.locator('header button[title="Switch management system"] svg')).toHaveCount(0);
   });
 
-  test('role switcher changes persona, landing screen and navigation', async ({ page }) => {
+  test('role switcher changes persona, landing screen and navigation', async ({ page, dataSource }) => {
     await openApp(page);
     const roleBtn = page.locator('header button', { hasText: 'Rina Kusuma' });
     const pick = async (role) => {
@@ -135,7 +135,8 @@ test.describe('App shell', () => {
     await expect(page.locator('aside nav button[title="Standards & licence"]')).toHaveCount(0);
     await pick('Top management');
     await expect(ui.title(page)).toHaveText('Home');
-    await expect(page.locator('aside nav button')).toHaveCount(8);
+    // The api sends Top Management aggregates only, so Start here and Team & roles are not offered there.
+    await expect(page.locator('aside nav button')).toHaveCount(dataSource === 'api' ? 6 : 8);
     await pick('MS Manager');
     await expect(page.locator('aside nav button')).toHaveCount(16);
   });

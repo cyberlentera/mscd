@@ -82,7 +82,7 @@ export default function MyTasks({ v }) {
             </button>
           </Fragment>))}{" "}
           <span style={{ marginLeft: "auto", display: "inline-flex" }}>
-            <span data-tip={v.tasks?.sortNote} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "12px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
+            <span data-tip={v.tasks?.sortNote} tabIndex="0" role="img" aria-label={v.tasks?.sortNote} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "12px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
           </span>
         </div>
         {list(v.tasks?.feed).map((k, $i83) => (<Fragment key={$i83}>
@@ -104,7 +104,7 @@ export default function MyTasks({ v }) {
             </span>{" "}
             <span style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "flex-start" }}>
               <span style={{ padding: "3px 9px", borderRadius: "999px", fontSize: "12px", fontWeight: "600", whiteSpace: "nowrap", background: k?.bg, color: k?.fg }}>{txt(k?.due)}</span>
-              <span data-tip={k?.examples} style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "12px", color: "var(--tx3)", cursor: "help" }}>
+              <span data-tip={k?.examples} tabIndex="0" role="img" aria-label={k?.exLabel} style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "12px", color: "var(--tx3)", cursor: "help" }}>
                 <span style={{ display: "inline-flex", width: "14px", height: "14px", borderRadius: "50%", border: "1px solid var(--tx3)", alignItems: "center", justifyContent: "center", fontSize: "12px", fontFamily: "var(--ffm)" }}>{"i"}</span>{txt(v.t?.accepted)}
               </span>
             </span>{" "}

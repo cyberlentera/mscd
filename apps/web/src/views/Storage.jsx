@@ -85,7 +85,7 @@ export default function Storage({ v }) {
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "4px" }}>
         <span style={{ fontWeight: "600", fontSize: "1.05em" }}>{txt(v.t?.linkHealth)}</span>
-        <span data-tip={v.st?.linkTip} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "12px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
+        <span data-tip={v.st?.linkTip} tabIndex="0" role="img" aria-label={v.st?.linkTip} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "12px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
       </div>
     </>) : null}</>
   );

@@ -10,7 +10,7 @@ export default function TraceTest({ v }) {
         <div style={{ padding: "12px var(--pad)", borderBottom: "1px solid var(--bd)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ fontWeight: "600" }}>{txt(v.t?.traceTest)}</span>
-            <span data-tip={v.t?.traceSub} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "12px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
+            <span data-tip={v.t?.traceSub} tabIndex="0" role="img" aria-label={v.t?.traceSub} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "12px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
           </div>
           <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
             {list(v.trace?.picks).map((p, $i42) => (<Fragment key={$i42}>

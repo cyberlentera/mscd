@@ -42,5 +42,7 @@ body:has(.mscd[data-theme="dark"]){background:#131210}
 body:has(.mscd[data-theme="dark"]) .mscd-pop{background:#f2eee7;color:#1c1a17;border-color:rgba(0,0,0,.12)}
 .mscd [data-tip]:not([data-tip=""]){cursor:help}
 .mscd button[data-tip],.mscd [data-tip] button{cursor:pointer}
+/* A row that opens on click keeps its pointer over cells that also have a popover. */
+.mscd tr[style*="cursor: pointer"] [data-tip]{cursor:inherit}
 /* Column lines on every data table in the page. */
 .mscd main table th+th,.mscd main table td+td{border-left:1px solid var(--bd)}

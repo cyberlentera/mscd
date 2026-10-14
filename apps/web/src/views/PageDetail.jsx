@@ -22,7 +22,7 @@ export default function PageDetail({ v }) {
                 <span style={{ padding: "2px 8px", borderRadius: "999px", fontSize: "max(12px, .9em)", fontWeight: "600", background: b?.bg, color: b?.fg }}>{txt(b?.v)}</span>
               </Fragment>))}
               {v.det?.note ? (<>
-                <span data-tip={v.det?.note?.text} style={{ display: "inline-flex", width: "18px", height: "18px", borderRadius: "50%", background: v.det?.note?.bg, color: v.det?.note?.fg, fontSize: "12px", alignItems: "center", justifyContent: "center", cursor: "help", fontWeight: "700" }}>{"i"}</span>
+                <span data-tip={v.det?.note?.text} tabIndex="0" role="img" aria-label={v.det?.note?.text} style={{ display: "inline-flex", width: "18px", height: "18px", borderRadius: "50%", background: v.det?.note?.bg, color: v.det?.note?.fg, fontSize: "12px", alignItems: "center", justifyContent: "center", cursor: "help", fontWeight: "700" }}>{"i"}</span>
               </>) : null}
             </div>
             <div style={{ fontSize: "1.4em", fontWeight: "600", marginTop: "4px" }}>{txt(v.det?.title)}</div>

@@ -1,8 +1,8 @@
 // Certification cycle rows of a system (build plan G.5 `EVENTS`, `FOCUS`, `PREP`, `PAST`, `CYCLE_ITEMS`, TS 9.4,
 // C.11, UI 1.10).
 import {
-  uiFindingClass, uiFindingState, uiTupleStatus, type CycleRow, type EventRow, type FindingClassification, type FindingStatus,
-  type Pair, type PastRow, type PrepRow, type TaskProgressStatus, type Text,
+  uiFindingClass, uiFindingState, uiTupleStatus, type AuditEventType, type AuditOutcome, type CycleRow, type EventRow,
+  type FindingClassification, type FindingStatus, type Pair, type PastRow, type PrepRow, type TaskProgressStatus, type Text,
 } from '@mscd/shared';
 import { NONE } from './text';
 
@@ -19,6 +19,10 @@ export interface AuditEventRow {
   expectedFocus: string | null;
   prepWindowDays: number;
   outcomeSummary: string | null;
+  /** `event_type`; the journey reads certification from it. */
+  eventType?: AuditEventType;
+  /** `outcome` once recorded. */
+  outcome?: AuditOutcome | null;
 }
 
 /** Bilingual event labels kept by date in `management_system.display.eventLabels` (D-06). */
@@ -34,7 +38,7 @@ function withPair(text: string, pair: Pair | undefined): Text {
   return pair && pair[0] === text ? [pair[0], pair[1]] : text;
 }
 
-/** G.5 `EVENTS[ms]`: events by date with the short label, days, result and the `next` flag. */
+/** G.5 `EVENTS[ms]`: events by date with the short label, days, result, event type, outcome and the `next` flag. */
 export function deriveEvents(events: readonly AuditEventRow[], today: string, labels: EventLabels = {}): EventRow[] {
   const next = nextAuditEvent(events, today);
   return [...events]
@@ -46,6 +50,8 @@ export function deriveEvents(events: readonly AuditEventRow[], today: string, la
       if (matched && label?.short) row.short = [label.short[0], label.short[1]];
       if (e.outcomeSummary) row.result = withPair(e.outcomeSummary, label?.result);
       if (next && e.id === next.id) row.next = true;
+      if (e.eventType) row.type = e.eventType;
+      if (e.outcome) row.outcome = e.outcome;
       return row;
     });
 }

@@ -1,6 +1,7 @@
 // Loaders of the read model (build plan WP-17, D-05): the rows of one or every system of the transaction's
 // organisation in a fixed number of queries, one per table group, never one per record (no N+1). Everything runs in
 // the caller's tenant transaction (D-03); person columns come back as handles.
+import type { AuditEventType, AuditOutcome } from '@mscd/shared';
 import { sql, type RawBuilder } from 'kysely';
 import type { Trx } from '../../../common/tokens';
 import type { AuditEventRow, CycleItemRow, FindingRow, PrepTaskRow } from '../derive/audit';
@@ -263,10 +264,10 @@ export async function loadOrgData(trx: Trx, options: LoadOptions): Promise<OrgDa
     await sql<{
       id: string; management_system_id: string; updated_at: Date; scheduled_at: string; audit_days: number | null; short_label: string;
       name_en: string; name_id: string; lead_auditor_name: string | null; expected_focus: string | null; prep_window_days: number;
-      outcome_summary: string | null;
+      outcome_summary: string | null; event_type: AuditEventType; outcome: AuditOutcome | null;
     }>`
       select id, management_system_id, updated_at, scheduled_at, audit_days, short_label, name_en, name_id, lead_auditor_name,
-             expected_focus, prep_window_days, outcome_summary
+             expected_focus, prep_window_days, outcome_summary, event_type, outcome
       from audit_event where management_system_id = any(${uuids(msIds)}) and deleted_at is null order by scheduled_at, id`.execute(trx)
   ).rows;
   const routeRows = (
@@ -411,6 +412,8 @@ export async function loadOrgData(trx: Trx, options: LoadOptions): Promise<OrgDa
         expectedFocus: e.expected_focus,
         prepWindowDays: e.prep_window_days,
         outcomeSummary: e.outcome_summary,
+        eventType: e.event_type,
+        outcome: e.outcome,
       })),
       defaultRoute: route ? { mode: route.mode, note: route.note, repositoryName: route.repository_name } : null,
       records: recordsByMs.get(s.id) ?? [],

@@ -14691,7 +14691,9 @@
       "result": [
        "Passed, 2 OFI",
        "Lulus, 2 OFI"
-      ]
+      ],
+      "type": "stage1",
+      "outcome": "recommended"
      },
      {
       "t": [
@@ -14703,7 +14705,9 @@
       "result": [
        "Certified, 2 Minor NC, 1 OFI",
        "Tersertifikasi, 2 NC Minor, 1 OFI"
-      ]
+      ],
+      "type": "stage2",
+      "outcome": "recommended"
      },
      {
       "t": [
@@ -14712,7 +14716,8 @@
       ],
       "d": "2026-11-12",
       "days": 2,
-      "next": true
+      "next": true,
+      "type": "surveillance"
      },
      {
       "t": [
@@ -14720,7 +14725,8 @@
        "Surveilans 2"
       ],
       "d": "2027-11-10",
-      "days": 2
+      "days": 2,
+      "type": "surveillance"
      },
      {
       "t": [
@@ -14728,7 +14734,8 @@
        "Resertifikasi"
       ],
       "d": "2028-02-14",
-      "days": 3
+      "days": 3,
+      "type": "recertification"
      }
     ],
     "qms": [
@@ -14746,7 +14753,9 @@
       "result": [
        "Certified, 1 Minor",
        "Tersertifikasi, 1 Minor"
-      ]
+      ],
+      "type": "recertification",
+      "outcome": "recommended"
      },
      {
       "t": [
@@ -14758,7 +14767,9 @@
       "result": [
        "Passed, 1 Minor",
        "Lulus, 1 Minor"
-      ]
+      ],
+      "type": "surveillance",
+      "outcome": "recommended"
      },
      {
       "t": [
@@ -14770,7 +14781,9 @@
       "result": [
        "Passed, 0 NC, 2 OFI",
        "Lulus, 0 NC, 2 OFI"
-      ]
+      ],
+      "type": "surveillance",
+      "outcome": "recommended"
      },
      {
       "t": [
@@ -14783,7 +14796,8 @@
       ],
       "d": "2026-12-03",
       "days": 3,
-      "next": true
+      "next": true,
+      "type": "recertification"
      },
      {
       "t": [
@@ -14795,7 +14809,8 @@
        "Surveilans 1"
       ],
       "d": "2027-12-01",
-      "days": 1
+      "days": 1,
+      "type": "surveillance"
      }
     ],
     "bcms": [
@@ -14806,7 +14821,8 @@
       ],
       "d": "2027-02-10",
       "days": 1,
-      "next": true
+      "next": true,
+      "type": "stage1"
      },
      {
       "t": [
@@ -14814,7 +14830,8 @@
        "Tahap 2, sertifikasi"
       ],
       "d": "2027-04-20",
-      "days": 2
+      "days": 2,
+      "type": "stage2"
      },
      {
       "t": [
@@ -14822,7 +14839,8 @@
        "Surveilans 1"
       ],
       "d": "2028-04-18",
-      "days": 1
+      "days": 1,
+      "type": "surveillance"
      }
     ],
     "abms": []
@@ -25354,7 +25372,9 @@
       "result": [
        "Passed, 2 OFI",
        "Lulus, 2 OFI"
-      ]
+      ],
+      "type": "stage1",
+      "outcome": "recommended"
      },
      {
       "t": [
@@ -25366,7 +25386,9 @@
       "result": [
        "Certified, 2 Minor NC, 1 OFI",
        "Tersertifikasi, 2 NC Minor, 1 OFI"
-      ]
+      ],
+      "type": "stage2",
+      "outcome": "recommended"
      },
      {
       "t": [
@@ -25375,7 +25397,8 @@
       ],
       "d": "2026-11-12",
       "days": 2,
-      "next": true
+      "next": true,
+      "type": "surveillance"
      },
      {
       "t": [
@@ -25383,7 +25406,8 @@
        "Surveilans 2"
       ],
       "d": "2027-11-10",
-      "days": 2
+      "days": 2,
+      "type": "surveillance"
      },
      {
       "t": [
@@ -25391,7 +25415,8 @@
        "Resertifikasi"
       ],
       "d": "2028-02-14",
-      "days": 3
+      "days": 3,
+      "type": "recertification"
      }
     ],
     "qms": [
@@ -25409,7 +25434,9 @@
       "result": [
        "Certified, 1 Minor",
        "Tersertifikasi, 1 Minor"
-      ]
+      ],
+      "type": "recertification",
+      "outcome": "recommended"
      },
      {
       "t": [
@@ -25421,7 +25448,9 @@
       "result": [
        "Passed, 1 Minor",
        "Lulus, 1 Minor"
-      ]
+      ],
+      "type": "surveillance",
+      "outcome": "recommended"
      },
      {
       "t": [
@@ -25433,7 +25462,9 @@
       "result": [
        "Passed, 0 NC, 2 OFI",
        "Lulus, 0 NC, 2 OFI"
-      ]
+      ],
+      "type": "surveillance",
+      "outcome": "recommended"
      },
      {
       "t": [
@@ -25446,7 +25477,8 @@
       ],
       "d": "2026-12-03",
       "days": 3,
-      "next": true
+      "next": true,
+      "type": "recertification"
      },
      {
       "t": [
@@ -25458,7 +25490,8 @@
        "Surveilans 1"
       ],
       "d": "2027-12-01",
-      "days": 1
+      "days": 1,
+      "type": "surveillance"
      }
     ]
    },
@@ -33095,7 +33128,9 @@
       "result": [
        "Passed, 2 OFI",
        "Lulus, 2 OFI"
-      ]
+      ],
+      "type": "stage1",
+      "outcome": "recommended"
      },
      {
       "t": [
@@ -33107,7 +33142,9 @@
       "result": [
        "Certified, 2 Minor NC, 1 OFI",
        "Tersertifikasi, 2 NC Minor, 1 OFI"
-      ]
+      ],
+      "type": "stage2",
+      "outcome": "recommended"
      },
      {
       "t": [
@@ -33116,7 +33153,8 @@
       ],
       "d": "2026-11-12",
       "days": 2,
-      "next": true
+      "next": true,
+      "type": "surveillance"
      },
      {
       "t": [
@@ -33124,7 +33162,8 @@
        "Surveilans 2"
       ],
       "d": "2027-11-10",
-      "days": 2
+      "days": 2,
+      "type": "surveillance"
      },
      {
       "t": [
@@ -33132,7 +33171,8 @@
        "Resertifikasi"
       ],
       "d": "2028-02-14",
-      "days": 3
+      "days": 3,
+      "type": "recertification"
      }
     ]
    },

@@ -143,6 +143,7 @@ describe('certification cycle rows (G.5 EVENTS, FOCUS, PREP, PAST, CYCLE_ITEMS)'
   const events: AuditEventRow[] = ndt.EVENTS.qms!.map((e, i) => ({
     id: `e${i}`, updatedAt: new Date(0), scheduledAt: e.d, auditDays: e.days, shortLabel: e.t[0], nameEn: e.t[0], nameId: e.t[1], leadAuditorName: null,
     expectedFocus: e.next ? ndt.FOCUS.qms! : null, prepWindowDays: 60, outcomeSummary: e.result ? e.result[0] : null,
+    eventType: e.type, outcome: e.outcome ?? null,
   }));
   const labels = Object.fromEntries(ndt.EVENTS.qms!.map((e) => [e.d, { t: e.t, ...(e.short ? { short: e.short } : {}), ...(e.result ? { result: e.result } : {}) }]));
 
@@ -151,7 +152,9 @@ describe('certification cycle rows (G.5 EVENTS, FOCUS, PREP, PAST, CYCLE_ITEMS)'
     expect(nextAuditEvent(events, today)!.scheduledAt).toBe('2026-12-03');
     expect(deriveFocus(nextAuditEvent(events, today))).toBe(ndt.FOCUS.qms);
     expect(deriveFocus(null)).toBe('-');
-    expect(deriveEvents(events, today)[0]).toEqual({ t: 'Recertification (2015 ed.)', d: '2023-06-22', days: 2, result: 'Certified, 1 Minor' });
+    expect(deriveEvents(events, today)[0]).toEqual({ t: 'Recertification (2015 ed.)', d: '2023-06-22', days: 2, result: 'Certified, 1 Minor', type: 'recertification', outcome: 'recommended' });
+    // An event without a stored type or outcome (a row read before they were loaded) has neither field.
+    expect(deriveEvents([{ ...events[0]!, eventType: undefined, outcome: null }], today)[0]).toEqual({ t: 'Recertification (2015 ed.)', d: '2023-06-22', days: 2, result: 'Certified, 1 Minor' });
   });
 
   it('builds preparation, past findings, cycle items and finding counts', () => {

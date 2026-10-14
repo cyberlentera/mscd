@@ -204,7 +204,7 @@ export default function DrillScreen({ v }) {
                               <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
                                 <span style={{ width: "24px", height: "24px", borderRadius: "50%", flex: "none", background: c?.bg, color: c?.fg, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "700" }}>{txt(c?.i)}</span>
                                 {c?.go ? (<>
-                                  <button onClick={c?.go} style={{ border: "0", background: "transparent", padding: "0", font: "inherit", fontWeight: "500", whiteSpace: "nowrap", color: "var(--tx)", cursor: "pointer", textDecoration: "underline", textDecorationColor: "var(--bd)", textUnderlineOffset: "3px" }} className="hv7">{txt(c?.v)}</button>
+                                  <button onClick={c?.go} style={{ border: "0", background: "transparent", padding: "0", font: "inherit", fontWeight: "500", whiteSpace: "nowrap", color: "var(--tx)", cursor: "pointer", textDecoration: "underline", textDecorationColor: "var(--tx3)", textUnderlineOffset: "3px" }} className="hv7">{txt(c?.v)}</button>
                                 </>) : null}
                                 {c?.nogo ? (<>
                                   <span style={{ fontWeight: "500", whiteSpace: "nowrap" }}>{txt(c?.v)}</span>
@@ -229,6 +229,9 @@ export default function DrillScreen({ v }) {
                                 <span style={{ fontWeight: c?.fw, lineHeight: "1.3" }}>{txt(c?.v)}</span>
                               </>) : null}
                             </>) : null}{" "}
+                            {c?.name ? (<>
+                              <span style={{ minWidth: "0", display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: "1", overflow: "hidden", lineHeight: "1.3", color: "var(--tx2)" }}>{txt(c?.name)}</span>
+                            </>) : null}{" "}
                             {c?.dot ? (<>
                               <span style={{ width: "8px", height: "8px", borderRadius: "50%", flex: "none", background: c?.dot }}></span>
                             </>) : null}{" "}
@@ -251,7 +254,7 @@ export default function DrillScreen({ v }) {
                                 <span style={{ padding: "2px 8px", borderRadius: "999px", fontSize: "max(12px, .9em)", fontWeight: "600", background: b?.bg, color: b?.fg }}>{txt(b?.v)}</span>
                               </Fragment>))}
                               {row?.det?.note ? (<>
-                                <span data-tip={row?.det?.note?.text} style={{ display: "inline-flex", width: "18px", height: "18px", borderRadius: "50%", background: row?.det?.note?.bg, color: row?.det?.note?.fg, fontSize: "12px", alignItems: "center", justifyContent: "center", cursor: "help", fontWeight: "700" }}>{"i"}</span>
+                                <span data-tip={row?.det?.note?.text} tabIndex="0" role="img" aria-label={row?.det?.note?.text} style={{ display: "inline-flex", width: "18px", height: "18px", borderRadius: "50%", background: row?.det?.note?.bg, color: row?.det?.note?.fg, fontSize: "12px", alignItems: "center", justifyContent: "center", cursor: "help", fontWeight: "700" }}>{"i"}</span>
                               </>) : null}
                             </div>
                             <div style={{ fontSize: "1.1em", fontWeight: "600", marginTop: "4px" }}>{txt(row?.det?.title)}</div>

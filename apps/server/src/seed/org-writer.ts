@@ -762,7 +762,7 @@ export async function writeOrganisation(trx: Trx, input: OrgSeedInput): Promise<
           id,
           management_system_id: msId,
           certification_cycle_id: cycleId,
-          event_type: eventTypeOf(event.t[0]),
+          event_type: event.type ?? eventTypeOf(event.t[0]),
           name_en: names[0],
           name_id: names[1],
           short_label: event.t[0],
@@ -771,6 +771,7 @@ export async function writeOrganisation(trx: Trx, input: OrgSeedInput): Promise<
           lead_auditor_name: next && typeof ms.lead === 'string' && ms.lead !== '-' ? ms.lead : null,
           expected_focus: next && focus && focus !== '-' ? focus : null,
           prep_window_days: next ? ms.audit?.prepWindowDays ?? 60 : 60,
+          outcome: event.outcome ?? null,
           outcome_summary: event.result ? event.result[0] : null,
         })
         .execute();

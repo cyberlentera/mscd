@@ -10,7 +10,7 @@ export default function Portfolio({ v }) {
         <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", boxShadow: "var(--sh)" }}>
           <div style={{ padding: "12px var(--pad)", borderBottom: "1px solid var(--bd)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontWeight: "600", display: "inline-flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap" }}>{txt(v.t?.attention)}{" "}
-              <span data-tip={v.t?.noAvg} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "12px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
+              <span data-tip={v.t?.noAvg} tabIndex="0" role="img" aria-label={v.t?.noAvg} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "12px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
             </span>
             <span style={{ fontSize: "12px", color: "var(--tx3)" }}>{txt(v.attention?.length)}{" "}{txt(v.t?.items)}</span>
           </div>
@@ -62,7 +62,7 @@ export default function Portfolio({ v }) {
                   </>) : null}
                   {m?.noAudit ? (<>
                     <div style={{ fontWeight: "600", color: "var(--warn)", marginTop: "2px", display: "inline-flex", gap: "6px", alignItems: "center" }}>{txt(v.t?.noAudit)}{" "}
-                      <span data-tip={v.t?.noAuditSub} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "12px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
+                      <span data-tip={v.t?.noAuditSub} tabIndex="0" role="img" aria-label={v.t?.noAuditSub} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "12px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
                     </div>
                   </>) : null}
                 </div>

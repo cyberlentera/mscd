@@ -10,7 +10,7 @@ import { problem } from '../auth/helpers';
 // Test data of many shapes (wire snapshots, view models) is read field by field.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyRecord = Record<string, any>;
-const SCREENS = ['portfolio', 'm1overview', 'controls', 'phases', 'docs', 'audit', 'chain', 'gt', 'timeline', 'fresh', 'cal', 'mytasks', 'fw', 'storage'];
+const SCREENS = ['portfolio', 'm1overview', 'controls', 'phases', 'docs', 'audit', 'chain', 'gt', 'timeline', 'fresh', 'cal', 'mytasks', 'fw', 'storage', 'journey', 'team'];
 
 function mount(ds: unknown, props: AnyRecord = {}) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the controller is a JavaScript class
@@ -93,6 +93,66 @@ describe('controller in API mode', () => {
     expect(v.roleOptions.map((r: AnyRecord) => r.label)).toEqual(['MS Manager', '']);
     expect(v.roleOptions[1].name).toBe('Sign out');
     expect(v.me.name).toBe(app.personOf('joko')[0]);
+  });
+
+  it('Start here and Team & roles outside demo mode: no roster, unknown packs, a missing manager, owner systems left out', async () => {
+    const { routes } = await acme();
+    const { app } = await start(routes);
+    const isms = app.MSL.find((m: AnyRecord) => m.id === 'isms');
+    const [s1, s2] = app.journeyOf(isms).stages.map((s: AnyRecord) => s.checks);
+    // PACKS is empty for a user without pack.read: the standard is unknown, not missing, and does not hold stage 1.
+    expect(s1[0]).toMatchObject({ label: 'Standard', tone: 'mute' });
+    // ROLES names only the session user outside demo mode, so there is no internal auditor check.
+    expect(s2.map((c: AnyRecord) => c.label)).toEqual(['MS Manager', 'PICs assigned', 'Items without a PIC']);
+    // A system without a primary MS Manager (mgr 'none') does not pass stage 2.
+    app.state = { ...app.state, D: { ...app.D, EVENTS: { ...app.D.EVENTS, isms: [] } } };
+    const noMgr = app.journeyOf({ ...isms, mgr: 'none' });
+    expect(noMgr.stages[1].checks[0]).toMatchObject({ label: 'MS Manager', tone: 'bad' });
+    expect(noMgr.cur).toBe(2);
+    // Team & roles counts only ISMS (joko is Domain Owner in QMS, where the api sends only his own records) and labels
+    // nobody as internal auditor or top management.
+    app.state = { ...app.state, screen: 'team' };
+    const tm = app.renderVals().tm;
+    const chips = tm.rows.flatMap((r: AnyRecord) => r.roles);
+    expect(chips.length).toBeGreaterThan(0);
+    expect(new Set(chips.map((g: AnyRecord) => g.short))).toEqual(new Set(['ISMS']));
+    expect(chips.some((g: AnyRecord) => g.label === 'Internal auditor' || g.label === 'Top management')).toBe(false);
+    // A chip of another system opens that system with the role there: a Domain Owner cannot open Outstanding items.
+    app.go('chain', { ms: 'qms', person: 'joko' });
+    expect([app.state.ms, app.state.role, app.state.screen]).toEqual(['qms', 'owner', 'mytasks']);
+  });
+
+  it('Top Management and external auditors do not get Start here or Team & roles; actions follow what the role opens', async () => {
+    const fx = await wireOf();
+    // ISMS as the top_management projection: holders come as aggregates only, so every item reads as unassigned.
+    for (const it of fx.ms.isms.bundle.chain.items) it.h = 'none';
+    const me = meOf({ uiRoleByMs: { isms: 'top', qms: 'manager', bcms: 'auditor', abms: 'owner' } });
+    me.rolesByMs.abms = ['external_auditor'];
+    me.uiRoleByMs.abms = 'auditor';
+    const { app } = await start(readRoutes(fx, me));
+    expect([app.state.ms, app.state.role]).toEqual(['isms', 'top']);
+    const navIds = () => app.renderVals().nav.flatMap((g: AnyRecord) => g.items.map((i: AnyRecord) => i.label));
+    expect(navIds()).not.toContain('Start here');
+    expect(navIds()).not.toContain('Team & roles');
+    // A system where the user is an external auditor: the same UI role as an internal auditor, but no full read.
+    app.go('journey', { ms: 'abms' });
+    expect([app.state.role, app.state.screen]).toEqual(['auditor', 'portfolio']);
+    app.go('journey', { ms: 'bcms' });
+    expect([app.state.role, app.state.screen]).toEqual(['auditor', 'journey']);
+    const jr = app.renderVals().jr;
+    // Only systems read in full appear in the strip; stage actions keep the screens the role can open.
+    expect(jr.systems.map((s: AnyRecord) => s.short)).toEqual(['QMS', 'BCMS']);
+    expect(jr.stages[0].acts).toEqual([]);
+    expect(jr.track[0].go).toBeNull();
+    expect(jr.stages[5].acts.map((a: AnyRecord) => a.label)).toEqual(['Audit readiness']);
+    app.state = { ...app.state, screen: 'team' };
+    const tm = app.renderVals().tm;
+    expect(new Set(tm.rows.flatMap((r: AnyRecord) => r.roles.map((g: AnyRecord) => g.short)))).toEqual(new Set(['QMS', 'BCMS']));
+    const unassigned = ['qms', 'bcms'].reduce((n, id) => n + app.data(app.MSL.find((m: AnyRecord) => m.id === id)).chain.items.filter((i: AnyRecord) => i.h === 'none').length, 0);
+    expect(tm.stats[1].n).toBe(unassigned);
+    // Back to ISMS as Top Management: the journey falls back to the role's first screen.
+    app.setMs('isms');
+    expect([app.state.role, app.state.screen]).toEqual(['top', 'portfolio']);
   });
 
   it('absent licence and pack cards render as -', async () => {

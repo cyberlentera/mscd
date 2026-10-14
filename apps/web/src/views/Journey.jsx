@@ -65,7 +65,7 @@ export default function Journey({ v }) {
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                   <span style={{ fontWeight: "600", fontSize: "1.05em" }}>{txt(s?.title)}</span>
                   <span style={{ fontSize: "12px", fontWeight: "600", padding: "2px 8px", borderRadius: "999px", background: s?.tagBg, color: s?.tagFg, whiteSpace: "nowrap" }}>{txt(s?.tag)}</span>
-                  <span data-tip={s?.who} aria-label={s?.who} style={{ display: "inline-flex", width: "24px", height: "24px", borderRadius: "7px", alignItems: "center", justifyContent: "center", background: "var(--sur2)", color: "var(--tx3)", cursor: "help" }}>
+                  <span data-tip={s?.who} tabIndex="0" role="img" aria-label={s?.who} style={{ display: "inline-flex", width: "24px", height: "24px", borderRadius: "7px", alignItems: "center", justifyContent: "center", background: "var(--sur2)", color: "var(--tx3)", cursor: "help" }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "none" }}>
                       <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>

@@ -169,6 +169,8 @@ export interface SampleEvent {
   days: number;
   result?: Pair;
   next?: boolean;
+  type?: 'stage1' | 'stage2' | 'surveillance' | 'recertification' | 'transition' | 'special';
+  outcome?: 'recommended' | 'recommended_with_conditions' | 'not_recommended';
 }
 
 export interface SampleDriftRule {

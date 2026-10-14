@@ -2,7 +2,7 @@
 // into the UI 4.2 `Snapshot` (H.4).
 import { z } from 'zod';
 import {
-  FindingClassLabel, LocKind, OpenClosed, OwnershipType, RepoStatus, StorageAdapter, TupleStatus, UiRole, DriftSrc,
+  AuditEventType, AuditOutcome, FindingClassLabel, LocKind, OpenClosed, OwnershipType, RepoStatus, StorageAdapter, TupleStatus, UiRole, DriftSrc,
 } from '../enums.js';
 import {
   FreqId, Instant, IsoDate, MsId, Pair, PermissionSet, PersonId, RecordKey, RecordRef, RepositorySlug, StageKey, Text, Uuid, named,
@@ -171,11 +171,15 @@ export const EventRow = named(
     days: z.int().min(0).nullable(),
     result: Text.optional(),
     next: z.boolean().optional(),
+    /** `audit_event.event_type`: the journey reads certification from it instead of the label. */
+    type: AuditEventType.optional(),
+    /** `audit_event.outcome` once recorded. */
+    outcome: AuditOutcome.optional(),
   }),
   'Audit event of the certification cycle (UI 1.10 EVENTS, G.5)',
   {
-    valid: [...EXAMPLE_MS_SNAPSHOT.EVENTS, { t: 'Stage 1', d: '2027-02-10', days: null }],
-    invalid: [{ t: ['Stage 1', 'Tahap 1'], d: '2027-02-10' }, { t: ['Stage 1', 'Tahap 1'], d: 'Feb 2027', days: 1 }],
+    valid: [...EXAMPLE_MS_SNAPSHOT.EVENTS, { t: 'Stage 1', d: '2027-02-10', days: null }, { t: 'Stage 2', d: '2025-03-10', days: 3, type: 'stage2', outcome: 'not_recommended' }],
+    invalid: [{ t: ['Stage 1', 'Tahap 1'], d: '2027-02-10' }, { t: ['Stage 1', 'Tahap 1'], d: 'Feb 2027', days: 1 }, { t: 'Stage 2', d: '2025-03-10', days: 3, outcome: 'passed' }],
   },
 );
 export type EventRow = z.infer<typeof EventRow>;

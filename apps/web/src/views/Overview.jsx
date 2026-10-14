@@ -66,7 +66,7 @@ export default function Overview({ v }) {
               <span style={{ fontWeight: p?.fw, display: "flex", alignItems: "center", gap: "6px", minWidth: "0" }}>
                 <span style={{ minWidth: "0" }}>{txt(p?.name)}</span>
                 {p?.gate ? (<>
-                  <span data-tip={v.t?.gateTag} aria-label={v.t?.gateTag} style={{ flex: "none", display: "inline-flex", alignItems: "center", justifyContent: "center", width: "20px", height: "20px", borderRadius: "5px", background: "var(--badbg)", color: "var(--bad)" }}>
+                  <span data-tip={v.t?.gateTag} role="img" aria-label={v.t?.gateTag} style={{ flex: "none", display: "inline-flex", alignItems: "center", justifyContent: "center", width: "20px", height: "20px", borderRadius: "5px", background: "var(--badbg)", color: "var(--bad)" }}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "none" }}>
                       <path d="M4 22V4M4 4h13l-2 4 2 4H4"></path>
                     </svg>

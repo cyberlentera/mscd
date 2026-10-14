@@ -39,7 +39,7 @@ export default function Team({ v }) {
           <thead>
             <tr style={{ textAlign: "left", fontSize: "12px", textTransform: "uppercase", letterSpacing: ".06em", color: "var(--tx3)" }}>
               {list(v.tm?.cols).map((c, $i24) => (<Fragment key={$i24}>
-                <th style={{ padding: "10px 14px", borderBottom: "1px solid var(--bd)", borderLeft: "1px solid var(--bd)", fontWeight: "600" }}>{txt(c)}</th>
+                <th style={{ padding: "10px 14px", borderBottom: "1px solid var(--bd)", fontWeight: "600" }}>{txt(c)}</th>
               </Fragment>))}
             </tr>
           </thead>
@@ -98,7 +98,7 @@ export default function Team({ v }) {
               </svg>
             </span>
             <span style={{ fontWeight: "600", flex: "1", minWidth: "0" }}>{txt(r?.title)}</span>
-            <span data-tip={r?.detail} style={{ display: "inline-flex", width: "18px", height: "18px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "12px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
+            <span data-tip={r?.detail} tabIndex="0" role="img" aria-label={r?.detail} style={{ display: "inline-flex", width: "18px", height: "18px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "12px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
           </div>
         </Fragment>))}
       </div>

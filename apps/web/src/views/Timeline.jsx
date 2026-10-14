@@ -130,7 +130,7 @@ export default function Timeline({ v }) {
             <div style={{ padding: "12px var(--pad)", borderBottom: "1px solid var(--bd)", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <span style={{ fontWeight: "600" }}>{txt(v.t?.cycleComplete)}</span>
-                <span data-tip={v.t?.cycleSub} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "12px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
+                <span data-tip={v.t?.cycleSub} tabIndex="0" role="img" aria-label={v.t?.cycleSub} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "12px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
               </div>
               <button onClick={v.tl?.toggleCycle} style={{ border: "0", background: "transparent", padding: "0", font: "inherit", fontSize: "12.5px", color: "var(--acc)", cursor: "pointer", fontWeight: "500" }}>{txt(v.tl?.cycleBtn)}</button>
             </div>
@@ -151,7 +151,7 @@ export default function Timeline({ v }) {
           <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", boxShadow: "var(--sh)" }}>
             <div style={{ padding: "12px var(--pad)", borderBottom: "1px solid var(--bd)", display: "flex", alignItems: "center", gap: "8px" }}>
               <span style={{ fontWeight: "600" }}>{txt(v.t?.drift)}</span>
-              <span data-tip={v.t?.driftSub} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "12px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
+              <span data-tip={v.t?.driftSub} tabIndex="0" role="img" aria-label={v.t?.driftSub} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "12px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
             </div>
             {list(v.tl?.drift).map((dr, $i56) => (<Fragment key={$i56}>
               <button onClick={dr?.go} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "10px", alignItems: "center", width: "100%", textAlign: "left", border: "0", borderBottom: "1px solid var(--bd)", background: dr?.rowBg, padding: "10px var(--pad)", cursor: "pointer", color: "var(--tx)", font: "inherit", fontSize: "var(--fs)" }}>

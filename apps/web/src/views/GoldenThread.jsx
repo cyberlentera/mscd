@@ -14,7 +14,7 @@ export default function GoldenThread({ v }) {
             <button onClick={s?.go} style={{ height: "26px", padding: "0 9px", borderRadius: "999px", border: "1px solid var(--bd)", background: "var(--sur)", color: "var(--tx2)", font: "inherit", fontSize: "12px", cursor: "pointer", fontFamily: "var(--ffm)", whiteSpace: "nowrap" }}>{txt(s?.id)}</button>
           </Fragment>))}
         </div>
-        <span data-tip={v.gt?.tip} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "12px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
+        <span data-tip={v.gt?.tip} tabIndex="0" role="img" aria-label={v.gt?.tip} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "12px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
       </div>
       {v.gt?.none ? (<>
         <div style={{ background: "var(--sur)", border: "1px dashed var(--bd)", borderRadius: "var(--r)", padding: "calc(var(--pad) * 2)", textAlign: "center", color: "var(--tx2)" }}>{txt(v.gt?.none)}</div>
