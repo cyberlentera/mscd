@@ -65,7 +65,11 @@ export default function Sidebar({ v }) {
           <div>
             {g?.label ? (<>
               {v.sbOpen ? (<>
-                <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: ".08em", color: "var(--tx3)", padding: "0 10px 6px" }}>{txt(g?.label)}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: "7px", fontSize: "12px", textTransform: "uppercase", letterSpacing: ".08em", color: "var(--tx3)", padding: "0 10px 6px" }}>
+                  {g?.no ? (<>
+                    <span style={{ flex: "none", width: "18px", height: "18px", borderRadius: "5px", background: "var(--tx)", color: "var(--bg)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--ffm)", fontSize: "12px", fontWeight: "600", letterSpacing: "0" }}>{txt(g?.no)}</span>
+                  </>) : null}{txt(g?.label)}
+                </div>
               </>) : null}
               {v.sbClosed ? (<>
                 <div style={{ height: "1px", background: "var(--bd)", margin: "2px 6px 8px" }}></div>

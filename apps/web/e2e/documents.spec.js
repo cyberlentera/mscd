@@ -3,7 +3,7 @@ import {
   drawerAction, drawerFact, drawerLinks, openRow, expectToast, switchMs, closeDrawer,
 } from './helpers.js';
 
-const ids = (page) => listRows(page).locator('td:nth-child(2) > span:first-child');
+const ids = (page) => listRows(page).locator('td:nth-child(2) > div > :first-child');
 
 async function openRegister(page) {
   await openApp(page);
@@ -66,7 +66,7 @@ test.describe('Document register', () => {
     await expect(drawerFact(page, 'Owner')).toHaveText('Rina Kusuma, ISMS Manager');
     await expect(drawerFact(page, 'Approver')).toHaveText('Hendra Wijaya');
     await expect(drawerFact(page, 'Used by')).toHaveText('ISMS, QMS, BCMS, ABMS (shared IMS document)');
-    await expect(drawerLinks(page, 'Upstream')).toHaveText(['A.5.2', 'A.5.3', 'A.5.4', 'A.5.31', 'A.5.32', 'A.5.33']);
+    await expect(drawerLinks(page, 'Linked from')).toHaveText(['A.5.2', 'A.5.3', 'A.5.4', 'A.5.31', 'A.5.32', 'A.5.33']);
     await closeDrawer(page);
 
     await openRow(page, 'POL-14');
@@ -76,16 +76,16 @@ test.describe('Document register', () => {
 
     await openRow(page, 'SOA-01');
     await expect(ui.drawer(page)).toContainText('Draft');
-    await expect(ui.drawer(page).locator('span[title^="Draft: not yet a controlled document"]')).toHaveCount(1);
+    await expect(ui.drawer(page).locator('span[data-tip^="Draft: not yet a controlled document"]')).toHaveCount(1);
     await drawerAction(page, 'Continue draft').click();
     await expectToast(page, 'Opening SOA-01 v3.0: draft editor');
   });
 
-  test('a control linked from a document opens in Controls & requirements', async ({ page }) => {
+  test('a control linked from a document opens in Annex A controls', async ({ page }) => {
     await openRegister(page);
     await openRow(page, 'IMS-01');
-    await drawerLinks(page, 'Upstream').filter({ hasText: 'A.5.33' }).click();
-    await expect(ui.title(page)).toHaveText('Controls & requirements');
+    await drawerLinks(page, 'Linked from').filter({ hasText: 'A.5.33' }).click();
+    await expect(ui.title(page)).toHaveText('Annex A controls');
     await expect(ui.drawer(page)).toContainText('A.5.33');
     await expect(ui.drawer(page)).toContainText('Protection of records');
   });
@@ -100,7 +100,7 @@ test.describe('Document register', () => {
     await expect(listRow(page, 'STD-04').locator('td:nth-child(4)')).toHaveText('In review');
     expect(await chipCount(page, 'Expired')).toBe(4);
     expect(await chipCount(page, 'In review')).toBe(2);
-    await go(page, 'Controls & requirements');
+    await go(page, 'Annex A controls');
     await expect(page.locator('main button[style*="flex: 1 1 0"]').filter({ hasText: 'Documents expired' }).locator('span').first()).toHaveText('4');
   });
 
@@ -110,7 +110,7 @@ test.describe('Document register', () => {
     await drawerAction(page, 'Send reminder').click();
     await expectToast(page, 'Reminder sent to Yusuf Rahman');
     await drawerAction(page, 'Trace from here').click();
-    await expect(ui.title(page)).toHaveText('Golden Thread Viewer');
+    await expect(ui.title(page)).toHaveText('Traceability viewer');
     await expect(page.locator('main input[placeholder^="Enter any ID"]')).toHaveValue('PRC-16');
     await expect(page.locator('main')).toContainText('Secure Development Procedure');
   });

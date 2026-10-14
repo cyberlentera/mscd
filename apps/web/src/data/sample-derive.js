@@ -11,7 +11,7 @@ const STATUS_TEXT = {
   partial: ['Complete implementation', 'Selesaikan implementasi'],
   planned: ['Start implementation', 'Mulai implementasi'],
   ns: ['Assign and start', 'Tugaskan dan mulai'],
-  blocked: ['Resolve gate item: justification missing', 'Selesaikan item gate: justifikasi belum ada'],
+  blocked: ['Resolve blocking item: justification missing', 'Selesaikan item penghambat: justifikasi belum ada'],
 };
 const DOC_TEXT = {
   expired: ['Start review: review date passed', 'Mulai review: tanggal review terlewati'],

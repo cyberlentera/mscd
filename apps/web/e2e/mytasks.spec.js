@@ -49,7 +49,7 @@ test.describe('My Tasks', () => {
     await expect(tasks(page)).toHaveCount(1);
     await expect(page.locator('main h1 + div')).toHaveText('1 item');
     await expect(navBadge(page)).toHaveText('1');
-    await go(page, 'Controls & requirements');
+    await go(page, 'Annex A controls');
     await page.locator('main button[style*="flex: 1 1 0"]').filter({ hasText: 'Partially implemented' }).click();
     await expect(listRow(page, 'A.5.12').locator('td:nth-child(4)')).toHaveText('Complete, awaiting verification');
   });
@@ -60,29 +60,29 @@ test.describe('My Tasks', () => {
     const t = task(page, 'R-031');
     await expect(t).toContainText('Select a treatment: no treatment linked');
     // closing it here would drop it from the chain while the gate views still count it
-    await expect(t.locator('button')).toHaveText('Open gate item');
+    await expect(t.locator('button')).toHaveText('Open blocking item');
     await expect(t.locator('button', { hasText: 'Mark done' })).toHaveCount(0);
     await t.locator('button').click();
-    await expect(ui.title(page)).toHaveText('Controls & requirements');
-    await expect(activeTab(page)).toContainText('Open gate items, Risk & SoA');
+    await expect(ui.title(page)).toHaveText('Annex A controls');
+    await expect(activeTab(page)).toContainText('Blocking items, Risk & SoA');
     await expect(activeTab(page).locator('span').first()).toHaveText('4');
     await expect(ui.drawer(page)).toContainText('R-031');
-    await expect(drawerFact(page, 'Pending action')).toHaveText('Select a treatment: no treatment linked');
+    await expect(drawerFact(page, 'Next action')).toHaveText('Select a treatment: no treatment linked');
     await expect(listRows(page).locator('td:nth-child(2)')).toHaveText(['A.5.23', 'A.8.12', 'R-031', 'SOA-01']);
-    await expect(page.locator('aside nav button[title="Controls & requirements"] > span:last-child')).toHaveText('4');
+    await expect(page.locator('aside nav button[title="Annex A controls"] > span:last-child')).toHaveText('4');
 
     // the chain, the overview, the phase board and the portfolio all still count it
-    await go(page, 'Chain stages');
+    await go(page, 'Outstanding items');
     await tab(page, 'Risk').click();
     expect(await tabCount(page, 'Risk')).toBe(5);
     await expect(tab(page, 'Risk')).toContainText('33 / 38 ready');
     await expect(listRow(page, 'R-031')).toBeVisible();
-    await go(page, 'Overview');
+    await go(page, 'Readiness by clause');
     await expect(page.locator('main button[style*="grid-template-columns: 110px 1fr 220px 150px"]').filter({ hasText: 'R-031' })).toHaveCount(1);
-    await go(page, 'Phase board');
-    await expect(page.locator('main')).toContainText('4 blocked, 4 open gate items.');
-    await go(page, 'Portfolio Overview');
-    await expect(page.locator('main button[style*="grid-template-columns: 46px"]').filter({ hasText: '4 open gate items, Risk & SoA' })).toContainText('A.5.23, A.8.12, R-031, SOA-01');
+    await go(page, 'Roadmap');
+    await expect(page.locator('main')).toContainText('4 blocked, 4 blocking items.');
+    await go(page, 'Home');
+    await expect(page.locator('main button[style*="grid-template-columns: 46px"]').filter({ hasText: '4 blocking items, Risk & SoA' })).toHaveAttribute('data-tip', 'A.5.23, A.8.12, R-031, SOA-01');
     await go(page, 'My Tasks');
     await expect(tasks(page)).toHaveCount(3);
   });
@@ -94,13 +94,13 @@ test.describe('My Tasks', () => {
     await go(page, 'My Tasks');
     await expect(tasks(page)).toHaveCount(3);
     // the SoA approval holds the gate; the risk acceptance does not
-    await expect(tasks(page).filter({ hasText: 'Approve revised SoA' }).locator('button')).toHaveText('Open gate item');
+    await expect(tasks(page).filter({ hasText: 'Approve revised SoA' }).locator('button')).toHaveText('Open blocking item');
     await expect(task(page, 'R-022').locator('button')).toHaveText('Mark done');
     await task(page, 'R-022').locator('button').click();
     await expectToast(page, 'Item updated. After-audit flag recalculated.');
     await expect(task(page, 'R-022')).toHaveCount(0);
     await expect(tasks(page)).toHaveCount(2);
-    await go(page, 'Chain stages');
+    await go(page, 'Outstanding items');
     expect(await tabCount(page, 'Risk')).toBe(4);
     await expect(tab(page, 'Risk')).toContainText('34 / 38 ready');
   });
@@ -172,12 +172,12 @@ test.describe('My Tasks', () => {
   test('a control that holds a gate opens its gate item instead of being marked done', async ({ page }) => {
     await openApp(page);
     await switchRole(page, 'Domain Owner');
-    const t = tasks(page).filter({ hasText: 'Resolve the gate item for data leakage prevention' });
+    const t = tasks(page).filter({ hasText: 'Resolve the blocking item for data leakage prevention' });
     await expect(t).toHaveCount(1);
-    await expect(t.locator('button')).toHaveText('Open gate item');
+    await expect(t.locator('button')).toHaveText('Open blocking item');
     await t.locator('button').click();
-    await expect(ui.title(page)).toHaveText('Controls & requirements');
-    await expect(activeTab(page)).toContainText('Open gate items');
+    await expect(ui.title(page)).toHaveText('Annex A controls');
+    await expect(activeTab(page)).toContainText('Blocking items');
     await expect(ui.drawer(page)).toContainText('A.8.12');
     await expect(drawerFact(page, 'Justification')).toHaveText('-');
   });

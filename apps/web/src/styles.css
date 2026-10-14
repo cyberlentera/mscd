@@ -36,3 +36,11 @@ a{color:var(--acc)}a:hover{color:var(--tx)}
 .mscd tr[data-hov]:hover{background:var(--sur2)}
 /* Keep the page background dark behind the app in dark theme (overscroll, short pages). */
 body:has(.mscd[data-theme="dark"]){background:#131210}
+/* Hover popover for [data-tip]: secondary text shown on hover or focus instead of small print. */
+.mscd-pop{position:fixed;z-index:200;max-width:320px;padding:8px 11px;border-radius:8px;background:#1c1a17;color:#f2eee7;border:1px solid rgba(255,255,255,.12);font:500 13px/1.45 'IBM Plex Sans',system-ui,sans-serif;pointer-events:none;white-space:normal;overflow-wrap:anywhere}
+.mscd-pop[hidden]{display:none}
+body:has(.mscd[data-theme="dark"]) .mscd-pop{background:#f2eee7;color:#1c1a17;border-color:rgba(0,0,0,.12)}
+.mscd [data-tip]:not([data-tip=""]){cursor:help}
+.mscd button[data-tip],.mscd [data-tip] button{cursor:pointer}
+/* Column lines on every data table in the page. */
+.mscd main table th+th,.mscd main table td+td{border-left:1px solid var(--bd)}

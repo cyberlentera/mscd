@@ -40,9 +40,6 @@ const PATCHES = [
   // Framework library: the action column was clipped below ~1400px. Let long lines wrap and scroll as a last resort.
   ['<sc-if value="{{ isFw }}">\n      <div style="background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden">',
    '<sc-if value="{{ isFw }}">\n      <div style="background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);overflow-x:auto">'],
-  ['<span style="display:block;font-size:12px;color:var(--tx3);white-space:nowrap">{{ f.certifier }}</span>',
-   '<span style="display:block;font-size:12px;color:var(--tx3)">{{ f.certifier }}</span>'],
-  ['margin-top:2px;white-space:nowrap">✓ {{ f.sig }}', 'margin-top:2px">✓ {{ f.sig }}'],
   // Portfolio rows layout: scroll instead of clipping the right-hand columns on narrow screens.
   ['<sc-if value="{{ pfRows }}">\n        <div style="background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden">',
    '<sc-if value="{{ pfRows }}">\n        <div style="background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--sh);overflow-x:auto">'],
@@ -78,7 +75,7 @@ const PATCHES = [
   ['>Framework Pack<br>', '>{{ t.frameworkPack }}<br>'],
   ['title="Theme"', 'title="{{ t.theme }}"'],
   ['>Management system</th>', '>{{ t.c_msName }}</th>'],
-  ['>GATE</span>', '>{{ t.gateTag }}</span>', 2],
+  ['>GATE</span>', '>{{ t.gateTag }}</span>'],
   ['>PDF, XLSX, DOCX, PNG, max 50 MB, SHA-256 computed on upload<', '>{{ t.uploadHint }}<'],
 ];
 for (const [from, to, times = 1] of PATCHES) {
@@ -100,6 +97,7 @@ const SPLITS = {
   'pending per person': 'PendingPeople', 'Implementation overview': 'Overview',
   'My Tasks': 'MyTasks', 'Framework library': 'FrameworkLibrary',
   'Generic drill-down screen (Module 1 controls, Module 2 chain, Module 3 freshness)': 'DrillScreen',
+  'Start here': 'Journey', 'Team & roles': 'Team',
   'Drawer (panel pattern)': 'Drawer', 'Modals': 'Modals',
 };
 const TAG_SPLITS = { header: 'TopBar' };

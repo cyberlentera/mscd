@@ -27,7 +27,7 @@ export default function MyTasks({ v }) {
             <div style={{ fontSize: "1.55em", fontWeight: "600", marginTop: "4px", lineHeight: "1.2" }}>{txt(v.tasks?.greeting)}</div>
             <div style={{ color: "#cfc7b8", marginTop: "6px", lineHeight: "1.5" }}>{txt(v.tasks?.summary)}</div>
             <div style={{ display: "flex", gap: "8px", marginTop: "14px", flexWrap: "wrap" }}>
-              {list(v.tasks?.bySystem).map((b, $i67) => (<Fragment key={$i67}>
+              {list(v.tasks?.bySystem).map((b, $i79) => (<Fragment key={$i79}>
                 <button onClick={b?.go} style={{ display: "inline-flex", alignItems: "center", gap: "8px", height: "30px", padding: "0 10px 0 8px", borderRadius: "999px", border: "1px solid rgba(255,255,255,.18)", background: b?.bg, color: "#f2eee7", font: "inherit", fontSize: "12.5px", cursor: "pointer" }}>
                   <span style={{ width: "8px", height: "8px", borderRadius: "2px", background: b?.color }}></span>
                   <span style={{ fontWeight: "600" }}>{txt(b?.short)}</span>
@@ -43,12 +43,12 @@ export default function MyTasks({ v }) {
             <span style={{ fontSize: "12px", color: "var(--tx3)" }}>{txt(v.tasks?.weekRange)}</span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7,minmax(0,1fr))", gap: "6px", flex: "1" }}>
-            {list(v.tasks?.week).map((w, $i68) => (<Fragment key={$i68}>
+            {list(v.tasks?.week).map((w, $i80) => (<Fragment key={$i80}>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", padding: "8px 0", borderRadius: "10px", background: w?.bg, border: `1px solid ${w?.bd ?? ''}` }}>
                 <span style={{ fontSize: "12px", color: "var(--tx3)" }}>{txt(w?.dow)}</span>{" "}
                 <span style={{ fontSize: "15px", fontWeight: "600", color: w?.fg }}>{txt(w?.day)}</span>{" "}
                 <span style={{ display: "flex", gap: "3px", height: "8px", alignItems: "flex-end" }}>
-                  {list(w?.dots).map((dt, $i69) => (<Fragment key={$i69}>
+                  {list(w?.dots).map((dt, $i81) => (<Fragment key={$i81}>
                     <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: dt }}></span>
                   </Fragment>))}
                 </span>
@@ -76,15 +76,17 @@ export default function MyTasks({ v }) {
       </>) : null}
       <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", overflow: "hidden" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px var(--pad)", borderBottom: "1px solid var(--bd)" }}>
-          {list(v.tasks?.filters).map((f, $i70) => (<Fragment key={$i70}>
+          {list(v.tasks?.filters).map((f, $i82) => (<Fragment key={$i82}>
             <button onClick={f?.go} style={{ height: "28px", padding: "0 10px", borderRadius: "999px", border: `1px solid ${f?.bd ?? ''}`, background: f?.bg, color: f?.fg, font: "inherit", fontSize: "12px", fontWeight: "500", cursor: "pointer", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: "6px" }}>{txt(f?.label)}
               <span style={{ fontFamily: "var(--ffm)" }}>{txt(f?.n)}</span>
             </button>
           </Fragment>))}{" "}
-          <span style={{ marginLeft: "auto", fontSize: "12px", color: "var(--tx3)" }}>{txt(v.tasks?.sortNote)}</span>
+          <span style={{ marginLeft: "auto", display: "inline-flex" }}>
+            <span data-tip={v.tasks?.sortNote} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "12px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
+          </span>
         </div>
-        {list(v.tasks?.feed).map((k, $i71) => (<Fragment key={$i71}>
-          <div style={{ display: "grid", gridTemplateColumns: "4px 44px minmax(0,1fr) 150px 150px", gap: "14px", alignItems: "center", padding: "12px var(--pad) 12px 0", borderBottom: "1px solid var(--bd)", animation: "riseIn .4s cubic-bezier(.2,.7,.2,1) both", animationDelay: k?.delay, transition: "background .15s" }} className="hv5">
+        {list(v.tasks?.feed).map((k, $i83) => (<Fragment key={$i83}>
+          <div style={{ display: "grid", gridTemplateColumns: "4px 44px minmax(0,1fr) 150px 150px", gap: "14px", alignItems: "center", padding: "12px var(--pad) 12px 0", borderBottom: "1px solid var(--bd)", animation: "riseIn .4s cubic-bezier(.2,.7,.2,1) both", animationDelay: k?.delay, transition: "background .15s" }} className="hv9">
             <span style={{ height: "100%", minHeight: "52px", background: k?.tone, borderRadius: "0 3px 3px 0" }}></span>{" "}
             <span style={{ width: "44px", height: "44px", borderRadius: "12px", display: "inline-flex", alignItems: "center", justifyContent: "center", background: k?.iconBg, color: k?.iconFg }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -102,7 +104,7 @@ export default function MyTasks({ v }) {
             </span>{" "}
             <span style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "flex-start" }}>
               <span style={{ padding: "3px 9px", borderRadius: "999px", fontSize: "12px", fontWeight: "600", whiteSpace: "nowrap", background: k?.bg, color: k?.fg }}>{txt(k?.due)}</span>
-              <span title={k?.examples} style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "12px", color: "var(--tx3)", cursor: "help" }}>
+              <span data-tip={k?.examples} style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "12px", color: "var(--tx3)", cursor: "help" }}>
                 <span style={{ display: "inline-flex", width: "14px", height: "14px", borderRadius: "50%", border: "1px solid var(--tx3)", alignItems: "center", justifyContent: "center", fontSize: "12px", fontFamily: "var(--ffm)" }}>{"i"}</span>{txt(v.t?.accepted)}
               </span>
             </span>{" "}

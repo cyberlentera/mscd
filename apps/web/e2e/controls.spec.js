@@ -8,7 +8,7 @@ const statusCells = (page) => listRows(page).locator('td:nth-child(4)');
 const isActiveChip = (locator) => expect(locator).toHaveAttribute('style', /background: var\(--tx\)/);
 const footer = (page) => list(page).locator('xpath=./div[last()]/span').first();
 const freshTabs = async (page) => {
-  await go(page, 'Evidence freshness');
+  await go(page, 'Evidence status');
   const out = {};
   for (const label of ['Fresh', 'Aging', 'Expired', 'Critical']) out[label] = await tabCount(page, label);
   out.of = await tab(page, 'Fresh').locator('span').nth(1).innerText();
@@ -17,17 +17,17 @@ const freshTabs = async (page) => {
 
 async function openControls(page, query = '') {
   await openApp(page, query);
-  await go(page, 'Controls & requirements');
+  await go(page, 'Annex A controls');
 }
 
-test.describe('Controls & requirements', () => {
+test.describe('Annex A controls', () => {
   test('five summary tabs show counts and switch the table', async ({ page }) => {
     await openControls(page);
     await expect(tabs(page)).toHaveCount(5);
     expect(await tabCount(page, 'Controls implemented')).toBe(61);
     await expect(tab(page, 'Controls implemented')).toContainText('of 93');
     expect(await tabCount(page, 'Partially implemented')).toBe(18);
-    expect(await tabCount(page, 'Open gate items, Risk & SoA')).toBe(4);
+    expect(await tabCount(page, 'Blocking items, Risk & SoA')).toBe(4);
     expect(await tabCount(page, 'Documents approved')).toBe(14);
     await expect(tab(page, 'Documents approved')).toContainText('of 22');
     expect(await tabCount(page, 'Documents expired')).toBe(5);
@@ -43,8 +43,8 @@ test.describe('Controls & requirements', () => {
     await expectShown(page, 18);
     await expect(moreButton(page)).toHaveCount(0);
 
-    await tab(page, 'Open gate items, Risk & SoA').click();
-    await expect(heads(page)).toHaveText(['', 'Gate item', 'Type', 'Why it holds the gate', 'Holder', 'Due date']);
+    await tab(page, 'Blocking items, Risk & SoA').click();
+    await expect(heads(page)).toHaveText(['', 'Blocking item', 'Type', 'Why it blocks', 'Assigned to', 'Due date']);
     await expect(chips(page)).toHaveCount(0);
     await expect(listRows(page).locator('td:nth-child(2)')).toHaveText(['A.5.23', 'A.8.12', 'R-031', 'SOA-01']);
     await expect(listRows(page).locator('td:nth-child(3)')).toHaveText(['Control', 'Control', 'Risk', 'SoA']);
@@ -132,14 +132,14 @@ test.describe('Controls & requirements', () => {
     await expect(drawerFact(page, 'Owner')).toHaveText('Bagus Prasetyo, IT Infrastructure Lead');
     await expect(drawerFact(page, 'Last evidence')).toHaveText('EV-0313, 31 May 2026, Critical');
     await expect(drawerFact(page, 'Integrity')).toHaveText('Missing');
-    await expect(drawer.locator('span[title^="Status is held at Partial"]')).toHaveCount(1);
-    await expect(drawerLinks(page, 'Upstream')).toHaveText(['R-014', 'R-031']);
-    await expect(drawerLinks(page, 'Downstream')).toHaveText(['PRC-11', 'EV-0313']);
+    await expect(drawer.locator('span[data-tip^="Status is held at Partial"]')).toHaveCount(1);
+    await expect(drawerLinks(page, 'Linked from')).toHaveText(['R-014', 'R-031']);
+    await expect(drawerLinks(page, 'Leads to')).toHaveText(['PRC-11', 'EV-0313']);
     expect(await drawer.locator('button[title]').evaluateAll((b) => b.map((x) => x.title))).toEqual(['Mark complete', 'Send reminder', 'Reassign', 'Trace from here']);
 
     // upstream risk opens the Golden Thread on that risk
-    await drawerLinks(page, 'Upstream').filter({ hasText: 'R-031' }).click();
-    await expect(ui.title(page)).toHaveText('Golden Thread Viewer');
+    await drawerLinks(page, 'Linked from').filter({ hasText: 'R-031' }).click();
+    await expect(ui.title(page)).toHaveText('Traceability viewer');
     await expect(page.locator('main input[placeholder^="Enter any ID"]')).toHaveValue('R-031');
     await expect(page.locator('main')).not.toContainText('No record found');
     await expect(page.locator('main')).toContainText('Unpatched hypervisor in Surabaya DC');
@@ -149,7 +149,7 @@ test.describe('Controls & requirements', () => {
     await openControls(page);
     await tab(page, 'Partially implemented').click();
     await openRow(page, 'A.8.13');
-    await drawerLinks(page, 'Downstream').filter({ hasText: 'PRC-11' }).click();
+    await drawerLinks(page, 'Leads to').filter({ hasText: 'PRC-11' }).click();
     await expect(activeTab(page)).toContainText('Documents expired');
     await expect(ui.drawer(page)).toContainText('PRC-11');
     await expect(ui.drawer(page)).toContainText('Backup & Restore Procedure');
@@ -158,8 +158,8 @@ test.describe('Controls & requirements', () => {
     await closeDrawer(page);
     await tab(page, 'Partially implemented').click();
     await openRow(page, 'A.8.13');
-    await drawerLinks(page, 'Downstream').filter({ hasText: 'EV-0313' }).click();
-    await expect(ui.title(page)).toHaveText('Evidence freshness');
+    await drawerLinks(page, 'Leads to').filter({ hasText: 'EV-0313' }).click();
+    await expect(ui.title(page)).toHaveText('Evidence status');
     await expect(ui.drawer(page)).toContainText('EV-0313');
     await expect(drawerFact(page, 'Control / requirement')).toContainText('A.8.13, Information backup');
   });
@@ -169,7 +169,7 @@ test.describe('Controls & requirements', () => {
     await tab(page, 'Documents expired').click();
     await openRow(page, 'PRC-07');
     // A.8.2 is row 46 of the implemented list, past the first 30 rows
-    await drawerLinks(page, 'Upstream').filter({ hasText: 'A.8.2' }).click();
+    await drawerLinks(page, 'Linked from').filter({ hasText: 'A.8.2' }).click();
     await expect(activeTab(page)).toContainText('Controls implemented');
     await expect(ui.drawer(page)).toBeVisible();
     await expect(ui.drawer(page)).toContainText('Privileged access rights');
@@ -184,7 +184,7 @@ test.describe('Controls & requirements', () => {
     await expectToast(page, 'Marked complete: awaiting verification by the MS Manager');
     await expect(ui.drawer(page)).toContainText('Complete, awaiting verification');
     await expect(drawerAction(page, 'Mark complete')).toHaveCount(0);
-    await expect(ui.drawer(page).locator('span[title^="Marked complete by Rina Kusuma"]')).toHaveCount(1);
+    await expect(ui.drawer(page).locator('span[data-tip^="Marked complete by Rina Kusuma"]')).toHaveCount(1);
     // the tab still counts it, the chips split partial and awaiting verification, and both stay selected
     expect(await tabCount(page, 'Partially implemented')).toBe(18);
     expect(await chipCount(page, 'Partial')).toBe(17);
@@ -206,7 +206,7 @@ test.describe('Controls & requirements', () => {
     await openApp(page);
     const before = await freshTabs(page);
     expect(before).toEqual({ Fresh: 64, Aging: 6, Expired: 6, Critical: 3, of: 'of 79' });
-    await go(page, 'Controls & requirements');
+    await go(page, 'Annex A controls');
     // A.5.7 is Planned and has no evidence; A.5.13 is Partial with aging evidence
     await chip(page, 'Planned').click();
     await openRow(page, 'A.5.7');
@@ -224,16 +224,16 @@ test.describe('Controls & requirements', () => {
     await drawerAction(page, 'Mark complete').click();
     await expect(drawerFact(page, 'Last evidence')).toContainText('Aging');
     expect(await freshTabs(page)).toEqual(before);
-    await go(page, 'Storage repositories');
+    await go(page, 'File storage');
     await chip(page, 'All').click();
     expect(await chipCount(page, 'All')).toBe(119);
-    await go(page, 'Chain stages');
+    await go(page, 'Outstanding items');
     await tab(page, 'Evidence').click();
     await expect(tab(page, 'Evidence')).toContainText('69 / 79 ready');
 
     // verification by someone else changes the control, never the evidence
     await switchRole(page, 'Internal Auditor');
-    await go(page, 'Controls & requirements');
+    await go(page, 'Annex A controls');
     await chip(page, 'Complete, awaiting verification').click();
     await openRow(page, 'A.5.13');
     await drawerAction(page, 'Verify').click();
@@ -241,7 +241,7 @@ test.describe('Controls & requirements', () => {
     await expectToast(page, 'Verified');
     expect(await tabCount(page, 'Controls implemented')).toBe(62);
     expect(await freshTabs(page)).toEqual(before);
-    await go(page, 'Chain stages');
+    await go(page, 'Outstanding items');
     await tab(page, 'Evidence').click();
     await expect(tab(page, 'Evidence')).toContainText('69 / 79 ready');
   });
@@ -251,21 +251,21 @@ test.describe('Controls & requirements', () => {
     await openControls(page);
     await tab(page, 'Partially implemented').click();
     await openRow(page, 'A.8.13');
-    const note = ui.drawer(page).locator('span[title^="Status is held at Partial"]');
-    await expect(note).toHaveAttribute('title', 'Status is held at Partial because the last evidence is critical for a monthly control. Link current-cycle evidence, then mark the control complete so it can be verified.');
-    await drawerLinks(page, 'Downstream').filter({ hasText: 'EV-0313' }).click();
-    await expect(ui.title(page)).toHaveText('Evidence freshness');
-    await expect(ui.drawer(page).locator('span[title]').first()).toHaveAttribute('title', /stays at Partial\. Re-link the file or submit new evidence, then mark the control complete for verification\./);
+    const note = ui.drawer(page).locator('span[data-tip^="Status is held at Partial"]');
+    await expect(note).toHaveAttribute('data-tip', 'Status is held at Partial because the last evidence is critical for a monthly control. Link current-cycle evidence, then mark the control complete so it can be verified.');
+    await drawerLinks(page, 'Leads to').filter({ hasText: 'EV-0313' }).click();
+    await expect(ui.title(page)).toHaveText('Evidence status');
+    await expect(ui.drawer(page).locator('span[data-tip]').first()).toHaveAttribute('data-tip', /stays at Partial\. Re-link the file or submit new evidence, then mark the control complete for verification\./);
     await drawerAction(page, 'Re-link file').click();
     await ui.modal(page).locator('button', { hasText: 'Link selected file' }).click();
     await expectToast(page, 'Evidence linked');
-    await go(page, 'Controls & requirements');
+    await go(page, 'Annex A controls');
     await tab(page, 'Partially implemented').click();
     await openRow(page, 'A.8.13');
     // the evidence is current now; the status moves only when someone marks the control complete
     await expect(drawerFact(page, 'Last evidence')).toHaveText('EV-0313, 29 Sep 2026, Fresh');
     await expect(ui.drawer(page)).toContainText('Partial');
-    await expect(ui.drawer(page).locator('span[title^="Status is held"]')).toHaveCount(0);
+    await expect(ui.drawer(page).locator('span[data-tip^="Status is held"]')).toHaveCount(0);
     await drawerAction(page, 'Mark complete').click();
     await expect(ui.drawer(page)).toContainText('Complete, awaiting verification');
   });
@@ -280,7 +280,7 @@ test.describe('Controls & requirements', () => {
 
     await switchRole(page, 'Internal Auditor');
     await expect(page.locator('header')).toContainText('Maya Putri');
-    await expect(ui.title(page)).toHaveText('Controls & requirements');
+    await expect(ui.title(page)).toHaveText('Annex A controls');
     await chip(page, 'Complete, awaiting verification').click();
     await expect(listRows(page)).toHaveCount(1);
     await openRow(page, 'A.5.13');
@@ -330,7 +330,7 @@ test.describe('Controls & requirements', () => {
     await expect(modal).not.toContainText('This date falls after the audit event');
     await modal.locator('select').selectOption('dewi');
     await modal.locator('input[type="date"]').fill('2026-12-01');
-    await expect(modal).toContainText('This date falls after the audit event. The item will be flagged After audit.');
+    await expect(modal).toContainText('This date falls after the audit event. The item will be flagged Due after audit.');
     await modal.locator('input[type="date"]').fill('2026-11-01');
     await expect(modal).not.toContainText('This date falls after the audit event');
     await modal.locator('input[type="date"]').fill('2026-12-01');
@@ -340,13 +340,13 @@ test.describe('Controls & requirements', () => {
     await expect(listRow(page, 'A.5.13').locator('td:nth-child(5)')).toContainText('Dewi Anggraini');
     await expect(drawerFact(page, 'Owner')).toHaveText('Dewi Anggraini, HR Manager');
 
-    await go(page, 'Chain stages');
+    await go(page, 'Outstanding items');
     await tab(page, 'Control').click();
     const row = listRow(page, 'A.5.13');
     await expect(row).toContainText('Dewi Anggraini');
     await expect(row).toContainText('1 Dec 2026');
-    await expect(row).toContainText('After audit');
-    expect(await chipCount(page, 'After audit')).toBe(14);
+    await expect(row).toContainText('Due after audit');
+    expect(await chipCount(page, 'Due after audit')).toBe(14);
   });
 
   test('changing only the holder keeps the chain due date', async ({ page }) => {
@@ -356,7 +356,7 @@ test.describe('Controls & requirements', () => {
     await drawerAction(page, 'Reassign').click();
     await ui.modal(page).locator('select').selectOption('yusuf');
     await ui.modal(page).locator('button', { hasText: 'Save' }).click();
-    await go(page, 'Chain stages');
+    await go(page, 'Outstanding items');
     await tab(page, 'Control').click();
     const row = listRow(page, 'A.5.13');
     await expect(row).toContainText('Yusuf Rahman');
@@ -376,31 +376,31 @@ test.describe('Controls & requirements', () => {
     await openControls(page);
     await openRow(page, 'A.5.1');
     await drawerAction(page, 'Trace from here').click();
-    await expect(ui.title(page)).toHaveText('Golden Thread Viewer');
+    await expect(ui.title(page)).toHaveText('Traceability viewer');
     await expect(page.locator('main input[placeholder^="Enter any ID"]')).toHaveValue('A.5.1');
     await expect(page.locator('main')).toContainText('Policies for information security');
   });
 
   test('gate items explain why the gate is held and trace to the SoA stage', async ({ page }) => {
     await openControls(page);
-    await tab(page, 'Open gate items, Risk & SoA').click();
+    await tab(page, 'Blocking items, Risk & SoA').click();
     await expect(listRow(page, 'A.5.23')).toContainText('Applicable: no risk-based justification linked');
     await expect(listRow(page, 'A.5.23')).toContainText('Missing');
     await openRow(page, 'A.5.23');
-    await expect(ui.drawer(page)).toContainText('Holding gate');
-    await expect(ui.drawer(page).locator('span[title*="Risk & SoA gate cannot close"]')).toHaveCount(1);
+    await expect(ui.drawer(page)).toContainText('Blocking');
+    await expect(ui.drawer(page).locator('span[data-tip*="Risk & SoA checkpoint cannot close"]')).toHaveCount(1);
     await expect(drawerAction(page, 'Mark complete')).toHaveCount(0);
     await expect(ui.drawer(page)).toContainText('No evidence this cycle');
     await drawerAction(page, 'Trace from here').click();
-    await expect(ui.title(page)).toHaveText('Chain stages');
+    await expect(ui.title(page)).toHaveText('Outstanding items');
     await expect(activeTab(page).locator('div').nth(1)).toHaveText('SoA');
 
-    await go(page, 'Controls & requirements');
-    await tab(page, 'Open gate items, Risk & SoA').click();
+    await go(page, 'Annex A controls');
+    await tab(page, 'Blocking items, Risk & SoA').click();
     await openRow(page, 'R-031');
     await expect(ui.drawer(page)).toContainText('Unpatched hypervisor in Surabaya DC');
     await expect(drawerFact(page, 'Stage')).toHaveText('Risk');
-    await expect(drawerFact(page, 'Pending action')).toHaveText('Select a treatment: no treatment linked');
+    await expect(drawerFact(page, 'Next action')).toHaveText('Select a treatment: no treatment linked');
   });
 
   test('Start review on an expired document changes its status and counts', async ({ page }) => {
@@ -408,7 +408,7 @@ test.describe('Controls & requirements', () => {
     await tab(page, 'Documents expired').click();
     await openRow(page, 'PRC-07');
     await expect(drawerFact(page, 'Review due')).toHaveText('24 Sep 2026, Overdue 5d');
-    await expect(drawerLinks(page, 'Upstream')).toHaveText(['A.5.15', 'A.5.16', 'A.5.17', 'A.5.18', 'A.8.2', 'A.8.3']);
+    await expect(drawerLinks(page, 'Linked from')).toHaveText(['A.5.15', 'A.5.16', 'A.5.17', 'A.5.18', 'A.8.2', 'A.8.3']);
     await drawerAction(page, 'Start review').click();
     await expectToast(page, 'PRC-07, review started: assigned to Bagus Prasetyo');
     // the document left the expired list

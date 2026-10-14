@@ -6,14 +6,14 @@ import {
 const repos = (page) => page.locator('main div[style*="box-shadow"][style*="flex-direction: column"][style*="gap: 10px"]');
 const repo = (page, name) => repos(page).filter({ has: page.locator('div', { hasText: new RegExp('^' + name + '$') }) });
 const routing = (page) => page.locator('main table').first().locator('tbody > tr');
-const ids = (page) => listRows(page).locator('td:nth-child(2) > span:first-child');
+const ids = (page) => listRows(page).locator('td:nth-child(2) > div > :first-child');
 
 async function openStorage(page, query = '') {
   await openApp(page, query);
-  await go(page, 'Storage repositories');
+  await go(page, 'File storage');
 }
 
-test.describe('Storage repositories', () => {
+test.describe('File storage', () => {
   // @sample-only: in API mode the Managed Vault card follows the api's deployment (I.1; the test profile is on-premise) and the reference counts come from the api.
   test('repository cards show status, reference health and scope', { tag: '@sample-only' }, async ({ page }) => {
     await openStorage(page);
@@ -25,7 +25,7 @@ test.describe('Storage repositories', () => {
     await expect(repo(page, 'Google Shared Drive')).toContainText('Delegated token expired 27 Sep 2026: checks paused for 11 references');
     await expect(repo(page, 'Google Shared Drive')).toContainText('0 / 11 references');
     await expect(repo(page, 'Google Shared Drive')).toContainText('11pending');
-    await expect(repo(page, 'Managed Vault')).toContainText('Provider cloud, region Jakarta');
+    await expect(repo(page, 'Managed Vault').locator('[data-tip*="Provider cloud, region Jakarta"]')).toHaveCount(1);
     await expect(repo(page, 'Managed Vault')).toContainText('29 / 29 references');
     await expect(repo(page, 'Managed Vault')).toContainText('QMS, ABMS');
     await expect(repo(page, 'OneDrive personal')).toContainText('Flagged');
@@ -111,31 +111,31 @@ test.describe('Storage repositories', () => {
     await expect(drawerFact(page, 'Control / requirement')).toHaveText('Cl. 8.1, Operational planning and control');
     await expect(drawerFact(page, 'Integrity')).toHaveText('Check pending, Last integrity check 27 Sep 2026 (ok)');
     await drawerAction(page, 'Trace from here').click();
-    await expect(ui.title(page)).toHaveText('Golden Thread Viewer');
+    await expect(ui.title(page)).toHaveText('Traceability viewer');
     await expect(ui.msSwitch(page)).toContainText('BCMS');
     await expect(page.locator('main')).not.toContainText('No record found');
     await expect(page.locator('main input[placeholder^="Enter any ID"]')).toHaveValue('EB-0145');
 
-    await go(page, 'Storage repositories');
+    await go(page, 'File storage');
     await openRow(page, 'EB-0100');
     await drawerFact(page, 'Control / requirement').locator('button').click();
-    await expect(ui.title(page)).toHaveText('Controls & requirements');
+    await expect(ui.title(page)).toHaveText('Requirements');
     await expect(ui.msSwitch(page)).toContainText('BCMS');
     await expect(ui.drawer(page)).toContainText('Understanding the organization and its context');
   });
 
   test('on-premise shows the vault as object storage in the customer data centre', async ({ page }) => {
     await openStorage(page, '?deploy=onprem');
-    await expect(repo(page, 'Managed Vault')).toContainText('Object storage in your data centre');
+    await expect(repo(page, 'Managed Vault').locator('[data-tip*="Object storage in your data centre"]')).toHaveCount(1);
   });
 
   test('an organisation only sees the repositories its systems use', async ({ page }) => {
     await openApp(page);
     await switchOrg(page, 'PT Bank Sentosa Digital');
-    await go(page, 'Storage repositories');
+    await go(page, 'File storage');
     await expect(repos(page)).toHaveCount(3);
     await expect(repo(page, 'Google Shared Drive')).toHaveCount(0);
-    await expect(repo(page, 'Managed Vault')).toContainText('Object storage in your data centre');
+    await expect(repo(page, 'Managed Vault').locator('[data-tip*="Object storage in your data centre"]')).toHaveCount(1);
     await expect(repo(page, 'Managed Vault')).toContainText('27 / 27 references');
     await expect(routing(page)).toHaveCount(2);
     await expect(chips(page)).toHaveText([/Needs attention\s*3/, /Version changed\s*1/, /Missing\s*1/, /Access revoked\s*1/, /All\s*106/]);

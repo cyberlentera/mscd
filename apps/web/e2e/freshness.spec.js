@@ -6,15 +6,15 @@ import {
 const freqRows = (page) => page.locator('main button[style*="grid-template-columns: 110px 1fr 120px"]');
 const freq = (page, label) => freqRows(page).filter({ has: page.locator('span', { hasText: new RegExp('^' + label + '$') }) });
 const donut = (page) => page.locator('main svg[viewBox="0 0 44 44"]');
-const ids = (page) => listRows(page).locator('td:nth-child(2) > span:first-child');
+const ids = (page) => listRows(page).locator('td:nth-child(2) > div > :first-child');
 const freshCol = (page) => listRows(page).locator('td:nth-child(7)');
 
 async function openFresh(page) {
   await openApp(page);
-  await go(page, 'Evidence freshness');
+  await go(page, 'Evidence status');
 }
 
-test.describe('Evidence freshness', () => {
+test.describe('Evidence status', () => {
   test('tabs count evidence by freshness and filter the list, toggling off on a second click', async ({ page }) => {
     await openFresh(page);
     await expect(tabs(page)).toHaveCount(6);
@@ -108,7 +108,7 @@ test.describe('Evidence freshness', () => {
     await tab(page, 'File cannot be verified').click();
     await openRow(page, 'EV-0124');
     await expect(drawerFact(page, 'Integrity')).toHaveText('Version changed');
-    await expect(ui.drawer(page).locator('span[title^="The pinned version cannot be verified"]')).toHaveCount(1);
+    await expect(ui.drawer(page).locator('span[data-tip^="The pinned version cannot be verified"]')).toHaveCount(1);
     await drawerAction(page, 'Re-link file').click();
     const modal = ui.modal(page);
     await expect(modal).toContainText('Select evidence file from repository');
@@ -124,7 +124,7 @@ test.describe('Evidence freshness', () => {
     await search(page, 'EV-0124');
     await expect(listRows(page)).toHaveCount(1);
     await expect(freshCol(page)).toHaveText(['Fresh']);
-    await expect(listRows(page).locator('td:nth-child(8)')).toContainText('Verified');
+    await expect(listRows(page).locator('td:nth-child(8)')).toHaveAttribute('data-tip', /Verified/);
     await openRow(page, 'EV-0124');
     await expect(drawerFact(page, 'Produced')).toHaveText('29 Sep 2026 (0 d)');
     await expect(drawerFact(page, 'Pinned version')).toHaveText('v2.0');
@@ -207,7 +207,7 @@ test.describe('Evidence freshness', () => {
     await expect(drawerFact(page, 'Next due')).toHaveText('10 Oct 2026');
     await expect(listRow(page, 'EV-0124')).toContainText('Fajar Nugroho');
     await drawerFact(page, 'Control / requirement').locator('button').click();
-    await expect(ui.title(page)).toHaveText('Controls & requirements');
+    await expect(ui.title(page)).toHaveText('Annex A controls');
     await expect(ui.drawer(page)).toContainText('A.5.9');
   });
 
@@ -244,7 +244,7 @@ test.describe('Evidence freshness', () => {
   test('a domain owner only sees their own evidence', async ({ page }) => {
     await openApp(page);
     await switchRole(page, 'Domain Owner');
-    await go(page, 'Evidence freshness');
+    await go(page, 'Evidence status');
     expect(await tabCount(page, 'Fresh')).toBe(19);
     expect(await tabCount(page, 'Critical')).toBe(3);
     await expectShown(page, 27);

@@ -14,10 +14,10 @@ const prepRows = (page) => page.locator(PREP);
 
 async function openTimeline(page) {
   await openApp(page);
-  await go(page, 'Certification timeline');
+  await go(page, 'Certification cycle');
 }
 
-test.describe('Certification timeline', () => {
+test.describe('Certification cycle', () => {
   test('draws one lane per system with its audit events', async ({ page }) => {
     await openTimeline(page);
     await expect(lanes(page)).toHaveCount(4);
@@ -38,7 +38,7 @@ test.describe('Certification timeline', () => {
     await expect(card).toContainText('Surveillance 1');
     await expect(card).toContainText('12 Nov 2026, 2 Audit days, PT Sertifikasi Nusantara, Ir. Dwi Hartanto, IRCA LA');
     await expect(card).toContainText('44 days left');
-    await expect(card).toContainText(/63\s*Open along the chain/);
+    await expect(card).toContainText(/63\s*Outstanding items/);
     await expect(card).toContainText(/24\s*Overdue \/ missing/);
     await expect(card).toContainText(/16\s*Due after audit date/);
     await expect(card).toContainText('Preparation checklist');
@@ -136,10 +136,10 @@ test.describe('Certification timeline', () => {
     await closeDrawer(page);
     await openRow(page, 'R-009');
     await drawerAction(page, 'Trace from here').click();
-    await expect(ui.title(page)).toHaveText('Golden Thread Viewer');
+    await expect(ui.title(page)).toHaveText('Traceability viewer');
     await expect(page.locator('main')).not.toContainText('No record found');
 
-    await go(page, 'Certification timeline');
+    await go(page, 'Certification cycle');
     await drift(page).nth(1).click();
     await expect(listRows(page)).toHaveCount(3);
     await openRow(page, 'EV-0271');
@@ -148,7 +148,7 @@ test.describe('Certification timeline', () => {
     await drift(page).nth(2).click();
     await expect(listRows(page)).toHaveCount(4);
     await openRow(page, 'M-15');
-    await expect(drawerFact(page, 'Holder')).toHaveText('Unassigned, -');
+    await expect(drawerFact(page, 'Assigned to')).toHaveText('Unassigned, -');
     await closeDrawer(page);
     await drift(page).nth(2).click();
     await expect(list(page)).toHaveCount(0);

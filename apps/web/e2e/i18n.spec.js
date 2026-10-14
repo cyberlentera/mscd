@@ -9,9 +9,8 @@ const TAB_SCREENS = [2, 6, 9];
 // Labels that are the same word in Indonesian, product and feature names, and storage mode names.
 const SAME = new Set([
   'Status', 'Audit', 'No.', 'Minor', 'Beta', 'item', 'SoA',
-  // the Indonesian interface uses "gate" as its term throughout (Item gate terbuka, Menahan gate)
-  'GATE',
-  'Golden Thread Viewer', 'Tera', 'Link', 'Upload', 'Zero-transit', 'Pass-through',
+  // role names that Indonesian teams use as they are
+  'PIC', 'MS Manager', 'Tenant Admin', 'Tera', 'Link', 'Upload', 'Zero-transit', 'Pass-through',
   'SaaS, region Jakarta',
 ]);
 // Sample organisation data is content, not interface text: people, organisations, systems, repositories.
@@ -71,10 +70,10 @@ async function walk(page, query, ms, labels) {
       }
     }
     if (await list(page).count() && await listRows(page).count()) {
-      await listRows(page).first().click();
+      await listRows(page).first().locator('td').first().click();
       await expect(ui.drawer(page)).toBeVisible();
       await snap(`${SCREENS[i]}, drawer`);
-      const reassign = ui.drawer(page).locator('button[title="Reassign"], button[title="Alihkan"]');
+      const reassign = ui.drawer(page).locator('button[title="Reassign"], button[title="Ganti PIC"]');
       if (await reassign.count()) {
         await reassign.click();
         await expect(ui.modal(page)).toBeVisible();
@@ -90,6 +89,7 @@ async function walk(page, query, ms, labels) {
 test.describe('Indonesian interface', () => {
   for (const ms of SYSTEMS) {
     test(`no ${ms} interface label stays in English`, async ({ page }) => {
+      test.slow(); // walks every screen of the system
       const en = await walk(page, '', ms, SCREENS);
       const id = await walk(page, '?lang=id', ms, SCREENS_ID);
       expect([...id.keys()]).toEqual([...en.keys()]);
@@ -107,20 +107,20 @@ test.describe('Indonesian interface', () => {
     await expect(page.locator('main')).toContainText('28 Sep 2026 sampai 4 Okt 2026');
     await expect(page.locator('main')).toContainText('Rekaman');
     await expect(page.locator('main')).toContainText('Selesaikan penerapan classification of information');
-    await go(page, 'Register dokumen');
+    await go(page, 'Daftar induk dokumen');
     await expect(groupRows(page)).toHaveText([/^Kebijakan\s*\d+$/, /^Standar\s*\d+$/, /^Prosedur\s*\d+$/, /^Rencana\s*\d+$/, /^Register\s*\d+$/]);
-    await go(page, 'Pustaka framework');
+    await go(page, 'Standar & lisensi');
     await expect(page.locator('main')).toContainText('Pack beta');
     await expect(page.locator('main')).toContainText('2015 dalam transisi');
-    await go(page, 'Repositori penyimpanan');
+    await go(page, 'Penyimpanan berkas');
     await expect(page.locator('main')).toContainText('Retensi 6 tahun, enkripsi per tenant');
-    await go(page, 'Linimasa sertifikasi');
-    await expect(page.locator('main')).toContainText('Event audit, ISMS');
+    await go(page, 'Siklus sertifikasi');
+    await expect(page.locator('main')).toContainText('Agenda audit, ISMS');
     await expect(page.locator('main')).toContainText('Resert + transisi');
-    await go(page, 'Ikhtisar Portofolio');
-    await expect(page.locator('main')).toContainText('16 item tertunda jatuh tempo setelah tanggal audit');
+    await go(page, 'Beranda');
+    await expect(page.locator('main [data-tip="16 item tertunda jatuh tempo setelah tanggal audit"]')).toHaveCount(1);
     await expect(page.locator('aside')).toContainText('Organisasi');
-    await expect(page.locator('aside')).toContainText('Surveilans');
+    await expect(page.locator('aside')).toContainText('Pemeliharaan');
     await expect(page.locator('aside')).toContainText('Paket framework');
     await expect(page.locator('header')).toContainText('Manajer SM, ISMS Manager');
     await expect(page.locator('aside button[title="Ciutkan"]')).toHaveCount(1);

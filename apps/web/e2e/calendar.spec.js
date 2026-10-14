@@ -3,14 +3,14 @@ import {
   drawerAction, drawerFact, openRow, expectToast, switchMs,
 } from './helpers.js';
 
-const ids = (page) => listRows(page).locator('td:nth-child(2) > span:first-child');
+const ids = (page) => listRows(page).locator('td:nth-child(2) > div > :first-child');
 
 async function openCalendar(page) {
   await openApp(page);
-  await go(page, 'Review calendar');
+  await go(page, 'Document reviews');
 }
 
-test.describe('Review calendar', () => {
+test.describe('Document reviews', () => {
   test('lists overdue reviews first, then reviews by month', async ({ page }) => {
     await openCalendar(page);
     await expect(chips(page)).toHaveCount(0);

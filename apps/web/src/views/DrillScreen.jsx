@@ -29,7 +29,7 @@ export default function DrillScreen({ v }) {
             </div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))" }}>
-            {list(v.hero?.nums).map((h, $i22) => (<Fragment key={$i22}>
+            {list(v.hero?.nums).map((h, $i34) => (<Fragment key={$i34}>
               <div style={{ padding: "var(--pad)", borderRight: "1px solid rgba(255,255,255,.12)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
                 <div style={{ fontSize: "30px", fontWeight: "600", lineHeight: "1", color: h?.ink }}>{txt(h?.nEl)}</div>
                 <div style={{ opacity: ".95", marginTop: "8px", fontSize: "12.5px" }}>{txt(h?.label)}</div>
@@ -50,7 +50,7 @@ export default function DrillScreen({ v }) {
       <SummaryTabs v={v} />
       {v.tabs?.length ? (<>
         <div style={{ display: "flex", background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", boxShadow: "var(--sh)", overflow: "hidden" }}>
-          {list(v.tabs).map((tb, $i26) => (<Fragment key={$i26}>
+          {list(v.tabs).map((tb, $i38) => (<Fragment key={$i38}>
             <button onClick={tb?.go} style={{ flex: "1 1 0", minWidth: "0", textAlign: "left", background: tb?.bg, border: "0", borderRight: "1px solid var(--bd)", borderBottom: `3px solid ${tb?.bar ?? ''}`, padding: "12px 14px 10px", cursor: "pointer", color: "var(--tx)", font: "inherit", fontSize: "var(--fs)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "0 6px", flexWrap: "wrap" }}>
                 <span style={{ fontSize: "24px", fontWeight: "600", lineHeight: "1", color: tb?.ink }}>{txt(tb?.nEl)}</span>
@@ -61,7 +61,7 @@ export default function DrillScreen({ v }) {
               <div style={{ marginTop: "5px", color: "var(--tx2)", fontSize: "12.5px", lineHeight: "1.3" }}>{txt(tb?.label)}</div>
               {tb?.seg ? (<>
                 <div style={{ display: "flex", height: "4px", borderRadius: "2px", overflow: "hidden", marginTop: "8px", background: "var(--bd)", transformOrigin: "left", animation: "growX .7s cubic-bezier(.2,.7,.2,1) both" }}>
-                  {list(tb?.seg).map((sg, $i27) => (<Fragment key={$i27}>
+                  {list(tb?.seg).map((sg, $i39) => (<Fragment key={$i39}>
                     <div style={{ width: `${sg?.w ?? ''}%`, background: sg?.color, transition: "width .5s" }}></div>
                   </Fragment>))}
                 </div>
@@ -107,11 +107,11 @@ export default function DrillScreen({ v }) {
               </span>
             </span>
           </div>
-          {list(v.freq).map((f, $i28) => (<Fragment key={$i28}>
+          {list(v.freq).map((f, $i40) => (<Fragment key={$i40}>
             <button onClick={f?.go} style={{ display: "grid", gridTemplateColumns: "110px 1fr 120px", alignItems: "center", gap: "12px", width: "100%", border: "0", borderRadius: "6px", padding: "5px 8px", background: f?.bg, cursor: "pointer", color: "var(--tx)", font: "inherit", fontSize: "var(--fs)" }}>
               <span style={{ textAlign: "left", fontWeight: f?.fw }}>{txt(f?.label)}</span>{" "}
               <span style={{ display: "flex", height: "10px", borderRadius: "5px", overflow: "hidden", background: "var(--bd)", transformOrigin: "left", animation: "growX .7s cubic-bezier(.2,.7,.2,1) both" }}>
-                {list(f?.seg).map((sg, $i29) => (<Fragment key={$i29}>
+                {list(f?.seg).map((sg, $i41) => (<Fragment key={$i41}>
                   <span style={{ width: `${sg?.w ?? ''}%`, background: sg?.color, transition: "width .5s" }}></span>
                 </Fragment>))}
               </span>{" "}
@@ -148,7 +148,7 @@ export default function DrillScreen({ v }) {
               {v.listTitle ? (<>
                 <span style={{ fontWeight: "600", marginRight: "8px" }}>{txt(v.listTitle)}</span>
               </>) : null}{" "}
-              {list(v.chips).map((ch, $i45) => (<Fragment key={$i45}>
+              {list(v.chips).map((ch, $i57) => (<Fragment key={$i57}>
                 <button onClick={ch?.go} style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "28px", padding: "0 10px", borderRadius: "999px", border: `1px solid ${ch?.bd ?? ''}`, background: ch?.bg, color: ch?.fg, cursor: "pointer", font: "inherit", fontSize: "12px", fontWeight: "500", whiteSpace: "nowrap" }}>{txt(ch?.label)}
                   <span style={{ fontFamily: "var(--ffm)", fontSize: "12px" }}>{txt(ch?.n)}</span>
                 </button>
@@ -161,13 +161,19 @@ export default function DrillScreen({ v }) {
               <thead>
                 <tr style={{ textAlign: "left", fontSize: "12px", textTransform: "uppercase", letterSpacing: ".06em", color: "var(--tx3)" }}>
                   <th style={{ padding: "8px 6px 8px var(--pad)", borderBottom: "1px solid var(--bd)", width: "20px" }}></th>
-                  {list(v.cols).map((co, $i46) => (<Fragment key={$i46}>
-                    <th style={{ padding: "8px 8px", borderBottom: "1px solid var(--bd)", whiteSpace: "nowrap" }}>{txt(co)}</th>
+                  {list(v.colHeads).map((co, $i58) => (<Fragment key={$i58}>
+                    <th aria-sort={co?.aria} style={{ padding: "0", borderBottom: "1px solid var(--bd)", borderLeft: "1px solid var(--bd)", whiteSpace: "nowrap" }}>
+                      <button onClick={co?.go} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "6px", width: "100%", padding: "8px 10px", border: "0", background: "transparent", font: "inherit", fontWeight: "600", letterSpacing: "inherit", textTransform: "inherit", textAlign: "left", color: co?.fg, cursor: "pointer" }} className="hv4">{txt(co?.label)}
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "none", opacity: co?.op }}>
+                          <path d={co?.icon}></path>
+                        </svg>
+                      </button>
+                    </th>
                   </Fragment>))}
                 </tr>
               </thead>
               <tbody>
-                {list(v.rows).map((row, $i47) => (<Fragment key={$i47}>
+                {list(v.rows).map((row, $i59) => (<Fragment key={$i59}>
                   {row?.isGroup ? (<>
                     <tr>
                       <td colSpan={v.ncols} style={{ padding: "8px var(--pad)", borderBottom: "1px solid var(--bd)", background: "var(--sur2)", fontSize: "12px", textTransform: "uppercase", letterSpacing: ".06em", color: row?.ink, fontWeight: "600" }}>{txt(row?.label)}{" "}
@@ -176,51 +182,60 @@ export default function DrillScreen({ v }) {
                     </tr>
                   </>) : null}
                   {row?.isRow ? (<>
-                    <tr onClick={row?.go} style={{ cursor: "pointer", background: row?.bg }} className="hv4">
+                    <tr onClick={row?.go} style={{ cursor: "pointer", background: row?.bg }} className="hv5">
                       <td style={{ padding: "0 6px 0 var(--pad)", height: "var(--rh)", borderBottom: "1px solid var(--bd)", color: "var(--tx3)" }}>
                         <span style={{ display: "inline-block", width: "7px", height: "7px", borderRight: "1.5px solid currentColor", borderBottom: "1.5px solid currentColor", transform: `rotate(${row?.rot ?? ''})`, transition: "transform .2s", marginLeft: "2px" }}></span>
                       </td>
-                      {list(row?.cells).map((c, $i48) => (<Fragment key={$i48}>
-                        <td style={{ padding: "6px 8px", height: "var(--rh)", borderBottom: "1px solid var(--bd)", verticalAlign: "middle", maxWidth: "300px" }}>
-                          {c?.mono ? (<>
-                            <span style={{ fontFamily: "var(--ffm)", fontSize: "max(12px, .95em)", fontWeight: "500", whiteSpace: "nowrap" }}>{txt(c?.v)}</span>
-                          </>) : null}{" "}
-                          {c?.badge ? (<>
-                            <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: "999px", fontSize: "max(12px, .9em)", fontWeight: "600", whiteSpace: "nowrap", background: c?.bg, color: c?.fg }}>{txt(c?.v)}</span>
-                          </>) : null}{" "}
-                          {c?.person ? (<>
-                            <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
-                              <span style={{ width: "24px", height: "24px", borderRadius: "50%", flex: "none", background: c?.bg, color: c?.fg, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "700" }}>{txt(c?.i)}</span>
-                              <span style={{ lineHeight: "1.25" }}>
-                                <span style={{ fontWeight: "500", display: "block", whiteSpace: "nowrap" }}>{txt(c?.v)}</span>
-                                <span style={{ fontSize: "max(12px, .9em)", color: "var(--tx3)" }}>{txt(c?.s)}</span>
-                              </span>
-                            </span>
-                          </>) : null}{" "}
-                          {c?.loc ? (<>
-                            <span title={c?.title} style={{ display: "inline-flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap", minWidth: "132px", paddingRight: "4px" }}>
-                              <span style={{ width: "26px", height: "26px", borderRadius: "7px", display: "inline-flex", alignItems: "center", justifyContent: "center", background: "var(--sur2)", color: c?.ink }}>
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                                  <path d={c?.icon}></path>
-                                </svg>
-                              </span>
-                              <span style={{ lineHeight: "1.25" }}>
-                                <span style={{ display: "block", fontWeight: "500" }}>{txt(c?.v)}</span>
-                                {c?.s ? (<>
-                                  <span style={{ fontSize: "max(12px, .9em)", color: c?.sColor }}>{txt(c?.s)}</span>
+                      {list(row?.cells).map((c, $i60) => (<Fragment key={$i60}>
+                        <td data-tip={c?.tip} style={{ padding: "6px 10px", height: "var(--rh)", borderBottom: "1px solid var(--bd)", borderLeft: "1px solid var(--bd)", verticalAlign: "middle", maxWidth: "300px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "7px", minWidth: "0" }}>
+                            {c?.mono ? (<>
+                              {c?.go ? (<>
+                                <button onClick={c?.go} style={{ border: "0", background: "transparent", padding: "0", fontFamily: "var(--ffm)", fontSize: "max(12px, .95em)", fontWeight: "500", whiteSpace: "nowrap", color: "var(--acc)", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "3px" }} className="hv6">{txt(c?.v)}</button>
+                              </>) : null}
+                              {c?.nogo ? (<>
+                                <span style={{ fontFamily: "var(--ffm)", fontSize: "max(12px, .95em)", fontWeight: "500", whiteSpace: "nowrap" }}>{txt(c?.v)}</span>
+                              </>) : null}
+                            </>) : null}{" "}
+                            {c?.badge ? (<>
+                              <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: "999px", fontSize: "max(12px, .9em)", fontWeight: "600", whiteSpace: "nowrap", background: c?.bg, color: c?.fg }}>{txt(c?.v)}</span>
+                            </>) : null}{" "}
+                            {c?.person ? (<>
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                                <span style={{ width: "24px", height: "24px", borderRadius: "50%", flex: "none", background: c?.bg, color: c?.fg, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "700" }}>{txt(c?.i)}</span>
+                                {c?.go ? (<>
+                                  <button onClick={c?.go} style={{ border: "0", background: "transparent", padding: "0", font: "inherit", fontWeight: "500", whiteSpace: "nowrap", color: "var(--tx)", cursor: "pointer", textDecoration: "underline", textDecorationColor: "var(--bd)", textUnderlineOffset: "3px" }} className="hv7">{txt(c?.v)}</button>
+                                </>) : null}
+                                {c?.nogo ? (<>
+                                  <span style={{ fontWeight: "500", whiteSpace: "nowrap" }}>{txt(c?.v)}</span>
                                 </>) : null}
                               </span>
-                            </span>
-                          </>) : null}
-                          {c?.text ? (<>
-                            <div style={{ fontWeight: c?.fw, lineHeight: "1.3" }}>{txt(c?.v)}</div>
-                          </>) : null}
-                          {c?.sub ? (<>
-                            <div style={{ fontSize: "max(12px, .9em)", color: c?.subColor, marginTop: "2px", lineHeight: "1.3" }}>{txt(c?.sub)}</div>
-                          </>) : null}
-                          {c?.tag ? (<>
-                            <span style={{ display: "inline-flex", marginTop: "3px", marginLeft: c?.tagMl, padding: "1px 6px", borderRadius: "5px", fontSize: "max(12px, .9em)", fontWeight: "600", whiteSpace: "nowrap", background: c?.tag?.bg, color: c?.tag?.fg }}>{txt(c?.tag?.v)}</span>
-                          </>) : null}
+                            </>) : null}{" "}
+                            {c?.loc ? (<>
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap", paddingRight: "4px" }}>
+                                <span style={{ width: "26px", height: "26px", borderRadius: "7px", display: "inline-flex", alignItems: "center", justifyContent: "center", background: "var(--sur2)", color: c?.ink }}>
+                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d={c?.icon}></path>
+                                  </svg>
+                                </span>
+                                <span style={{ fontWeight: "500" }}>{txt(c?.v)}</span>
+                              </span>
+                            </>) : null}{" "}
+                            {c?.text ? (<>
+                              {c?.go ? (<>
+                                <button onClick={c?.go} style={{ border: "0", background: "transparent", padding: "0", font: "inherit", fontWeight: c?.fw, lineHeight: "1.3", textAlign: "left", color: "var(--acc)", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "3px" }} className="hv8">{txt(c?.v)}</button>
+                              </>) : null}
+                              {c?.nogo ? (<>
+                                <span style={{ fontWeight: c?.fw, lineHeight: "1.3" }}>{txt(c?.v)}</span>
+                              </>) : null}
+                            </>) : null}{" "}
+                            {c?.dot ? (<>
+                              <span style={{ width: "8px", height: "8px", borderRadius: "50%", flex: "none", background: c?.dot }}></span>
+                            </>) : null}{" "}
+                            {c?.tag ? (<>
+                              <span style={{ display: "inline-flex", padding: "1px 6px", borderRadius: "5px", fontSize: "max(12px, .9em)", fontWeight: "600", whiteSpace: "nowrap", background: c?.tag?.bg, color: c?.tag?.fg }}>{txt(c?.tag?.v)}</span>
+                            </>) : null}
+                          </div>
                         </td>
                       </Fragment>))}
                     </tr>
@@ -232,11 +247,11 @@ export default function DrillScreen({ v }) {
                           <div>
                             <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
                               <span style={{ fontFamily: "var(--ffm)", fontWeight: "600" }}>{txt(row?.det?.id)}</span>
-                              {list(row?.det?.badges).map((b, $i49) => (<Fragment key={$i49}>
+                              {list(row?.det?.badges).map((b, $i61) => (<Fragment key={$i61}>
                                 <span style={{ padding: "2px 8px", borderRadius: "999px", fontSize: "max(12px, .9em)", fontWeight: "600", background: b?.bg, color: b?.fg }}>{txt(b?.v)}</span>
                               </Fragment>))}
                               {row?.det?.note ? (<>
-                                <span title={row?.det?.note?.text} style={{ display: "inline-flex", width: "18px", height: "18px", borderRadius: "50%", background: row?.det?.note?.bg, color: row?.det?.note?.fg, fontSize: "12px", alignItems: "center", justifyContent: "center", cursor: "help", fontWeight: "700" }}>{"i"}</span>
+                                <span data-tip={row?.det?.note?.text} style={{ display: "inline-flex", width: "18px", height: "18px", borderRadius: "50%", background: row?.det?.note?.bg, color: row?.det?.note?.fg, fontSize: "12px", alignItems: "center", justifyContent: "center", cursor: "help", fontWeight: "700" }}>{"i"}</span>
                               </>) : null}
                             </div>
                             <div style={{ fontSize: "1.1em", fontWeight: "600", marginTop: "4px" }}>{txt(row?.det?.title)}</div>
@@ -244,7 +259,7 @@ export default function DrillScreen({ v }) {
                               <div style={{ marginTop: "6px", fontStyle: "italic", color: "var(--tx2)" }}>{txt(v.t?.auditorQ)}{": \""}{txt(row?.det?.q)}{"\""}</div>
                             </>) : null}
                             <div style={{ marginTop: "10px", display: "grid", gridTemplateColumns: "150px 1fr", rowGap: "6px", columnGap: "12px" }}>
-                              {list(row?.det?.facts).map((f, $i50) => (<Fragment key={$i50}>
+                              {list(row?.det?.facts).map((f, $i62) => (<Fragment key={$i62}>
                                 <div style={{ color: "var(--tx3)", fontSize: "max(12px, .9em)", paddingTop: "1px" }}>{txt(f?.k)}</div>
                                 <div style={{ fontFamily: f?.ff }}>
                                   {f?.go ? (<>
@@ -262,7 +277,7 @@ export default function DrillScreen({ v }) {
                               <div>
                                 <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: ".08em", color: "var(--tx3)", marginBottom: "6px" }}>{txt(v.t?.upstream)}</div>
                                 <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                                  {list(row?.det?.up).map((l, $i51) => (<Fragment key={$i51}>
+                                  {list(row?.det?.up).map((l, $i63) => (<Fragment key={$i63}>
                                     <button onClick={l?.go} style={{ border: "1px solid var(--bd)", background: "var(--sur)", color: "var(--tx)", borderRadius: "6px", padding: "3px 8px", fontFamily: "var(--ffm)", fontSize: "max(12px, .9em)", cursor: "pointer", whiteSpace: "nowrap" }}>{txt(l?.v)}</button>
                                   </Fragment>))}
                                   {row?.det?.noUp ? (<>
@@ -273,7 +288,7 @@ export default function DrillScreen({ v }) {
                               <div>
                                 <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: ".08em", color: "var(--tx3)", marginBottom: "6px" }}>{txt(v.t?.downstream)}</div>
                                 <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                                  {list(row?.det?.down).map((l, $i52) => (<Fragment key={$i52}>
+                                  {list(row?.det?.down).map((l, $i64) => (<Fragment key={$i64}>
                                     <button onClick={l?.go} style={{ border: "1px solid var(--bd)", background: "var(--sur)", color: "var(--tx)", borderRadius: "6px", padding: "3px 8px", fontFamily: "var(--ffm)", fontSize: "max(12px, .9em)", cursor: "pointer", whiteSpace: "nowrap" }}>{txt(l?.v)}</button>
                                   </Fragment>))}
                                   {row?.det?.noDown ? (<>
@@ -283,7 +298,7 @@ export default function DrillScreen({ v }) {
                               </div>
                             </div>
                             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "auto" }}>
-                              {list(row?.det?.actions).map((a, $i53) => (<Fragment key={$i53}>
+                              {list(row?.det?.actions).map((a, $i65) => (<Fragment key={$i65}>
                                 <button onClick={a?.go} title={a?.label} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px", height: "32px", minWidth: "32px", padding: `0 ${a?.px ?? ''}`, borderRadius: "8px", border: `1px solid ${a?.bd ?? ''}`, background: a?.bg, color: a?.fg, font: "inherit", fontSize: "var(--fs)", fontWeight: "500", cursor: "pointer", whiteSpace: "nowrap" }}>
                                   {a?.icon ? (<>
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "none" }}>

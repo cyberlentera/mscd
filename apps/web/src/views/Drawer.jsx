@@ -20,11 +20,11 @@ export default function Drawer({ v }) {
           <div>
             <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
               <span style={{ fontFamily: "var(--ffm)", fontWeight: "600" }}>{txt(v.det?.id)}</span>
-              {list(v.det?.badges).map((b, $i75) => (<Fragment key={$i75}>
+              {list(v.det?.badges).map((b, $i87) => (<Fragment key={$i87}>
                 <span style={{ padding: "2px 8px", borderRadius: "999px", fontSize: "max(12px, .9em)", fontWeight: "600", background: b?.bg, color: b?.fg }}>{txt(b?.v)}</span>
               </Fragment>))}
               {v.det?.note ? (<>
-                <span title={v.det?.note?.text} style={{ display: "inline-flex", width: "18px", height: "18px", borderRadius: "50%", background: v.det?.note?.bg, color: v.det?.note?.fg, fontSize: "12px", alignItems: "center", justifyContent: "center", cursor: "help", fontWeight: "700" }}>{"i"}</span>
+                <span data-tip={v.det?.note?.text} style={{ display: "inline-flex", width: "18px", height: "18px", borderRadius: "50%", background: v.det?.note?.bg, color: v.det?.note?.fg, fontSize: "12px", alignItems: "center", justifyContent: "center", cursor: "help", fontWeight: "700" }}>{"i"}</span>
               </>) : null}
             </div>
             <div style={{ fontSize: "1.3em", fontWeight: "600", marginTop: "4px", lineHeight: "1.3" }}>{txt(v.det?.title)}</div>
@@ -33,7 +33,7 @@ export default function Drawer({ v }) {
             </>) : null}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "150px 1fr", rowGap: "8px", columnGap: "12px" }}>
-            {list(v.det?.facts).map((f, $i76) => (<Fragment key={$i76}>
+            {list(v.det?.facts).map((f, $i88) => (<Fragment key={$i88}>
               <div style={{ color: "var(--tx3)", fontSize: "max(12px, .9em)", paddingTop: "1px" }}>{txt(f?.k)}</div>
               <div style={{ fontFamily: f?.ff }}>
                 {f?.go ? (<>
@@ -49,7 +49,7 @@ export default function Drawer({ v }) {
             <div>
               <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: ".08em", color: "var(--tx3)", marginBottom: "6px" }}>{txt(v.t?.upstream)}</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                {list(v.det?.up).map((l, $i77) => (<Fragment key={$i77}>
+                {list(v.det?.up).map((l, $i89) => (<Fragment key={$i89}>
                   <button onClick={l?.go} style={{ border: "1px solid var(--bd)", background: "var(--sur2)", color: "var(--tx)", borderRadius: "6px", padding: "3px 8px", fontFamily: "var(--ffm)", fontSize: "max(12px, .9em)", cursor: "pointer", whiteSpace: "nowrap" }}>{txt(l?.v)}</button>
                 </Fragment>))}
                 {v.det?.noUp ? (<>
@@ -60,7 +60,7 @@ export default function Drawer({ v }) {
             <div>
               <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: ".08em", color: "var(--tx3)", marginBottom: "6px" }}>{txt(v.t?.downstream)}</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                {list(v.det?.down).map((l, $i78) => (<Fragment key={$i78}>
+                {list(v.det?.down).map((l, $i90) => (<Fragment key={$i90}>
                   <button onClick={l?.go} style={{ border: "1px solid var(--bd)", background: "var(--sur2)", color: "var(--tx)", borderRadius: "6px", padding: "3px 8px", fontFamily: "var(--ffm)", fontSize: "max(12px, .9em)", cursor: "pointer", whiteSpace: "nowrap" }}>{txt(l?.v)}</button>
                 </Fragment>))}
                 {v.det?.noDown ? (<>
@@ -70,7 +70,7 @@ export default function Drawer({ v }) {
             </div>
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", paddingTop: "6px", borderTop: "1px solid var(--bd)" }}>
-            {list(v.det?.actions).map((a, $i79) => (<Fragment key={$i79}>
+            {list(v.det?.actions).map((a, $i91) => (<Fragment key={$i91}>
               <button onClick={a?.go} title={a?.label} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px", height: "34px", minWidth: "34px", padding: `0 ${a?.px ?? ''}`, borderRadius: "8px", border: `1px solid ${a?.bd ?? ''}`, background: a?.bg, color: a?.fg, font: "inherit", fontSize: "var(--fs)", fontWeight: "500", cursor: "pointer", whiteSpace: "nowrap" }}>
                 {a?.icon ? (<>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "none" }}>

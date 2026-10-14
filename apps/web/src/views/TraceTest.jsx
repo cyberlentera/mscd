@@ -8,18 +8,18 @@ export default function TraceTest({ v }) {
     <>{v.trace ? (<>
       <div style={{ background: "var(--sur)", border: "1px solid var(--bd)", borderRadius: "var(--r)", boxShadow: "var(--sh)" }}>
         <div style={{ padding: "12px var(--pad)", borderBottom: "1px solid var(--bd)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-          <div>
-            <div style={{ fontWeight: "600" }}>{txt(v.t?.traceTest)}</div>
-            <div style={{ fontSize: "12.5px", color: "var(--tx3)" }}>{txt(v.t?.traceSub)}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ fontWeight: "600" }}>{txt(v.t?.traceTest)}</span>
+            <span data-tip={v.t?.traceSub} style={{ display: "inline-flex", width: "16px", height: "16px", borderRadius: "50%", border: "1px solid var(--tx3)", color: "var(--tx3)", fontSize: "12px", lineHeight: "1", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "var(--ffm)", flex: "none" }}>{"i"}</span>
           </div>
           <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-            {list(v.trace?.picks).map((p, $i30) => (<Fragment key={$i30}>
+            {list(v.trace?.picks).map((p, $i42) => (<Fragment key={$i42}>
               <button onClick={p?.go} style={{ height: "28px", padding: "0 10px", borderRadius: "999px", border: `1px solid ${p?.bd ?? ''}`, background: p?.bg, color: p?.fg, font: "inherit", fontSize: "12.5px", fontWeight: "500", cursor: "pointer", fontFamily: "var(--ffm)" }}>{txt(p?.label)}</button>
             </Fragment>))}
           </div>
         </div>
         <div style={{ padding: "calc(var(--pad) + 6px) var(--pad)", display: "flex", alignItems: "flex-start", gap: "0", overflow: "auto" }}>
-          {list(v.trace?.nodes).map((n, $i31) => (<Fragment key={$i31}>
+          {list(v.trace?.nodes).map((n, $i43) => (<Fragment key={$i43}>
             <div style={{ display: "flex", alignItems: "flex-start", flex: "1 1 0", minWidth: "120px" }}>
               <button onClick={n?.go} style={{ flex: "1", minWidth: "0", textAlign: "left", border: `1.5px solid ${n?.fg ?? ''}`, background: n?.bg, borderRadius: "10px", padding: "10px 10px", cursor: "pointer", color: "var(--tx)", font: "inherit", fontSize: "var(--fs)", animation: n?.anim, animationDelay: n?.delay, transition: "transform .15s" }} className="hv3">
                 <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: ".04em", overflowWrap: "anywhere", color: n?.fg, fontWeight: "700" }}>{txt(n?.stage)}</div>
@@ -59,16 +59,15 @@ export default function TraceTest({ v }) {
             </tr>
           </thead>
           <tbody>
-            {list(v.trace?.stages).map((s, $i32) => (<Fragment key={$i32}>
+            {list(v.trace?.stages).map((s, $i44) => (<Fragment key={$i44}>
               <tr onClick={s?.go} data-hov="1" style={{ cursor: "pointer" }}>
-                <td style={{ padding: "10px var(--pad)", borderBottom: "1px solid var(--bd)" }}>
+                <td data-tip={s?.q} style={{ padding: "10px var(--pad)", borderBottom: "1px solid var(--bd)" }}>
                   <div style={{ fontWeight: "600" }}>{txt(s?.label)}</div>
-                  <div style={{ fontSize: "12px", color: "var(--tx3)", fontStyle: "italic" }}>{txt(s?.q)}</div>
                 </td>
                 <td style={{ padding: "10px 12px", borderBottom: "1px solid var(--bd)" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <span style={{ flex: "1", display: "flex", height: "8px", borderRadius: "4px", overflow: "hidden", background: "var(--bd)", transformOrigin: "left", animation: "growX .8s cubic-bezier(.2,.7,.2,1) both" }}>
-                      {list(s?.seg).map((sg, $i33) => (<Fragment key={$i33}>
+                      {list(s?.seg).map((sg, $i45) => (<Fragment key={$i45}>
                         <span style={{ width: `${sg?.w ?? ''}%`, background: sg?.color }}></span>
                       </Fragment>))}
                     </span>

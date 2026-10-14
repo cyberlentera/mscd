@@ -11,10 +11,10 @@ const empty = (page) => page.locator('main div[style*="border: 1px dashed"]');
 
 async function openGt(page) {
   await openApp(page);
-  await go(page, 'Golden Thread Viewer');
+  await go(page, 'Traceability viewer');
 }
 
-test.describe('Golden Thread Viewer', () => {
+test.describe('Traceability viewer', () => {
   test('shows the first pack chain with broken nodes and the clause at risk', async ({ page }) => {
     await openGt(page);
     await expect(suggestions(page)).toHaveText(['R-014', 'R-022', 'R-031', 'R-003', 'A.8.13', 'PRC-07', 'A.5.23']);
@@ -25,7 +25,7 @@ test.describe('Golden Thread Viewer', () => {
     await expect(rows(page).nth(5)).toContainText('Clause at risk 7.5');
     await expect(rows(page).nth(5)).toContainText('v3.2, Expired, Review due 24 Sep 2026');
     await expect(rows(page).nth(6)).toContainText('SharePoint Online, v2.0, Verified, Fresh, 18 Aug 2026');
-    await expect(page.locator('main')).toContainText(/Rendered in \d+ ms/);
+    await expect(page.locator('main [data-tip*="Rendered in"]')).toHaveAttribute('data-tip', /Rendered in \d+ ms/);
     await expect(empty(page)).toHaveCount(0);
   });
 
@@ -107,21 +107,21 @@ test.describe('Golden Thread Viewer', () => {
   test('nodes open the record they stand for', async ({ page }) => {
     await openGt(page);
     await nodeBtn(page, 1).click();
-    await expect(ui.title(page)).toHaveText('Chain stages');
+    await expect(ui.title(page)).toHaveText('Outstanding items');
     await expect(activeTab(page).locator('div').nth(1)).toHaveText('Risk');
     await expect(ui.drawer(page)).toContainText('Privileged credential misuse');
 
-    await go(page, 'Golden Thread Viewer');
+    await go(page, 'Traceability viewer');
     await nodeBtn(page, 3).click();
-    await expect(ui.title(page)).toHaveText('Controls & requirements');
+    await expect(ui.title(page)).toHaveText('Annex A controls');
     await expect(ui.drawer(page)).toContainText('A.8.2');
 
-    await go(page, 'Golden Thread Viewer');
+    await go(page, 'Traceability viewer');
     await nodeBtn(page, 6).click();
-    await expect(ui.title(page)).toHaveText('Evidence freshness');
+    await expect(ui.title(page)).toHaveText('Evidence status');
     await expect(drawerFact(page, 'Control / requirement')).toContainText('A.8.2');
 
-    await go(page, 'Golden Thread Viewer');
+    await go(page, 'Traceability viewer');
     await input(page).fill('POL-01');
     await input(page).press('Enter');
     await nodeBtn(page, 0).click();

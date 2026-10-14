@@ -11,22 +11,24 @@ test.describe('App shell', () => {
     }
   });
 
-  // Golden Thread Viewer and My Tasks have no page actions in the design; every other screen has at least one.
+  // Traceability viewer, My Tasks and Start here have no page actions in the design; every other screen has at least one.
   const PAGE_ACTIONS = {
-    'Portfolio Overview': { 'Export board': 'Board exported as PDF' },
-    'Overview': { 'Readiness report': 'Readiness report queued' },
-    'Controls & requirements': { 'Export SoA': 'Statement of Applicability exported (xlsx)', 'Add control': 'New custom control form opened' },
-    'Phase board': { 'Verify phase': 'Phase verification needs all activities Verified' },
+    'Home': { 'Export board': 'Board exported as PDF' },
+    'Readiness by clause': { 'Readiness report': 'Readiness report queued' },
+    'Annex A controls': { 'Export SoA': 'Statement of Applicability exported (xlsx)', 'Add control': 'New custom control form opened' },
+    'Roadmap': { 'Verify phase': 'Phase verification needs all activities Verified' },
     'Document register': { 'Export': 'Document register exported (xlsx)', 'New document': 'New document form opened' },
     'Audit readiness': { 'Build evidence pack': 'manifest will appear in SharePoint Online', 'Auditor access': 'Guest access link created, valid 14 days' },
-    'Chain stages': { 'Remind all holders': 'Reminders sent to 8 holders' },
-    'Golden Thread Viewer': {},
-    'Certification timeline': { 'Add audit event': 'Audit event form opened' },
-    'Evidence freshness': { 'Run integrity check': 'Integrity check started for 79 references' },
-    'Review calendar': { 'Calendar feed': 'Calendar feed (.ics) copied to clipboard' },
+    'Outstanding items': { 'Remind everyone assigned': 'Reminders sent to 8 people' },
+    'Traceability viewer': {},
+    'Certification cycle': { 'Add audit event': 'Audit event form opened' },
+    'Evidence status': { 'Run integrity check': 'Integrity check started for 79 references' },
+    'Document reviews': { 'Calendar feed': 'Calendar feed (.ics) copied to clipboard' },
     'My Tasks': {},
-    'Framework library': { 'Check for updates': 'Checked, 2 updates available' },
-    'Storage repositories': { 'Connect repository': 'Repository connection wizard opened' },
+    'Standards & licence': { 'Check for updates': 'Checked, 2 updates available' },
+    'File storage': { 'Connect repository': 'Repository connection wizard opened' },
+    'Start here': {},
+    'Team & roles': { 'Invite user': 'Invitation form opened' },
   };
   // @sample-only: in API mode page actions are api commands whose toasts carry the api's answers (exports queued for the worker, the auditor's email asked, counts from the api; H.4, WP-25 deviations 5 and 7).
   test('every screen has working page actions', { tag: '@sample-only' }, async ({ page }) => {
@@ -50,8 +52,8 @@ test.describe('App shell', () => {
     await page.locator('aside button[title="Collapse"]').click();
     await expect.poll(async () => (await aside.boundingBox()).width).toBeLessThan(80);
     await expect(page.locator('aside nav button').first().locator('span span')).toHaveCount(0);
-    await page.locator('aside nav button[title="Evidence freshness"]').click();
-    await expect(ui.title(page)).toHaveText('Evidence freshness');
+    await page.locator('aside nav button[title="Evidence status"]').click();
+    await expect(ui.title(page)).toHaveText('Evidence status');
     await page.locator('aside button[title="Expand"]').click();
     await expect.poll(async () => (await aside.boundingBox()).width).toBe(wide);
   });
@@ -71,15 +73,15 @@ test.describe('App shell', () => {
   test('language switches between English and Indonesian', async ({ page }) => {
     await openApp(page);
     await page.locator('header button', { hasText: /^ID$/ }).click();
-    await expect(ui.title(page)).toHaveText('Ikhtisar Portofolio');
-    await expect(page.locator('aside nav')).toContainText('Kesegaran bukti');
+    await expect(ui.title(page)).toHaveText('Beranda');
+    await expect(page.locator('aside nav')).toContainText('Status bukti');
     await page.locator('header button', { hasText: /^EN$/ }).click();
-    await expect(ui.title(page)).toHaveText('Portfolio Overview');
+    await expect(ui.title(page)).toHaveText('Home');
   });
 
   test('management system switcher changes the active system', async ({ page }) => {
     await openApp(page);
-    await go(page, 'Controls & requirements');
+    await go(page, 'Annex A controls');
     const sw = page.locator('header button[title="Switch management system"]');
     await expect(sw).toContainText('ISMS');
     await sw.click();
@@ -91,10 +93,10 @@ test.describe('App shell', () => {
 
   test('integrated view entry returns to the portfolio', async ({ page }) => {
     await openApp(page);
-    await go(page, 'Chain stages');
+    await go(page, 'Outstanding items');
     await page.locator('header button[title="Switch management system"]').click();
     await page.locator('header button', { hasText: 'IMS' }).click();
-    await expect(ui.title(page)).toHaveText('Portfolio Overview');
+    await expect(ui.title(page)).toHaveText('Home');
   });
 
   test('organisation switcher swaps tenant, systems and hides portfolio for single-system orgs', async ({ page }) => {
@@ -112,8 +114,8 @@ test.describe('App shell', () => {
     await orgBtn.click();
     await page.locator('aside button', { hasText: 'RS Medika Nusantara' }).click();
     await expect(orgBtn).toContainText('RS Medika Nusantara');
-    await expect(ui.title(page)).toHaveText('Overview');
-    await expect(page.locator('aside nav button[title="Portfolio Overview"]')).toHaveCount(0);
+    await expect(ui.title(page)).toHaveText('Readiness by clause');
+    await expect(page.locator('aside nav button[title="Home"]')).toHaveCount(0);
     await expect(page.locator('header button[title="Switch management system"] svg')).toHaveCount(0);
   });
 
@@ -129,13 +131,13 @@ test.describe('App shell', () => {
     await expect(ui.title(page)).toHaveText('My Tasks');
     await expect(page.locator('aside nav button')).toHaveCount(5);
     await pick('Auditor');
-    await expect(page.locator('aside nav button')).toHaveCount(9);
-    await expect(page.locator('aside nav button[title="Framework library"]')).toHaveCount(0);
+    await expect(page.locator('aside nav button')).toHaveCount(11);
+    await expect(page.locator('aside nav button[title="Standards & licence"]')).toHaveCount(0);
     await pick('Top management');
-    await expect(ui.title(page)).toHaveText('Portfolio Overview');
-    await expect(page.locator('aside nav button')).toHaveCount(6);
+    await expect(ui.title(page)).toHaveText('Home');
+    await expect(page.locator('aside nav button')).toHaveCount(8);
     await pick('MS Manager');
-    await expect(page.locator('aside nav button')).toHaveCount(14);
+    await expect(page.locator('aside nav button')).toHaveCount(16);
   });
 
   test('Tera explains every screen and can be dismissed', async ({ page }) => {

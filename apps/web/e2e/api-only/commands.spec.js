@@ -9,7 +9,7 @@ test.describe('Commands against the api @api-only', () => {
   test('BR-01 refuses a verification without current evidence with the api message', async ({ page, baseURL }) => {
     // rina (MS Manager of QMS) marks Cl. 6.3 complete; it has no evidence of the current period.
     await openApp(page);
-    await go(page, 'Controls & requirements');
+    await go(page, 'Annex A controls');
     await switchMs(page, 'QMS');
     await tab(page, 'Partially implemented').click();
     await openRow(page, 'Cl. 6.3');
@@ -19,7 +19,7 @@ test.describe('Commands against the api @api-only', () => {
     const minted = await page.request.post(baseURL + '/api/v1/test/session', { data: { handle: 'sari' }, headers: { origin: baseURL } });
     expect(minted.ok()).toBe(true);
     await openApp(page);
-    await go(page, 'Controls & requirements');
+    await go(page, 'Annex A controls');
     await switchMs(page, 'QMS');
     await tab(page, 'Partially implemented').click();
     await openRow(page, 'Cl. 6.3');
@@ -33,7 +33,7 @@ test.describe('Commands against the api @api-only', () => {
     test.use({ apiSession: 'maya' });
     test('Verify is hidden for auditors', async ({ page }) => {
       await openApp(page);
-      await go(page, 'Controls & requirements');
+      await go(page, 'Annex A controls');
       await switchMs(page, 'QMS');
       await tab(page, 'Partially implemented').click();
       await openRow(page, 'Cl. 8.7');
@@ -44,7 +44,7 @@ test.describe('Commands against the api @api-only', () => {
 
   test('a document version linked from the SharePoint picker goes to review', async ({ page }) => {
     await openApp(page);
-    await go(page, 'Controls & requirements');
+    await go(page, 'Annex A controls');
     await tab(page, 'Documents approved').click();
     await openRow(page, 'POL-01');
     const before = await drawerFact(page, 'Version').innerText();
@@ -64,7 +64,7 @@ test.describe('Commands against the api @api-only', () => {
 
   test('evidence re-linked from the SharePoint picker is pinned with its hash', async ({ page }) => {
     await openApp(page);
-    await go(page, 'Evidence freshness');
+    await go(page, 'Evidence status');
     await tab(page, 'File cannot be verified').click();
     await openRow(page, 'EV-0124');
     await expect(drawerFact(page, 'Integrity')).toHaveText('Version changed');
@@ -79,7 +79,7 @@ test.describe('Commands against the api @api-only', () => {
 
   test('evidence is uploaded to the Managed Vault and its SHA-256 recorded', async ({ page }) => {
     await openApp(page);
-    await go(page, 'Evidence freshness');
+    await go(page, 'Evidence status');
     await switchMs(page, 'QMS');
     await tab(page, 'Expired').click();
     await openRow(page, 'EQ-0154');

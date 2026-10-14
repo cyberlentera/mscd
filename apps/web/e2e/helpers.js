@@ -32,17 +32,19 @@ export const test = base.extend({
 export { expect };
 
 export const SCREENS = [
-  'Portfolio Overview', 'Overview', 'Controls & requirements', 'Phase board', 'Document register',
-  'Audit readiness', 'Chain stages', 'Golden Thread Viewer', 'Certification timeline',
-  'Evidence freshness', 'Review calendar', 'My Tasks', 'Framework library', 'Storage repositories',
+  'Home', 'Readiness by clause', 'Annex A controls', 'Roadmap', 'Document register',
+  'Audit readiness', 'Outstanding items', 'Traceability viewer', 'Certification cycle',
+  'Evidence status', 'Document reviews', 'My Tasks', 'Standards & licence', 'File storage',
+  'Start here', 'Team & roles',
 ];
 export const SCREENS_ID = [
-  'Ikhtisar Portofolio', 'Ikhtisar', 'Kontrol & persyaratan', 'Papan fase', 'Register dokumen',
-  'Kesiapan audit', 'Tahap rantai', 'Golden Thread Viewer', 'Linimasa sertifikasi',
-  'Kesegaran bukti', 'Kalender review', 'Tugas Saya', 'Pustaka framework', 'Repositori penyimpanan',
+  'Beranda', 'Kesiapan per klausul', 'Kontrol Annex A', 'Peta jalan', 'Daftar induk dokumen',
+  'Kesiapan audit', 'Item belum siap', 'Penelusuran rantai', 'Siklus sertifikasi',
+  'Status bukti', 'Tinjauan dokumen', 'Tugas Saya', 'Standar & lisensi', 'Penyimpanan berkas',
+  'Mulai di sini', 'Tim & peran',
 ];
 // Screens with a filterable list and row details (the drill-down screens).
-export const DRILL_SCREENS = ['Controls & requirements', 'Document register', 'Chain stages', 'Evidence freshness', 'Review calendar', 'Storage repositories'];
+export const DRILL_SCREENS = ['Annex A controls', 'Document register', 'Outstanding items', 'Evidence status', 'Document reviews', 'File storage'];
 
 export async function openApp(page, query = '') {
   await page.goto('/' + query);
@@ -55,9 +57,16 @@ export async function closeDrawerIfOpen(page) {
     await expect(page.locator('div[style*="z-index: 41"]')).toHaveCount(0);
   }
 }
+// Only ISMS has Annex A controls; the other systems name the same screen after their requirements.
+const REQS = { 'Annex A controls': 'Requirements', 'Kontrol Annex A': 'Persyaratan' };
 export async function go(page, label) {
   await closeDrawerIfOpen(page);
-  await page.locator(`aside nav button[title="${label}"]`).click();
+  let btn = page.locator(`aside nav button[title="${label}"]`);
+  if (REQS[label] && !(await btn.count())) {
+    label = REQS[label];
+    btn = page.locator(`aside nav button[title="${label}"]`);
+  }
+  await btn.click();
   await expect(page.locator('main h1')).toHaveText(label);
 }
 
@@ -121,7 +130,7 @@ export const drawerAction = (page, label) => ui.drawer(page).locator(`button[tit
 export const drawerFact = (page, key) => ui.drawer(page).locator('xpath=.//div[normalize-space(text())="' + key + '"]/following-sibling::div[1]');
 export const drawerLinks = (page, which) => ui.drawer(page).locator('xpath=.//div[normalize-space(text())="' + which + '"]/following-sibling::div[1]/button');
 export async function openRow(page, text) {
-  await listRow(page, text).click();
+  await listRow(page, text).locator('td').first().click();
   await expect(ui.drawer(page)).toBeVisible();
   await expect(ui.drawer(page)).toContainText(text);
 }

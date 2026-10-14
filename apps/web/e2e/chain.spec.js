@@ -8,20 +8,20 @@ const heroNum = (page, label) => hero(page).locator('div[style*="text-align: cen
 const people = (page) => page.locator('main tr[data-hov]');
 const person = (page, name) => people(page).filter({ hasText: name });
 const statusCol = (page) => listRows(page).locator('td:nth-child(4)');
-const ids = (page) => listRows(page).locator('td:nth-child(2) > span:first-child');
+const ids = (page) => listRows(page).locator('td:nth-child(2) > div > :first-child');
 
 async function openChain(page) {
   await openApp(page);
-  await go(page, 'Chain stages');
+  await go(page, 'Outstanding items');
 }
 
-test.describe('Chain stages', () => {
+test.describe('Outstanding items', () => {
   test('hero totals are visible and match the stage tabs', async ({ page }) => {
     await openChain(page);
-    await expect(heroNum(page, 'Open along the chain')).toHaveText('63');
+    await expect(heroNum(page, 'Outstanding items')).toHaveText('63');
     // the open count must be readable on the dark hero, not drawn in the hero background colour
     const [fg, bg] = await Promise.all([
-      heroNum(page, 'Open along the chain').evaluate((e) => getComputedStyle(e).color),
+      heroNum(page, 'Outstanding items').evaluate((e) => getComputedStyle(e).color),
       hero(page).evaluate((e) => getComputedStyle(e).backgroundColor),
     ]);
     expect(fg).not.toBe(bg);
@@ -60,16 +60,16 @@ test.describe('Chain stages', () => {
   test('status chips filter a stage: open, pending, overdue, missing, after audit, ready and all', async ({ page }) => {
     await openChain(page);
     await tab(page, 'Control').click();
-    await expect(chips(page)).toHaveText([/Open\s*28/, /Pending\s*26/, /Missing\s*2/, /After audit\s*13/, /Ready\s*65/, /All\s*93/]);
+    await expect(chips(page)).toHaveText([/Open\s*28/, /Pending\s*26/, /Missing\s*2/, /Due after audit\s*13/, /Ready\s*65/, /All\s*93/]);
     await chip(page, 'Pending').click();
     await expectShown(page, 26);
     await expect(statusCol(page)).toHaveText(Array(26).fill('Pending'));
     await chip(page, 'Missing').click();
     await expect(ids(page)).toHaveText(['A.5.23', 'A.8.12']);
     await expect(statusCol(page)).toHaveText(['Missing', 'Missing']);
-    await chip(page, 'After audit').click();
+    await chip(page, 'Due after audit').click();
     await expect(ids(page)).toHaveText(['A.5.7', 'A.5.9', 'A.5.19', 'A.5.21', 'A.5.22', 'A.6.3', 'A.7.4', 'A.7.7', 'A.8.13', 'A.8.15', 'A.8.24', 'A.8.32', 'A.8.33']);
-    await expect(listRows(page).locator('td:nth-child(7)')).toHaveText(Array(13).fill(/After audit/));
+    await expect(listRows(page).locator('td:nth-child(7)')).toHaveText(Array(13).fill(/Due after audit/));
     await chip(page, 'Ready').click();
     await expectShown(page, 30);
     await expect(moreButton(page)).toHaveText('+ 35');
@@ -97,7 +97,7 @@ test.describe('Chain stages', () => {
     await expect(listRows(page)).toHaveCount(3);
     await search(page, 'Fajar after');
     await expect(listRows(page)).toHaveCount(0);
-    await search(page, 'gate');
+    await search(page, 'justification missing');
     await expect(ids(page)).toHaveText(['A.5.23', 'A.8.12']);
     await search(page, '');
     await expectShown(page, 28);
@@ -109,40 +109,40 @@ test.describe('Chain stages', () => {
     await expect(person(page, 'Bagus Prasetyo').locator('td')).toHaveText([/Bagus Prasetyo/, '26', '15', '4', '8 Jun 2026', 'Risk, Risk treatment, Control, SoA, Document, Evidence, Metric']);
     await expect(person(page, 'Unassigned').locator('td').nth(1)).toHaveText('2');
     await person(page, 'Bagus Prasetyo').click();
-    await expect(page.locator('main')).toContainText('Showing items held by Bagus Prasetyo, IT Infrastructure Lead');
+    await expect(page.locator('main')).toContainText('Showing items assigned to Bagus Prasetyo, IT Infrastructure Lead');
     await expect(activeTab(page)).toHaveCount(0);
-    await expect(chips(page)).toHaveText([/Open\s*26/, /Pending\s*11/, /Overdue\s*12/, /Missing\s*3/, /After audit\s*4/]);
+    await expect(chips(page)).toHaveText([/Open\s*26/, /Pending\s*11/, /Overdue\s*12/, /Missing\s*3/, /Due after audit\s*4/]);
     await expect(listRows(page)).toHaveCount(26);
     // sorted by due date, with the stage shown under each record
     await expect(ids(page).first()).toHaveText('EV-0319');
-    await expect(listRows(page).first()).toContainText('Evidence');
+    await expect(listRows(page).first().locator('[data-tip="Evidence"]')).toHaveCount(1);
     await expect(listRows(page).first()).toContainText('8 Jun 2026');
     await chip(page, 'Overdue').click();
     await expect(listRows(page)).toHaveCount(12);
     await person(page, 'Bagus Prasetyo').click();
-    await expect(page.locator('main')).not.toContainText('Showing items held by');
+    await expect(page.locator('main')).not.toContainText('Showing items assigned to');
     await expect(activeTab(page)).toHaveCount(1);
 
     await person(page, 'Yusuf Rahman').click();
     await expect(listRows(page)).toHaveCount(10);
     await page.locator('main button[title="Clear"]').click();
-    await expect(page.locator('main')).not.toContainText('Showing items held by');
+    await expect(page.locator('main')).not.toContainText('Showing items assigned to');
     await expect(activeTab(page).locator('div').nth(1)).toHaveText('Context issue');
   });
 
-  test('Remind all holders counts the people who receive a reminder', async ({ page }) => {
+  test('Remind everyone assigned counts the people who receive a reminder', async ({ page }) => {
     await openChain(page);
-    await ui.pageAction(page, 'Remind all holders').click();
-    await expect(ui.toast(page)).toHaveText('Reminders sent to 8 holders');
+    await ui.pageAction(page, 'Remind everyone assigned').click();
+    await expect(ui.toast(page)).toHaveText('Reminders sent to 8 people');
     await switchMs(page, 'QMS');
-    await ui.pageAction(page, 'Remind all holders').click();
-    await expect(ui.toast(page)).toHaveText('Reminders sent to 4 holders');
+    await ui.pageAction(page, 'Remind everyone assigned').click();
+    await expect(ui.toast(page)).toHaveText('Reminders sent to 4 people');
   });
 
   test('changing a due date past the audit flags the item and updates the counts', async ({ page }) => {
     await openChain(page);
     await tab(page, 'Risk').click();
-    expect(await chipCount(page, 'After audit')).toBe(1);
+    expect(await chipCount(page, 'Due after audit')).toBe(1);
     await openRow(page, 'R-022');
     await drawerAction(page, 'Change due date').click();
     const modal = ui.modal(page);
@@ -154,20 +154,20 @@ test.describe('Chain stages', () => {
     await modal.locator('button', { hasText: 'Save' }).click();
     await expectToast(page, 'Item updated. After-audit flag recalculated.');
     await expect(listRow(page, 'R-022')).toContainText('1 Dec 2026');
-    await expect(listRow(page, 'R-022')).toContainText('After audit');
-    expect(await chipCount(page, 'After audit')).toBe(2);
+    await expect(listRow(page, 'R-022')).toContainText('Due after audit');
+    expect(await chipCount(page, 'Due after audit')).toBe(2);
     await expect(heroNum(page, 'Due after audit date')).toHaveText('17');
     await expect(person(page, 'Hendra Wijaya').locator('td').nth(3)).toHaveText('1');
-    await expect(ui.drawer(page)).toContainText('After audit');
-    await expect(drawerFact(page, 'Due date')).toHaveText('1 Dec 2026, After audit');
+    await expect(ui.drawer(page)).toContainText('Due after audit');
+    await expect(drawerFact(page, 'Due date')).toHaveText('1 Dec 2026, Due after audit');
 
     // moving it back before the audit clears the flag
     await drawerAction(page, 'Change due date').click();
     await modal.locator('input[type="date"]').fill('2026-10-30');
     await expect(modal).not.toContainText('This date falls after the audit event');
     await modal.locator('button', { hasText: 'Save' }).click();
-    await expect(listRow(page, 'R-022')).not.toContainText('After audit');
-    expect(await chipCount(page, 'After audit')).toBe(1);
+    await expect(listRow(page, 'R-022')).not.toContainText('Due after audit');
+    expect(await chipCount(page, 'Due after audit')).toBe(1);
     await expect(heroNum(page, 'Due after audit date')).toHaveText('16');
   });
 
@@ -189,7 +189,7 @@ test.describe('Chain stages', () => {
     await expect(ui.modal(page)).toHaveCount(0);
     await expect(listRow(page, 'R-022').locator('td:nth-child(4)')).toHaveText('Pending');
     await expect(listRow(page, 'R-022')).toContainText('29 Oct 2026');
-    await expect(chips(page)).toHaveText([/Open\s*5/, /Pending\s*4/, /Overdue\s*1/, /After audit\s*1/]);
+    await expect(chips(page)).toHaveText([/Open\s*5/, /Pending\s*4/, /Overdue\s*1/, /Due after audit\s*1/]);
     await expect(heroNum(page, 'Overdue / missing')).toHaveText('24');
   });
 
@@ -209,7 +209,7 @@ test.describe('Chain stages', () => {
     await tab(page, 'Risk treatment').click();
     await openRow(page, 'T-031');
     await expect(ui.drawer(page)).toContainText('Missing');
-    await expect(drawerFact(page, 'Holder')).toHaveText('Unassigned, -');
+    await expect(drawerFact(page, 'Assigned to')).toHaveText('Unassigned, -');
     // without a holder the primary action is Reassign
     await expect(drawerAction(page, 'Reassign')).toHaveCSS('background-color', 'rgb(173, 79, 11)');
     await drawerAction(page, 'Reassign').click();
@@ -218,7 +218,7 @@ test.describe('Chain stages', () => {
     await ui.modal(page).locator('button', { hasText: 'Save' }).click();
     await expect(listRow(page, 'T-031').locator('td:nth-child(4)')).toHaveText('Pending');
     await expect(listRow(page, 'T-031')).toContainText('Rina Kusuma');
-    await expect(chips(page)).toHaveText([/Open\s*4/, /Pending\s*3/, /Overdue\s*1/, /After audit\s*1/]);
+    await expect(chips(page)).toHaveText([/Open\s*4/, /Pending\s*3/, /Overdue\s*1/, /Due after audit\s*1/]);
     await expect(heroNum(page, 'Overdue / missing')).toHaveText('23');
   });
 
@@ -227,16 +227,16 @@ test.describe('Chain stages', () => {
     await tab(page, 'Risk').click();
     await openRow(page, 'R-014');
     await expect(drawerFact(page, 'Stage')).toHaveText('Risk');
-    await expect(drawerFact(page, 'Pending action')).toHaveText('Annual reassessment');
-    await expect(drawerFact(page, 'Holder')).toHaveText('Bagus Prasetyo, IT Infrastructure Lead');
+    await expect(drawerFact(page, 'Next action')).toHaveText('Annual reassessment');
+    await expect(drawerFact(page, 'Assigned to')).toHaveText('Bagus Prasetyo, IT Infrastructure Lead');
     await expect(drawerFact(page, 'Due date')).toHaveText('10 Sep 2026');
     await expect(ui.drawer(page)).toContainText('Show me how this risk was identified and assessed.');
-    await expect(drawerLinks(page, 'Upstream')).toHaveText(['CI-02']);
-    await expect(drawerLinks(page, 'Downstream')).toHaveText(['T-014', 'A.8.2']);
+    await expect(drawerLinks(page, 'Linked from')).toHaveText(['CI-02']);
+    await expect(drawerLinks(page, 'Leads to')).toHaveText(['T-014', 'A.8.2']);
     await drawerAction(page, 'Send reminder').click();
     await expectToast(page, 'Reminder sent to Bagus Prasetyo, email + in-app');
-    await drawerLinks(page, 'Upstream').click();
-    await expect(ui.title(page)).toHaveText('Golden Thread Viewer');
+    await drawerLinks(page, 'Linked from').click();
+    await expect(ui.title(page)).toHaveText('Traceability viewer');
     await expect(page.locator('main input[placeholder^="Enter any ID"]')).toHaveValue('CI-02');
     await expect(page.locator('main')).not.toContainText('No record found');
     await expect(page.locator('main')).toContainText('Dependence on privileged administrators');
@@ -254,9 +254,9 @@ test.describe('Chain stages', () => {
   test('top management sees the chain without the per-person table', async ({ page }) => {
     await openApp(page);
     await switchRole(page, 'Top Management');
-    await go(page, 'Chain stages');
+    await go(page, 'Outstanding items');
     await expect(listRows(page)).toHaveCount(1);
-    await expect(page.locator('main')).not.toContainText('Pending per person');
+    await expect(page.locator('main')).not.toContainText('Outstanding by person');
   });
 
   test('a system without an audit shows the no-audit state with its stages', async ({ page }) => {

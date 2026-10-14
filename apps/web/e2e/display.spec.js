@@ -4,7 +4,7 @@ import {
 } from './helpers.js';
 
 const SYSTEMS = ['ISMS', 'QMS', 'BCMS', 'ABMS'];
-// Screens with summary cards used as tabs: Controls & requirements, Chain stages, Evidence freshness.
+// Screens with summary cards used as tabs: Annex A controls, Outstanding items, Evidence status.
 const TAB_SCREENS = [2, 6, 9];
 
 async function check(page, { textOverflow, contrast }) {
@@ -28,10 +28,10 @@ async function visitAll(page, labels, { textOverflow = true, contrast = false } 
       }
     }
     if (await list(page).count() && await listRows(page).count()) {
-      await listRows(page).first().click();
+      await listRows(page).first().locator('td').first().click();
       await expect(ui.drawer(page)).toBeVisible();
       await check(page, opts);
-      const reassign = ui.drawer(page).locator('button[title="Reassign"], button[title="Alihkan"]');
+      const reassign = ui.drawer(page).locator('button[title="Reassign"], button[title="Ganti PIC"]');
       if (await reassign.count()) {
         await reassign.click();
         await expect(ui.modal(page)).toBeVisible();
@@ -52,6 +52,7 @@ async function openIn(page, query, ms) {
 test.describe('Display settings', () => {
   for (const ms of SYSTEMS) {
     test(`dark theme renders every ${ms} screen with readable text`, async ({ page }) => {
+      test.slow(); // walks every screen of the system
       await openIn(page, '?theme=dark', ms);
       const root = page.locator('.mscd').first();
       await expect(root).toHaveAttribute('data-theme', 'dark');
@@ -63,8 +64,8 @@ test.describe('Display settings', () => {
 
   test('dark theme carries into the drawer and modals', async ({ page }) => {
     await openApp(page, '?theme=dark');
-    await go(page, 'Controls & requirements');
-    await listRows(page).first().click();
+    await go(page, 'Annex A controls');
+    await listRows(page).first().locator('td').first().click();
     await expect(ui.drawer(page)).toHaveAttribute('data-theme', 'dark');
     await expect(ui.drawer(page)).toHaveCSS('background-color', 'rgb(28, 26, 23)');
     await ui.drawer(page).locator('button[title="Reassign"]').click();
@@ -80,7 +81,7 @@ test.describe('Display settings', () => {
     await expect(hero).toHaveCSS('color', 'rgb(242, 238, 231)');
     await expectReadableText(page, 3);
     // filled step circles draw dark text on the bright dark-theme status colours
-    await go(page, 'Phase board');
+    await go(page, 'Roadmap');
     const circle = page.locator('main button[title="Initiation & mandate"] > span').first();
     await expect(circle).toHaveCSS('background-color', 'rgb(95, 207, 144)');
     await expect(circle).toHaveCSS('color', 'rgb(19, 18, 16)');
@@ -88,6 +89,7 @@ test.describe('Display settings', () => {
 
   for (const ms of SYSTEMS) {
     test(`Indonesian renders every ${ms} screen with translated titles and no leftover keys`, async ({ page }) => {
+      test.slow(); // walks every screen of the system
       await openIn(page, '?lang=id', ms);
       await expect(page.locator('aside nav button')).toHaveCount(SCREENS_ID.length);
       for (const label of SCREENS_ID) {
@@ -102,14 +104,14 @@ test.describe('Display settings', () => {
 
   test('Indonesian translates statuses, chips and dates', async ({ page }) => {
     await openApp(page, '?lang=id');
-    await go(page, 'Kontrol & persyaratan');
+    await go(page, 'Kontrol Annex A');
     await expect(page.locator('main')).toContainText('Kontrol diterapkan');
     await expect(listRows(page).first()).toContainText('Diterapkan');
-    await go(page, 'Kalender review');
+    await go(page, 'Tinjauan dokumen');
     await expect(page.locator('main')).toContainText('Terlambat');
     await expect(page.locator('main')).toContainText('Okt 2026');
-    await go(page, 'Kesegaran bukti');
-    await expect(page.locator('main')).toContainText('Kesegaran per frekuensi operasi');
+    await go(page, 'Status bukti');
+    await expect(page.locator('main')).toContainText('Kemutakhiran per frekuensi operasi');
   });
 
   for (const [density, rowHeight, pad] of [['dense', 36, '10px'], ['airy', 60, '24px']]) {
@@ -117,13 +119,14 @@ test.describe('Display settings', () => {
       await openApp(page, '?density=' + density);
       const root = page.locator('.mscd').first();
       await expect(root).toHaveAttribute('data-density', density);
-      await go(page, 'Controls & requirements');
+      await go(page, 'Annex A controls');
       const h = await listRows(page).first().evaluate((r) => r.querySelector('td').getBoundingClientRect().height);
       expect(h).toBeGreaterThanOrEqual(rowHeight);
       expect(await root.evaluate((e) => getComputedStyle(e).getPropertyValue('--pad').trim())).toBe(pad);
     });
     for (const ms of SYSTEMS) {
       test(`${density} density renders every ${ms} screen`, async ({ page }) => {
+        test.slow(); // walks every screen of the system
         await openIn(page, '?density=' + density, ms);
         await visitAll(page, SCREENS);
       });
@@ -140,6 +143,7 @@ test.describe('Display settings', () => {
       // The pairing comes from Google Fonts and falls back to system fonts when that is unreachable
       // (the on-premise image does not load it by default), so the text must fit with either.
       test(`${font} font pairing renders every ${ms} screen`, async ({ page }) => {
+        test.slow(); // walks every screen of the system
         await openIn(page, '?font=' + font, ms);
         await page.evaluate(() => document.fonts.ready);
         await visitAll(page, SCREENS);
@@ -166,7 +170,7 @@ test.describe('Display settings', () => {
     await expect(root).toHaveAttribute('data-theme', 'light');
     await expect(root).toHaveAttribute('data-density', 'comfortable');
     await expect(root).toHaveAttribute('data-font', 'plex');
-    await expect(ui.title(page)).toHaveText('Portfolio Overview');
+    await expect(ui.title(page)).toHaveText('Home');
     await expect(page.locator('main svg[viewBox="0 0 120 120"]')).toHaveCount(4);
   });
 });
@@ -175,6 +179,7 @@ test.describe('Viewport widths', () => {
   for (const width of [1280, 1920]) {
     for (const ms of SYSTEMS) {
       test(`every ${ms} screen fits at ${width} px`, async ({ page }) => {
+        test.slow(); // walks every screen of the system
         await page.setViewportSize({ width, height: 900 });
         await openIn(page, '', ms);
         await visitAll(page, SCREENS);

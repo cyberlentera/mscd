@@ -22,7 +22,7 @@ test.describe('Audit readiness', () => {
     await expect(hero(page)).toContainText('PT Sertifikasi Nusantara, Ir. Dwi Hartanto, IRCA LA');
     await expect(hero(page)).toContainText('44');
     await expect(hero(page)).toContainText('days left, 12 Nov 2026');
-    await expect(hero(page)).toContainText(/63\s*Open along the chain\s*of 402 records/);
+    await expect(hero(page)).toContainText(/63\s*Outstanding items\s*of 402 records/);
     await expect(hero(page)).toContainText(/24\s*Overdue \/ missing/);
     await expect(hero(page)).toContainText(/16\s*Due after audit date/);
     await expect(hero(page)).toContainText(/339\s*Records ready/);
@@ -42,7 +42,7 @@ test.describe('Audit readiness', () => {
   });
 
   for (const [id, ids, colors, text] of [
-    ['R-022', ['CI-05', 'R-022', 'T-022', 'A.5.23', 'A.5.23', 'POL-14', '-', 'M-03'], [OK, WARN, OK, BAD, BAD, OK, BAD, OK], '3 break points: Control A.5.23: Resolve gate item: justification missing'],
+    ['R-022', ['CI-05', 'R-022', 'T-022', 'A.5.23', 'A.5.23', 'POL-14', '-', 'M-03'], [OK, WARN, OK, BAD, BAD, OK, BAD, OK], '3 break points: Control A.5.23: Resolve blocking item: justification missing'],
     ['R-031', ['CI-03', 'R-031', 'T-031', 'A.8.8', 'A.8.8', 'PRC-10', 'EV-0298', 'M-07'], [OK, WARN, BAD, WARN, WARN, OK, BAD, BAD], '3 break points: Risk treatment T-031: Assign owner and plan treatment (Unassigned)'],
     ['R-003', ['CI-01', 'R-003', 'T-003', 'A.5.15', 'A.5.15', 'PRC-07', 'EV-0142', 'M-02'], [OK, OK, OK, OK, OK, BAD, OK, OK], '1 break point: Document PRC-07: Start review: review date passed'],
   ]) {
@@ -71,31 +71,31 @@ test.describe('Audit readiness', () => {
   test('chain nodes open the record they stand for', async ({ page }) => {
     await openAudit(page);
     await nodes(page).nth(1).click();
-    await expect(ui.title(page)).toHaveText('Chain stages');
+    await expect(ui.title(page)).toHaveText('Outstanding items');
     await expect(activeTab(page).locator('div').nth(1)).toHaveText('Risk');
     await expect(ui.drawer(page)).toContainText('R-014');
-    await expect(drawerFact(page, 'Pending action')).toHaveText('Annual reassessment');
+    await expect(drawerFact(page, 'Next action')).toHaveText('Annual reassessment');
 
     await go(page, 'Audit readiness');
     await nodes(page).nth(3).click();
-    await expect(ui.title(page)).toHaveText('Controls & requirements');
+    await expect(ui.title(page)).toHaveText('Annex A controls');
     await expect(ui.drawer(page)).toContainText('A.8.2');
     await expect(ui.drawer(page)).toContainText('Privileged access rights');
 
     await go(page, 'Audit readiness');
     await nodes(page).nth(6).click();
-    await expect(ui.title(page)).toHaveText('Evidence freshness');
+    await expect(ui.title(page)).toHaveText('Evidence status');
     await expect(ui.drawer(page)).toContainText('EV-0280');
 
     await go(page, 'Audit readiness');
     await nodes(page).nth(5).click();
-    await expect(ui.title(page)).toHaveText('Chain stages');
+    await expect(ui.title(page)).toHaveText('Outstanding items');
     await expect(activeTab(page).locator('div').nth(1)).toHaveText('Document');
     await expect(ui.drawer(page)).toContainText('PRC-07');
 
     await go(page, 'Audit readiness');
     await nodes(page).nth(0).click();
-    await expect(ui.title(page)).toHaveText('Chain stages');
+    await expect(ui.title(page)).toHaveText('Outstanding items');
     await expect(activeTab(page).locator('div').nth(1)).toHaveText('Context issue');
     await expect(ui.drawer(page)).toHaveCount(0);
   });
@@ -108,7 +108,7 @@ test.describe('Audit readiness', () => {
     await expect(stageRows(page).nth(3).locator('td')).toHaveText([/Control/, '70%', '93', '26', '2', '13', '2 Oct 2026']);
     await expect(stageRows(page).nth(6).locator('td')).toHaveText([/Evidence/, '87%', '79', '0', '10', '0', '-']);
     await stageRows(page).nth(6).click();
-    await expect(ui.title(page)).toHaveText('Chain stages');
+    await expect(ui.title(page)).toHaveText('Outstanding items');
     await expect(activeTab(page).locator('div').nth(1)).toHaveText('Evidence');
   });
 

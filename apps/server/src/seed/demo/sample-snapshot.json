@@ -4879,8 +4879,8 @@
          "Information security for use of cloud services"
         ],
         "act": [
-         "Resolve gate item: justification missing",
-         "Selesaikan item gate: justifikasi belum ada"
+         "Resolve blocking item: justification missing",
+         "Selesaikan item penghambat: justifikasi belum ada"
         ],
         "h": "andi",
         "due": null,
@@ -5156,8 +5156,8 @@
          "Data leakage prevention"
         ],
         "act": [
-         "Resolve gate item: justification missing",
-         "Selesaikan item gate: justifikasi belum ada"
+         "Resolve blocking item: justification missing",
+         "Selesaikan item penghambat: justifikasi belum ada"
         ],
         "h": "bagus",
         "due": null,
@@ -10567,8 +10567,8 @@
          "Business impact analysis and risk assessment"
         ],
         "act": [
-         "Resolve gate item: justification missing",
-         "Selesaikan item gate: justifikasi belum ada"
+         "Resolve blocking item: justification missing",
+         "Selesaikan item penghambat: justifikasi belum ada"
         ],
         "h": "tono",
         "due": null,
@@ -12376,8 +12376,8 @@
          "Bribery risk assessment"
         ],
         "act": [
-         "Resolve gate item: justification missing",
-         "Selesaikan item gate: justifikasi belum ada"
+         "Resolve blocking item: justification missing",
+         "Selesaikan item penghambat: justifikasi belum ada"
         ],
         "h": "lina",
         "due": null,
@@ -20049,8 +20049,8 @@
          "Information security for use of cloud services"
         ],
         "act": [
-         "Resolve gate item: justification missing",
-         "Selesaikan item gate: justifikasi belum ada"
+         "Resolve blocking item: justification missing",
+         "Selesaikan item penghambat: justifikasi belum ada"
         ],
         "h": "andi",
         "due": null,
@@ -20326,8 +20326,8 @@
          "Data leakage prevention"
         ],
         "act": [
-         "Resolve gate item: justification missing",
-         "Selesaikan item gate: justifikasi belum ada"
+         "Resolve blocking item: justification missing",
+         "Selesaikan item penghambat: justifikasi belum ada"
         ],
         "h": "bagus",
         "due": null,
@@ -30415,8 +30415,8 @@
          "Information security for use of cloud services"
         ],
         "act": [
-         "Resolve gate item: justification missing",
-         "Selesaikan item gate: justifikasi belum ada"
+         "Resolve blocking item: justification missing",
+         "Selesaikan item penghambat: justifikasi belum ada"
         ],
         "h": "andi",
         "due": null,
@@ -30692,8 +30692,8 @@
          "Data leakage prevention"
         ],
         "act": [
-         "Resolve gate item: justification missing",
-         "Selesaikan item gate: justifikasi belum ada"
+         "Resolve blocking item: justification missing",
+         "Selesaikan item penghambat: justifikasi belum ada"
         ],
         "h": "bagus",
         "due": null,
@@ -34002,7 +34002,9 @@
    ]
   },
   "TERA_KEYS": [
+   "journey",
    "portfolio",
+   "team",
    "m1overview",
    "controls",
    "phases",

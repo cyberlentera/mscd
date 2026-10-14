@@ -7,13 +7,13 @@ const isActiveChip = (l) => expect(l).toHaveAttribute('style', /background: var\
 
 // Inline rows keep the header clickable, so expanded rows, filters and search must all reset on a system switch.
 test.describe('Management system switching resets the selection', () => {
-  test('Controls & requirements', async ({ page }) => {
+  test('Annex A controls', async ({ page }) => {
     await openApp(page, '?drill=inline');
-    await go(page, 'Controls & requirements');
+    await go(page, 'Annex A controls');
     await tab(page, 'Partially implemented').click();
     await chip(page, 'Partial').click();
     await search(page, 'A.5');
-    await listRows(page).first().click();
+    await listRows(page).first().locator('td').first().click();
     await expect(inlineDetails(page)).toHaveCount(1);
     await switchMs(page, 'QMS');
     await expect(inlineDetails(page)).toHaveCount(0);
@@ -22,25 +22,25 @@ test.describe('Management system switching resets the selection', () => {
     await expectShown(page, 22);
   });
 
-  test('Chain stages', async ({ page }) => {
+  test('Outstanding items', async ({ page }) => {
     await openApp(page, '?drill=inline');
-    await go(page, 'Chain stages');
+    await go(page, 'Outstanding items');
     await page.locator('main tr[data-hov]').filter({ hasText: 'Bagus Prasetyo' }).click();
-    await listRows(page).first().click();
+    await listRows(page).first().locator('td').first().click();
     await expect(inlineDetails(page)).toHaveCount(1);
     await switchMs(page, 'QMS');
-    await expect(page.locator('main')).not.toContainText('Showing items held by');
+    await expect(page.locator('main')).not.toContainText('Showing items assigned to');
     await expect(inlineDetails(page)).toHaveCount(0);
     await expect(activeTab(page).locator('div').nth(1)).toHaveText('Context issue');
     await expect(page.locator('main tr[data-hov]')).toHaveCount(4);
   });
 
-  test('Evidence freshness', async ({ page }) => {
+  test('Evidence status', async ({ page }) => {
     await openApp(page, '?drill=inline');
-    await go(page, 'Evidence freshness');
+    await go(page, 'Evidence status');
     await tab(page, 'Expired').click();
     await page.locator('main button[style*="grid-template-columns: 110px 1fr 120px"]').filter({ hasText: 'Quarterly' }).click();
-    await listRows(page).first().click();
+    await listRows(page).first().locator('td').first().click();
     await expect(inlineDetails(page)).toHaveCount(1);
     await switchMs(page, 'QMS');
     await expect(activeTab(page)).toHaveCount(0);
@@ -49,35 +49,35 @@ test.describe('Management system switching resets the selection', () => {
     await expectShown(page, 27);
   });
 
-  test('Document register and Review calendar', async ({ page }) => {
+  test('Document register and Document reviews', async ({ page }) => {
     await openApp(page, '?drill=inline');
     await go(page, 'Document register');
     await chip(page, 'Expired').click();
-    await listRows(page).first().click();
+    await listRows(page).first().locator('td').first().click();
     await switchMs(page, 'BCMS');
     await isActiveChip(chip(page, 'All'));
     await expect(inlineDetails(page)).toHaveCount(0);
-    await go(page, 'Review calendar');
+    await go(page, 'Document reviews');
     await search(page, 'IMS');
     await switchMs(page, 'ABMS');
     await expect(ui.search(page)).toHaveValue('');
     await expect(listRows(page)).toHaveCount(3);
   });
 
-  test('Storage repositories', async ({ page }) => {
+  test('File storage', async ({ page }) => {
     await openApp(page, '?drill=inline');
-    await go(page, 'Storage repositories');
+    await go(page, 'File storage');
     await chip(page, 'All').click();
-    await listRows(page).first().click();
+    await listRows(page).first().locator('td').first().click();
     await expect(inlineDetails(page)).toHaveCount(1);
     await switchMs(page, 'BCMS');
     await isActiveChip(chip(page, 'Needs attention'));
     await expect(inlineDetails(page)).toHaveCount(0);
   });
 
-  test('Phase board and Audit readiness', async ({ page }) => {
+  test('Roadmap and Audit readiness', async ({ page }) => {
     await openApp(page, '?drill=inline');
-    await go(page, 'Phase board');
+    await go(page, 'Roadmap');
     await page.locator('main button[title="Initiation & mandate"]').click();
     await switchMs(page, 'QMS');
     await expect(page.locator('main')).toContainText('9. ISO 9001:2026 transition');
@@ -89,7 +89,7 @@ test.describe('Management system switching resets the selection', () => {
 
   test('"show more" starts again from the first page', async ({ page }) => {
     await openApp(page);
-    await go(page, 'Controls & requirements');
+    await go(page, 'Annex A controls');
     await chip(page, 'All').click();
     await list(page).locator('xpath=./div[last()]/button').click();
     await expect(listRows(page)).toHaveCount(60);
@@ -104,7 +104,7 @@ test.describe('Organisation switching', () => {
   test('a two-system on-premise organisation', { tag: '@sample-only' }, async ({ page }) => {
     await openApp(page);
     await switchOrg(page, 'PT Bank Sentosa Digital');
-    await expect(ui.title(page)).toHaveText('Portfolio Overview');
+    await expect(ui.title(page)).toHaveText('Home');
     await expect(page.locator('main svg[viewBox="0 0 120 120"]')).toHaveCount(2);
     await expect(page.locator('main button[style*="grid-template-columns: 46px"]').filter({ hasText: /BCMS|ABMS/ })).toHaveCount(0);
     await ui.orgButton(page).click();
@@ -117,63 +117,63 @@ test.describe('Organisation switching', () => {
     await ui.msSwitch(page).click();
     await expect(page.locator('header div[style*="width: 420px"] button')).toHaveText([/ISMS/, /QMS/, /Integrated view/]);
     await ui.msSwitch(page).click();
-    await go(page, 'Certification timeline');
+    await go(page, 'Certification cycle');
     await expect(page.locator('main div[style*="height: 58px"]')).toHaveCount(2);
   });
 
   test('a single-system organisation lands on Overview without the portfolio', async ({ page }) => {
     await openApp(page);
     await switchOrg(page, 'RS Medika Nusantara');
-    await expect(ui.title(page)).toHaveText('Overview');
-    await expect(ui.nav(page, 'Portfolio Overview')).toHaveCount(0);
-    await expect(ui.navItems(page)).toHaveCount(13);
+    await expect(ui.title(page)).toHaveText('Readiness by clause');
+    await expect(ui.nav(page, 'Home')).toHaveCount(0);
+    await expect(ui.navItems(page)).toHaveCount(15);
     await expect(ui.msSwitch(page).locator('svg')).toHaveCount(0);
     await ui.msSwitch(page).click();
     await expect(page.locator('header div[style*="width: 420px"]')).toHaveCount(0);
-    await go(page, 'Framework library');
+    await go(page, 'Standards & licence');
     await expect(page.locator('main table tbody > tr')).toHaveCount(1);
-    await go(page, 'Storage repositories');
+    await go(page, 'File storage');
     await expect(page.locator('main div[style*="box-shadow"][style*="gap: 10px"]').filter({ hasText: 'references' })).toHaveCount(2);
   });
 
   test('switching organisation clears filters and returns to the full tenant', async ({ page }) => {
     await openApp(page, '?drill=inline');
-    await go(page, 'Controls & requirements');
+    await go(page, 'Annex A controls');
     await chip(page, 'All').click();
     await search(page, 'backup');
-    await listRows(page).first().click();
+    await listRows(page).first().locator('td').first().click();
     await expect(inlineDetails(page)).toHaveCount(1);
     await switchOrg(page, 'RS Medika Nusantara');
-    await go(page, 'Controls & requirements');
+    await go(page, 'Annex A controls');
     await expect(ui.search(page)).toHaveValue('');
     await expect(inlineDetails(page)).toHaveCount(0);
     await switchOrg(page, 'PT Nusantara Digital Teknologi');
-    await expect(ui.title(page)).toHaveText('Portfolio Overview');
+    await expect(ui.title(page)).toHaveText('Home');
     await expect(page.locator('main svg[viewBox="0 0 120 120"]')).toHaveCount(4);
-    await expect(ui.navItems(page)).toHaveCount(14);
+    await expect(ui.navItems(page)).toHaveCount(16);
   });
 });
 
 test.describe('Roles and navigation', () => {
   test('switching to a role that cannot open the current screen moves to one it can', async ({ page }) => {
     await openApp(page);
-    await go(page, 'Phase board');
+    await go(page, 'Roadmap');
     await switchRole(page, 'Internal Auditor');
-    await expect(ui.title(page)).toHaveText('Portfolio Overview');
-    await expect(ui.nav(page, 'Phase board')).toHaveCount(0);
-    await go(page, 'Golden Thread Viewer');
+    await expect(ui.title(page)).toHaveText('Home');
+    await expect(ui.nav(page, 'Roadmap')).toHaveCount(0);
+    await go(page, 'Traceability viewer');
     await switchRole(page, 'Top Management');
-    await expect(ui.title(page)).toHaveText('Portfolio Overview');
-    await go(page, 'Chain stages');
+    await expect(ui.title(page)).toHaveText('Home');
+    await go(page, 'Outstanding items');
     await switchRole(page, 'MS Manager');
-    await expect(ui.title(page)).toHaveText('Chain stages');
+    await expect(ui.title(page)).toHaveText('Outstanding items');
   });
 
   test('a domain owner sees only their own controls and documents', async ({ page }) => {
     await openApp(page);
     await switchRole(page, 'Domain Owner');
-    await expect(ui.navItems(page)).toHaveText([/Overview/, /Controls & requirements/, /Document register/, /Evidence freshness/, /My Tasks/]);
-    await go(page, 'Controls & requirements');
+    await expect(ui.navItems(page)).toHaveText([/My Tasks/, /Annex A controls/, /Document register/, /Readiness by clause/, /Evidence status/]);
+    await go(page, 'Annex A controls');
     await chip(page, 'All').click();
     await expect(listRows(page).locator('td:nth-child(5)')).toHaveText(Array(await listRows(page).count()).fill(/Bagus Prasetyo/));
     await go(page, 'Document register');
@@ -184,30 +184,31 @@ test.describe('Roles and navigation', () => {
     await openApp(page);
     await switchOrg(page, 'RS Medika Nusantara');
     await switchRole(page, 'Internal Auditor');
-    await go(page, 'Chain stages');
+    await go(page, 'Outstanding items');
     await switchOrg(page, 'RS Medika Nusantara');
     await expect(ui.title(page)).toHaveText('Audit readiness');
-    await expect(ui.navItems(page)).toHaveCount(8);
+    await expect(ui.navItems(page)).toHaveCount(10);
   });
 
   test('sidebar badges count gate items, chain problems, critical evidence and tasks', async ({ page }) => {
     await openApp(page);
     const badge = (label) => ui.nav(page, label).locator('> span:last-child');
-    await expect(badge('Controls & requirements')).toHaveText('4');
-    await expect(badge('Chain stages')).toHaveText('24');
-    await expect(badge('Evidence freshness')).toHaveText('3');
+    await expect(badge('Annex A controls')).toHaveText('4');
+    await expect(badge('Outstanding items')).toHaveText('24');
+    await expect(badge('Evidence status')).toHaveText('3');
     await expect(badge('My Tasks')).toHaveText('3');
     await switchMs(page, 'QMS');
-    await expect(ui.nav(page, 'Controls & requirements').locator('> span')).toHaveCount(1);
-    await expect(badge('Chain stages')).toHaveText('5');
+    await expect(ui.nav(page, 'Requirements').locator('> span')).toHaveCount(1);
+    await expect(badge('Outstanding items')).toHaveText('5');
   });
 
   test('opening another screen starts at the top of the page', async ({ page }) => {
     await openApp(page);
+    await page.mouse.move(800, 500);
     await page.mouse.wheel(0, 900);
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(300);
-    await page.locator('aside nav button[title="Chain stages"]').click();
-    await expect(ui.title(page)).toHaveText('Chain stages');
+    await page.locator('aside nav button[title="Outstanding items"]').click();
+    await expect(ui.title(page)).toHaveText('Outstanding items');
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   });
 });

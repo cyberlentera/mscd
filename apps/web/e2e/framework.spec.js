@@ -2,22 +2,22 @@ import { test, expect, openApp, go, ui, switchOrg, expectToast } from './helpers
 
 const rows = (page) => page.locator('main table tbody > tr');
 const row = (page, code) => rows(page).filter({ hasText: code });
-const licence = (page) => page.locator('main div[style*="background: rgb(28, 26, 23)"]').filter({ hasText: 'Licence & entitlement' });
+const licence = (page) => page.locator('main div[style*="background: rgb(28, 26, 23)"]').filter({ hasText: /^Licence/ });
 const meters = (page) => licence(page).locator('div[style*="min-width: 64px"]');
 const channel = (page) => page.locator('main div[style*="flex-direction: column"][style*="gap: 10px"]').filter({ hasText: /update channel/i });
 
 async function openFw(page, query = '') {
   await openApp(page, query);
-  await go(page, 'Framework library');
+  await go(page, 'Standards & licence');
 }
 
-test.describe('Framework library', () => {
+test.describe('Standards & licence', () => {
   test('lists every framework with edition, signed pack, status and repository', async ({ page }) => {
     await openFw(page);
     await expect(page.locator('main thead th')).toHaveText(['Standard', 'Editions', 'Pack version', 'Status', 'Active management systems', 'Files', '']);
     await expect(rows(page)).toHaveCount(4);
     await expect(row(page, 'ISO/IEC 27001 : 2022')).toContainText('Current');
-    await expect(row(page, 'ISO/IEC 27001 : 2022')).toContainText('✓ Ed25519, 02 Feb 2026');
+    await expect(row(page, 'ISO/IEC 27001 : 2022').locator('[data-tip="Ed25519, 02 Feb 2026"]')).toHaveCount(1);
     await expect(row(page, 'ISO/IEC 27001 : 2022')).toContainText('SharePoint');
     await expect(row(page, 'ISO 9001 : 2015')).toContainText('Edition transition');
     await expect(row(page, 'ISO 9001 : 2015')).toContainText('Update available 1.0.0');
@@ -41,9 +41,9 @@ test.describe('Framework library', () => {
   test('Manage opens the overview of that system', async ({ page }) => {
     await openFw(page);
     await row(page, 'ISO 37001 : 2025').locator('button', { hasText: 'Manage' }).click();
-    await expect(ui.title(page)).toHaveText('Overview');
+    await expect(ui.title(page)).toHaveText('Readiness by clause');
     await expect(ui.msSwitch(page)).toContainText('ABMS');
-    await go(page, 'Framework library');
+    await go(page, 'Standards & licence');
     await row(page, 'ISO 22301 : 2019').locator('button', { hasText: 'Manage' }).click();
     await expect(ui.msSwitch(page)).toContainText('BCMS');
   });
@@ -51,7 +51,7 @@ test.describe('Framework library', () => {
   test('Transition opens the transition phase of the QMS', async ({ page }) => {
     await openFw(page);
     await row(page, 'ISO 9001 : 2015').locator('button', { hasText: 'Transition' }).click();
-    await expect(ui.title(page)).toHaveText('Phase board');
+    await expect(ui.title(page)).toHaveText('Roadmap');
     await expect(ui.msSwitch(page)).toContainText('QMS');
     await expect(page.locator('main')).toContainText('9. ISO 9001:2026 transition');
   });
@@ -71,7 +71,7 @@ test.describe('Framework library', () => {
     await openFw(page);
     await expect(channel(page)).toContainText('Update channel');
     await expect(channel(page)).toContainText('Packs are distributed automatically');
-    await expect(channel(page)).toContainText('Storage adapters: Managed Vault, Microsoft 365, Google Workspace, SMB');
+    await expect(channel(page)).toContainText('Storage connectors: Managed Vault, Microsoft 365, Google Workspace, SMB');
     await channel(page).locator('button', { hasText: 'Check for updates' }).click();
     await expectToast(page, 'Checked: ISO9001-2026 1.0.0 and ISO37001-2025 0.7.0 available');
     await ui.pageAction(page, 'Check for updates').click();
@@ -95,7 +95,7 @@ test.describe('Framework library', () => {
   test('the licence belongs to the selected organisation', async ({ page }) => {
     await openFw(page);
     await switchOrg(page, 'PT Bank Sentosa Digital');
-    await go(page, 'Framework library');
+    await go(page, 'Standards & licence');
     await expect(rows(page)).toHaveCount(2);
     await expect(licence(page)).toContainText('PT Bank Sentosa Digital');
     await expect(meters(page)).toHaveText([/2\s*Frameworks/, /2\s*Management systems/, /86\s*Users/]);

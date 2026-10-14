@@ -14,23 +14,23 @@ const counts = async (page) => current(page).locator('div[style*="text-align: ce
 
 async function openPhases(page) {
   await openApp(page);
-  await go(page, 'Phase board');
+  await go(page, 'Roadmap');
 }
 
-test.describe('Phase board', () => {
+test.describe('Roadmap', () => {
   test('stepper shows every phase and opens the current gate phase by default', async ({ page }) => {
     await openPhases(page);
     await expect(steps(page)).toHaveCount(9);
     await expect(steps(page).locator('span[class]')).toHaveText(['✓', '✓', '✓', '4', '✓', '✓', '✓', '✓', '9']);
     await expect(current(page)).toContainText('4. Risk assessment & SoA');
-    await expect(current(page)).toContainText('GATE');
+    await expect(current(page)).toContainText('CHECKPOINT');
     await expect(current(page)).toContainText('4 blocked');
     expect(await counts(page)).toEqual(['6 Verified', '0 Complete, awaiting verification', '0 In progress', '4 Blocked', '0 Not started']);
-    await expect(bannerText(page)).toHaveText('Critical gate: every activity must be Verified before the next phase opens. 4 blocked, 4 open gate items. Open gate items');
+    await expect(bannerText(page)).toHaveText('Checkpoint phase: every activity must be Verified before the next phase opens. 4 blocked, 4 blocking items. Blocking items');
     await expect(listRows(page)).toHaveCount(10);
     await expect(statusCol(page)).toHaveText(['Verified', 'Verified', 'Verified', 'Verified', 'Blocked', 'Blocked', 'Verified', 'Verified', 'Blocked', 'Blocked']);
-    await expect(listRow(page, '4.5')).toContainText('Blocked by A.8.12');
-    await expect(listRow(page, '4.5')).toContainText('Resolve gate item A.8.12');
+    await expect(listRow(page, '4.5').locator('[data-tip="Blocked by A.8.12"]')).toHaveCount(1);
+    await expect(listRow(page, '4.5')).toContainText('Resolve blocking item A.8.12');
   });
 
   test('stepper labels are cut at a word boundary and keep the full name in the title', async ({ page }) => {
@@ -52,7 +52,7 @@ test.describe('Phase board', () => {
     await step(page, 'Improvement & audit readiness').click();
     await expect(current(page)).toContainText('9. Improvement & audit readiness');
     await expect(current(page)).toContainText('In progress');
-    await expect(current(page)).not.toContainText('GATE');
+    await expect(current(page)).not.toContainText('CHECKPOINT');
     expect(await counts(page)).toEqual(['4 Verified', '0 Complete, awaiting verification', '2 In progress', '0 Blocked', '1 Not started']);
     await expect(listRows(page)).toHaveCount(7);
     await expect(statusCol(page)).toHaveText(['Verified', 'Verified', 'Verified', 'In progress', 'Verified', 'In progress', 'Not started']);
@@ -80,11 +80,11 @@ test.describe('Phase board', () => {
     await expectToast(page, 'Phase 1 is already verified');
   });
 
-  test('gate banner link opens the open gate items', async ({ page }) => {
+  test('gate banner link opens the blocking items', async ({ page }) => {
     await openPhases(page);
-    await banner(page).locator('button', { hasText: 'Open gate items' }).click();
-    await expect(ui.title(page)).toHaveText('Controls & requirements');
-    await expect(activeTab(page)).toContainText('Open gate items, Risk & SoA');
+    await banner(page).locator('button', { hasText: 'Blocking items' }).click();
+    await expect(ui.title(page)).toHaveText('Annex A controls');
+    await expect(activeTab(page)).toContainText('Blocking items, Risk & SoA');
   });
 
   test('locked phases show a locked state that links back to the gate phase', async ({ page }) => {
@@ -92,13 +92,13 @@ test.describe('Phase board', () => {
     await switchMs(page, 'BCMS');
     await expect(current(page)).toContainText('4. BIA & risk assessment');
     await expect(current(page)).toContainText('2 blocked');
-    await expect(banner(page)).toContainText('2 blocked, 3 open gate items.');
+    await expect(banner(page)).toContainText('2 blocked, 3 blocking items.');
     await step(page, 'BC strategies & plans').click();
     await expect(current(page)).toContainText('5. BC strategies & plans');
     await expect(current(page)).toContainText('Locked');
     await expect(statusCol(page)).toHaveText(Array(7).fill('Locked'));
     await expect(listRows(page).locator('td:nth-child(8)')).toHaveText(Array(7).fill('-'));
-    await expect(bannerText(page)).toHaveText('This phase is locked until the gate phase is verified: 4. BIA & risk assessment. BIA & risk assessment');
+    await expect(bannerText(page)).toHaveText('This phase opens once the checkpoint phase is verified: 4. BIA & risk assessment. BIA & risk assessment');
     await openRow(page, '5.1');
     await expect(ui.drawer(page)).toContainText('Locked');
     expect(await ui.drawer(page).locator('button[title]').count()).toBe(0);
@@ -111,20 +111,20 @@ test.describe('Phase board', () => {
     await openPhases(page);
     await openRow(page, '4.5');
     await expect(ui.drawer(page)).toContainText('Select Annex A controls');
-    await expect(ui.drawer(page)).toContainText('Holding gate');
-    await expect(drawerFact(page, 'Phase')).toHaveText('4. Risk assessment & SoA, GATE');
+    await expect(ui.drawer(page)).toContainText('Blocking');
+    await expect(drawerFact(page, 'Phase')).toHaveText('4. Risk assessment & SoA, CHECKPOINT');
     await expect(drawerFact(page, 'Blocked by')).toHaveText('A.8.12, Data leakage prevention');
     await expect(drawerAction(page, 'Mark complete')).toHaveCount(0);
     await drawerFact(page, 'Blocked by').locator('button').click();
-    await expect(ui.title(page)).toHaveText('Controls & requirements');
-    await expect(activeTab(page)).toContainText('Open gate items');
+    await expect(ui.title(page)).toHaveText('Annex A controls');
+    await expect(activeTab(page)).toContainText('Blocking items');
 
-    await go(page, 'Phase board');
+    await go(page, 'Roadmap');
     await openRow(page, '4.10');
-    await expect(drawerLinks(page, 'Downstream')).toHaveText(['SOA-01']);
-    await drawerAction(page, 'Open gate item').click();
-    await expect(ui.title(page)).toHaveText('Controls & requirements');
-    await expect(activeTab(page)).toContainText('Open gate items');
+    await expect(drawerLinks(page, 'Leads to')).toHaveText(['SOA-01']);
+    await drawerAction(page, 'Open blocking item').click();
+    await expect(ui.title(page)).toHaveText('Annex A controls');
+    await expect(activeTab(page)).toContainText('Blocking items');
   });
 
   test('required output link opens the document', async ({ page }) => {
@@ -132,7 +132,7 @@ test.describe('Phase board', () => {
     await openRow(page, '4.10');
     await expect(drawerFact(page, 'Required output')).toHaveText('SOA-01, Statement of Applicability v3.0, v3.0, Draft');
     await drawerFact(page, 'Required output').locator('button').click();
-    await expect(ui.title(page)).toHaveText('Controls & requirements');
+    await expect(ui.title(page)).toHaveText('Annex A controls');
     await expect(ui.drawer(page)).toContainText('SOA-01');
     await expect(ui.drawer(page)).toContainText('Draft');
   });
@@ -142,8 +142,8 @@ test.describe('Phase board', () => {
     await step(page, 'Improvement & audit readiness').click();
     await openRow(page, '9.4');
     await expect(drawerFact(page, 'Owner')).toHaveText('Dewi Anggraini, HR Manager');
-    await drawerAction(page, 'Record blocker').click();
-    await expectToast(page, 'Blocker recorded and linked to the gate item');
+    await drawerAction(page, 'Report blocker').click();
+    await expectToast(page, 'Blocker reported and linked to the blocking item');
     await drawerAction(page, 'Mark complete').click();
     await expectToast(page, 'Marked complete: awaiting verification by the MS Manager');
     await expect(listRow(page, '9.4').locator('td:nth-child(7)')).toHaveText('Complete, awaiting verification');
@@ -167,7 +167,7 @@ test.describe('Phase board', () => {
     await expectToast(page, 'Verified. Status recalculated');
     await expect(listRow(page, '9.4').locator('td:nth-child(7)')).toHaveText('Verified');
     expect(await counts(page)).toEqual(['5 Verified', '3 Complete, awaiting verification', '4 In progress', '0 Blocked', '2 Not started']);
-    await go(page, 'Overview');
+    await go(page, 'Readiness by clause');
     await expect(page.locator('main button', { hasText: 'ISO 9001:2026 transition' })).toContainText('5 / 14');
   });
 

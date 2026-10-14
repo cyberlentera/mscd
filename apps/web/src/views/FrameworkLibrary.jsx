@@ -20,21 +20,24 @@ export default function FrameworkLibrary({ v }) {
             </tr>
           </thead>
           <tbody>
-            {list(v.fw?.cards).map((f, $i72) => (<Fragment key={$i72}>
+            {list(v.fw?.cards).map((f, $i84) => (<Fragment key={$i84}>
               <tr data-hov="1" style={{ transition: "background .15s" }}>
-                <td style={{ padding: "12px var(--pad)", borderBottom: "1px solid var(--bd)", verticalAlign: "top" }}>
-                  <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
-                    <span style={{ width: "10px", height: "10px", borderRadius: "3px", background: f?.color, marginTop: "5px", flex: "none" }}></span>
-                    <span>
-                      <span style={{ display: "block", fontWeight: "600", whiteSpace: "nowrap" }}>{txt(f?.code)}</span>
-                      <span style={{ display: "block", fontSize: "12px", color: "var(--tx3)" }}>{txt(f?.name)}</span>
-                    </span>
+                <td data-tip={f?.name} style={{ padding: "12px var(--pad)", borderBottom: "1px solid var(--bd)", verticalAlign: "top" }}>
+                  <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                    <span style={{ width: "10px", height: "10px", borderRadius: "3px", background: f?.color, flex: "none" }}></span>
+                    <span style={{ fontWeight: "600", whiteSpace: "nowrap" }}>{txt(f?.code)}</span>
                   </div>
                 </td>
                 <td style={{ padding: "12px", borderBottom: "1px solid var(--bd)", verticalAlign: "top", color: "var(--tx2)", whiteSpace: "nowrap" }}>{txt(f?.edsShort)}</td>
-                <td style={{ padding: "12px", borderBottom: "1px solid var(--bd)", verticalAlign: "top" }}>
-                  <span style={{ fontFamily: "var(--ffm)" }}>{txt(f?.pack)}</span>
-                  <span style={{ display: "block", fontSize: "12px", color: "var(--ok)", marginTop: "2px" }}>{"✓ "}{txt(f?.sig)}{", "}{txt(f?.installed)}</span>
+                <td data-tip={f?.sigTip} style={{ padding: "12px", borderBottom: "1px solid var(--bd)", verticalAlign: "top" }}>
+                  <span style={{ display: "flex", alignItems: "flex-start", gap: "6px" }}>
+                    <span style={{ fontFamily: "var(--ffm)" }}>{txt(f?.pack)}</span>
+                    <span style={{ flex: "none", display: "inline-flex", width: "18px", height: "18px", borderRadius: "50%", alignItems: "center", justifyContent: "center", background: "var(--okbg)", color: "var(--ok)" }}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "none" }}>
+                        <path d="M5 12l5 5L20 7"></path>
+                      </svg>
+                    </span>
+                  </span>
                 </td>
                 <td style={{ padding: "12px", borderBottom: "1px solid var(--bd)", verticalAlign: "top" }}>
                   <span style={{ display: "inline-flex", padding: "3px 9px", borderRadius: "999px", fontSize: "12px", fontWeight: "600", background: f?.bg, color: f?.fg, whiteSpace: "nowrap" }}>{txt(f?.status)}</span>
@@ -42,21 +45,17 @@ export default function FrameworkLibrary({ v }) {
                     <span style={{ display: "block", fontSize: "12px", color: "var(--info)", marginTop: "4px", maxWidth: "220px" }}>{txt(v.t?.updateAvail)}{" "}{txt(f?.updateShort)}</span>
                   </>) : null}
                 </td>
-                <td style={{ padding: "12px", borderBottom: "1px solid var(--bd)", verticalAlign: "top" }}>
+                <td data-tip={f?.certifier} style={{ padding: "12px", borderBottom: "1px solid var(--bd)", verticalAlign: "top" }}>
                   <span style={{ fontWeight: "600" }}>{txt(f?.short)}</span>
-                  <span style={{ display: "block", fontSize: "12px", color: "var(--tx3)" }}>{txt(f?.certifier)}</span>
                 </td>
-                <td style={{ padding: "12px", borderBottom: "1px solid var(--bd)", verticalAlign: "top" }}>
+                <td data-tip={f?.locMode} style={{ padding: "12px", borderBottom: "1px solid var(--bd)", verticalAlign: "top" }}>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap" }}>
                     <span style={{ width: "26px", height: "26px", borderRadius: "7px", display: "inline-flex", alignItems: "center", justifyContent: "center", background: "var(--sur2)", color: f?.locColor }}>
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                         <path d={f?.locIcon}></path>
                       </svg>
                     </span>
-                    <span style={{ lineHeight: "1.25" }}>
-                      <span style={{ display: "block", fontWeight: "500" }}>{txt(f?.locShort)}</span>
-                      <span style={{ fontSize: "12px", color: "var(--tx3)" }}>{txt(f?.locMode)}</span>
-                    </span>
+                    <span style={{ fontWeight: "500" }}>{txt(f?.locShort)}</span>
                   </span>
                 </td>
                 <td style={{ padding: "12px var(--pad)", borderBottom: "1px solid var(--bd)", verticalAlign: "top", width: "1%" }}>
@@ -85,13 +84,13 @@ export default function FrameworkLibrary({ v }) {
               <strong style={{ color: "#f2eee7" }}>{txt(v.fw?.to)}</strong>{", "}{txt(v.t?.signature)}{" ✓ "}{txt(v.fw?.sig)}
             </div>
             <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "12px" }}>
-              {list(v.fw?.featureChips).map((fc, $i73) => (<Fragment key={$i73}>
+              {list(v.fw?.featureChips).map((fc, $i85) => (<Fragment key={$i85}>
                 <span style={{ padding: "3px 9px", borderRadius: "999px", fontSize: "12px", border: "1px solid rgba(255,255,255,.18)", color: "#f2eee7" }}>{txt(fc)}</span>
               </Fragment>))}
             </div>
           </div>
           <div style={{ position: "relative", display: "flex", gap: "20px" }}>
-            {list(v.fw?.lic).map((l, $i74) => (<Fragment key={$i74}>
+            {list(v.fw?.lic).map((l, $i86) => (<Fragment key={$i86}>
               <div style={{ textAlign: "center", minWidth: "64px" }}>
                 <div style={{ fontSize: "26px", fontWeight: "600", lineHeight: "1" }}>{txt(l?.n)}</div>
                 <div style={{ fontSize: "12px", color: "#cfc7b8", marginTop: "4px", whiteSpace: "nowrap" }}>{txt(l?.k)}</div>

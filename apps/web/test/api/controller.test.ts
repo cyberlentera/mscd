@@ -187,7 +187,7 @@ describe('controller in API mode', () => {
     app.state = { ...app.state, screen: 'chain' };
     app.renderVals().pageActions[0].go();
     await settle(app);
-    expect(app.state.toast).toBe('Reminders sent to 8 holders');
+    expect(app.state.toast).toBe('Reminders sent to 8 people');
     app.state = { ...app.state, screen: 'fresh' };
     app.renderVals().pageActions[0].go();
     await settle(app);
