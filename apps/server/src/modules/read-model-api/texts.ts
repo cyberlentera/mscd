@@ -97,5 +97,5 @@ export const RECORD_STATE: Readonly<Record<'open' | 'ready', Pair>> = {
 /** Titles of chain nodes without a record (UI 2.9 `resolveNode`). */
 export const NODE_MISSING: Readonly<Record<'record' | 'evidence', Pair>> = {
   record: ['No record linked', 'Tidak ada rekaman tertaut'],
-  evidence: ['No evidence recorded this cycle', 'Belum ada bukti tercatat siklus ini'],
+  evidence: ['No evidence recorded this cycle', 'Belum ada evidence tercatat siklus ini'],
 };

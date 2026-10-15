@@ -36,7 +36,7 @@ describe('schema rules', () => {
 
     beforeAll(async () => {
       await inScope(db.app, scope(), async (trx) => {
-        const values = { management_system_id: msId, event_type: 'surveillance' as const, name_en: 'Surveillance', name_id: 'Surveilans', short_label: 'S1' };
+        const values = { management_system_id: msId, event_type: 'surveillance' as const, name_en: 'Surveillance', name_id: 'Surveillance', short_label: 'S1' };
         eventId = (await trx.insertInto('audit_event').values({ ...values, scheduled_at: '2026-11-20' }).returning('id').executeTakeFirstOrThrow()).id;
         earlierEventId = (await trx.insertInto('audit_event').values({ ...values, scheduled_at: '2026-10-15' }).returning('id').executeTakeFirstOrThrow()).id;
       });

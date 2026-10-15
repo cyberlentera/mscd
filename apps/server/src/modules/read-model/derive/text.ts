@@ -58,7 +58,7 @@ export function relinkAction(integ: IntegId): Pair {
 
 /** `Submit <frequency> evidence` (UI 2.3), with the frequency labels in lower case. */
 export function submitEvidenceAction(frequency: Pair): Pair {
-  return [`Submit ${frequency[0].toLowerCase()} evidence`, `Serahkan bukti ${frequency[1].toLowerCase()}`];
+  return [`Submit ${frequency[0].toLowerCase()} evidence`, `Serahkan evidence ${frequency[1].toLowerCase()}`];
 }
 
 /** Justification chain items of blocked entries (UI 2.3 `soa`). */

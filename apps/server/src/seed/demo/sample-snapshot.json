@@ -92,12 +92,12 @@
      ],
      "stage": [
       "Surveillance 1, year 2",
-      "Surveilans 1, tahun ke-2"
+      "Surveillance 1, tahun ke-2"
      ],
      "audit": {
       "name": [
        "Surveillance audit 1",
-       "Audit surveilans 1"
+       "Audit surveillance 1"
       ],
       "date": "2026-11-12",
       "days": 2,
@@ -162,12 +162,12 @@
      ],
      "stage": [
       "Recertification + transition audit",
-      "Resertifikasi + audit transisi"
+      "Recertification + audit transisi"
      ],
      "audit": {
       "name": [
        "Recertification & ISO 9001:2026 transition audit",
-       "Audit resertifikasi & transisi ISO 9001:2026"
+       "Audit recertification & transisi ISO 9001:2026"
       ],
       "date": "2026-12-03",
       "days": 3,
@@ -232,7 +232,7 @@
      ],
      "cert": [
       "Not yet certified, Stage 1 planned",
-      "Belum tersertifikasi, Tahap 1 direncanakan"
+      "Belum tersertifikasi, Stage 1 direncanakan"
      ],
      "stage": [
       "Implementation, phase 4 of 8",
@@ -241,7 +241,7 @@
      "audit": {
       "name": [
        "Stage 1 audit",
-       "Audit Tahap 1"
+       "Audit Stage 1"
       ],
       "date": "2027-02-10",
       "days": 1,
@@ -265,7 +265,7 @@
      "pack": "ISO22301-2019 v1.0.0",
      "phase": [
       "BIA & risk assessment",
-      "BIA & penilaian risiko"
+      "BIA & risk assessment"
      ],
      "unit": "req",
      "banner": {
@@ -278,7 +278,7 @@
      },
      "gateName": [
       "BIA & Risk Assessment",
-      "BIA & Penilaian Risiko"
+      "BIA & Risk Assessment"
      ],
      "gtSuggestions": [
       "BIA-03",
@@ -335,13 +335,13 @@
       "tone": "warn",
       "text": [
        "Beta framework pack ISO37001-2025 v0.6: 41 of 88 activities available.",
-       "Framework pack beta ISO37001-2025 v0.6: 41 dari 88 aktivitas tersedia."
+       "Framework Pack beta ISO37001-2025 v0.6: 41 dari 88 aktivitas tersedia."
       ],
       "kind": "beta"
      },
      "gateName": [
       "Bribery Risk Assessment",
-      "Penilaian Risiko Penyuapan"
+      "Bribery Risk Assessment"
      ],
      "gtSuggestions": [
       "Cl. 4.5"
@@ -665,7 +665,7 @@
      "status": "warn",
      "msg": [
       "Personal repository, account disabled 15 Aug 2026, move evidence to the team library",
-      "Repositori pribadi, akun dinonaktifkan 15 Agu 2026, pindahkan bukti ke library tim"
+      "Repositori pribadi, akun dinonaktifkan 15 Agu 2026, pindahkan evidence ke library tim"
      ],
      "tenant": [
       "F. Nugroho, account disabled",
@@ -5767,7 +5767,7 @@
         ],
         "act": [
          "Submit quarterly evidence",
-         "Serahkan bukti kuartalan"
+         "Serahkan evidence kuartalan"
         ],
         "h": "andi",
         "due": "2026-08-06",
@@ -5792,7 +5792,7 @@
         ],
         "act": [
          "Submit quarterly evidence",
-         "Serahkan bukti kuartalan"
+         "Serahkan evidence kuartalan"
         ],
         "h": "dewi",
         "due": "2026-09-01",
@@ -5817,7 +5817,7 @@
         ],
         "act": [
          "Submit quarterly evidence",
-         "Serahkan bukti kuartalan"
+         "Serahkan evidence kuartalan"
         ],
         "h": "fajar",
         "due": "2026-07-07",
@@ -5867,7 +5867,7 @@
         ],
         "act": [
          "Submit monthly evidence",
-         "Serahkan bukti bulanan"
+         "Serahkan evidence bulanan"
         ],
         "h": "bagus",
         "due": "2026-08-23",
@@ -5892,7 +5892,7 @@
         ],
         "act": [
          "Submit monthly evidence",
-         "Serahkan bukti bulanan"
+         "Serahkan evidence bulanan"
         ],
         "h": "bagus",
         "due": "2026-08-30",
@@ -5942,7 +5942,7 @@
         ],
         "act": [
          "Submit daily evidence",
-         "Serahkan bukti harian"
+         "Serahkan evidence harian"
         ],
         "h": "bagus",
         "due": "2026-06-08",
@@ -5967,7 +5967,7 @@
         ],
         "act": [
          "Submit quarterly evidence",
-         "Serahkan bukti kuartalan"
+         "Serahkan evidence kuartalan"
         ],
         "h": "bagus",
         "due": "2026-08-28",
@@ -8613,7 +8613,7 @@
         ],
         "act": [
          "Submit annual evidence",
-         "Serahkan bukti tahunan"
+         "Serahkan evidence tahunan"
         ],
         "h": "sari",
         "due": "2026-06-08",
@@ -8638,7 +8638,7 @@
         ],
         "act": [
          "Submit annual evidence",
-         "Serahkan bukti tahunan"
+         "Serahkan evidence tahunan"
         ],
         "h": "andi",
         "due": "2026-06-05",
@@ -8663,7 +8663,7 @@
         ],
         "act": [
          "Submit monthly evidence",
-         "Serahkan bukti bulanan"
+         "Serahkan evidence bulanan"
         ],
         "h": "sari",
         "due": "2026-09-16",
@@ -13104,7 +13104,7 @@
         ],
         "act": [
          "Submit annual evidence",
-         "Serahkan bukti tahunan"
+         "Serahkan evidence tahunan"
         ],
         "h": "lina",
         "due": "2026-06-11",
@@ -13129,7 +13129,7 @@
         ],
         "act": [
          "Submit annual evidence",
-         "Serahkan bukti tahunan"
+         "Serahkan evidence tahunan"
         ],
         "h": "lina",
         "due": "2026-06-04",
@@ -13841,7 +13841,7 @@
       "id": "treatment",
       "l": [
        "Risk treatment",
-       "Perlakuan risiko"
+       "Risk treatment"
       ],
       "q": "What was done about it, and is it complete?",
       "rec": 41
@@ -13878,7 +13878,7 @@
       "id": "evidence",
       "l": [
        "Evidence",
-       "Bukti"
+       "Evidence"
       ],
       "q": "Prove it operated during this cycle, after implementation.",
       "src": "ev"
@@ -13952,7 +13952,7 @@
       "id": "evidence",
       "l": [
        "Evidence",
-       "Bukti"
+       "Evidence"
       ],
       "q": "Show records from the current cycle.",
       "src": "ev"
@@ -14035,7 +14035,7 @@
       "id": "evidence",
       "l": [
        "Evidence",
-       "Bukti"
+       "Evidence"
       ],
       "q": "Show exercise and operating records.",
       "src": "ev"
@@ -14091,7 +14091,7 @@
       "id": "evidence",
       "l": [
        "Evidence",
-       "Bukti"
+       "Evidence"
       ],
       "q": "",
       "src": "ev"
@@ -14684,7 +14684,7 @@
      {
       "t": [
        "Stage 1",
-       "Tahap 1"
+       "Stage 1"
       ],
       "d": "2025-01-20",
       "days": 1,
@@ -14698,7 +14698,7 @@
      {
       "t": [
        "Stage 2, certification",
-       "Tahap 2, sertifikasi"
+       "Stage 2, sertifikasi"
       ],
       "d": "2025-03-10",
       "days": 3,
@@ -14712,7 +14712,7 @@
      {
       "t": [
        "Surveillance 1",
-       "Surveilans 1"
+       "Surveillance 1"
       ],
       "d": "2026-11-12",
       "days": 2,
@@ -14722,7 +14722,7 @@
      {
       "t": [
        "Surveillance 2",
-       "Surveilans 2"
+       "Surveillance 2"
       ],
       "d": "2027-11-10",
       "days": 2,
@@ -14731,7 +14731,7 @@
      {
       "t": [
        "Recertification",
-       "Resertifikasi"
+       "Recertification"
       ],
       "d": "2028-02-14",
       "days": 3,
@@ -14742,11 +14742,11 @@
      {
       "t": [
        "Recertification (2015 ed.)",
-       "Resertifikasi (ed. 2015)"
+       "Recertification (ed. 2015)"
       ],
       "short": [
        "Recertification",
-       "Resertifikasi"
+       "Recertification"
       ],
       "d": "2023-06-22",
       "days": 2,
@@ -14760,7 +14760,7 @@
      {
       "t": [
        "Surveillance 1",
-       "Surveilans 1"
+       "Surveillance 1"
       ],
       "d": "2024-06-18",
       "days": 1,
@@ -14774,7 +14774,7 @@
      {
       "t": [
        "Surveillance 2",
-       "Surveilans 2"
+       "Surveillance 2"
       ],
       "d": "2025-06-24",
       "days": 1,
@@ -14788,11 +14788,11 @@
      {
       "t": [
        "Recertification + 2026 transition",
-       "Resertifikasi + transisi 2026"
+       "Recertification + transisi 2026"
       ],
       "short": [
        "Recert + transition",
-       "Resert + transisi"
+       "Recert + transisi"
       ],
       "d": "2026-12-03",
       "days": 3,
@@ -14802,11 +14802,11 @@
      {
       "t": [
        "Surveillance 1 (2026 ed.)",
-       "Surveilans 1 (ed. 2026)"
+       "Surveillance 1 (ed. 2026)"
       ],
       "short": [
        "Surveillance 1",
-       "Surveilans 1"
+       "Surveillance 1"
       ],
       "d": "2027-12-01",
       "days": 1,
@@ -14817,7 +14817,7 @@
      {
       "t": [
        "Stage 1",
-       "Tahap 1"
+       "Stage 1"
       ],
       "d": "2027-02-10",
       "days": 1,
@@ -14827,7 +14827,7 @@
      {
       "t": [
        "Stage 2, certification",
-       "Tahap 2, sertifikasi"
+       "Stage 2, sertifikasi"
       ],
       "d": "2027-04-20",
       "days": 2,
@@ -14836,7 +14836,7 @@
      {
       "t": [
        "Surveillance 1",
-       "Surveilans 1"
+       "Surveillance 1"
       ],
       "d": "2028-04-18",
       "days": 1,
@@ -15239,7 +15239,7 @@
       "id": "unverif",
       "l": [
        "Evidence files that cannot be verified",
-       "Berkas bukti tak terverifikasi"
+       "Berkas evidence tak terverifikasi"
       ],
       "src": "unverif"
      },
@@ -15332,7 +15332,7 @@
       "id": "unverif",
       "l": [
        "Evidence files that cannot be verified",
-       "Berkas bukti tak terverifikasi"
+       "Berkas evidence tak terverifikasi"
       ],
       "src": "unverif"
      },
@@ -15340,7 +15340,7 @@
       "id": "nohash",
       "l": [
        "Google-native evidence without content hash",
-       "Bukti Google native tanpa hash"
+       "Evidence Google native tanpa hash"
       ],
       "src": "nohash"
      }
@@ -15457,12 +15457,12 @@
      ],
      "stage": [
       "Surveillance 1, year 2",
-      "Surveilans 1, tahun ke-2"
+      "Surveillance 1, tahun ke-2"
      ],
      "audit": {
       "name": [
        "Surveillance audit 1",
-       "Audit surveilans 1"
+       "Audit surveillance 1"
       ],
       "date": "2026-11-12",
       "days": 2,
@@ -15527,12 +15527,12 @@
      ],
      "stage": [
       "Recertification + transition audit",
-      "Resertifikasi + audit transisi"
+      "Recertification + audit transisi"
      ],
      "audit": {
       "name": [
        "Recertification & ISO 9001:2026 transition audit",
-       "Audit resertifikasi & transisi ISO 9001:2026"
+       "Audit recertification & transisi ISO 9001:2026"
       ],
       "date": "2026-12-03",
       "days": 3,
@@ -15871,7 +15871,7 @@
      "status": "warn",
      "msg": [
       "Personal repository, account disabled 15 Aug 2026, move evidence to the team library",
-      "Repositori pribadi, akun dinonaktifkan 15 Agu 2026, pindahkan bukti ke library tim"
+      "Repositori pribadi, akun dinonaktifkan 15 Agu 2026, pindahkan evidence ke library tim"
      ],
      "tenant": [
       "F. Nugroho, account disabled",
@@ -20955,7 +20955,7 @@
         ],
         "act": [
          "Submit quarterly evidence",
-         "Serahkan bukti kuartalan"
+         "Serahkan evidence kuartalan"
         ],
         "h": "andi",
         "due": "2026-08-06",
@@ -20980,7 +20980,7 @@
         ],
         "act": [
          "Submit quarterly evidence",
-         "Serahkan bukti kuartalan"
+         "Serahkan evidence kuartalan"
         ],
         "h": "dewi",
         "due": "2026-09-01",
@@ -21005,7 +21005,7 @@
         ],
         "act": [
          "Submit quarterly evidence",
-         "Serahkan bukti kuartalan"
+         "Serahkan evidence kuartalan"
         ],
         "h": "fajar",
         "due": "2026-07-07",
@@ -21055,7 +21055,7 @@
         ],
         "act": [
          "Submit monthly evidence",
-         "Serahkan bukti bulanan"
+         "Serahkan evidence bulanan"
         ],
         "h": "bagus",
         "due": "2026-08-23",
@@ -21080,7 +21080,7 @@
         ],
         "act": [
          "Submit monthly evidence",
-         "Serahkan bukti bulanan"
+         "Serahkan evidence bulanan"
         ],
         "h": "bagus",
         "due": "2026-08-30",
@@ -21130,7 +21130,7 @@
         ],
         "act": [
          "Submit daily evidence",
-         "Serahkan bukti harian"
+         "Serahkan evidence harian"
         ],
         "h": "bagus",
         "due": "2026-06-08",
@@ -21155,7 +21155,7 @@
         ],
         "act": [
          "Submit quarterly evidence",
-         "Serahkan bukti kuartalan"
+         "Serahkan evidence kuartalan"
         ],
         "h": "bagus",
         "due": "2026-08-28",
@@ -23801,7 +23801,7 @@
         ],
         "act": [
          "Submit annual evidence",
-         "Serahkan bukti tahunan"
+         "Serahkan evidence tahunan"
         ],
         "h": "sari",
         "due": "2026-06-08",
@@ -23826,7 +23826,7 @@
         ],
         "act": [
          "Submit annual evidence",
-         "Serahkan bukti tahunan"
+         "Serahkan evidence tahunan"
         ],
         "h": "andi",
         "due": "2026-06-05",
@@ -23851,7 +23851,7 @@
         ],
         "act": [
          "Submit monthly evidence",
-         "Serahkan bukti bulanan"
+         "Serahkan evidence bulanan"
         ],
         "h": "sari",
         "due": "2026-09-16",
@@ -24756,7 +24756,7 @@
       "id": "treatment",
       "l": [
        "Risk treatment",
-       "Perlakuan risiko"
+       "Risk treatment"
       ],
       "q": "What was done about it, and is it complete?",
       "rec": 41
@@ -24793,7 +24793,7 @@
       "id": "evidence",
       "l": [
        "Evidence",
-       "Bukti"
+       "Evidence"
       ],
       "q": "Prove it operated during this cycle, after implementation.",
       "src": "ev"
@@ -24867,7 +24867,7 @@
       "id": "evidence",
       "l": [
        "Evidence",
-       "Bukti"
+       "Evidence"
       ],
       "q": "Show records from the current cycle.",
       "src": "ev"
@@ -25365,7 +25365,7 @@
      {
       "t": [
        "Stage 1",
-       "Tahap 1"
+       "Stage 1"
       ],
       "d": "2025-01-20",
       "days": 1,
@@ -25379,7 +25379,7 @@
      {
       "t": [
        "Stage 2, certification",
-       "Tahap 2, sertifikasi"
+       "Stage 2, sertifikasi"
       ],
       "d": "2025-03-10",
       "days": 3,
@@ -25393,7 +25393,7 @@
      {
       "t": [
        "Surveillance 1",
-       "Surveilans 1"
+       "Surveillance 1"
       ],
       "d": "2026-11-12",
       "days": 2,
@@ -25403,7 +25403,7 @@
      {
       "t": [
        "Surveillance 2",
-       "Surveilans 2"
+       "Surveillance 2"
       ],
       "d": "2027-11-10",
       "days": 2,
@@ -25412,7 +25412,7 @@
      {
       "t": [
        "Recertification",
-       "Resertifikasi"
+       "Recertification"
       ],
       "d": "2028-02-14",
       "days": 3,
@@ -25423,11 +25423,11 @@
      {
       "t": [
        "Recertification (2015 ed.)",
-       "Resertifikasi (ed. 2015)"
+       "Recertification (ed. 2015)"
       ],
       "short": [
        "Recertification",
-       "Resertifikasi"
+       "Recertification"
       ],
       "d": "2023-06-22",
       "days": 2,
@@ -25441,7 +25441,7 @@
      {
       "t": [
        "Surveillance 1",
-       "Surveilans 1"
+       "Surveillance 1"
       ],
       "d": "2024-06-18",
       "days": 1,
@@ -25455,7 +25455,7 @@
      {
       "t": [
        "Surveillance 2",
-       "Surveilans 2"
+       "Surveillance 2"
       ],
       "d": "2025-06-24",
       "days": 1,
@@ -25469,11 +25469,11 @@
      {
       "t": [
        "Recertification + 2026 transition",
-       "Resertifikasi + transisi 2026"
+       "Recertification + transisi 2026"
       ],
       "short": [
        "Recert + transition",
-       "Resert + transisi"
+       "Recert + transisi"
       ],
       "d": "2026-12-03",
       "days": 3,
@@ -25483,11 +25483,11 @@
      {
       "t": [
        "Surveillance 1 (2026 ed.)",
-       "Surveilans 1 (ed. 2026)"
+       "Surveillance 1 (ed. 2026)"
       ],
       "short": [
        "Surveillance 1",
-       "Surveilans 1"
+       "Surveillance 1"
       ],
       "d": "2027-12-01",
       "days": 1,
@@ -25776,7 +25776,7 @@
       "id": "unverif",
       "l": [
        "Evidence files that cannot be verified",
-       "Berkas bukti tak terverifikasi"
+       "Berkas evidence tak terverifikasi"
       ],
       "src": "unverif"
      },
@@ -25938,12 +25938,12 @@
      ],
      "stage": [
       "Surveillance 1, year 2",
-      "Surveilans 1, tahun ke-2"
+      "Surveillance 1, tahun ke-2"
      ],
      "audit": {
       "name": [
        "Surveillance audit 1",
-       "Audit surveilans 1"
+       "Audit surveillance 1"
       ],
       "date": "2026-11-12",
       "days": 2,
@@ -26258,7 +26258,7 @@
      "status": "warn",
      "msg": [
       "Personal repository, account disabled 15 Aug 2026, move evidence to the team library",
-      "Repositori pribadi, akun dinonaktifkan 15 Agu 2026, pindahkan bukti ke library tim"
+      "Repositori pribadi, akun dinonaktifkan 15 Agu 2026, pindahkan evidence ke library tim"
      ],
      "tenant": [
       "F. Nugroho, account disabled",
@@ -31336,7 +31336,7 @@
         ],
         "act": [
          "Submit quarterly evidence",
-         "Serahkan bukti kuartalan"
+         "Serahkan evidence kuartalan"
         ],
         "h": "andi",
         "due": "2026-08-06",
@@ -31361,7 +31361,7 @@
         ],
         "act": [
          "Submit quarterly evidence",
-         "Serahkan bukti kuartalan"
+         "Serahkan evidence kuartalan"
         ],
         "h": "dewi",
         "due": "2026-09-01",
@@ -31386,7 +31386,7 @@
         ],
         "act": [
          "Submit quarterly evidence",
-         "Serahkan bukti kuartalan"
+         "Serahkan evidence kuartalan"
         ],
         "h": "fajar",
         "due": "2026-07-07",
@@ -31436,7 +31436,7 @@
         ],
         "act": [
          "Submit monthly evidence",
-         "Serahkan bukti bulanan"
+         "Serahkan evidence bulanan"
         ],
         "h": "bagus",
         "due": "2026-08-23",
@@ -31461,7 +31461,7 @@
         ],
         "act": [
          "Submit monthly evidence",
-         "Serahkan bukti bulanan"
+         "Serahkan evidence bulanan"
         ],
         "h": "bagus",
         "due": "2026-08-30",
@@ -31511,7 +31511,7 @@
         ],
         "act": [
          "Submit daily evidence",
-         "Serahkan bukti harian"
+         "Serahkan evidence harian"
         ],
         "h": "bagus",
         "due": "2026-06-08",
@@ -31536,7 +31536,7 @@
         ],
         "act": [
          "Submit quarterly evidence",
-         "Serahkan bukti kuartalan"
+         "Serahkan evidence kuartalan"
         ],
         "h": "bagus",
         "due": "2026-08-28",
@@ -32716,7 +32716,7 @@
       "id": "treatment",
       "l": [
        "Risk treatment",
-       "Perlakuan risiko"
+       "Risk treatment"
       ],
       "q": "What was done about it, and is it complete?",
       "rec": 41
@@ -32753,7 +32753,7 @@
       "id": "evidence",
       "l": [
        "Evidence",
-       "Bukti"
+       "Evidence"
       ],
       "q": "Prove it operated during this cycle, after implementation.",
       "src": "ev"
@@ -33121,7 +33121,7 @@
      {
       "t": [
        "Stage 1",
-       "Tahap 1"
+       "Stage 1"
       ],
       "d": "2025-01-20",
       "days": 1,
@@ -33135,7 +33135,7 @@
      {
       "t": [
        "Stage 2, certification",
-       "Tahap 2, sertifikasi"
+       "Stage 2, sertifikasi"
       ],
       "d": "2025-03-10",
       "days": 3,
@@ -33149,7 +33149,7 @@
      {
       "t": [
        "Surveillance 1",
-       "Surveilans 1"
+       "Surveillance 1"
       ],
       "d": "2026-11-12",
       "days": 2,
@@ -33159,7 +33159,7 @@
      {
       "t": [
        "Surveillance 2",
-       "Surveilans 2"
+       "Surveillance 2"
       ],
       "d": "2027-11-10",
       "days": 2,
@@ -33168,7 +33168,7 @@
      {
       "t": [
        "Recertification",
-       "Resertifikasi"
+       "Recertification"
       ],
       "d": "2028-02-14",
       "days": 3,
@@ -33356,7 +33356,7 @@
       "id": "unverif",
       "l": [
        "Evidence files that cannot be verified",
-       "Berkas bukti tak terverifikasi"
+       "Berkas evidence tak terverifikasi"
       ],
       "src": "unverif"
      },
@@ -34072,11 +34072,11 @@
    ],
    "bcms": [
     "BIA & Risk Assessment",
-    "BIA & Penilaian Risiko"
+    "BIA & Risk Assessment"
    ],
    "abms": [
     "Bribery Risk Assessment",
-    "Penilaian Risiko Penyuapan"
+    "Bribery Risk Assessment"
    ]
   },
   "gtSuggestions": {

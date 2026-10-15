@@ -15,12 +15,12 @@ async function openGt(page) {
 }
 
 test.describe('Traceability viewer', () => {
-  test('shows the first pack chain with broken nodes and the clause at risk', async ({ page }) => {
+  test('shows the first pack chain with gaps and the clause at risk', async ({ page }) => {
     await openGt(page);
     await expect(suggestions(page)).toHaveText(['R-014', 'R-022', 'R-031', 'R-003', 'A.8.13', 'PRC-07', 'A.5.23']);
     await expect(rows(page)).toHaveCount(8);
     expect(await nodeIds(page)).toEqual(['CI-02', 'R-014', 'T-014', 'A.8.2', 'A.8.2', 'PRC-07', 'EV-0280', 'M-07']);
-    expect(await nodeStates(page)).toEqual(['Ready', 'Broken', 'Broken', 'Ready', 'Ready', 'Broken', 'Ready', 'Broken']);
+    expect(await nodeStates(page)).toEqual(['Ready', 'Gap', 'Gap', 'Ready', 'Ready', 'Gap', 'Ready', 'Gap']);
     await expect(rows(page).nth(1)).toContainText('Clause at risk 6.1.2');
     await expect(rows(page).nth(5)).toContainText('Clause at risk 7.5');
     await expect(rows(page).nth(5)).toContainText('v3.2, Expired, Review due 24 Sep 2026');
@@ -44,7 +44,7 @@ test.describe('Traceability viewer', () => {
     await suggestions(page).filter({ hasText: 'A.8.13' }).click();
     await expect(input(page)).toHaveValue('A.8.13');
     expect(await nodeIds(page)).toEqual(['R-014', 'A.8.13', 'A.8.13', 'PRC-11', 'EV-0313']);
-    expect(await nodeStates(page)).toEqual(['Broken', 'Pending', 'Pending', 'Broken', 'Broken']);
+    expect(await nodeStates(page)).toEqual(['Gap', 'Pending', 'Pending', 'Gap', 'Gap']);
     await expect(rows(page).nth(4)).toContainText('Clause at risk 8.1 / 9.1');
     await expect(rows(page).nth(4)).toContainText('SharePoint Online, v5.0, Missing, Critical, 31 May 2026');
 
@@ -67,7 +67,7 @@ test.describe('Traceability viewer', () => {
     await input(page).fill('r-003');
     await traceBtn(page).click();
     await expect(rows(page)).toHaveCount(8);
-    expect(await nodeStates(page)).toEqual(['Ready', 'Ready', 'Ready', 'Ready', 'Ready', 'Broken', 'Ready', 'Ready']);
+    expect(await nodeStates(page)).toEqual(['Ready', 'Ready', 'Ready', 'Ready', 'Ready', 'Gap', 'Ready', 'Ready']);
 
     await input(page).fill('EV-0100');
     await traceBtn(page).click();

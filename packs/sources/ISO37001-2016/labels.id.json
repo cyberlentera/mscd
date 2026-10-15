@@ -2,7 +2,7 @@
   "ms.name": "ABMS",
   "ms.long_name": "Sistem manajemen anti-penyuapan",
   "ms.manager_role": "Fungsi Kepatuhan Anti-Penyuapan",
-  "gate.name": "Penilaian Risiko Penyuapan",
+  "gate.name": "Bribery Risk Assessment",
   "applicability.artefact_name": "Proporsionalitas Kontrol",
   "risk.object_name": "Risiko penyuapan"
 }

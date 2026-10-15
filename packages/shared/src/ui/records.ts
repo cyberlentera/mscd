@@ -38,8 +38,8 @@ export const MsAudit = named(
   z.object({ name: Pair, date: IsoDate, days: z.int().min(0).nullable(), prepWindowDays: z.int().min(0).max(365) }),
   'Next audit event of a system (TS 9.4, G.5 MS.audit)',
   {
-    valid: [EXAMPLE_MS.audit, { name: ['Stage 1', 'Tahap 1'], date: '2027-02-10', days: null, prepWindowDays: 60 }],
-    invalid: [{ name: ['Stage 1', 'Tahap 1'], date: '2027-02-10', days: 1 }, { ...EXAMPLE_MS.audit, date: '10 Feb 2027' }],
+    valid: [EXAMPLE_MS.audit, { name: ['Stage 1', 'Stage 1'], date: '2027-02-10', days: null, prepWindowDays: 60 }],
+    invalid: [{ name: ['Stage 1', 'Stage 1'], date: '2027-02-10', days: 1 }, { ...EXAMPLE_MS.audit, date: '10 Feb 2027' }],
   },
 );
 export type MsAudit = z.infer<typeof MsAudit>;

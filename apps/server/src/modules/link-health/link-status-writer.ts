@@ -145,10 +145,10 @@ export class LinkStatusWriter {
           msId: e.ms_ids[0] ?? null,
           digest: true,
           createdBy: SYSTEM_USER_ID,
-          title: { en: `New file version for evidence ${e.evidence_code}`, id: `Versi berkas baru untuk bukti ${e.evidence_code}` },
+          title: { en: `New file version for evidence ${e.evidence_code}`, id: `Versi berkas baru untuk evidence ${e.evidence_code}` },
           body: {
             en: `The file of ${e.evidence_code} ${e.title} has a newer version than the one linked as evidence. The evidence stays valid; review the new version and link it if it should replace the evidence (BR-32).`,
-            id: `Berkas ${e.evidence_code} ${e.title} memiliki versi yang lebih baru daripada yang ditautkan sebagai bukti. Bukti tetap berlaku; tinjau versi baru dan tautkan bila harus menggantikan bukti (BR-32).`,
+            id: `Berkas ${e.evidence_code} ${e.title} memiliki versi yang lebih baru daripada yang ditautkan sebagai evidence. Evidence tetap berlaku; tinjau versi baru dan tautkan bila harus menggantikan evidence (BR-32).`,
           },
           ref: { module: 'implementation', entityType: 'evidence', id: e.id, code: e.evidence_code },
         });

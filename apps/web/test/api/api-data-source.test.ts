@@ -509,12 +509,12 @@ describe('commands', () => {
 describe('errors and session', () => {
   it('maps a problem to the error of the result: messages, then the title; warnings to pairs', async () => {
     const { ds, routes } = await loaded({
-      'POST /api/v1/ms/isms/applicability/:id/transitions': problem(422, 'business-rule', { rule: 'BR-01', messages: { en: 'No valid evidence in the current period', id: 'Tidak ada bukti valid pada periode berjalan' } }),
+      'POST /api/v1/ms/isms/applicability/:id/transitions': problem(422, 'business-rule', { rule: 'BR-01', messages: { en: 'No valid evidence in the current period', id: 'Tidak ada evidence valid pada periode berjalan' } }),
     });
     const id = (await ds.snapshot)!.refs['isms:req:A.8.13'].id;
-    routes[`POST /api/v1/ms/isms/applicability/${id}/transitions`] = problem(422, 'business-rule', { rule: 'BR-01', messages: { en: 'No valid evidence in the current period', id: 'Tidak ada bukti valid pada periode berjalan' } });
+    routes[`POST /api/v1/ms/isms/applicability/${id}/transitions`] = problem(422, 'business-rule', { rule: 'BR-01', messages: { en: 'No valid evidence in the current period', id: 'Tidak ada evidence valid pada periode berjalan' } });
     const r = await ds.markComplete('isms:req:A.8.13');
-    expect(r).toEqual({ ok: false, changed: [], error: { status: 422, rule: 'BR-01', message: ['No valid evidence in the current period', 'Tidak ada bukti valid pada periode berjalan'] } });
+    expect(r).toEqual({ ok: false, changed: [], error: { status: 422, rule: 'BR-01', message: ['No valid evidence in the current period', 'Tidak ada evidence valid pada periode berjalan'] } });
     routes[`POST /api/v1/ms/isms/applicability/${id}/transitions`] = problem(412, 'precondition-failed');
     expect((await ds.markComplete('isms:req:A.8.13')).error).toEqual({ status: 412, message: ['Title of precondition-failed', 'Title of precondition-failed'] });
     routes[`POST /api/v1/ms/isms/applicability/${id}/transitions`] = json({ ok: true, changed: ['isms'], warnings: [{ rule: 'BR-41', messages: { en: 'Holder has 12 open items', id: 'Pemegang memiliki 12 item terbuka' } }] });

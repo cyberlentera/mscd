@@ -88,7 +88,7 @@ test.describe('Display settings', () => {
   });
 
   for (const ms of SYSTEMS) {
-    test(`Indonesian renders every ${ms} screen with translated titles and no leftover keys`, async ({ page }) => {
+    test(`Indonesian renders every ${ms} screen with no leftover keys`, async ({ page }) => {
       test.slow(); // walks every screen of the system
       await openIn(page, '?lang=id', ms);
       await expect(page.locator('aside nav button')).toHaveCount(SCREENS_ID.length);
@@ -104,13 +104,13 @@ test.describe('Display settings', () => {
 
   test('Indonesian translates statuses, chips and dates', async ({ page }) => {
     await openApp(page, '?lang=id');
-    await go(page, 'Kontrol Annex A');
+    await go(page, 'Annex A controls');
     await expect(page.locator('main')).toContainText('Kontrol diterapkan');
     await expect(listRows(page).first()).toContainText('Diterapkan');
-    await go(page, 'Tinjauan dokumen');
+    await go(page, 'Document reviews');
     await expect(page.locator('main')).toContainText('Terlambat');
     await expect(page.locator('main')).toContainText('Okt 2026');
-    await go(page, 'Status bukti');
+    await go(page, 'Evidence status');
     await expect(page.locator('main')).toContainText('Kemutakhiran per frekuensi operasi');
   });
 

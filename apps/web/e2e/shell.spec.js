@@ -73,11 +73,15 @@ test.describe('App shell', () => {
   test('language switches between English and Indonesian', async ({ page }) => {
     await openApp(page);
     await page.locator('header button', { hasText: /^ID$/ }).click();
-    await expect(ui.title(page)).toHaveText('Beranda');
-    await expect(page.locator('aside nav')).toContainText('Status bukti');
+    // Screen names stay English in Indonesian (glossary of 2026-10-15); the nav groups and the shell translate.
+    await expect(ui.title(page)).toHaveText('Home');
+    await expect(page.locator('aside nav')).toContainText('Evidence status');
     await expect(page.locator('aside nav')).toContainText('Pemeliharaan');
+    await expect(page.locator('aside')).toContainText('Organisasi');
     await page.locator('header button', { hasText: /^EN$/ }).click();
     await expect(ui.title(page)).toHaveText('Home');
+    await expect(page.locator('aside nav')).toContainText('Maintain');
+    await expect(page.locator('aside nav')).not.toContainText('Pemeliharaan');
   });
 
   test('management system switcher changes the active system', async ({ page }) => {

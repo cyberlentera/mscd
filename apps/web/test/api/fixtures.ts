@@ -104,8 +104,8 @@ export async function wireOf(orgId = 'ndt', persona = 'manager'): Promise<WireFi
   }
   const tasks = {
     items: [
-      { key: 'isms:x:R-014', ms: 'isms', kind: 'x', id: 'R-014', title: ['R-014', 'R-014'], act: ['Select a treatment', 'Pilih perlakuan'], due: '2026-10-20', st: 'pending', after: false, stage: 'risk' },
-      { key: `isms:task:${uuidOf('task-1')}`, ms: 'isms', kind: 'task', id: uuidOf('task-1'), title: ['EV-0101', 'EV-0101'], act: ['Upload overdue evidence', 'Unggah bukti terlambat'], due: '2026-09-20', st: 'overdue', after: false, stage: null },
+      { key: 'isms:x:R-014', ms: 'isms', kind: 'x', id: 'R-014', title: ['R-014', 'R-014'], act: ['Select a treatment', 'Pilih risk treatment'], due: '2026-10-20', st: 'pending', after: false, stage: 'risk' },
+      { key: `isms:task:${uuidOf('task-1')}`, ms: 'isms', kind: 'task', id: uuidOf('task-1'), title: ['EV-0101', 'EV-0101'], act: ['Upload overdue evidence', 'Unggah evidence terlambat'], due: '2026-09-20', st: 'overdue', after: false, stage: null },
     ],
     counts: { total: 2, overdue: 1, week: 0, later: 1 },
   };

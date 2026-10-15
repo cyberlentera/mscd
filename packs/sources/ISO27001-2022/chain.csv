@@ -1,9 +1,9 @@
 stage_key,position,label_en,label_id,question_en,question_id,source,entity_type,risk_profile_code,is_mandatory,clause_at_risk,overview_clause,gate_type_label_en,gate_type_label_id
 context,1,Context issue,Isu konteks,How do you know which internal and external issues affect the ISMS?,Bagaimana Anda mengetahui isu internal dan eksternal yang memengaruhi ISMS?,entity,context_issue,,true,4.1,4,,
 risk,2,Risk,Risiko,Show me how this risk was identified and assessed.,Tunjukkan bagaimana risiko ini diidentifikasi dan dinilai.,entity,risk,information_security,true,6.1.2,6,Risk,Risiko
-treatment,3,Risk treatment,Perlakuan risiko,"What was done about it, and is it complete?","Apa yang dilakukan terhadapnya, dan apakah sudah selesai?",entity,risk_treatment,,true,6.1.3,6,Treatment,Perlakuan
-control,4,Control,Kontrol,Which Annex A control implements the treatment?,Kontrol Annex A mana yang menerapkan perlakuan ini?,applicability,,,true,6.1.3 d),8,,
+treatment,3,Risk treatment,Risk treatment,"What was done about it, and is it complete?","Apa yang dilakukan terhadapnya, dan apakah sudah selesai?",entity,risk_treatment,,true,6.1.3,6,Treatment,Treatment
+control,4,Control,Kontrol,Which Annex A control implements the treatment?,Kontrol Annex A mana yang menerapkan risk treatment ini?,applicability,,,true,6.1.3 d),8,,
 soa,5,SoA,SoA,"Why is this control applicable, and is the justification risk-based?","Mengapa kontrol ini berlaku, dan apakah justifikasinya berbasis risiko?",justification,chain_record,,true,6.1.3 d),6,SoA,SoA
 document,6,Document,Dokumen,"Where is it written down, and is that version current?","Di mana hal ini didokumentasikan, dan apakah versinya masih berlaku?",document,,,true,7.5,7,,
-evidence,7,Evidence,Bukti,"Prove it operated during this cycle, after implementation.","Buktikan bahwa ini berjalan selama siklus ini, setelah diterapkan.",evidence,,,true,8.1 / 9.1,8,,
+evidence,7,Evidence,Evidence,"Prove it operated during this cycle, after implementation.","Buktikan bahwa ini berjalan selama siklus ini, setelah diterapkan.",evidence,,,true,8.1 / 9.1,8,,
 metric,8,Metric,Metrik,How do you know it is effective?,Bagaimana Anda mengetahui bahwa ini efektif?,entity,metric,,true,9.1,9,,

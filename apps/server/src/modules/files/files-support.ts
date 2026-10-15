@@ -12,7 +12,7 @@ export type Warning = NonNullable<CommandResult['warnings']>[number];
 const RULE_TEXT: Readonly<Partial<Record<BusinessRuleId, Messages>>> = {
   'BR-23': {
     en: 'This requirement is similar but not identical. Make sure this evidence really satisfies both.',
-    id: 'Persyaratan ini mirip tetapi tidak identik. Pastikan bukti ini benar-benar memenuhi keduanya.',
+    id: 'Persyaratan ini mirip tetapi tidak identik. Pastikan evidence ini benar-benar memenuhi keduanya.',
   },
   'BR-29': {
     en: 'Repository {name} cannot be reached. Try again later or contact your administrator.',
@@ -28,7 +28,7 @@ const RULE_TEXT: Readonly<Partial<Record<BusinessRuleId, Messages>>> = {
   },
   'BR-36': {
     en: 'The evidence date is later than the file creation date. Check the date again.',
-    id: 'Tanggal bukti lebih lambat dari tanggal pembuatan berkas. Periksa kembali tanggalnya.',
+    id: 'Tanggal evidence lebih lambat dari tanggal pembuatan berkas. Periksa kembali tanggalnya.',
   },
 };
 

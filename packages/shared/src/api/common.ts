@@ -250,7 +250,7 @@ export const Problem = named(
     valid: [
       {
         type: 'https://mscd.cyberlentera.com/problems/business-rule', title: 'Business rule violated', status: 422, rule: 'BR-01',
-        messages: { en: 'No valid evidence in the current period', id: 'Tidak ada bukti valid pada periode berjalan' },
+        messages: { en: 'No valid evidence in the current period', id: 'Tidak ada evidence valid pada periode berjalan' },
         requestId: '5f0c2a8e-6b1d-4c3e-9f7a-2b8c4d6e8f01',
       },
       {

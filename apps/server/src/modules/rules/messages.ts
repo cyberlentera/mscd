@@ -24,7 +24,7 @@ export const RULE_MESSAGES: Readonly<Record<RuleId, RuleMessageTemplate>> = {
   // Digest 6.2 (TS 8.1, PRD 6.3, PRD 8.2)
   'BR-01': {
     en: 'This entry cannot be set to implemented without evidence from the current period whose file is intact or moved. Set it to partially implemented or planned instead.',
-    id: 'Entri ini tidak dapat diubah menjadi diterapkan tanpa bukti dari periode berjalan yang berkasnya utuh atau dipindahkan. Ubah menjadi sebagian diterapkan atau direncanakan.',
+    id: 'Entri ini tidak dapat diubah menjadi diterapkan tanpa evidence dari periode berjalan yang berkasnya utuh atau dipindahkan. Ubah menjadi sebagian diterapkan atau direncanakan.',
   },
   'BR-02': {
     en: 'Link this applicable entry to at least one risk. Until it is, the entry cannot be verified and blocks the checkpoint.',
@@ -36,7 +36,7 @@ export const RULE_MESSAGES: Readonly<Record<RuleId, RuleMessageTemplate>> = {
   },
   'BR-04': {
     en: 'A risk treatment cannot be completed without residual risk acceptance by the risk owner, and the implementer cannot accept it.',
-    id: 'Perlakuan risiko tidak dapat diselesaikan tanpa penerimaan risiko residual oleh pemilik risiko, dan pelaksana tidak dapat menerimanya.',
+    id: 'Risk treatment tidak dapat diselesaikan tanpa penerimaan risiko residual oleh pemilik risiko, dan pelaksana tidak dapat menerimanya.',
   },
   'BR-05': {
     en: 'This risk is above the risk appetite and needs escalation.',
@@ -65,7 +65,7 @@ export const RULE_MESSAGES: Readonly<Record<RuleId, RuleMessageTemplate>> = {
   },
   'BR-11': {
     en: 'The evidence has expired. The entry was set to partially implemented and a task was created for the evidence owner.',
-    id: 'Bukti telah kedaluwarsa. Entri diubah menjadi sebagian diterapkan dan tugas dibuat untuk pemilik bukti.',
+    id: 'Evidence telah kedaluwarsa. Entri diubah menjadi sebagian diterapkan dan tugas dibuat untuk pemilik evidence.',
   },
   'BR-12': {
     en: 'This activity stays locked until every activity of checkpoint phase {phase} is verified.',
@@ -116,7 +116,7 @@ export const RULE_MESSAGES: Readonly<Record<RuleId, RuleMessageTemplate>> = {
   },
   'BR-23': {
     en: 'This requirement is similar but not identical. Make sure this evidence really satisfies both.',
-    id: 'Persyaratan ini mirip tetapi tidak identik. Pastikan bukti ini benar-benar memenuhi keduanya.',
+    id: 'Persyaratan ini mirip tetapi tidak identik. Pastikan evidence ini benar-benar memenuhi keduanya.',
   },
   'BR-24': {
     en: 'Recovery time must not exceed the maximum tolerable period of disruption.',
@@ -149,12 +149,12 @@ export const RULE_MESSAGES: Readonly<Record<RuleId, RuleMessageTemplate>> = {
   },
   'BR-31': {
     en: 'The evidence file can no longer be verified in {repository}. Re-link it or upload the correct version.',
-    id: 'Berkas bukti tidak dapat lagi diverifikasi di {repository}. Tautkan ulang atau unggah versi yang benar.',
+    id: 'Berkas evidence tidak dapat lagi diverifikasi di {repository}. Tautkan ulang atau unggah versi yang benar.',
     defaults: { repository: { en: 'its repository', id: 'repositorinya' } },
   },
   'BR-32': {
     en: 'This evidence file was changed after it was submitted. The recorded evidence remains the earlier version.',
-    id: 'Berkas bukti ini diubah setelah diserahkan. Bukti yang tercatat tetap versi sebelumnya.',
+    id: 'Berkas evidence ini diubah setelah diserahkan. Evidence yang tercatat tetap versi sebelumnya.',
   },
   'BR-33': {
     en: 'The edition of the standard in use is past its transition period.',
@@ -162,7 +162,7 @@ export const RULE_MESSAGES: Readonly<Record<RuleId, RuleMessageTemplate>> = {
   },
   'BR-34': {
     en: 'This evidence is not valid and is listed in the exceptions of the evidence pack manifest.',
-    id: 'Bukti ini tidak valid dan dicantumkan pada bagian pengecualian manifes paket bukti.',
+    id: 'Evidence ini tidak valid dan dicantumkan pada bagian pengecualian manifes paket evidence.',
     silent: true,
   },
   'BR-35': {
@@ -172,7 +172,7 @@ export const RULE_MESSAGES: Readonly<Record<RuleId, RuleMessageTemplate>> = {
   },
   'BR-36': {
     en: 'The evidence date is later than the file creation date. Check the date again.',
-    id: 'Tanggal bukti lebih lambat dari tanggal pembuatan berkas. Periksa kembali tanggalnya.',
+    id: 'Tanggal evidence lebih lambat dari tanggal pembuatan berkas. Periksa kembali tanggalnya.',
   },
   'BR-37': {
     en: 'The licence has expired. Data can still be read and exported.',

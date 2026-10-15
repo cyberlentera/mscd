@@ -35,12 +35,12 @@ function problemOf(error: unknown) {
 describe('problem errors (D.1)', () => {
   it('carry the slug, status and extension members', () => {
     const ref = { module: 'audit' as const, entityType: 'risk', id: '8a1f2d3c-4b5e-4f60-9a7b-1c2d3e4f5a6b', code: 'R-031' };
-    const rule = problemOf(new BusinessRuleError('BR-01', { en: 'No valid evidence', id: 'Tidak ada bukti valid' }, ref));
+    const rule = problemOf(new BusinessRuleError('BR-01', { en: 'No valid evidence', id: 'Tidak ada evidence valid' }, ref));
     expect(rule).toMatchObject({
       type: 'https://mscd.cyberlentera.com/problems/business-rule',
       status: 422,
       rule: 'BR-01',
-      messages: { en: 'No valid evidence', id: 'Tidak ada bukti valid' },
+      messages: { en: 'No valid evidence', id: 'Tidak ada evidence valid' },
       ref,
       requestId: REQUEST_ID,
     });

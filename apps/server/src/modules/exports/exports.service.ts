@@ -28,7 +28,7 @@ const TYPE_NAMES: Readonly<Record<ExportRequest['type'], readonly [string, strin
   portfolio_board: ['Portfolio board', 'Papan portofolio'],
   readiness: ['Readiness report', 'Laporan kesiapan'],
   soa: ['Statement of Applicability', 'Statement of Applicability'],
-  document_register: ['Document register', 'Daftar induk dokumen'],
+  document_register: ['Document register', 'Document register'],
   audit_trail: ['Audit trail', 'Jejak audit'],
 };
 

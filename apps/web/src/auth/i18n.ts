@@ -25,15 +25,15 @@ export function fill(pair: Pair, values: Record<string, string | number>): Pair 
 
 export const TEXT = {
   // brand panel
-  headline: ['The chain stays intact, or you hear about it first.', 'Rantai tetap utuh, atau Anda yang pertama tahu.'],
-  factFrameworks: ['ISO/IEC 27001, ISO 9001, ISO 22301, ISO 37001', 'ISO/IEC 27001, ISO 9001, ISO 22301, ISO 37001'],
-  factChain: ['One traceability chain for risks, controls, documents and evidence', 'Satu rantai ketertelusuran untuk risiko, kontrol, dokumen, dan bukti'],
+  headline: ['The chain stays intact, or you hear about it first.', 'Chain of Evidence tetap utuh, atau Anda yang pertama tahu.'],
+  factFrameworks: ['ISO 27001, 9001, 22301, 37001 and other standards as Framework Packs', 'ISO 27001, 9001, 22301, 37001, dan standar lain lewat Framework Pack'],
+  factChain: ['One traceability chain for risks, controls, documents and evidence', 'Satu Chain of Evidence yang menautkan risiko, kontrol, dokumen, dan evidence'],
   factFiles: ['Files stay in your repository', 'Berkas tetap berada di repositori Anda'],
   chainIssue: ['Issue', 'Isu'],
   chainRisk: ['Risk', 'Risiko'],
   chainControl: ['Control', 'Kontrol'],
   chainDocument: ['Document', 'Dokumen'],
-  chainEvidence: ['Evidence', 'Bukti'],
+  chainEvidence: ['Evidence', 'Evidence'],
   chainFinding: ['Finding', 'Temuan'],
   deploySaas: ['SaaS', 'SaaS'],
   deployOnprem: ['On-Premise', 'On-Premise'],

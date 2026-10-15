@@ -117,7 +117,7 @@ describe('self-assessment and audit activities', () => {
           db,
           'tst',
           sql`insert into audit_event (management_system_id, event_type, name_en, name_id, short_label, scheduled_at)
-              values (${system.id}, 'stage1', 'Stage 1 audit', 'Audit tahap 1', 'Stage 1', '2027-02-01') returning id, event_type`,
+              values (${system.id}, 'stage1', 'Stage 1 audit', 'Audit Stage 1', 'Stage 1', '2027-02-01') returning id, event_type`,
         );
         event = created!;
       } else {

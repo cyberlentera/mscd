@@ -24,7 +24,7 @@ export const AuditEventCreateRequest = named(
   z.strictObject(auditEventShape),
   'POST /ms/{ms}/audit-events body',
   {
-    valid: [{ eventType: 'stage1', nameEn: 'Stage 1 audit', nameId: 'Audit tahap 1', shortLabel: 'Stage 1', scheduledAt: '2027-02-10', auditDays: 1, prepWindowDays: 60 }],
+    valid: [{ eventType: 'stage1', nameEn: 'Stage 1 audit', nameId: 'Audit Stage 1', shortLabel: 'Stage 1', scheduledAt: '2027-02-10', auditDays: 1, prepWindowDays: 60 }],
     invalid: [{ eventType: 'stage3', nameEn: 'x', nameId: 'x', shortLabel: 'x', scheduledAt: '2027-02-10' }, { eventType: 'stage1', nameEn: 'x', nameId: 'x', shortLabel: 'x', scheduledAt: '2027-02-10', prepWindowDays: 400 }],
   },
 );

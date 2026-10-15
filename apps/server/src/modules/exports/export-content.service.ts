@@ -117,10 +117,10 @@ const CLAUSES: Readonly<Record<number, readonly [string, string]>> = {
 
 const T = {
   soaSheet: ['Statement of Applicability', 'Statement of Applicability'],
-  docSheet: ['Document register', 'Daftar induk dokumen'],
+  docSheet: ['Document register', 'Document register'],
   soaColumns: [
     ['ID', 'ID'], ['Title', 'Judul'], ['Theme', 'Tema'], ['Applicable', 'Berlaku'], ['Justification', 'Justifikasi'], ['Status', 'Status'],
-    ['Owner', 'Pemilik'], ['Implementing document', 'Dokumen pelaksana'], ['Frequency', 'Frekuensi'], ['Last evidence', 'Bukti terakhir'],
+    ['Owner', 'Pemilik'], ['Implementing document', 'Dokumen pelaksana'], ['Frequency', 'Frekuensi'], ['Last evidence', 'Evidence terakhir'],
     ['Freshness', 'Kemutakhiran'], ['Integrity', 'Integritas'],
   ],
   docColumns: [
@@ -137,7 +137,7 @@ const T = {
   clauseReadiness: ['Clause readiness', 'Kesiapan klausul'],
   clause: ['Clause', 'Klausul'],
   readiness: ['Readiness', 'Kesiapan'],
-  stages: ['Readiness per chain step', 'Kesiapan per tahap rantai'],
+  stages: ['Readiness per chain step', 'Kesiapan per tahap Chain of Evidence'],
   stage: ['Step', 'Tahap'],
   records: ['Records', 'Rekaman'],
   open: ['Open', 'Terbuka'],
@@ -167,9 +167,9 @@ const T = {
   findings: ['Open findings', 'Temuan terbuka'],
   major: ['major', 'mayor'],
   docExpired: ['Expired documents', 'Dokumen kedaluwarsa'],
-  evCritical: ['Critical evidence', 'Bukti kritis'],
-  evUnverifiable: ['Unverifiable evidence', 'Bukti tidak dapat diverifikasi'],
-  afterAudit: ['Chain items due after the audit', 'Item rantai jatuh tempo setelah audit'],
+  evCritical: ['Critical evidence', 'Evidence kritis'],
+  evUnverifiable: ['Unverifiable evidence', 'Evidence tidak dapat diverifikasi'],
+  afterAudit: ['Chain items due after the audit', 'Item Chain of Evidence jatuh tempo setelah audit'],
   requirements: ['Requirements', 'Persyaratan'],
   implemented: ['Implemented', 'Diterapkan'],
   documentsApproved: ['Documents approved', 'Dokumen disetujui'],

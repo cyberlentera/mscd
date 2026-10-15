@@ -12,6 +12,8 @@ const SAME = new Set([
   // role names that Indonesian teams use as they are
   'PIC', 'MS Manager', 'Tenant Admin', 'Tera', 'Link', 'Upload', 'Zero-transit', 'Pass-through',
   'SaaS, region Jakarta',
+  // screen names and the ISO terms Indonesian teams say in English (glossary of 2026-10-15)
+  ...SCREENS, 'Requirements', 'Evidence', 'Framework Pack', 'Gap', 'Traceability test', 'Risk treatment',
 ]);
 // Sample organisation data is content, not interface text: people, organisations, systems, repositories.
 const DATA = new Set([
@@ -23,7 +25,10 @@ const DATA = new Set([
 ]);
 // IDs, codes, versions, dates, numbers and all-capital abbreviations (ISMS, MSCD, EN, ID, initials).
 const CODE = /^(?:[A-Z][A-Za-z]{0,4}[-.]\s?[A-Z]?\d|Cl\. ?\d|ISO|v\d|rev \d|\d|[A-Z]{2,5}$)/;
-const allowed = (s) => SAME.has(s) || DATA.has(s) || CODE.test(s);
+// Audit event buttons: the certification audit name, English in both languages, and a date whose month is spelled
+// the same in Indonesian (Stage 1, 20 Jan 2025).
+const EVENT = /^(?:Stage [12]|Surveillance \d|Recertification), \d{1,2} (?:Jan|Feb|Mar|Apr|Jun|Jul|Sep|Nov) \d{4}$/;
+const allowed = (s) => SAME.has(s) || DATA.has(s) || CODE.test(s) || EVENT.test(s);
 
 // Interface labels on screen: header and sidebar text and tooltips, table headers, button labels
 // (the tooltip of icon-only buttons), summary tab labels, drawer fact keys and the modal.
@@ -103,25 +108,25 @@ test.describe('Indonesian interface', () => {
 
   test('generated sentences, dates and plurals follow the language', async ({ page }) => {
     await openApp(page, '?lang=id');
-    await go(page, 'Tugas Saya');
+    await go(page, 'My Tasks');
     await expect(page.locator('main')).toContainText('28 Sep - 4 Okt 2026');
     await expect(page.locator('main')).toContainText('Rekaman');
     await expect(page.locator('main')).toContainText('Selesaikan penerapan classification of information');
-    await go(page, 'Daftar induk dokumen');
+    await go(page, 'Document register');
     await expect(groupRows(page)).toHaveText([/^Kebijakan\s*\d+$/, /^Standar\s*\d+$/, /^Prosedur\s*\d+$/, /^Rencana\s*\d+$/, /^Register\s*\d+$/]);
-    await go(page, 'Standar & lisensi');
+    await go(page, 'Standards & licence');
     await expect(page.locator('main')).toContainText('Pack beta');
     await expect(page.locator('main')).toContainText('2015 dalam transisi');
-    await go(page, 'Penyimpanan berkas');
+    await go(page, 'File storage');
     await expect(page.locator('main')).toContainText('Retensi 6 tahun, enkripsi per tenant');
-    await go(page, 'Siklus sertifikasi');
+    await go(page, 'Certification cycle');
     await expect(page.locator('main')).toContainText('Agenda audit, ISMS');
-    await expect(page.locator('main')).toContainText('Resert + transisi');
-    await go(page, 'Beranda');
+    await expect(page.locator('main')).toContainText('Recert + transisi');
+    await go(page, 'Home');
     await expect(page.locator('main [data-tip="16 item tertunda jatuh tempo setelah tanggal audit"]')).toHaveCount(1);
     await expect(page.locator('aside')).toContainText('Organisasi');
     await expect(page.locator('aside')).toContainText('Pemeliharaan');
-    await expect(page.locator('aside')).toContainText('Paket framework');
+    await expect(page.locator('aside')).toContainText('Framework Pack');
     await expect(page.locator('header')).toContainText('Manajer SM, ISMS Manager');
     await expect(page.locator('aside button[title="Ciutkan"]')).toHaveCount(1);
     await expect(page.locator('header button[title="Tema"]')).toHaveCount(1);

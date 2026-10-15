@@ -83,7 +83,7 @@ export class PackBundleStore {
       messageKey: 'packs.import_unavailable',
       messages: {
         en: 'This installation cannot keep an imported pack bundle for the worker. Install the pack with mscd-server packs install <file>, or put it in packs.dir and run migrate.',
-        id: 'Instalasi ini tidak dapat menyimpan bundel paket yang diimpor untuk worker. Pasang paket dengan mscd-server packs install <file>, atau letakkan di packs.dir lalu jalankan migrate.',
+        id: 'Instalasi ini tidak dapat menyimpan bundel Framework Pack yang diimpor untuk worker. Pasang Framework Pack dengan mscd-server packs install <file>, atau letakkan di packs.dir lalu jalankan migrate.',
       },
     });
   }

@@ -73,7 +73,7 @@ const LABELS = {
   isms: {
     managerRoleId: 'Manajer ISMS',
     gate: ['Risk & SoA', 'Risiko & SoA'],
-    artefact: ['Statement of Applicability', 'Pernyataan Keberlakuan'],
+    artefact: ['Statement of Applicability', 'Statement of Applicability'],
     riskObject: ['Information security risk', 'Risiko keamanan informasi'],
   },
   qms: {
@@ -84,13 +84,13 @@ const LABELS = {
   },
   bcms: {
     managerRoleId: 'Manajer BCMS',
-    gate: ['BIA & Risk Assessment', 'BIA & Penilaian Risiko'],
+    gate: ['BIA & Risk Assessment', 'BIA & Risk Assessment'],
     artefact: ['BCMS Scope Determination', 'Penetapan Ruang Lingkup BCMS'],
     riskObject: ['Disruption risk', 'Risiko gangguan'],
   },
   abms: {
     managerRoleId: 'Fungsi Kepatuhan Anti-Penyuapan',
-    gate: ['Bribery Risk Assessment', 'Penilaian Risiko Penyuapan'],
+    gate: ['Bribery Risk Assessment', 'Bribery Risk Assessment'],
     artefact: ['Control Proportionality', 'Proporsionalitas Kontrol'],
     riskObject: ['Bribery risk', 'Risiko penyuapan'],
   },
@@ -129,7 +129,7 @@ const OVERVIEW_CLAUSE = { context: 4, brisk: 4, risk: 6, treatment: 6, soa: 6, a
 /** Gate item type labels of the sample's chain records (UI 2.4); other stages show their key. */
 const GATE_TYPE_LABEL = {
   risk: ['Risk', 'Risiko'],
-  treatment: ['Treatment', 'Perlakuan'],
+  treatment: ['Treatment', 'Treatment'],
   soa: ['SoA', 'SoA'],
   bia: ['BIA', 'BIA'],
 };
@@ -139,7 +139,7 @@ const QUESTION_ID = {
   'How do you know which internal and external issues affect the ISMS?': 'Bagaimana Anda mengetahui isu internal dan eksternal yang memengaruhi ISMS?',
   'Show me how this risk was identified and assessed.': 'Tunjukkan bagaimana risiko ini diidentifikasi dan dinilai.',
   'What was done about it, and is it complete?': 'Apa yang dilakukan terhadapnya, dan apakah sudah selesai?',
-  'Which Annex A control implements the treatment?': 'Kontrol Annex A mana yang menerapkan perlakuan ini?',
+  'Which Annex A control implements the treatment?': 'Kontrol Annex A mana yang menerapkan risk treatment ini?',
   'Why is this control applicable, and is the justification risk-based?': 'Mengapa kontrol ini berlaku, dan apakah justifikasinya berbasis risiko?',
   'Where is it written down, and is that version current?': 'Di mana hal ini didokumentasikan, dan apakah versinya masih berlaku?',
   'Prove it operated during this cycle, after implementation.': 'Buktikan bahwa ini berjalan selama siklus ini, setelah diterapkan.',
@@ -167,8 +167,8 @@ const PHASE_NAME_ID = {
   'Initiation & mandate': 'Inisiasi & mandat',
   'Context & scope': 'Konteks & ruang lingkup',
   'Leadership & policy': 'Kepemimpinan & kebijakan',
-  'Risk assessment & SoA': 'Penilaian risiko & SoA',
-  'Risk treatment & controls': 'Perlakuan risiko & kontrol',
+  'Risk assessment & SoA': 'Risk assessment & SoA',
+  'Risk treatment & controls': 'Risk treatment & kontrol',
   'Documentation': 'Dokumentasi',
   'Operation & awareness': 'Operasi & kepedulian',
   'Performance evaluation': 'Evaluasi kinerja',
@@ -177,9 +177,9 @@ const PHASE_NAME_ID = {
   'Risk & opportunity + process map': 'Risiko & peluang + peta proses',
   'Process controls & design': 'Kendali proses & desain',
   'ISO 9001:2026 transition': 'Transisi ISO 9001:2026',
-  'BIA & risk assessment': 'BIA & penilaian risiko',
+  'BIA & risk assessment': 'BIA & risk assessment',
   'BC strategies & plans': 'Strategi & rencana BC',
-  'Bribery risk assessment': 'Penilaian risiko penyuapan',
+  'Bribery risk assessment': 'Bribery risk assessment',
   'Anti-bribery controls': 'Kontrol anti-penyuapan',
 };
 

@@ -74,7 +74,7 @@ export class ObjectAccessService {
         // D-34: auditors never get a provider URL; a copy the api cannot stream stays closed to them.
         throw refusal('files.copy_not_streamable', {
           en: 'This evidence copy cannot be opened here. Ask the organisation for a copy in the Managed Vault.',
-          id: 'Salinan bukti ini tidak dapat dibuka di sini. Minta organisasi menyediakan salinan di Managed Vault.',
+          id: 'Salinan evidence ini tidak dapat dibuka di sini. Minta organisasi menyediakan salinan di Managed Vault.',
         });
       } else {
         via = 'redirect';

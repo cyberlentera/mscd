@@ -179,7 +179,7 @@ export const EventRow = named(
   'Audit event of the certification cycle (UI 1.10 EVENTS, G.5)',
   {
     valid: [...EXAMPLE_MS_SNAPSHOT.EVENTS, { t: 'Stage 1', d: '2027-02-10', days: null }, { t: 'Stage 2', d: '2025-03-10', days: 3, type: 'stage2', outcome: 'not_recommended' }],
-    invalid: [{ t: ['Stage 1', 'Tahap 1'], d: '2027-02-10' }, { t: ['Stage 1', 'Tahap 1'], d: 'Feb 2027', days: 1 }, { t: 'Stage 2', d: '2025-03-10', days: 3, outcome: 'passed' }],
+    invalid: [{ t: ['Stage 1', 'Stage 1'], d: '2027-02-10' }, { t: ['Stage 1', 'Stage 1'], d: 'Feb 2027', days: 1 }, { t: 'Stage 2', d: '2025-03-10', days: 3, outcome: 'passed' }],
   },
 );
 export type EventRow = z.infer<typeof EventRow>;

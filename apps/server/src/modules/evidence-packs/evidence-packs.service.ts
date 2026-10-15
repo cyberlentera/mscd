@@ -112,7 +112,7 @@ export class EvidencePacksService {
         ok: true,
         changed: [ms],
         taskId: task.id,
-        message: [`Evidence pack queued; files go to ${repository}`, `Paket bukti dalam antrean; berkas disimpan di ${repository}`],
+        message: [`Evidence pack queued; files go to ${repository}`, `Paket evidence dalam antrean; berkas disimpan di ${repository}`],
         data: { packId: pack.id },
       };
     });

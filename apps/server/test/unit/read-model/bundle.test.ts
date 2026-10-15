@@ -12,7 +12,7 @@ import { loadSampleSnapshot, type SampleOrgSnapshot } from '../../../src/seed/sn
 
 const sample = loadSampleSnapshot();
 const today = sample.today;
-const GATE_TYPES: Record<string, Pair> = { risk: ['Risk', 'Risiko'], treatment: ['Treatment', 'Perlakuan'], soa: ['SoA', 'SoA'], bia: ['BIA', 'BIA'] };
+const GATE_TYPES: Record<string, Pair> = { risk: ['Risk', 'Risiko'], treatment: ['Treatment', 'Treatment'], soa: ['SoA', 'SoA'], bia: ['BIA', 'BIA'] };
 
 function systems(): { org: string; ms: string; snapshot: SampleOrgSnapshot }[] {
   return Object.entries(sample.snapshots).flatMap(([org, snapshot]) => Object.keys(snapshot.bundles).map((ms) => ({ org, ms, snapshot })));

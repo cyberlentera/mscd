@@ -114,7 +114,7 @@ export class FreshnessService {
             kind: 'evidence_aging',
             msId: e.msId,
             digest: true,
-            title: { en: `Evidence ageing: ${e.code}`, id: `Bukti hampir kedaluwarsa: ${e.code}` },
+            title: { en: `Evidence ageing: ${e.code}`, id: `Evidence hampir kedaluwarsa: ${e.code}` },
             body: {
               en: `${e.code} ${e.title} (produced ${fmtDay(e.producedAt, 'en')}) is ageing. Provide a newer version before it expires.`,
               id: `${e.code} ${e.title} (dibuat ${fmtDay(e.producedAt, 'id')}) hampir kedaluwarsa. Sediakan versi yang lebih baru sebelum masa berlakunya habis.`,
@@ -296,7 +296,7 @@ export class FreshnessService {
           title:
             rule === 'BR-31'
               ? { en: `Re-link or upload the correct version of ${e.evidence_code}`, id: `Tautkan ulang atau unggah versi yang benar untuk ${e.evidence_code}` }
-              : { en: `Provide current evidence for ${e.evidence_code}`, id: `Sediakan bukti terkini untuk ${e.evidence_code}` },
+              : { en: `Provide current evidence for ${e.evidence_code}`, id: `Sediakan evidence terkini untuk ${e.evidence_code}` },
         });
         if (task.created) result.tasksOpened += 1;
       }
@@ -335,11 +335,11 @@ export class FreshnessService {
       rule === 'BR-31'
         ? {
             en: `The evidence file of ${entry.code} can no longer be verified in its repository, so the control is now partially implemented (BR-31). Re-link it or upload the correct version.`,
-            id: `Berkas bukti ${entry.code} tidak dapat diverifikasi lagi di repositorinya, sehingga kontrol kini sebagian diterapkan (BR-31). Tautkan ulang atau unggah versi yang benar.`,
+            id: `Berkas evidence ${entry.code} tidak dapat diverifikasi lagi di repositorinya, sehingga kontrol kini sebagian diterapkan (BR-31). Tautkan ulang atau unggah versi yang benar.`,
           }
         : {
             en: `The evidence of ${entry.code} has expired, so the control is now partially implemented (BR-11). Provide current evidence and verify it again.`,
-            id: `Bukti ${entry.code} telah kedaluwarsa, sehingga kontrol kini sebagian diterapkan (BR-11). Sediakan bukti terkini dan verifikasi kembali.`,
+            id: `Evidence ${entry.code} telah kedaluwarsa, sehingga kontrol kini sebagian diterapkan (BR-11). Sediakan evidence terkini dan verifikasi kembali.`,
           };
     const created = await this.notifications.create(trx, {
       recipientUserId: entry.owner_user_id,

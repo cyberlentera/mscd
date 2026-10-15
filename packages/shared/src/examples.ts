@@ -8,8 +8,8 @@ export const EXAMPLE_MS = {
   name: ['Information security management system', 'Sistem manajemen keamanan informasi'], mgr: 'rina', mgrRole: 'ISMS Manager',
   color: '#e8731a', scope: 'Data centre & managed services operations: Jakarta and Surabaya', certifier: 'PT Sertifikasi Nusantara',
   lead: 'Ir. Dwi Hartanto, IRCA LA', cert: ['Certified 14 Mar 2025, cycle 2025 to 2028', 'Tersertifikasi 14 Mar 2025, siklus 2025 sampai 2028'],
-  stage: ['Surveillance 1, year 2', 'Surveilans 1, tahun ke-2'],
-  audit: { name: ['Surveillance audit 1', 'Audit surveilans 1'], date: '2026-11-12', days: 2, prepWindowDays: 60 },
+  stage: ['Surveillance 1, year 2', 'Surveillance 1, tahun ke-2'],
+  audit: { name: ['Surveillance audit 1', 'Audit surveillance 1'], date: '2026-11-12', days: 2, prepWindowDays: 60 },
   clauses: [100, 100, 88, 72, 94, 81, 67], findings: { open: 3, major: 1 }, loc: 'sp', locMode: 'Customer Repository, Link',
   pack: 'ISO27001-2022 v1.2.0', phase: ['Operate & maintain', 'Operasi & pemeliharaan'], unit: 'ctrl',
   theme: { 5: 'Organizational', 6: 'People', 7: 'Physical', 8: 'Technological' },
@@ -119,8 +119,8 @@ export const EXAMPLE_MS_SNAPSHOT = {
   },
   X: { risk: [EXAMPLE_X_RECORD] },
   EVENTS: [
-    { t: ['Stage 2, certification', 'Tahap 2, sertifikasi'], d: '2025-03-10', days: 3, result: ['Certified, 2 Minor NC, 1 OFI', 'Tersertifikasi, 2 NC Minor, 1 OFI'] },
-    { t: ['Surveillance 1', 'Surveilans 1'], d: '2026-11-12', days: 2, next: true },
+    { t: ['Stage 2, certification', 'Stage 2, sertifikasi'], d: '2025-03-10', days: 3, result: ['Certified, 2 Minor NC, 1 OFI', 'Tersertifikasi, 2 NC Minor, 1 OFI'] },
+    { t: ['Surveillance 1', 'Surveillance 1'], d: '2026-11-12', days: 2, next: true },
   ],
   FOCUS: 'Vulnerability remediation (NC-2025-02)',
   PREP: [['Approve SoA v3.0', 'hendra', '2026-10-15', 'open']],
@@ -128,7 +128,7 @@ export const EXAMPLE_MS_SNAPSHOT = {
   CYCLE_ITEMS: [['9.3', 'Management review with all mandatory inputs', 'hendra', '2026-10-28', 'open', '2 of 7 inputs not yet prepared']],
   DRIFT: [
     { id: 'risk12', l: ['Risks not reassessed in 12 months', 'Risiko tidak dinilai ulang 12 bulan'], rows: [['R-005', 'Data centre power failure', 'bagus', '2026-10-30']] },
-    { id: 'unverif', l: ['Evidence files that cannot be verified', 'Berkas bukti tak terverifikasi'], src: 'unverif' },
+    { id: 'unverif', l: ['Evidence files that cannot be verified', 'Berkas evidence tak terverifikasi'], src: 'unverif' },
   ],
   refs: { 'isms:x:R-031': EXAMPLE_REF },
 } as const;

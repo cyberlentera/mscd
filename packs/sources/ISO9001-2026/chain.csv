@@ -5,5 +5,5 @@ action,3,Action,Tindakan,What actions were planned and were they effective?,"Tin
 process,4,Process / requirement,Proses / persyaratan,Show the process and its operational controls.,Tunjukkan prosesnya beserta kendali operasionalnya.,applicability,,,true,4.4,8,,
 objective,5,Quality objective,Sasaran mutu,Are objectives measurable and monitored?,Apakah sasaran dapat diukur dan dipantau?,entity,quality_objective,,true,6.2,6,,
 document,6,Document,Dokumen,Is this the current controlled version?,Apakah ini versi terkendali yang berlaku?,document,,,true,7.5,7,,
-evidence,7,Evidence,Bukti,Show records from the current cycle.,Tunjukkan rekaman dari siklus berjalan.,evidence,,,true,8.1 / 9.1,8,,
+evidence,7,Evidence,Evidence,Show records from the current cycle.,Tunjukkan rekaman dari siklus berjalan.,evidence,,,true,8.1 / 9.1,8,,
 metric,8,Metric,Metrik,How is performance evaluated?,Bagaimana kinerja dievaluasi?,entity,metric,,true,9.1,9,,

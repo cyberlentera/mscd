@@ -90,14 +90,14 @@ describe('requests', () => {
 describe('errors', () => {
   it('maps a problem to {status, rule, message: [messages.en, messages.id]} with the D.1 members', async () => {
     const { fetch } = fakeFetch({
-      'POST /api/v1/x': problem(422, 'business-rule', { rule: 'BR-01', messages: { en: 'No valid evidence', id: 'Tidak ada bukti valid' }, messageKey: 'br.01', detail: 'd', errors: [{ path: 'body.to', message: 'm' }] }),
+      'POST /api/v1/x': problem(422, 'business-rule', { rule: 'BR-01', messages: { en: 'No valid evidence', id: 'Tidak ada evidence valid' }, messageKey: 'br.01', detail: 'd', errors: [{ path: 'body.to', message: 'm' }] }),
     });
     const r = await new ApiClient({ fetch }).post('/api/v1/x', {});
     expect(r.ok).toBe(false);
     if (r.ok) return;
     expect(r.status).toBe(422);
     expect(r.error).toMatchObject({
-      status: 422, slug: 'business-rule', rule: 'BR-01', message: ['No valid evidence', 'Tidak ada bukti valid'], messageKey: 'br.01', detail: 'd',
+      status: 422, slug: 'business-rule', rule: 'BR-01', message: ['No valid evidence', 'Tidak ada evidence valid'], messageKey: 'br.01', detail: 'd',
       errors: [{ path: 'body.to', message: 'm' }], requestId: 'req-12345678',
     });
   });

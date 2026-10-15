@@ -556,10 +556,10 @@ export class RepositoriesService {
           recipientUserId: adminId,
           kind: 'move_request',
           msId: system.id,
-          title: { en: `Move evidence out of ${row.name}`, id: `Pindahkan bukti dari ${row.name}` },
+          title: { en: `Move evidence out of ${row.name}`, id: `Pindahkan evidence dari ${row.name}` },
           body: {
             en: `${principal.user.displayName} asks to move the ${system.code} evidence of the personal repository ${row.name} to a team library.${body.note ? ` Note: ${body.note}` : ''}`,
-            id: `${principal.user.displayName} meminta bukti ${system.code} di repositori pribadi ${row.name} dipindahkan ke library tim.${body.note ? ` Catatan: ${body.note}` : ''}`,
+            id: `${principal.user.displayName} meminta evidence ${system.code} di repositori pribadi ${row.name} dipindahkan ke library tim.${body.note ? ` Catatan: ${body.note}` : ''}`,
           },
         });
         if (created) notified += 1;

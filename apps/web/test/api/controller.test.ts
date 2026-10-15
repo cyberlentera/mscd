@@ -231,11 +231,11 @@ describe('controller in API mode', () => {
     app.command((ds: AnyRecord) => ds.markComplete('isms:req:A.8.13'), () => app.toast(app.t('toastComplete')));
     await settle(app);
     expect(app.state.toast).toBe(app.t('toastComplete') + '. Holder has 12 open items');
-    routes[`POST /api/v1/ms/isms/applicability/${id}/transitions`] = problem(422, 'business-rule', { rule: 'BR-01', messages: { en: 'No valid evidence in the current period', id: 'Tidak ada bukti valid pada periode berjalan' } });
+    routes[`POST /api/v1/ms/isms/applicability/${id}/transitions`] = problem(422, 'business-rule', { rule: 'BR-01', messages: { en: 'No valid evidence in the current period', id: 'Tidak ada evidence valid pada periode berjalan' } });
     app.state = { ...app.state, lang: 'id' };
     app.command((ds: AnyRecord) => ds.markComplete('isms:req:A.8.13'), () => app.toast('done'));
     await settle(app);
-    expect(app.state.toast).toBe('Tidak ada bukti valid pada periode berjalan');
+    expect(app.state.toast).toBe('Tidak ada evidence valid pada periode berjalan');
     routes[`POST /api/v1/ms/isms/applicability/${id}/transitions`] = 'network-error';
     app.command((ds: AnyRecord) => ds.markComplete('isms:req:A.8.13'), () => app.toast('done'));
     await settle(app);

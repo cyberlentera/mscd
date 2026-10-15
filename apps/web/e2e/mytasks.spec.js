@@ -138,7 +138,7 @@ test.describe('My Tasks', () => {
 
   // The due badge ('9 Des 2026, Lewat tanggal audit') and the button ('Buka item penghambat') are widest for the
   // Domain Owner in Indonesian: neither leaves its column nor reaches the other at 1280 px.
-  for (const [query, role, title] of [['', 'Domain Owner', 'My Tasks'], ['?lang=id', 'Pemilik Domain', 'Tugas Saya']]) {
+  for (const [query, role, title] of [['', 'Domain Owner', 'My Tasks'], ['?lang=id', 'Pemilik Domain', 'My Tasks']]) {
     test(`task rows of the ${role} fit at 1280 px`, async ({ page }) => {
       await page.setViewportSize({ width: 1280, height: 900 });
       await openApp(page, query);

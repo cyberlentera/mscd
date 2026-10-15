@@ -108,7 +108,7 @@ describe('tenant isolation and privileges (J.5)', () => {
         .execute();
       const event = await trx
         .insertInto('audit_event')
-        .values({ management_system_id: org.msId, certification_cycle_id: cycle.id, event_type: 'surveillance', name_en: 'Surveillance 1', name_id: 'Surveilans 1', short_label: 'S1', scheduled_at: '2026-11-20' })
+        .values({ management_system_id: org.msId, certification_cycle_id: cycle.id, event_type: 'surveillance', name_en: 'Surveillance 1', name_id: 'Surveillance 1', short_label: 'S1', scheduled_at: '2026-11-20' })
         .returning('id')
         .executeTakeFirstOrThrow();
       await trx.insertInto('audit_prep_task').values({ audit_event_id: event.id, management_system_id: org.msId, title: 'Internal audit', owner_user_id: member, due_at: '2026-10-30' }).execute();

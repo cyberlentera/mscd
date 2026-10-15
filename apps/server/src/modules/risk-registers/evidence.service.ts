@@ -259,7 +259,7 @@ export class EvidenceService {
       if (!target) throw new NotFoundError();
       if (targets.length === 1) {
         throw unprocessable('evidence.last_target', 'The last target of an evidence record cannot be removed; delete the evidence instead',
-          'Target terakhir dari catatan bukti tidak dapat dihapus; hapus buktinya');
+          'Target terakhir dari catatan evidence tidak dapat dihapus; hapus evidence-nya');
       }
       await sql`update evidence_target set deleted_at = now(), updated_at = now(), updated_by = ${actor} where id = ${target.id}`.execute(trx);
       // A system the evidence no longer serves loses its link, unless the link is the primary one (A-29).

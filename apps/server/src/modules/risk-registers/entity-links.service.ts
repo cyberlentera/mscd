@@ -158,7 +158,7 @@ export class EntityLinksService {
            where evidence_id = ${link.entity_id} and management_system_id = ${link.management_system_id} and deleted_at is null`.execute(trx);
         if ((rows[0]?.n ?? 0) > 0) {
           throw unprocessable('entity_link.evidence_targets', `The evidence still targets entries of ${target.slug}; remove those targets first`,
-            `Bukti masih menargetkan entri ${target.slug}; hapus target tersebut terlebih dahulu`);
+            `Evidence masih menargetkan entri ${target.slug}; hapus target tersebut terlebih dahulu`);
         }
       }
       const code = await this.codeOf(trx, link);

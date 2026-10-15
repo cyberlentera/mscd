@@ -28,7 +28,7 @@ test.describe('Audit readiness', () => {
     await expect(hero(page)).toContainText(/339\s*Records ready/);
   });
 
-  test('traceability test renders R-014 with node states and break points', async ({ page }) => {
+  test('traceability test renders R-014 with node states and gaps', async ({ page }) => {
     await openAudit(page);
     await expect(picks(page)).toHaveText(['R-014', 'R-022', 'R-031', 'R-003', 'Random']);
     await expect(pick(page, 'R-014')).toHaveAttribute('style', /background: var\(--tx\)/);
@@ -37,14 +37,14 @@ test.describe('Audit readiness', () => {
     expect(await nodeColors(page)).toEqual([OK, BAD, BAD, OK, OK, BAD, OK, BAD]);
     await expect(nodes(page).nth(1)).toContainText('Bagus Prasetyo');
     await expect(nodes(page).nth(1)).toContainText('Overdue, 10 Sep 2026');
-    await expect(warning(page)).toContainText('4 break points: Risk R-014: Annual reassessment (Bagus Prasetyo, 10 Sep 2026)');
+    await expect(warning(page)).toContainText('4 gaps: Risk R-014: Annual reassessment (Bagus Prasetyo, 10 Sep 2026)');
     await expect(warning(page)).toContainText('Metric M-07: Enter Aug and Sep values (Bagus Prasetyo, 5 Sep 2026)');
   });
 
   for (const [id, ids, colors, text] of [
-    ['R-022', ['CI-05', 'R-022', 'T-022', 'A.5.23', 'A.5.23', 'POL-14', '-', 'M-03'], [OK, WARN, OK, BAD, BAD, OK, BAD, OK], '3 break points: Control A.5.23: Resolve blocking item: justification missing'],
-    ['R-031', ['CI-03', 'R-031', 'T-031', 'A.8.8', 'A.8.8', 'PRC-10', 'EV-0298', 'M-07'], [OK, WARN, BAD, WARN, WARN, OK, BAD, BAD], '3 break points: Risk treatment T-031: Assign owner and plan treatment (Unassigned)'],
-    ['R-003', ['CI-01', 'R-003', 'T-003', 'A.5.15', 'A.5.15', 'PRC-07', 'EV-0142', 'M-02'], [OK, OK, OK, OK, OK, BAD, OK, OK], '1 break point: Document PRC-07: Start review: review date passed'],
+    ['R-022', ['CI-05', 'R-022', 'T-022', 'A.5.23', 'A.5.23', 'POL-14', '-', 'M-03'], [OK, WARN, OK, BAD, BAD, OK, BAD, OK], '3 gaps: Control A.5.23: Resolve blocking item: justification missing'],
+    ['R-031', ['CI-03', 'R-031', 'T-031', 'A.8.8', 'A.8.8', 'PRC-10', 'EV-0298', 'M-07'], [OK, WARN, BAD, WARN, WARN, OK, BAD, BAD], '3 gaps: Risk treatment T-031: Assign owner and plan treatment (Unassigned)'],
+    ['R-003', ['CI-01', 'R-003', 'T-003', 'A.5.15', 'A.5.15', 'PRC-07', 'EV-0142', 'M-02'], [OK, OK, OK, OK, OK, BAD, OK, OK], '1 gap: Document PRC-07: Start review: review date passed'],
   ]) {
     test(`traceability pick ${id} renders its chain`, async ({ page }) => {
       await openAudit(page);

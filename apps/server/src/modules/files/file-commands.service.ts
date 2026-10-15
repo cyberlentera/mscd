@@ -101,7 +101,7 @@ export class FileCommandsService {
     if (producedAt > today) {
       throw refusal('files.produced_in_future', {
         en: 'The evidence date cannot be later than today.',
-        id: 'Tanggal bukti tidak boleh lebih lambat dari hari ini.',
+        id: 'Tanggal evidence tidak boleh lebih lambat dari hari ini.',
       });
     }
     const prepared = await this.tenancy.withTenant(tenantContextOf(principal), async (trx) => {

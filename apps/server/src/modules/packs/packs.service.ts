@@ -101,10 +101,10 @@ export function packProblem(error: PackRejectedError): ProblemError {
       en: error.code === 'downgrade' ? `${error.message}: an older version is never installed.` : error.message,
       id:
         error.code === 'downgrade'
-          ? 'Versi paket lebih lama dari versi yang terpasang: versi lama tidak pernah dipasang.'
+          ? 'Versi Framework Pack lebih lama dari versi yang terpasang: versi lama tidak pernah dipasang.'
           : error.code === 'engine_version'
-            ? 'Paket ini membutuhkan versi server yang lebih baru.'
-            : 'Paket ini tidak dapat memperbarui edisi yang terpasang.',
+            ? 'Framework Pack ini membutuhkan versi server yang lebih baru.'
+            : 'Framework Pack ini tidak dapat memperbarui edisi yang terpasang.',
     },
   });
 }
@@ -261,7 +261,7 @@ export class PacksService {
         messageKey: 'packs.offline_channel',
         messages: {
           en: 'Updates come as signed offline bundles on this installation. Import a pack bundle to update.',
-          id: 'Pembaruan pada instalasi ini datang sebagai bundel luring yang ditandatangani. Impor bundel paket untuk memperbarui.',
+          id: 'Pembaruan pada instalasi ini datang sebagai bundel luring yang ditandatangani. Impor bundel Framework Pack untuk memperbarui.',
         },
       });
     }
@@ -302,7 +302,7 @@ export class PacksService {
     return {
       ok: true,
       changed: [],
-      message: n === 0 ? ['All packs are up to date', 'Semua paket sudah terbaru'] : [`${n} update${n === 1 ? '' : 's'} available`, `${n} pembaruan tersedia`],
+      message: n === 0 ? ['All packs are up to date', 'Semua Framework Pack sudah terbaru'] : [`${n} update${n === 1 ? '' : 's'} available`, `${n} pembaruan tersedia`],
       data: { available },
     };
   }

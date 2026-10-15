@@ -6,4 +6,4 @@ drisk,4,Disruption risk,Risiko gangguan,How were disruption risks assessed?,Baga
 strategy,5,Strategy / requirement,Strategi / persyaratan,Which strategies and solutions were selected?,Strategi dan solusi mana yang dipilih?,applicability,,,true,8.3,8,,
 document,6,BC plan / document,Rencana BC / dokumen,Are plans approved and current?,Apakah rencana sudah disetujui dan masih berlaku?,document,,,true,7.5,7,,
 exercise,7,Exercise,Latihan,When was this plan last exercised?,Kapan rencana ini terakhir diuji melalui latihan?,entity,exercise,,true,8.5,8,,
-evidence,8,Evidence,Bukti,Show exercise and operating records.,Tunjukkan rekaman latihan dan rekaman operasional.,evidence,,,true,8.1 / 9.1,8,,
+evidence,8,Evidence,Evidence,Show exercise and operating records.,Tunjukkan rekaman latihan dan rekaman operasional.,evidence,,,true,8.1 / 9.1,8,,

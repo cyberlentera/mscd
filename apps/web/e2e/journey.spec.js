@@ -57,7 +57,7 @@ test.describe('Start here', () => {
 
   test('follows the selected system and the Indonesian interface', async ({ page }) => {
     await openApp(page, '?lang=id');
-    await go(page, 'Mulai di sini');
+    await go(page, 'Start here');
     await expect(main(page)).toContainText('Tahap 7 dari 7');
     await expect(main(page)).toContainText('Pertahankan sertifikat');
     await switchMs(page, 'QMS');

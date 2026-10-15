@@ -149,8 +149,8 @@ describe('snapshot of the sample source', () => {
     const ms = Object.fromEntries(snap.MS.map((m) => [m.id, m]));
     expect(ms.isms.gateName).toEqual(['Risk & SoA', 'Risiko & SoA']);
     expect(ms.qms.gateName).toEqual(['Risk & Opportunity + Process Map', 'Risiko & Peluang + Peta Proses']);
-    expect(ms.bcms.gateName).toEqual(['BIA & Risk Assessment', 'BIA & Penilaian Risiko']);
-    expect(ms.abms.gateName).toEqual(['Bribery Risk Assessment', 'Penilaian Risiko Penyuapan']);
+    expect(ms.bcms.gateName).toEqual(['BIA & Risk Assessment', 'BIA & Risk Assessment']);
+    expect(ms.abms.gateName).toEqual(['Bribery Risk Assessment', 'Bribery Risk Assessment']);
     expect([ms.isms, ms.qms, ms.bcms, ms.abms].map((m) => m.gtSuggestions)).toEqual([['A.8.13', 'PRC-07', 'A.5.23'], ['Cl. 8.4', 'PRC-Q04'], ['BIA-03', 'PLN-B02'], ['Cl. 4.5']]);
     expect([ms.isms, ms.qms, ms.bcms, ms.abms].map((m) => m.approver)).toEqual(['hendra', 'sari', 'hendra', 'lina']);
     expect([ms.qms, ms.bcms, ms.abms].map((m) => m.banner.kind)).toEqual(['transition', 'connector', 'beta']);

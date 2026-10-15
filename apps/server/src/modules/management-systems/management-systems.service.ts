@@ -222,7 +222,7 @@ export class ManagementSystemsService {
             kind: 'beta',
             tone: 'info',
             text_en: `${version.pack_id} ${version.pack_version} is a pre-release pack; its content may still change.`,
-            text_id: `${version.pack_id} ${version.pack_version} adalah paket pra-rilis; isinya masih dapat berubah.`,
+            text_id: `${version.pack_id} ${version.pack_version} adalah Framework Pack pra-rilis; isinya masih dapat berubah.`,
             source_ref: JSON.stringify({ frameworkVersionId: version.id }),
             created_by: userId,
             updated_by: userId,

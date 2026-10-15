@@ -13,7 +13,7 @@
   {
     "code": "unverif",
     "label_en": "Evidence files that cannot be verified",
-    "label_id": "Berkas bukti tak terverifikasi",
+    "label_id": "Berkas evidence tak terverifikasi",
     "severity": "crit",
     "source_stage": "evidence",
     "source_kind": "unverif",
@@ -24,7 +24,7 @@
   {
     "code": "nohash",
     "label_en": "Google-native evidence without content hash",
-    "label_id": "Bukti Google native tanpa hash",
+    "label_id": "Evidence Google native tanpa hash",
     "severity": "warn",
     "source_stage": "evidence",
     "source_kind": "nohash",

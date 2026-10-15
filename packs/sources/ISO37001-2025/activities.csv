@@ -12,12 +12,12 @@ phase_no,phase_name_en,phase_name_id,is_gate_phase,activity_no,title,clause_ref,
 3,Leadership & policy,Kepemimpinan & kebijakan,false,2,"Define roles, responsibilities and authorities",,,"Define roles, responsibilities and authorities: approved and recorded in the register"
 3,Leadership & policy,Kepemimpinan & kebijakan,false,3,Set measurable objectives,,,Set measurable objectives: approved and recorded in the register
 3,Leadership & policy,Kepemimpinan & kebijakan,false,4,Approve and communicate policy,,POL-01,Approve and communicate policy: approved and recorded in the register
-4,Bribery risk assessment,Penilaian risiko penyuapan,true,1,Identify bribery risk positions and transactions,,,Identify bribery risk positions and transactions: approved and recorded in the register
-4,Bribery risk assessment,Penilaian risiko penyuapan,true,2,Identify business associates in scope,,,Identify business associates in scope: approved and recorded in the register
-4,Bribery risk assessment,Penilaian risiko penyuapan,true,3,"Assess bribery risks by position, partner, region",,,"Assess bribery risks by position, partner, region: approved and recorded in the register"
-4,Bribery risk assessment,Penilaian risiko penyuapan,true,4,Determine proportionate controls,,,Determine proportionate controls: approved and recorded in the register
-4,Bribery risk assessment,Penilaian risiko penyuapan,true,5,Approve bribery risk assessment,,,Approve bribery risk assessment: approved and recorded in the register
-4,Bribery risk assessment,Penilaian risiko penyuapan,true,6,Set risk review triggers,,,Set risk review triggers: approved and recorded in the register
+4,Bribery risk assessment,Bribery risk assessment,true,1,Identify bribery risk positions and transactions,,,Identify bribery risk positions and transactions: approved and recorded in the register
+4,Bribery risk assessment,Bribery risk assessment,true,2,Identify business associates in scope,,,Identify business associates in scope: approved and recorded in the register
+4,Bribery risk assessment,Bribery risk assessment,true,3,"Assess bribery risks by position, partner, region",,,"Assess bribery risks by position, partner, region: approved and recorded in the register"
+4,Bribery risk assessment,Bribery risk assessment,true,4,Determine proportionate controls,,,Determine proportionate controls: approved and recorded in the register
+4,Bribery risk assessment,Bribery risk assessment,true,5,Approve bribery risk assessment,,,Approve bribery risk assessment: approved and recorded in the register
+4,Bribery risk assessment,Bribery risk assessment,true,6,Set risk review triggers,,,Set risk review triggers: approved and recorded in the register
 5,Anti-bribery controls,Kontrol anti-penyuapan,false,1,Establish anti-bribery compliance function,,,Establish anti-bribery compliance function: approved and recorded in the register
 5,Anti-bribery controls,Kontrol anti-penyuapan,false,2,Due diligence procedure,,,Due diligence procedure: approved and recorded in the register
 5,Anti-bribery controls,Kontrol anti-penyuapan,false,3,Financial controls,,,Financial controls: approved and recorded in the register

@@ -2,7 +2,7 @@
   "ms.name": "BCMS",
   "ms.long_name": "Sistem manajemen keberlangsungan usaha",
   "ms.manager_role": "Manajer BCMS",
-  "gate.name": "BIA & Penilaian Risiko",
+  "gate.name": "BIA & Risk Assessment",
   "applicability.artefact_name": "Penetapan Ruang Lingkup BCMS",
   "risk.object_name": "Risiko gangguan"
 }

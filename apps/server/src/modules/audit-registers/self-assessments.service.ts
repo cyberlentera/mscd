@@ -105,7 +105,7 @@ export class SelfAssessmentsService {
       if (from !== body.status) pickTransition(MACHINE, from, body.status, authz, false);
       const owner = body.ownerHandle !== undefined ? await this.members.resolveHandle(trx, body.ownerHandle) : (stored?.owner_user_id ?? null);
       if (body.status === 'gap' && owner === null) {
-        throw unprocessable('audit.gap_needs_owner', 'A gap needs an owner and a target date', 'Kesenjangan memerlukan pemilik dan tanggal target');
+        throw unprocessable('audit.gap_needs_owner', 'A gap needs an owner and a target date', 'Gap memerlukan pemilik dan tanggal target');
       }
       const evidence = await this.evidenceOf(trx, system.id, body.evidenceCodes);
       const today = todayOf(this.clock, orgOf(principal));
@@ -174,7 +174,7 @@ export class SelfAssessmentsService {
         if (live[0]) throw new ConflictError(`Finding ${live[0].code} was already raised from ${condition.code}`, { messageKey: 'audit.finding_already_raised' });
       }
       if (row.status !== 'gap') {
-        throw unprocessable('audit.raise_needs_gap', 'A finding is raised from a gap only', 'Temuan hanya dapat diajukan dari kesenjangan');
+        throw unprocessable('audit.raise_needs_gap', 'A finding is raised from a gap only', 'Temuan hanya dapat diajukan dari gap');
       }
       const code = await this.nextFindingCode(trx, record.ms.id, todayOf(this.clock, orgOf(principal)).slice(0, 4));
       const owner = row.owner_user_id ? ((await sql<{ handle: string }>`select handle from platform.app_user where id = ${row.owner_user_id}`.execute(trx)).rows[0]?.handle ?? 'none') : 'none';
@@ -231,7 +231,7 @@ export class SelfAssessmentsService {
                         and l.management_system_id = ${msId} and l.deleted_at is null)`.execute(trx);
     const unknown = wanted.filter((c) => !rows.some((r) => r.code === c));
     if (unknown.length > 0) {
-      throw unprocessable('audit.unknown_evidence', `Unknown evidence of this system: ${unknown.join(', ')}`, `Bukti tidak dikenal pada sistem ini: ${unknown.join(', ')}`);
+      throw unprocessable('audit.unknown_evidence', `Unknown evidence of this system: ${unknown.join(', ')}`, `Evidence tidak dikenal pada sistem ini: ${unknown.join(', ')}`);
     }
     return rows;
   }

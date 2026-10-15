@@ -252,7 +252,7 @@ export class RemindersService {
       if (d) return { title: [d.title, d.title], act: ['Review', 'Tinjau'], due: d.rev || null };
     } else if (kind === 'ev') {
       const e = b.evs.find((x) => x.code === id);
-      if (e) return { title: [e.title, e.title], act: ['Submit evidence', 'Serahkan bukti'], due: e.next };
+      if (e) return { title: [e.title, e.title], act: ['Submit evidence', 'Serahkan evidence'], due: e.next };
     } else if (kind === 'act') {
       const a = b.phases.flatMap((p) => p.acts).find((x) => x.no === id);
       if (a) return { title: [`${a.no} ${a.title}`, `${a.no} ${a.title}`], act: FOLLOW_UP, due: a.date };

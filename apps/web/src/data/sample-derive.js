@@ -18,7 +18,7 @@ const DOC_TEXT = {
   review: ['Approve review', 'Setujui tinjauan'],
   draft: ['Continue draft and approve', 'Lanjutkan draf dan setujui'],
 };
-const GATE_TYPE = { risk: ['Risk', 'Risiko'], treatment: ['Treatment', 'Perlakuan'], soa: ['SoA', 'SoA'], bia: ['BIA', 'BIA'] };
+const GATE_TYPE = { risk: ['Risk', 'Risiko'], treatment: ['Treatment', 'Treatment'], soa: ['SoA', 'SoA'], bia: ['BIA', 'BIA'] };
 // Sample fabrication (UI 2.15): activity owners rotate through a pool per system.
 const OWNER_POOL = {
   isms: ['rina', 'hendra', 'bagus', 'dewi', 'fajar', 'yusuf', 'andi', 'lina'],
@@ -112,7 +112,7 @@ export function chain(D, ov, d) {
         if (!bad && !stale) return;
         const act = bad
           ? ['Re-link file in repository (' + D.INTEG[e.integ][0] + ')', 'Tautkan ulang berkas di repositori (' + D.INTEG[e.integ][1] + ')']
-          : ['Submit ' + D.FREQ[e.freq][0].toLowerCase() + ' evidence', 'Serahkan bukti ' + D.FREQ[e.freq][1].toLowerCase()];
+          : ['Submit ' + D.FREQ[e.freq][0].toLowerCase() + ' evidence', 'Serahkan evidence ' + D.FREQ[e.freq][1].toLowerCase()];
         items.push(mk(s.id, 'ev', e.code, same(e.title + ', ' + e.ctrl), act, e.owner, e.next, { missing: e.integ === 'missing' || e.integ === 'revoked', ref: e, up: [e.ctrl], q: s.q }));
       });
     } else {

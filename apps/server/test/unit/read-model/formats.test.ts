@@ -35,7 +35,7 @@ describe('MS fields (G.5 MS[])', () => {
     'catalogue.theme.8': ['Technological', 'Teknologi'] as [string, string],
   };
   const event: AuditEventRow = {
-    id: 'e', updatedAt: new Date(0), scheduledAt: '2026-11-12', auditDays: 2, shortLabel: 'Surveillance 1', nameEn: 'Surveillance audit 1', nameId: 'Audit surveilans 1',
+    id: 'e', updatedAt: new Date(0), scheduledAt: '2026-11-12', auditDays: 2, shortLabel: 'Surveillance 1', nameEn: 'Surveillance audit 1', nameId: 'Audit surveillance 1',
     leadAuditorName: 'Ir. Dwi Hartanto, IRCA LA', expectedFocus: 'focus', prepWindowDays: 60, outcomeSummary: null,
   };
 

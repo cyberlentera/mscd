@@ -37,12 +37,8 @@ export const SCREENS = [
   'Evidence status', 'Document reviews', 'My Tasks', 'Standards & licence', 'File storage',
   'Start here', 'Team & roles',
 ];
-export const SCREENS_ID = [
-  'Beranda', 'Kesiapan per klausul', 'Kontrol Annex A', 'Peta jalan', 'Daftar induk dokumen',
-  'Kesiapan audit', 'Item belum siap', 'Penelusuran rantai', 'Siklus sertifikasi',
-  'Status bukti', 'Tinjauan dokumen', 'Tugas Saya', 'Standar & lisensi', 'Penyimpanan berkas',
-  'Mulai di sini', 'Tim & peran',
-];
+// Screen names are English in both languages (glossary of 2026-10-15), so the Indonesian list is the English one.
+export const SCREENS_ID = SCREENS;
 // Screens with a filterable list and row details (the drill-down screens).
 export const DRILL_SCREENS = ['Annex A controls', 'Document register', 'Outstanding items', 'Evidence status', 'Document reviews', 'File storage'];
 
@@ -58,7 +54,7 @@ export async function closeDrawerIfOpen(page) {
   }
 }
 // Only ISMS has Annex A controls; the other systems name the same screen after their requirements.
-const REQS = { 'Annex A controls': 'Requirements', 'Kontrol Annex A': 'Persyaratan' };
+const REQS = { 'Annex A controls': 'Requirements' };
 export async function go(page, label) {
   await closeDrawerIfOpen(page);
   let btn = page.locator(`aside nav button[title="${label}"]`);

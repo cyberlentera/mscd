@@ -12,13 +12,13 @@ phase_no,phase_name_en,phase_name_id,is_gate_phase,activity_no,title,clause_ref,
 3,Leadership & policy,Kepemimpinan & kebijakan,false,2,"Define roles, responsibilities and authorities",,,"Define roles, responsibilities and authorities: approved and recorded in the register"
 3,Leadership & policy,Kepemimpinan & kebijakan,false,3,Set measurable objectives,,,Set measurable objectives: approved and recorded in the register
 3,Leadership & policy,Kepemimpinan & kebijakan,false,4,Approve and communicate policy,,POL-01,Approve and communicate policy: approved and recorded in the register
-4,BIA & risk assessment,BIA & penilaian risiko,true,1,Identify products and services,,,Identify products and services: approved and recorded in the register
-4,BIA & risk assessment,BIA & penilaian risiko,true,2,Determine prioritised activities,,,Determine prioritised activities: approved and recorded in the register
-4,BIA & risk assessment,BIA & penilaian risiko,true,3,"Set MTPD, RTO and RPO per activity",,,"Set MTPD, RTO and RPO per activity: approved and recorded in the register"
-4,BIA & risk assessment,BIA & penilaian risiko,true,4,Complete BIA for all prioritised activities,,PLN-B01,Complete BIA for all prioritised activities: approved and recorded in the register
-4,BIA & risk assessment,BIA & penilaian risiko,true,5,Assess disruption risks,,,Assess disruption risks: approved and recorded in the register
-4,BIA & risk assessment,BIA & penilaian risiko,true,6,Approve BIA report,,PLN-B01,Approve BIA report: approved and recorded in the register
-4,BIA & risk assessment,BIA & penilaian risiko,true,7,Approve risk assessment,,,Approve risk assessment: approved and recorded in the register
+4,BIA & risk assessment,BIA & risk assessment,true,1,Identify products and services,,,Identify products and services: approved and recorded in the register
+4,BIA & risk assessment,BIA & risk assessment,true,2,Determine prioritised activities,,,Determine prioritised activities: approved and recorded in the register
+4,BIA & risk assessment,BIA & risk assessment,true,3,"Set MTPD, RTO and RPO per activity",,,"Set MTPD, RTO and RPO per activity: approved and recorded in the register"
+4,BIA & risk assessment,BIA & risk assessment,true,4,Complete BIA for all prioritised activities,,PLN-B01,Complete BIA for all prioritised activities: approved and recorded in the register
+4,BIA & risk assessment,BIA & risk assessment,true,5,Assess disruption risks,,,Assess disruption risks: approved and recorded in the register
+4,BIA & risk assessment,BIA & risk assessment,true,6,Approve BIA report,,PLN-B01,Approve BIA report: approved and recorded in the register
+4,BIA & risk assessment,BIA & risk assessment,true,7,Approve risk assessment,,,Approve risk assessment: approved and recorded in the register
 5,BC strategies & plans,Strategi & rencana BC,false,1,Select continuity strategies,,,Select continuity strategies: approved and recorded in the register
 5,BC strategies & plans,Strategi & rencana BC,false,2,Define resource requirements,,,Define resource requirements: approved and recorded in the register
 5,BC strategies & plans,Strategi & rencana BC,false,3,Write BC plans,,PLN-B02,Write BC plans: approved and recorded in the register

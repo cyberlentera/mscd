@@ -727,7 +727,7 @@ export class EvidencePackBuildJob implements JobHandlerInstance<'evidence-pack.b
         recipientUserId: input.pack.created_by,
         kind: 'evidence_pack_ready',
         msId: input.system.id,
-        title: { en: `Evidence pack ${input.label} is ready`, id: `Paket bukti ${input.label} siap` },
+        title: { en: `Evidence pack ${input.label} is ready`, id: `Paket evidence ${input.label} siap` },
         body: {
           en: `${input.system.code}: ${items.length - exceptions} files copied to ${packFolder}, ${exceptions} exceptions.`,
           id: `${input.system.code}: ${items.length - exceptions} berkas disalin ke ${packFolder}, ${exceptions} pengecualian.`,

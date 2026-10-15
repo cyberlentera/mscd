@@ -40,9 +40,10 @@ describe('texts', () => {
     }
   });
 
-  it('are translated (the Indonesian text differs) except names and codes', () => {
+  it('are translated (the Indonesian text differs) except names, codes and the English ISO terms', () => {
     const same = Object.entries(TEXT).filter(([, [en, id]]) => en === id).map(([k]) => k);
-    expect(same.sort()).toEqual(['deployOnprem', 'deploySaas', 'emailPlaceholder', 'factFrameworks', 'passwordPlaceholder', 'tls'].sort());
+    // Evidence is one of the ISO terms Indonesian teams say in English (glossary of 2026-10-15).
+    expect(same.sort()).toEqual(['chainEvidence', 'deployOnprem', 'deploySaas', 'emailPlaceholder', 'passwordPlaceholder', 'tls'].sort());
   });
 });
 
@@ -87,7 +88,7 @@ describe('errorMessage', () => {
     expect(errorMessage({ status: 401, slug: 'unauthenticated', message: ['x', 'x'] }, { stepExpired: true })[0]).toMatch(/sign-in has expired/);
     expect(errorMessage({ status: 401, slug: 'unauthenticated', message: ['x', 'x'] })[0]).toMatch(/email or password/);
     expect(errorMessage({ status: 0, message: CONNECTION_LOST })).toBe(CONNECTION_LOST);
-    expect(errorMessage({ status: 422, rule: 'BR-01', message: ['No valid evidence', 'Tidak ada bukti valid'] })).toEqual(['No valid evidence', 'Tidak ada bukti valid']);
+    expect(errorMessage({ status: 422, rule: 'BR-01', message: ['No valid evidence', 'Tidak ada evidence valid'] })).toEqual(['No valid evidence', 'Tidak ada evidence valid']);
   });
 
   it('translates the password policy errors of F.4', () => {
